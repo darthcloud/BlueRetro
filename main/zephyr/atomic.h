@@ -10,9 +10,13 @@
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_H_
 
 #include <stdbool.h>
+#ifdef BLUERETRO
+#include "types.h"
+#else
 #include <toolchain.h>
 
 #include <zephyr/types.h>
+#endif /* BLUERETRO */
 
 #ifdef __cplusplus
 extern "C" {

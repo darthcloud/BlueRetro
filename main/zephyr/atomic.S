@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef BLUERETRO
+#include "xtensa_context.h"
+#else
 #include <xtensa_context.h>
+#endif /* BLUERETRO */
 /**
  *
  * @brief Atomically clear a memory location

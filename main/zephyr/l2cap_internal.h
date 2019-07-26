@@ -8,7 +8,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef BLUERETRO
 #include <bluetooth/l2cap.h>
+#endif /* BLUERETRO */
 
 enum l2cap_conn_list_action {
 	BT_L2CAP_CHAN_LOOKUP,
@@ -22,6 +24,10 @@ enum l2cap_conn_list_action {
 #define BT_L2CAP_CID_BR_SMP		0x0007
 
 #define BT_L2CAP_PSM_RFCOMM		0x0003
+#ifdef BLUERETRO
+#define BT_L2CAP_PSM_HID_CTRL	0x0011
+#define BT_L2CAP_PSM_HID_INTR 	0x0013
+#endif /* BLUERETRO */
 
 struct bt_l2cap_hdr {
 	u16_t len;
@@ -192,6 +198,7 @@ struct bt_l2cap_le_credits {
 
 #define BT_L2CAP_SDU_HDR_LEN		2
 
+#ifndef BLUERETRO
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 #define BT_L2CAP_RX_MTU CONFIG_BT_L2CAP_RX_MTU
 #else
@@ -322,3 +329,4 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, u8_t hci_status);
 
 /* Handle received data */
 void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
+#endif /* BLUERETRO */

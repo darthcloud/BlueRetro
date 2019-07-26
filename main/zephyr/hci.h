@@ -8,12 +8,18 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
+#ifdef BLUERETRO
+#include <stdbool.h>
+#include <string.h>
+#include "types.h"
+#else
 #include <toolchain.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/util.h>
 #include <net/buf.h>
+#endif /* BLUERETRO */
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +48,13 @@ typedef struct {
 	u8_t      type;
 	bt_addr_t a;
 } bt_addr_le_t;
+
+#ifdef BLUERETRO
+/** Bluetooth Class of Device */
+typedef struct {
+	u8_t  val[3];
+} bt_class_t;
+#endif /* BLUERETRO */
 
 #define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
 #define BT_ADDR_NONE    (&(bt_addr_t) { \
@@ -353,7 +366,11 @@ struct bt_hci_cmd_hdr {
 #define BT_OCF(opcode)                          ((opcode) & BIT_MASK(10))
 
 #define BT_HCI_OP_INQUIRY                       BT_OP(BT_OGF_LINK_CTRL, 0x0001)
+#ifdef BLUERETRO
+struct bt_hci_cp_inquiry {
+#else
 struct bt_hci_op_inquiry {
+#endif /* BLUERETRO */
 	u8_t lap[3];
 	u8_t length;
 	u8_t num_rsp;
@@ -548,6 +565,13 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_DISABLED                  0x00
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
+struct bt_hci_cp_write_class_of_device {
+    bt_class_t dev_class;
+} __packed;
+#endif /* BLUERETRO */
 
 #define BT_TX_POWER_LEVEL_CURRENT               0x00
 #define BT_TX_POWER_LEVEL_MAX                   0x01
@@ -1370,6 +1394,18 @@ struct bt_hci_evt_inquiry_complete {
 	u8_t status;
 } __packed;
 
+#ifdef BLUERETRO
+#define BT_HCI_EVT_INQUIRY_RESULT               0x02
+struct bt_hci_evt_inquiry_result {
+	u8_t      nb_rsp;
+	bt_addr_t *addr;
+	u8_t      *pscan_rep_mode;
+	u8_t      *reserved;
+	u8_t      **cod;
+	u16_t     *clock_offset;
+} __packed;
+#endif /* BLUERETRO */
+
 #define BT_HCI_EVT_CONN_COMPLETE                0x03
 struct bt_hci_evt_conn_complete {
 	u8_t      status;
@@ -1857,6 +1893,7 @@ struct bt_hci_evt_le_chan_sel_algo {
 #define BT_EVT_MASK_LE_SCAN_REQ_RECEIVED         BT_EVT_BIT(18)
 #define BT_EVT_MASK_LE_CHAN_SEL_ALGO             BT_EVT_BIT(19)
 
+#ifndef BLUERETRO
 /** Allocate a HCI command buffer.
   *
   * This function allocates a new buffer for a HCI command. It is given
@@ -1937,6 +1974,8 @@ typedef bool bt_hci_vnd_evt_cb_t(struct net_buf_simple *buf);
   * @return 0 on success or negative error value on failure.
   */
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb);
+
+#endif /* BLUERETRO */
 
 #ifdef __cplusplus
 }
