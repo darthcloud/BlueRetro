@@ -130,14 +130,6 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t ir[18];
 } __packed;
 
-struct bt_hidp_wiiu_pro {
-    uint16_t ls_x_axis;
-    uint16_t rs_x_axis;
-    uint16_t ls_y_axis;
-    uint16_t rs_y_axis;
-    uint8_t buttons[3];
-} __packed;
-
 struct bt_hidp_data {
     struct bt_hidp_hdr hidp_hdr;
     union {

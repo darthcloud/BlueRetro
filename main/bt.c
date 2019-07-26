@@ -183,6 +183,7 @@ enum {
 #define H4_TYPE_SCO     3
 #define H4_TYPE_EVENT   4
 
+static struct input_data *input;
 static TaskHandle_t xHandle = NULL;
 static uint8_t hci_version = 0;
 static bt_addr_t local_bdaddr;
@@ -880,7 +881,9 @@ static void bt_task(void *param) {
     }
 }
 
-esp_err_t bt_init(void) {
+esp_err_t bt_init(struct input_data *input_data) {
+    input = input_data;
+
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
