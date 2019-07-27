@@ -183,7 +183,7 @@ enum {
 #define H4_TYPE_SCO     3
 #define H4_TYPE_EVENT   4
 
-static struct input_data *input;
+static struct io *input;
 static TaskHandle_t xHandle = NULL;
 static uint8_t hci_version = 0;
 static bt_addr_t local_bdaddr;
@@ -724,11 +724,9 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             switch (bt_hidp_data->hidp_hdr.protocol) {
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
-                    struct bt_hidp_wiiu_pro *wiiu_pro = (struct bt_hidp_wiiu_pro *)bt_hidp_data->hidp_data.wii_core_acc_ext.ext;
+                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)bt_hidp_data->hidp_data.wii_core_acc_ext.ext;
                     printf("# LX: %04X LY: %04X RX: %04X RY: %04X ", wiiu_pro->ls_x_axis, wiiu_pro->ls_y_axis, wiiu_pro->rs_x_axis, wiiu_pro->rs_y_axis);
-                    for (uint8_t i = 0; i < sizeof(wiiu_pro->buttons); i++) {
-                        printf("%02X", wiiu_pro->buttons[i]);
-                    }
+                    printf("%06X", wiiu_pro->buttons);
                     printf("\r");
                     break;
                 }
@@ -881,8 +879,8 @@ static void bt_task(void *param) {
     }
 }
 
-esp_err_t bt_init(struct input_data *input_data) {
-    input = input_data;
+esp_err_t bt_init(struct io *io_data) {
+    input = io_data;
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();

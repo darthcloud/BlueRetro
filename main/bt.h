@@ -1,9 +1,9 @@
 #ifndef _BT_H_
 #define _BT_H_
 
-#include "input.h"
+#include "io.h"
 
-esp_err_t bt_init(struct input_data *input_data);
+esp_err_t bt_init(struct io *io_data);
 
 #endif /* _BT_H_ */
 
