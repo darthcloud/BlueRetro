@@ -28,7 +28,7 @@ typedef enum {
 
 typedef struct {
     uint8_t data[NSI_FRAME_MAX] __attribute__((aligned(8)));
-    uint8_t len;
+    uint16_t len;
     uint8_t stop_len;
 } nsi_frame_t;
 

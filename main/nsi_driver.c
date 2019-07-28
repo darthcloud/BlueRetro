@@ -54,16 +54,18 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 static uint16_t IRAM_ATTR nsi_bytes_to_items(nsi_channel_t channel, nsi_frame_t *frame) {
     uint8_t byte, bit,*val;//, crc = 0xFF;
     uint16_t item, idx;
+
     //int16_t crc_bit = nsi[channel].nsi_mode ? 0 : -24;
 
     //printf("len %d stop %d\n", frame->len, frame->stop_len);
 
-    for (idx = item = (channel * RMT_MEM_ITEM_NUM), byte = 0, val = frame->data; byte < frame->len; byte++, val++) {
+    for (idx = item = (channel * RMT_MEM_ITEM_NUM), val = frame->data; item < frame->len; val++) {
         //printf("%02X\n", val);
         //if (byte == 3) {
         //    RMT.conf_ch[channel].conf1.tx_start = 1;
         //}
-        for (bit = 0; bit < 8; bit++, item++, idx = (item & 0x1FF),  *val <<= 1/*, crc_bit++*/) {
+        //for (; (item % 8); item++,  *val <<= 1/*, crc_bit++*/) {
+        do {
             //ets_printf("%02X\n", *val);
             //if (crc_bit == 0)
             //    crc = 0xFF;
@@ -72,16 +74,18 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items(nsi_channel_t channel, nsi_frame_t 
             if (*val & 0x80) {
                 //if (crc_bit < 256)
                 //    crc ^= nsi_crc_table[crc_bit];
-                rmt_items[idx].val = BIT_ONE;
+                rmt_items[item].val = BIT_ONE;
             }
             else {
-                rmt_items[idx].val = BIT_ZERO;
+                rmt_items[item].val = BIT_ZERO;
             }
-        }
+            item++;
+            *val <<= 1;
+        } while ((item % 8));
     }
     //rmt_items[idx].level0 = 0;
     //rmt_items[idx].level1 = 1;
-    rmt_items[idx].val = STOP_BIT_2US;
+    rmt_items[item].val = STOP_BIT_2US;
     //printf("crc: 0x%02X or 0x%02X\n", crc, crc ^ 0xFF);
     return item;
 }
@@ -141,11 +145,11 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 switch (nsi_frame.data[0]) {
                     case 0x00:
                         memcpy(nsi_frame.data, nsi_ident.data, 3);
-                        nsi_frame.len = 3;
+                        nsi_frame.len = 24;
                         break;
                     case 0x01:
                         memcpy(nsi_frame.data, nsi_status.data, 4);
-                        nsi_frame.len = 4;
+                        nsi_frame.len = 32;
                         break;
                 }
                 nsi_frame.stop_len = 2;
