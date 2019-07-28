@@ -1,6 +1,9 @@
 #ifndef _IO_H_
 #define _IO_H_
 
+#include <sys/cdefs.h>
+#include <stdint.h>
+
 #define BTN_D_UP     0x00
 #define BTN_D_LEFT   0x01
 #define BTN_D_RIGHT  0x02
@@ -46,43 +49,22 @@
 struct nes_map {
     uint8_t buttons;
 } __packed;
-#if 0
-const uint8_t nes_mask[] =
-{
-/*  DU    DL    DR    DD    LJU   LJL   LJR   LJD   RJU   RJL   RJR   RJD   LA    L     RA    R     */
-    0x08, 0x02, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x00, 0x00, 0x20, 0x00, 0x10, 0x00, 0x00, 0x00
-/*  LZ    LG    LJ    RZ    RG    RJ    A     B     X     Y     SEL   HOME  STA   C                 */
-};
-#endif
+extern const uint8_t nes_mask[32];
+
 #define IO_FORMAT_SNES     0x01
 struct snes_map {
     uint16_t buttons;
 } __packed;
-#if 0
-const uint16_t snes_mask[] =
-{
-/*  DU      DL      DR      DD      LJU     LJL     LJR     LJD     RJU     RJL     RJR     RJD     LA      L       RA      R       */
-    0x0008, 0x0002, 0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x2000, 0x0000, 0x1000,
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000, 0x0080, 0x4000, 0x0040, 0x0020, 0x0000, 0x0010, 0x0000, 0x0000, 0x0000
-/*  LZ      LG      LJ      RZ      RG      RJ      A       B       X       Y       SEL     HOME    STA     C                       */
-};
-#endif
+extern const uint16_t snes_mask[32];
+
 #define IO_FORMAT_N64      0x02
 struct n64_map {
     uint16_t buttons;
     int8_t rs_x_axis;
     int8_t rs_y_axis;
 } __packed;
-#if 0
-const uint16_t n64_mask[] =
-{
-/*  DU      DL      DR      DD      LJU     LJL     LJR     LJD     RJU     RJL     RJR     RJD     LA      L       RA      R       */
-    0x0008, 0x0002, 0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000, 0x0800, 0x0200, 0x0100, 0x0400, 0x0000, 0x2000, 0x0000, 0x1000,
-    0x0000, 0x0000, 0x0000, 0x0020, 0x0000, 0x0000, 0x0080, 0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0010, 0x0000, 0x0000, 0x0000
-/*  LZ      LG      LJ      RZ      RG      RJ      A       B       X       Y       SEL     HOME    STA     C                       */
-};
-#endif
+extern const uint16_t n64_mask[32];
+
 #define IO_FORMAT_GC       0x04
 struct gc_map {
     uint16_t buttons;
@@ -102,6 +84,7 @@ struct wiiu_pro_map {
     uint16_t rs_y_axis;
     uint32_t buttons;
 } __packed;
+extern const uint32_t wiiu_mask[32];
 
 struct io {
     uint8_t format;
