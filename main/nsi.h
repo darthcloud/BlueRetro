@@ -7,6 +7,8 @@
 #ifndef _NSI_H_
 #define _NSI_H_
 
+#include "io.h"
+
 #define NSI_FRAME_MAX 63
 
 typedef enum {
@@ -32,7 +34,7 @@ typedef struct {
     uint8_t stop_len;
 } nsi_frame_t;
 
-void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, TaskHandle_t *task_handle);
+void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data);
 void nsi_reset(nsi_channel_t channel);
 esp_err_t nsi_rx(nsi_channel_t channel, nsi_frame_t *frame);
 void nsi_tx(nsi_channel_t channel, nsi_frame_t *frame);

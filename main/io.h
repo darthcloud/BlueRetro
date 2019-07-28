@@ -60,8 +60,8 @@ extern const uint16_t snes_mask[32];
 #define IO_FORMAT_N64      0x02
 struct n64_map {
     uint16_t buttons;
-    int8_t rs_x_axis;
-    int8_t rs_y_axis;
+    int8_t ls_x_axis;
+    int8_t ls_y_axis;
 } __packed;
 extern const uint16_t n64_mask[32];
 
@@ -96,6 +96,8 @@ struct io {
         struct wiiu_pro_map wiiu_pro;
     } io;
 } __packed;
+
+void translate_status(struct io *input, struct io* output);
 
 #endif /* _IO_H_ */
 

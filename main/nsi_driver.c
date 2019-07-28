@@ -19,6 +19,7 @@
 
 #define NSI_BIT_PERIOD_TICKS 8
 
+static struct io *output;
 static nsi_frame_t nsi_frame = {0};
 static  nsi_frame_t nsi_ident = {{0x05, 0x00, 0x00}, 3, 2};
 static  nsi_frame_t nsi_status = {{0x00, 0x00, 0x00, 0x00}, 4, 2};
@@ -148,7 +149,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         nsi_frame.len = 24;
                         break;
                     case 0x01:
-                        memcpy(nsi_frame.data, nsi_status.data, 4);
+                        memcpy(nsi_frame.data, &output->io.n64, 4);
                         nsi_frame.len = 32;
                         break;
                 }
@@ -172,9 +173,9 @@ static void IRAM_ATTR nsi_isr(void *arg) {
         portYIELD_FROM_ISR();
 }
 
-void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, TaskHandle_t *task_handle) {
+void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data) {
     nsi[channel].nsi_mode = mode;
-    nsi[channel].nsi_task_handle = task_handle;
+    output = output_data;
 
     periph_module_enable(PERIPH_RMT_MODULE);
 
