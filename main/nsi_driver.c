@@ -3,18 +3,25 @@
  * ESP32 app demonstrating sniffing Nintendo's serial interface via RMT peripheral.
  *
 */
+#include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <driver/gpio.h>
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
+#include <esp_private/esp_timer_impl.h>
 #include "nsi.h"
+
+#define BIT_ZERO 0x80020006
+#define BIT_ONE  0x80060002
+#define STOP_BIT_1US 0x80000002
+#define STOP_BIT_2US 0x80000004
 
 #define NSI_BIT_PERIOD_TICKS 8
 
 static nsi_frame_t nsi_frame = {0};
-static nsi_frame_t nsi_ident = {{0x05, 0x00, 0x00}, 3, 2};
-static nsi_frame_t nsi_status = {{0x00, 0x00, 0x00, 0x00}, 4, 2};
+static  nsi_frame_t nsi_ident = {{0x05, 0x00, 0x00}, 3, 2};
+static  nsi_frame_t nsi_status = {{0x00, 0x00, 0x00, 0x00}, 4, 2};
 
 static const uint8_t nsi_crc_table[256] = {
    0x8F, 0x85, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0xC2, 0x61, 0xF2, 0x79, 0xFE, 0x7F,
@@ -45,38 +52,36 @@ static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items(nsi_channel_t channel, nsi_frame_t *frame) {
-    uint8_t byte, bit, val;//, crc = 0xFF;
+    uint8_t byte, bit,*val;//, crc = 0xFF;
     uint16_t item, idx;
     //int16_t crc_bit = nsi[channel].nsi_mode ? 0 : -24;
 
     //printf("len %d stop %d\n", frame->len, frame->stop_len);
 
-    for (idx = item = (channel * RMT_MEM_ITEM_NUM), byte = 0, val = frame->data[0]; byte < frame->len; byte++, val = frame->data[byte]) {
+    for (idx = item = (channel * RMT_MEM_ITEM_NUM), byte = 0, val = frame->data; byte < frame->len; byte++, val++) {
         //printf("%02X\n", val);
         //if (byte == 3) {
         //    RMT.conf_ch[channel].conf1.tx_start = 1;
         //}
-        for (bit = 0; bit < 8; bit++, item++, idx = (item & 0x1FF), val <<= 1/*, crc_bit++*/) {
+        for (bit = 0; bit < 8; bit++, item++, idx = (item & 0x1FF),  *val <<= 1/*, crc_bit++*/) {
+            //ets_printf("%02X\n", *val);
             //if (crc_bit == 0)
             //    crc = 0xFF;
             //rmt_items[idx].level0 = 0;
             //rmt_items[idx].level1 = 1;
-            if (val & 0x80) {
+            if (*val & 0x80) {
                 //if (crc_bit < 256)
                 //    crc ^= nsi_crc_table[crc_bit];
-                rmt_items[idx].duration0 = NSI_BIT_PERIOD_TICKS * 1/4;
-                rmt_items[idx].duration1 = NSI_BIT_PERIOD_TICKS * 3/4;
+                rmt_items[idx].val = BIT_ONE;
             }
             else {
-                rmt_items[idx].duration0 = NSI_BIT_PERIOD_TICKS * 3/4;
-                rmt_items[idx].duration1 = NSI_BIT_PERIOD_TICKS * 1/4;
+                rmt_items[idx].val = BIT_ZERO;
             }
         }
     }
     //rmt_items[idx].level0 = 0;
     //rmt_items[idx].level1 = 1;
-    rmt_items[idx].duration0 = NSI_BIT_PERIOD_TICKS * frame->stop_len/4;
-    rmt_items[idx].duration1 = 0;
+    rmt_items[idx].val = STOP_BIT_2US;
     //printf("crc: 0x%02X or 0x%02X\n", crc, crc ^ 0xFF);
     return item;
 }
@@ -110,6 +115,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint8_t i, channel;
+    uint64_t time1, time2;
 
     while (status) {
         i = __builtin_ffs(status) - 1;
@@ -118,7 +124,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
         switch (i % 3) {
             /* TX End */
             case 0:
-                ets_printf("TX_END\n");
+                //ets_printf("TX_END\n");
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
                 /* Go RX right away */
@@ -127,19 +133,23 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 break;
             /* RX End */
             case 1:
-                ets_printf("RX_END\n");
+                //ets_printf("RX_END\n");
                 RMT.conf_ch[channel].conf1.rx_en = 0;
                 RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                 nsi_items_to_bytes(0, &nsi_frame);
                 switch (nsi_frame.data[0]) {
                     case 0x00:
-                        nsi_bytes_to_items(0, &nsi_ident);
+                        memcpy(nsi_frame.data, nsi_ident.data, 3);
+                        nsi_frame.len = 3;
                         break;
                     case 0x01:
-                        nsi_bytes_to_items(0, &nsi_status);
+                        memcpy(nsi_frame.data, nsi_status.data, 4);
+                        nsi_frame.len = 4;
                         break;
                 }
+                nsi_frame.stop_len = 2;
+                nsi_bytes_to_items(0, &nsi_frame);
                 RMT.conf_ch[channel].conf1.tx_start = 1;
                 //vTaskNotifyGiveFromISR(*nsi[channel].nsi_task_handle,
                 //                        &xHigherPriorityTaskWoken);
