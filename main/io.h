@@ -4,46 +4,44 @@
 #include <sys/cdefs.h>
 #include <stdint.h>
 
-#define BTN_D_UP     0x00
-#define BTN_D_LEFT   0x01
-#define BTN_D_RIGHT  0x02
-#define BTN_D_DOWN   0x03
-#define BTN_LJ_UP    0x04
-#define BTN_LJ_LEFT  0x05
-#define BTN_LJ_RIGHT 0x06
-#define BTN_LJ_DOWN  0x07
-#define BTN_RJ_UP    0x08
-#define BTN_RJ_LEFT  0x09
-#define BTN_RJ_RIGHT 0x0A
-#define BTN_RJ_DOWN  0x0B
+#define BTN_DU 0x00
+#define BTN_DL 0x01
+#define BTN_DR 0x02
+#define BTN_DD 0x03
+#define BTN_LU 0x04
+#define BTN_LL 0x05
+#define BTN_LR 0x06
+#define BTN_LD 0x07
+#define BTN_BU 0x08
+#define BTN_BL 0x09
+#define BTN_BR 0x0A
+#define BTN_BD 0x0B
+#define BTN_RU 0x0C
+#define BTN_RL 0x0D
+#define BTN_RR 0x0E
+#define BTN_RD 0x0F
 
 /*
  * Setup analog triggers so their LSB is clear since they are positive axes 
  * and make sure both analog trigger has only 1 bit different (2nd bit).
  */
+#define BTN_LA 0x10
+#define BTN_LM 0x11
+#define BTN_RA 0x12
+#define BTN_RM 0x13
+#define BTN_LS 0x14
+#define BTN_LG 0x15
+#define BTN_LJ 0x16
+#define BTN_RS 0x17
+#define BTN_RG 0x18
+#define BTN_RJ 0x19
 
-#define BTN_LA       0x0C
-#define BTN_L        0x0D
-#define BTN_RA       0x0E
-#define BTN_R        0x0F
-#define BTN_LZ       0x10
-#define BTN_LG       0x11
-#define BTN_LJ       0x12
-#define BTN_RZ       0x13
-#define BTN_RG       0x14
-#define BTN_RJ       0x15
-
-#define BTN_A        0x16
-#define BTN_B        0x17
-#define BTN_X        0x18
-#define BTN_Y        0x19
-
-#define BTN_SELECT   0x1A
-#define BTN_HOME     0x1B
-#define BTN_START    0x1C
-#define BTN_C        0x1D
-#define BTN_MAX      0x1E
-#define BTN_NONE     0x1F
+#define BTN_SL 0x1A
+#define BTN_HM 0x1B
+#define BTN_ST 0x1C
+#define BTN_BE 0x1D
+#define BTN_MX 0x1E
+#define BTN_NN 0x1F
 
 #define IO_FORMAT_NES      0x00
 struct nes_map {
