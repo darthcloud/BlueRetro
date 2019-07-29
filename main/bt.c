@@ -189,7 +189,7 @@ static TaskHandle_t xHandle = NULL;
 static uint8_t hci_version = 0;
 static bt_addr_t local_bdaddr;
 static bt_addr_t remote_bdaddr;
-static atomic_t bt_flags;
+static atomic_t bt_flags = 0;
 static struct bt_hci_tx_frame bt_hci_tx_frame;
 static struct bt_acl_frame bt_acl_frame;
 static bt_class_t local_class = {{0x04, 0x08, 0x00}};

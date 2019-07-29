@@ -1,6 +1,11 @@
 #include "io.h"
 
 #include <stdio.h>
+#include "zephyr/atomic.h"
+
+enum {
+    IO_CALIBRATED
+};
 
 const uint8_t nes_mask[32] =
 {
@@ -34,23 +39,27 @@ const uint32_t wiiu_mask[32] =
 /*  LZ       LG       LJ       RZ       RG       RJ       A        B        X        Y        SEL      HOME     STA      C                          */
 };
 
+static atomic_t io_flags = 0;
+
 void translate_status(struct io *input, struct io* output) {
+    if (!atomic_test_bit(&io_flags, IO_CALIBRATED)) {
+    }
     output->io.n64.buttons = 0x0000;
     for (uint8_t i = 0; i < 32; i++) {
         if (~input->io.wiiu_pro.buttons & wiiu_mask[i]) {
             output->io.n64.buttons |= n64_mask[i];
         }
     }
-    if (input->io.wiiu_pro.rs_x_axis > 0x900) {
+    if (input->io.wiiu_pro.rs_x_axis > 0x1000) {
         output->io.n64.buttons |= n64_mask[BTN_RJ_RIGHT];
     }
-    else if (input->io.wiiu_pro.rs_x_axis < 0x700) {
+    else if (input->io.wiiu_pro.rs_x_axis < 0x600) {
         output->io.n64.buttons |= n64_mask[BTN_RJ_LEFT];
     }
-    if (input->io.wiiu_pro.rs_y_axis > 0x900) {
+    if (input->io.wiiu_pro.rs_y_axis > 0x1000) {
         output->io.n64.buttons |= n64_mask[BTN_RJ_UP];
     }
-    else if (input->io.wiiu_pro.rs_y_axis < 0x700) {
+    else if (input->io.wiiu_pro.rs_y_axis < 0x600) {
         output->io.n64.buttons |= n64_mask[BTN_RJ_DOWN];
     }
     output->io.n64.ls_x_axis = (input->io.wiiu_pro.ls_x_axis >> 4) - 0x80;
