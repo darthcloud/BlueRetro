@@ -1,6 +1,7 @@
 #include "io.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "zephyr/atomic.h"
 
 enum {
@@ -40,6 +41,7 @@ const uint32_t wiiu_mask[32] =
 };
 
 static atomic_t io_flags = 0;
+
 static uint8_t map_table[32] =
 {
     /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
@@ -48,22 +50,45 @@ static uint8_t map_table[32] =
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
 
-static void map_axis_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
+static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     switch (btn_id) {
         case BTN_LU:
-            output->io.n64.ls_y_axis = value;
+            if (abs(value) > abs(output->io.n64.ls_y_axis)) {
+                output->io.n64.ls_y_axis = value;
+            }
             break;
         case BTN_LD:
-            output->io.n64.ls_y_axis = -value;
+            if (abs(value) > abs(output->io.n64.ls_y_axis)) {
+                output->io.n64.ls_y_axis = -value;
+            }
             break;
         case BTN_LL:
-            output->io.n64.ls_x_axis = -value;
+            if (abs(value) > abs(output->io.n64.ls_x_axis)) {
+                output->io.n64.ls_x_axis = -value;
+            }
             break;
         case BTN_LR:
-            output->io.n64.ls_x_axis = value;
+            if (abs(value) > abs(output->io.n64.ls_x_axis)) {
+                output->io.n64.ls_x_axis = value;
+            }
             break;
     }
 };
+
+static void map_axis_to_buttons_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
+    if (value >= 0x0) {
+        if (value > AXIS_BTN_THRS) {
+            output->io.n64.buttons |= n64_mask[map_table[btn_p]];
+        }
+        map_to_n64_axis(output, map_table[btn_p], value);
+    }
+    else {
+        if (value < -AXIS_BTN_THRS) {
+            output->io.n64.buttons |= n64_mask[map_table[btn_n]];
+        }
+        map_to_n64_axis(output, map_table[btn_n], -value);
+    }
+}
 
 void translate_status(struct io *input, struct io* output) {
     int8_t scaled_lx, scaled_ly, scaled_rx, scaled_ry;
@@ -89,60 +114,16 @@ void translate_status(struct io *input, struct io* output) {
     /* Set responce curve */
 
     /* Map axis to */
-    if (scaled_lx >= 0x0) {
-        if (scaled_lx > AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_LR]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_LR], scaled_lx);
-    }
-    else {
-        if (scaled_lx < -AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_LL]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_LL], -scaled_lx);
-    }
-    if (scaled_ly >= 0x0) {
-        if (scaled_ly > AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_LU]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_LU], scaled_ly);
-    }
-    else {
-        if (scaled_ly < -AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_LD]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_LD], -scaled_ly);
-    }
-    if (scaled_rx >= 0x0) {
-        if (scaled_rx > AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_RR]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_RR], scaled_rx);
-    }
-    else {
-        if (scaled_rx < -AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_RL]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_RL], -scaled_rx);
-    }
-    if (scaled_ry >= 0x0) {
-        if (scaled_ry > AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_RU]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_RU], scaled_ry);
-    }
-    else {
-        if (scaled_ry < -AXIS_BTN_THRS) {
-            output->io.n64.buttons |= n64_mask[map_table[BTN_RD]];
-        }
-        map_axis_to_n64_axis(output, map_table[BTN_RD], -scaled_ry);
-    }
+    map_axis_to_buttons_axis(output, BTN_LL, BTN_LR, scaled_lx);
+    map_axis_to_buttons_axis(output, BTN_LD, BTN_LU, scaled_ly);
+    map_axis_to_buttons_axis(output, BTN_RL, BTN_RR, scaled_rx);
+    map_axis_to_buttons_axis(output, BTN_RD, BTN_RU, scaled_ry);
 
     /* Map buttons to */
     for (uint8_t i = 0; i < 32; i++) {
         if (~input->io.wiiu_pro.buttons & wiiu_mask[i]) {
             output->io.n64.buttons |= n64_mask[map_table[i]];
-            map_axis_to_n64_axis(output, map_table[i], 0x54);
+            map_to_n64_axis(output, map_table[i], 0x54);
         }
     }
 
