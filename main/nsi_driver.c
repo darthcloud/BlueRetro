@@ -9,7 +9,6 @@
 #include <driver/gpio.h>
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
-#include <esp_private/esp_timer_impl.h>
 #include "nsi.h"
 
 #define BIT_ZERO 0x80020006
@@ -120,7 +119,6 @@ static void IRAM_ATTR nsi_isr(void *arg) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint8_t i, channel;
-    uint64_t time1, time2;
 
     while (status) {
         i = __builtin_ffs(status) - 1;

@@ -43,6 +43,8 @@
 #define BTN_MX 0x1E
 #define BTN_NN 0x1F
 
+#define AXIS_BTN_THRS 0x20
+
 #define IO_FORMAT_NES      0x00
 struct nes_map {
     uint8_t buttons;

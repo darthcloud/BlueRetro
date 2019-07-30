@@ -35,7 +35,7 @@ const uint32_t wiiu_mask[32] =
 {
 /*  DU       DL       DR       DD       LU       LL       LR       LD       BU       BL       BR       BD       RU       RL       RR       RD       */
     0x00100, 0x00200, 0x00080, 0x00040, 0x00000, 0x00000, 0x00000, 0x00000, 0x00800, 0x02000, 0x01000, 0x04000, 0x00000, 0x00000, 0x00000, 0x00000,
-    0x00000, 0x00020, 0x00000, 0x00002, 0x00800, 0x00000, 0x20000, 0x00400, 0x00000, 0x10000, 0x00010, 0x00008, 0x00004, 0x00000, 0x00000, 0x00000
+    0x00000, 0x00020, 0x00000, 0x00002, 0x08000, 0x00000, 0x20000, 0x00400, 0x00000, 0x10000, 0x00010, 0x00008, 0x00004, 0x00000, 0x00000, 0x00000
 /*  LA       LM       RA       RM       LS       LG       LJ       RS       RG       RJ       SL       HM       ST       BE                         */
 };
 
@@ -90,49 +90,49 @@ void translate_status(struct io *input, struct io* output) {
 
     /* Map axis to */
     if (scaled_lx >= 0x0) {
-        if (scaled_lx > 0x30) {
+        if (scaled_lx > AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_LR]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_LR], scaled_lx);
     }
     else {
-        if (scaled_lx < -0x30) {
+        if (scaled_lx < -AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_LL]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_LL], -scaled_lx);
     }
     if (scaled_ly >= 0x0) {
-        if (scaled_ly > 0x30) {
+        if (scaled_ly > AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_LU]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_LU], scaled_ly);
     }
     else {
-        if (scaled_ly < -0x30) {
+        if (scaled_ly < -AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_LD]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_LD], -scaled_ly);
     }
     if (scaled_rx >= 0x0) {
-        if (scaled_rx > 0x30) {
+        if (scaled_rx > AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_RR]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_RR], scaled_rx);
     }
     else {
-        if (scaled_rx < -0x30) {
+        if (scaled_rx < -AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_RL]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_RL], -scaled_rx);
     }
     if (scaled_ry >= 0x0) {
-        if (scaled_ry > 0x30) {
+        if (scaled_ry > AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_RU]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_RU], scaled_ry);
     }
     else {
-        if (scaled_ry < -0x30) {
+        if (scaled_ry < -AXIS_BTN_THRS) {
             output->io.n64.buttons |= n64_mask[map_table[BTN_RD]];
         }
         map_axis_to_n64_axis(output, map_table[BTN_RD], -scaled_ry);
