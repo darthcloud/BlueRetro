@@ -43,7 +43,10 @@
 #define BTN_MX 0x1E
 #define BTN_NN 0x1F
 
-#define AXIS_BTN_THRS 0x20
+#define AXIS_DEAD_ZONE      0x0F
+#define AXIS_BTN_THRS       0x20
+#define AXIS_BTN_VALUE      0x54
+#define TRIGGER_BTN_THRS    0x18
 
 #define IO_FORMAT_NES      0x00
 struct nes_map {

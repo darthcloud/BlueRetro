@@ -41,6 +41,10 @@ const uint32_t wiiu_mask[32] =
 };
 
 static atomic_t io_flags = 0;
+static int16_t lx_cal = 0;
+static int16_t ly_cal = 0;
+static int16_t rx_cal = 0;
+static int16_t ry_cal = 0;
 
 static uint8_t map_table[32] =
 {
@@ -49,6 +53,28 @@ static uint8_t map_table[32] =
     /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
+
+static inline void set_calibration(int16_t *var, uint16_t val, uint16_t ideal)
+{
+    *var = ideal - val;
+}
+
+static inline void apply_calibration(uint16_t cal, uint16_t *val) {
+    /* no clamping, controller really bad if required */
+    *val += cal;
+}
+
+static inline void apply_deadzone(uint16_t *val) {
+    if (*val >= AXIS_DEAD_ZONE) {
+        *val -= AXIS_DEAD_ZONE;
+    }
+    else if (*val <= AXIS_DEAD_ZONE) {
+        *val += AXIS_DEAD_ZONE;
+    }
+    else {
+        *val = 0;
+    }
+}
 
 static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     switch (btn_id) {
@@ -99,11 +125,25 @@ void translate_status(struct io *input, struct io* output) {
     output->io.n64.ls_y_axis = 0x00;
 
     if (!atomic_test_bit(&io_flags, IO_CALIBRATED)) {
-        /* Store calib */
+        /* Init calib */
+        set_calibration(&lx_cal, input->io.wiiu_pro.ls_x_axis, 0x800);
+        set_calibration(&ly_cal, input->io.wiiu_pro.ls_y_axis, 0x800);
+        set_calibration(&rx_cal, input->io.wiiu_pro.rs_x_axis, 0x800);
+        set_calibration(&ry_cal, input->io.wiiu_pro.rs_y_axis, 0x800);
+        atomic_set_bit(&io_flags, IO_CALIBRATED);
     }
-    else{
-        /* Apply calib */
-    }
+
+    /* Apply calib */
+    apply_calibration(lx_cal, &input->io.wiiu_pro.ls_x_axis);
+    apply_calibration(ly_cal, &input->io.wiiu_pro.ls_y_axis);
+    apply_calibration(rx_cal, &input->io.wiiu_pro.rs_x_axis);
+    apply_calibration(ry_cal, &input->io.wiiu_pro.rs_y_axis);
+
+    /* Apply deadzone */
+    apply_deadzone(&input->io.wiiu_pro.ls_x_axis);
+    apply_deadzone(&input->io.wiiu_pro.ls_y_axis);
+    apply_deadzone(&input->io.wiiu_pro.rs_x_axis);
+    apply_deadzone(&input->io.wiiu_pro.rs_y_axis);
 
     /* Scale axis */
     scaled_lx = (input->io.wiiu_pro.ls_x_axis >> 4) - 0x80;
