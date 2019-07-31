@@ -5,7 +5,65 @@
 #include "zephyr/atomic.h"
 
 enum {
-    IO_CALIBRATED
+    /* The rumble motor should be on. */
+    IO_RUMBLE_MOTOR_ON,
+
+    /* Flag for detecting when all buttons are released. */
+    IO_NO_BTNS_PRESSED,
+
+    /* Flag to force reporting emptied slot. */
+
+    IO_FORCE_EMPTIED,
+
+    /* Flag to control menu rumble feedback. */
+    IO_RUMBLE_FEEDBACK,
+
+    /* Is the GC controller a WaveBird? */
+    IO_CTRL_PENDING_INIT,
+
+    /* WaveBird association state. */
+    IO_CTRL_READY,
+
+    /* Adaptor bypass mode. */
+    IO_BYPASS_MODE,
+
+    /* Joystick calibrated. */
+    IO_CALIBRATED,
+
+    /* Flag for tracking if remap source is an axis. */
+    IO_AXIS,
+
+    /* Flag for button layout modification. */
+    IO_LAYOUT_MODIFIER,
+
+    /* Flag for N64 CTRL2. */
+    IO_CTRL2,
+
+    /* Set when we want to remap an analog trigger. */
+    IO_TRIGGER,
+
+    /* Joystick menu flags. */
+    IO_CS,
+    IO_AXIS_Y,
+
+    /* 1st controller mute flag. */
+    IO_MUTE,
+
+    /* Menu multi-level option flags. */
+    IO_MODE,
+    IO_LAYOUT,
+    IO_JOYSTICK,
+    IO_PRESET,
+    IO_REMAP,
+    IO_SPECIAL,
+
+    /* We're waiting for a button to be released, cleared when no buttons are pressed. */
+    IO_WAITING_FOR_RELEASE,
+
+    /* Menu levels flags. */
+    IO_MENU_LEVEL1,
+    IO_MENU_LEVEL2,
+    IO_MENU_LEVEL3,
 };
 
 const uint8_t nes_mask[32] =
@@ -104,15 +162,25 @@ static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
 static void map_axis_to_buttons_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
     if (value >= 0x0) {
         if (value > AXIS_BTN_THRS) {
+            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
             output->io.n64.buttons |= n64_mask[map_table[btn_p]];
         }
         map_to_n64_axis(output, map_table[btn_p], value);
     }
     else {
         if (value < -AXIS_BTN_THRS) {
+            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
             output->io.n64.buttons |= n64_mask[map_table[btn_n]];
         }
         map_to_n64_axis(output, map_table[btn_n], -value);
+    }
+}
+
+static void menu(struct io *input)
+{
+    if (~input->io.wiiu_pro.buttons & BTN_HM) {
+        atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+        printf("JG2019 In Menu\n");
     }
 }
 
@@ -145,6 +213,11 @@ void translate_status(struct io *input, struct io* output) {
     apply_deadzone(&input->io.wiiu_pro.rs_x_axis);
     apply_deadzone(&input->io.wiiu_pro.rs_y_axis);
 
+    /* Execute menu if Home buttons pressed */
+    if (atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
+        menu(input);
+    }
+
     /* Scale axis */
     scaled_lx = (input->io.wiiu_pro.ls_x_axis >> 4) - 0x80;
     scaled_ly = (input->io.wiiu_pro.ls_y_axis >> 4) - 0x80;
@@ -152,6 +225,9 @@ void translate_status(struct io *input, struct io* output) {
     scaled_ry = (input->io.wiiu_pro.rs_y_axis >> 4) - 0x80;
 
     /* Set responce curve */
+
+    /* Clear flag, will be reset if any buttons is pressed */
+    atomic_clear_bit(&io_flags, IO_NO_BTNS_PRESSED);
 
     /* Map axis to */
     map_axis_to_buttons_axis(output, BTN_LL, BTN_LR, scaled_lx);
@@ -162,9 +238,12 @@ void translate_status(struct io *input, struct io* output) {
     /* Map buttons to */
     for (uint8_t i = 0; i < 32; i++) {
         if (~input->io.wiiu_pro.buttons & wiiu_mask[i]) {
+            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
             output->io.n64.buttons |= n64_mask[map_table[i]];
             map_to_n64_axis(output, map_table[i], 0x54);
         }
     }
-
+    if (atomic_test_bit(&io_flags, IO_NO_BTNS_PRESSED)) {
+        atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+    }
 }
