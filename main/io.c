@@ -1,8 +1,11 @@
 #include "io.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "zephyr/atomic.h"
+
+typedef void (*convert_generic_func_t)(struct io*, struct generic_map *);
 
 enum {
     /* The rumble motor should be on. */
@@ -106,6 +109,12 @@ const uint16_t n64_mask[32] =
     0x0000, 0x2000, 0x0000, 0x1000, 0x0020, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0010, 0x0000, 0x0000, 0x0000
 /*  LA      LM      RA      RM      LS      LG      LJ      RS      RG      RJ      SL      HM      ST      BE                      */
 };
+const uint8_t n64_axes_idx[6] =
+{
+/*  LX       LY   */
+    0,       1
+};
+
 
 const uint32_t wiiu_mask[32] =
 {
@@ -116,12 +125,12 @@ const uint32_t wiiu_mask[32] =
 };
 const uint8_t wiiu_axes_idx[6] =
 {
-/*  LX       LY       RX       RY       TL      TR     */
-    0,       2,       1,       3,       0,      0
+/*  LX       LY       RX       RY   */
+    0,       2,       1,       3
 };
 
 static atomic_t io_flags = 0;
-static int32_t axis_cal[6] = 0;
+static int32_t axis_cal[6] = {0};
 
 static uint8_t map_table[32] =
 {
@@ -131,14 +140,45 @@ static uint8_t map_table[32] =
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
 
+void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
+    uint8_t i;
+
+    memset(generic, 0, sizeof(*generic));
+    for (i = 0; i < 30; i++) {
+        if (~specific->io.wiiu_pro.buttons & wiiu_mask[i]) {
+            generic->buttons |= generic_mask[i];
+        }
+    }
+    for (i = 0; i < sizeof(specific->io.wiiu_pro.axes)/sizeof(*specific->io.wiiu_pro.axes); i++) {
+        generic->axes[i].value.unsign = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]];
+    }
+}
+
+const convert_generic_func_t convert_to_generic_func[16] =
+{
+    NULL, /* Generic */
+    NULL, /* NES */
+    NULL, /* SNES */
+    NULL, /* N64 */
+    NULL, /* GC */
+    NULL, /* Wii */
+    wiiu_pro_to_generic
+};
+
+const convert_generic_func_t convert_from_generic_func[16] =
+{
+    NULL, /* Generic */
+    NULL, /* NES */
+    NULL, /* SNES */
+    NULL, /* N64 */
+    NULL, /* GC */
+    NULL, /* Wii */
+    NULL
+};
+
 static inline void set_calibration(int32_t *var, struct axis *axis)
 {
-    if (axis->sign) {
-        *var = axis->ideal - axis->value.sign;
-    }
-    else {
-        *var = axis->ideal - axis->value.unsign;
-    }
+    *var = axis->meta->neutral - axis->value.unsign;
 }
 
 static inline void apply_calibration(int32_t cal, struct axis *axis) {
@@ -161,23 +201,23 @@ static inline void apply_deadzone(uint16_t *val) {
 static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     switch (btn_id) {
         case BTN_LU:
-            if (abs(value) > abs(output->io.n64.ls_y_axis)) {
-                output->io.n64.ls_y_axis = value;
+            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LY]])) {
+                output->io.n64.axes[n64_axes_idx[AXIS_LY]] = value;
             }
             break;
         case BTN_LD:
-            if (abs(value) > abs(output->io.n64.ls_y_axis)) {
-                output->io.n64.ls_y_axis = -value;
+            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LY]])) {
+                output->io.n64.axes[n64_axes_idx[AXIS_LY]] = -value;
             }
             break;
         case BTN_LL:
-            if (abs(value) > abs(output->io.n64.ls_x_axis)) {
-                output->io.n64.ls_x_axis = -value;
+            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LX]])) {
+                output->io.n64.axes[n64_axes_idx[AXIS_LX]] = -value;
             }
             break;
         case BTN_LR:
-            if (abs(value) > abs(output->io.n64.ls_x_axis)) {
-                output->io.n64.ls_x_axis = value;
+            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LX]])) {
+                output->io.n64.axes[n64_axes_idx[AXIS_LX]] = value;
             }
             break;
     }
@@ -209,15 +249,17 @@ static void menu(struct io *input)
 }
 
 void translate_status(struct io *input, struct io* output) {
-    struct generic_map generic;
+    struct generic_map generic = {0};
     uint8_t i;
     int8_t scaled_lx, scaled_ly, scaled_rx, scaled_ry;
 
     /* Reset N64 status buffer */
-    output->buttons = 0x0000000;
-    for (i = 0; i < sizeof(geberic.axes)/sizeof(*generic.axes); i++) {
-        generic.axes[i].axis.unsign = 0;
-    }
+    //output->buttons = 0x0000000;
+    //for (i = 0; i < sizeof(geberic.axes)/sizeof(*generic.axes); i++) {
+    //    generic.axes[i].axis.unsign = 0;
+    //}
+
+    convert_to_generic_func[input->format](input, &generic);
 
     if (!atomic_test_bit(&io_flags, IO_CALIBRATED)) {
         /* Init calib */
@@ -228,10 +270,11 @@ void translate_status(struct io *input, struct io* output) {
     }
 
     /* Apply calib */
-    for (i = 0; i < sizeof(output->axes)/sizeof(*output->axes); i++) {
-        apply_calibration(axis_cal[i], &output->axes[i]);
+    for (i = 0; i < sizeof(generic.axes)/sizeof(*generic.axes); i++) {
+        apply_calibration(axis_cal[i], &generic.axes[i]);
     }
 
+#ifdef OLD
     /* Apply deadzone */
     apply_deadzone(&input->io.wiiu_pro.ls_x_axis);
     apply_deadzone(&input->io.wiiu_pro.ls_y_axis);
@@ -271,19 +314,6 @@ void translate_status(struct io *input, struct io* output) {
     if (atomic_test_bit(&io_flags, IO_NO_BTNS_PRESSED)) {
         atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
     }
+#endif
 }
 
-void wiiu_pro_to_generic(void *map, struct generic_map *generic) {
-    struct wiiu_pro_map *specific = (struct wiiu_pro_map *)map;
-    uint8_t i;
-
-    memset(generic, 0, sizeof(*generic));
-    for (i = 0; i < 30; i++) {
-        if (~specific.buttons & wiiu_mask[i]) {
-            generic->buttons |= generic_mask[i];
-        }
-    }
-    for (i = 0; i < sizeof(specific->axes)/sizeof(*specific->axes); i++) {
-        generic->axes[i].value.unsign = specific->axes[wiiu_axes_idx[i]];
-    }
-}
