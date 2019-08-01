@@ -129,6 +129,27 @@ const uint8_t wiiu_axes_idx[6] =
     0,       2,       1,       3
 };
 
+const uint32_t axes_to_btn_mask_p[6] =
+{
+    (1U << BTN_LR), (1U << BTN_LU), (1U << BTN_RR), (1U << BTN_RU), (1U << BTN_LA), (1U << BTN_RA)
+};
+
+const uint32_t axes_to_btn_mask_n[6] =
+{
+    (1U << BTN_LL), (1U << BTN_LD), (1U << BTN_RL), (1U << BTN_RD), 0, 0
+};
+
+const struct axis_meta wiiu_pro_axes_meta =
+{
+    .neutral = 0x800,
+    .deadzone = 0x00F,
+    .halfway_n = 0x600,
+    .halfway_p = 0x1000,
+    .min = 0x0310,
+    .max = 0x1290,
+    .sign = 0,
+};
+
 static atomic_t io_flags = 0;
 static int32_t axis_cal[6] = {0};
 
@@ -143,14 +164,20 @@ static uint8_t map_table[32] =
 void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
-    memset(generic, 0, sizeof(*generic));
     for (i = 0; i < 30; i++) {
         if (~specific->io.wiiu_pro.buttons & wiiu_mask[i]) {
             generic->buttons |= generic_mask[i];
         }
     }
     for (i = 0; i < sizeof(specific->io.wiiu_pro.axes)/sizeof(*specific->io.wiiu_pro.axes); i++) {
+        generic->axes[i].meta = &wiiu_pro_axes_meta;
         generic->axes[i].value.unsign = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]];
+        if (generic->axes[i].value.unsign > generic->axes[i].meta->halfway_p) {
+            generic->buttons |= generic_mask[axes_to_btn_mask_p[wiiu_axes_idx[i]]];
+        }
+        else if (generic->axes[i].value.unsign < generic->axes[i].meta->halfway_n) {
+            generic->buttons |= generic_mask[axes_to_btn_mask_n[wiiu_axes_idx[i]]];
+        }
     }
 }
 
@@ -186,15 +213,15 @@ static inline void apply_calibration(int32_t cal, struct axis *axis) {
     axis->value.unsign += cal;
 }
 
-static inline void apply_deadzone(uint16_t *val) {
-    if (*val >= AXIS_DEAD_ZONE) {
-        *val -= AXIS_DEAD_ZONE;
+static inline void apply_deadzone(struct axis *axis) {
+    if (axis->value.unsign >= axis->meta->deadzone) {
+        axis->value.unsign -= axis->meta->deadzone;
     }
-    else if (*val <= AXIS_DEAD_ZONE) {
-        *val += AXIS_DEAD_ZONE;
+    else if (axis->value.unsign <= axis->meta->deadzone) {
+        axis->value.unsign += axis->meta->deadzone;
     }
     else {
-        *val = 0;
+        axis->value.unsign = axis->meta->neutral;
     }
 }
 
@@ -225,24 +252,16 @@ static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
 
 static void map_axis_to_buttons_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
     if (value >= 0x0) {
-        if (value > AXIS_BTN_THRS) {
-            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
-            output->io.n64.buttons |= n64_mask[map_table[btn_p]];
-        }
         map_to_n64_axis(output, map_table[btn_p], value);
     }
     else {
-        if (value < -AXIS_BTN_THRS) {
-            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
-            output->io.n64.buttons |= n64_mask[map_table[btn_n]];
-        }
         map_to_n64_axis(output, map_table[btn_n], -value);
     }
 }
 
-static void menu(struct io *input)
+static void menu(struct generic_map *input)
 {
-    if (~input->io.wiiu_pro.buttons & BTN_HM) {
+    if (~input->buttons & BTN_HM) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         printf("JG2019 In Menu\n");
     }
@@ -261,6 +280,10 @@ void translate_status(struct io *input, struct io* output) {
 
     convert_to_generic_func[input->format](input, &generic);
 
+    if (!generic.buttons) {
+        atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+    }
+
     if (!atomic_test_bit(&io_flags, IO_CALIBRATED)) {
         /* Init calib */
         for (i = 0; i < sizeof(generic.axes)/sizeof(*generic.axes); i++) {
@@ -274,18 +297,17 @@ void translate_status(struct io *input, struct io* output) {
         apply_calibration(axis_cal[i], &generic.axes[i]);
     }
 
-#ifdef OLD
     /* Apply deadzone */
-    apply_deadzone(&input->io.wiiu_pro.ls_x_axis);
-    apply_deadzone(&input->io.wiiu_pro.ls_y_axis);
-    apply_deadzone(&input->io.wiiu_pro.rs_x_axis);
-    apply_deadzone(&input->io.wiiu_pro.rs_y_axis);
+    for (i = 0; i < sizeof(generic.axes)/sizeof(*generic.axes); i++) {
+        apply_deadzone(&generic.axes[i]);
+    }
 
     /* Execute menu if Home buttons pressed */
     if (atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
-        menu(input);
+        menu(&generic);
     }
 
+#ifdef OLD
     /* Scale axis */
     scaled_lx = (input->io.wiiu_pro.ls_x_axis >> 4) - 0x80;
     scaled_ly = (input->io.wiiu_pro.ls_y_axis >> 4) - 0x80;
@@ -311,9 +333,8 @@ void translate_status(struct io *input, struct io* output) {
             map_to_n64_axis(output, map_table[i], 0x54);
         }
     }
-    if (atomic_test_bit(&io_flags, IO_NO_BTNS_PRESSED)) {
-        atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-    }
 #endif
+
+    convert_from_generic_func[output->format](output, &generic);
 }
 

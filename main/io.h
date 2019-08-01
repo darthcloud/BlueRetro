@@ -59,7 +59,9 @@
 struct axis_meta {
     uint32_t neutral;
     uint32_t deadzone;
-    uint32_t halfway;
+    uint32_t halfway_n;
+    uint32_t halfway_p;
+    uint32_t min;
     uint32_t max;
     uint8_t sign;
 };
@@ -69,7 +71,7 @@ struct axis {
         uint32_t unsign;
         int32_t sign;
     } value;
-    struct axis_meta *meta;
+    const struct axis_meta *meta;
 };
 
 #define IO_FORMAT_GENERIC  0x00
