@@ -43,48 +43,71 @@
 #define BTN_MX 0x1E
 #define BTN_NN 0x1F
 
-#define AXIS_DEAD_ZONE      0x0F
-#define AXIS_BTN_THRS       0x20
-#define AXIS_BTN_VALUE      0x54
-#define TRIGGER_BTN_THRS    0x18
+#define AXIS_LX 0x00
+#define AXIS_LY 0x01
+#define AXIS_RX 0x02
+#define AXIS_RY 0x03
+#define TRIG_L  0x04
+#define TRIG_R  0x05
 
-#define IO_FORMAT_NES      0x00
+#define WIIU_PRO_AXIS_SIGN     0
+#define WIIU_PRO_AXIS_NEUTRAL  0x800
+#define WIIU_PRO_AXIS_DEADZONE 0x00F
+#define WIIU_PRO_AXIS_HALFWAY  0x200
+#define WIIU_PRO_AXIS_MAX      0x490
+
+struct axis_meta {
+    uint32_t neutral;
+    uint32_t deadzone;
+    uint32_t halfway;
+    uint32_t max;
+    uint8_t sign;
+};
+
+struct axis {
+    union {
+        uint32_t unsign;
+        int32_t sign;
+    } value;
+    struct axis_meta *meta;
+};
+
+#define IO_FORMAT_GENERIC  0x00
+struct generic_map {
+    uint32_t buttons;
+    struct axis axes[6];
+};
+extern const uint8_t generic_btns_mask[32];
+extern const uint8_t generic_axes_idx[6];
+
+#define IO_FORMAT_NES      0x01
 struct nes_map {
     uint8_t buttons;
 } __packed;
 extern const uint8_t nes_mask[32];
 
-#define IO_FORMAT_SNES     0x01
+#define IO_FORMAT_SNES     0x02
 struct snes_map {
     uint16_t buttons;
 } __packed;
 extern const uint16_t snes_mask[32];
 
-#define IO_FORMAT_N64      0x02
+#define IO_FORMAT_N64      0x03
 struct n64_map {
     uint16_t buttons;
-    int8_t ls_x_axis;
-    int8_t ls_y_axis;
+    int8_t axes[2];
 } __packed;
 extern const uint16_t n64_mask[32];
 
 #define IO_FORMAT_GC       0x04
 struct gc_map {
     uint16_t buttons;
-    uint8_t ls_x_axis;
-    uint8_t ls_y_axis;
-    uint8_t rs_x_axis;
-    uint8_t rs_y_axis;
-    uint8_t la_axis;
-    uint8_t ra_axis;
+    uint8_t axes[6];
 } __packed;
 
-#define IO_FORMAT_WIIU_PRO 0x05
+#define IO_FORMAT_WIIU_PRO 0x06
 struct wiiu_pro_map {
-    uint16_t ls_x_axis;
-    uint16_t rs_x_axis;
-    uint16_t ls_y_axis;
-    uint16_t rs_y_axis;
+    uint16_t axes[4];
     uint32_t buttons;
 } __packed;
 extern const uint32_t wiiu_mask[32];

@@ -66,6 +66,23 @@ enum {
     IO_MENU_LEVEL3,
 };
 
+const uint32_t generic_mask[32] =
+{
+/*  DU              DL              DR              DD               LU             LL              LR              LD               */
+    (1U << BTN_DU), (1U << BTN_DL), (1U << BTN_DR), (1U << BTN_DD), (1U << BTN_LU), (1U << BTN_LL), (1U << BTN_LR), (1U << BTN_LD),
+/*  BU              BL              BR              BD               RU             RL              RR              RD               */
+    (1U << BTN_BU), (1U << BTN_BL), (1U << BTN_BR), (1U << BTN_BD), (1U << BTN_RU), (1U << BTN_RL), (1U << BTN_RR), (1U << BTN_RD),
+/*  LA              LM              RA              RM               LS             LG              LJ              RS               */
+    (1U << BTN_LA), (1U << BTN_LM), (1U << BTN_RA), (1U << BTN_RM), (1U << BTN_LS), (1U << BTN_LG), (1U << BTN_LJ), (1U << BTN_RS),
+/*  RG              RJ              SL              HM               ST             BE                                               */
+    (1U << BTN_RG), (1U << BTN_RJ), (1U << BTN_SL), (1U << BTN_HM), (1U << BTN_ST), (1U << BTN_BE), 0, 0
+};
+
+const uint8_t generic_axes_idx[6] =
+{
+    AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R
+};
+
 const uint8_t nes_mask[32] =
 {
 /*  DU    DL    DR    DD    LU    LL    LR    LD    BU    BL    BR    BD    RU    RL    RR    RD    */
@@ -97,12 +114,14 @@ const uint32_t wiiu_mask[32] =
     0x00000, 0x00020, 0x00000, 0x00002, 0x08000, 0x00000, 0x20000, 0x00400, 0x00000, 0x10000, 0x00010, 0x00008, 0x00004, 0x00000, 0x00000, 0x00000
 /*  LA       LM       RA       RM       LS       LG       LJ       RS       RG       RJ       SL       HM       ST       BE                         */
 };
+const uint8_t wiiu_axes_idx[6] =
+{
+/*  LX       LY       RX       RY       TL      TR     */
+    0,       2,       1,       3,       0,      0
+};
 
 static atomic_t io_flags = 0;
-static int16_t lx_cal = 0;
-static int16_t ly_cal = 0;
-static int16_t rx_cal = 0;
-static int16_t ry_cal = 0;
+static int32_t axis_cal[6] = 0;
 
 static uint8_t map_table[32] =
 {
@@ -112,14 +131,19 @@ static uint8_t map_table[32] =
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
 
-static inline void set_calibration(int16_t *var, uint16_t val, uint16_t ideal)
+static inline void set_calibration(int32_t *var, struct axis *axis)
 {
-    *var = ideal - val;
+    if (axis->sign) {
+        *var = axis->ideal - axis->value.sign;
+    }
+    else {
+        *var = axis->ideal - axis->value.unsign;
+    }
 }
 
-static inline void apply_calibration(uint16_t cal, uint16_t *val) {
+static inline void apply_calibration(int32_t cal, struct axis *axis) {
     /* no clamping, controller really bad if required */
-    *val += cal;
+    axis->value.unsign += cal;
 }
 
 static inline void apply_deadzone(uint16_t *val) {
@@ -185,27 +209,28 @@ static void menu(struct io *input)
 }
 
 void translate_status(struct io *input, struct io* output) {
+    struct generic_map generic;
+    uint8_t i;
     int8_t scaled_lx, scaled_ly, scaled_rx, scaled_ry;
 
     /* Reset N64 status buffer */
-    output->io.n64.buttons = 0x0000;
-    output->io.n64.ls_x_axis = 0x00;
-    output->io.n64.ls_y_axis = 0x00;
+    output->buttons = 0x0000000;
+    for (i = 0; i < sizeof(geberic.axes)/sizeof(*generic.axes); i++) {
+        generic.axes[i].axis.unsign = 0;
+    }
 
     if (!atomic_test_bit(&io_flags, IO_CALIBRATED)) {
         /* Init calib */
-        set_calibration(&lx_cal, input->io.wiiu_pro.ls_x_axis, 0x800);
-        set_calibration(&ly_cal, input->io.wiiu_pro.ls_y_axis, 0x800);
-        set_calibration(&rx_cal, input->io.wiiu_pro.rs_x_axis, 0x800);
-        set_calibration(&ry_cal, input->io.wiiu_pro.rs_y_axis, 0x800);
+        for (i = 0; i < sizeof(generic.axes)/sizeof(*generic.axes); i++) {
+            set_calibration(&axis_cal[i], &generic.axes[i]);
+        }
         atomic_set_bit(&io_flags, IO_CALIBRATED);
     }
 
     /* Apply calib */
-    apply_calibration(lx_cal, &input->io.wiiu_pro.ls_x_axis);
-    apply_calibration(ly_cal, &input->io.wiiu_pro.ls_y_axis);
-    apply_calibration(rx_cal, &input->io.wiiu_pro.rs_x_axis);
-    apply_calibration(ry_cal, &input->io.wiiu_pro.rs_y_axis);
+    for (i = 0; i < sizeof(output->axes)/sizeof(*output->axes); i++) {
+        apply_calibration(axis_cal[i], &output->axes[i]);
+    }
 
     /* Apply deadzone */
     apply_deadzone(&input->io.wiiu_pro.ls_x_axis);
@@ -236,7 +261,7 @@ void translate_status(struct io *input, struct io* output) {
     map_axis_to_buttons_axis(output, BTN_RD, BTN_RU, scaled_ry);
 
     /* Map buttons to */
-    for (uint8_t i = 0; i < 32; i++) {
+    for (i = 0; i < 32; i++) {
         if (~input->io.wiiu_pro.buttons & wiiu_mask[i]) {
             atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
             output->io.n64.buttons |= n64_mask[map_table[i]];
@@ -245,5 +270,20 @@ void translate_status(struct io *input, struct io* output) {
     }
     if (atomic_test_bit(&io_flags, IO_NO_BTNS_PRESSED)) {
         atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+    }
+}
+
+void wiiu_pro_to_generic(void *map, struct generic_map *generic) {
+    struct wiiu_pro_map *specific = (struct wiiu_pro_map *)map;
+    uint8_t i;
+
+    memset(generic, 0, sizeof(*generic));
+    for (i = 0; i < 30; i++) {
+        if (~specific.buttons & wiiu_mask[i]) {
+            generic->buttons |= generic_mask[i];
+        }
+    }
+    for (i = 0; i < sizeof(specific->axes)/sizeof(*specific->axes); i++) {
+        generic->axes[i].value.unsign = specific->axes[wiiu_axes_idx[i]];
     }
 }
