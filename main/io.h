@@ -57,20 +57,15 @@
 #define WIIU_PRO_AXIS_MAX      0x490
 
 struct axis_meta {
-    uint32_t neutral;
-    uint32_t deadzone;
-    uint32_t halfway_n;
-    uint32_t halfway_p;
-    uint32_t min;
-    uint32_t max;
-    uint8_t sign;
+    int32_t neutral;
+    int32_t deadzone;
+    int32_t abs_btn_thrs;
+    int32_t abs_max;
+    int32_t sign;
 };
 
 struct axis {
-    union {
-        uint32_t unsign;
-        int32_t sign;
-    } value;
+    int32_t value;
     const struct axis_meta *meta;
 };
 

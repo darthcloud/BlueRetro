@@ -143,6 +143,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 nsi_items_to_bytes(0, &nsi_frame);
                 switch (nsi_frame.data[0]) {
                     case 0x00:
+                        output->format = IO_FORMAT_N64;
                         memcpy(nsi_frame.data, nsi_ident.data, 3);
                         nsi_frame.len = 24;
                         break;

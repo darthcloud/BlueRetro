@@ -111,8 +111,7 @@ const uint16_t n64_mask[32] =
 };
 const uint8_t n64_axes_idx[6] =
 {
-/*  LX       LY   */
-    0,       1
+    AXIS_LX, AXIS_LY
 };
 
 
@@ -125,8 +124,7 @@ const uint32_t wiiu_mask[32] =
 };
 const uint8_t wiiu_axes_idx[6] =
 {
-/*  LX       LY       RX       RY   */
-    0,       2,       1,       3
+    AXIS_LX, AXIS_RX, AXIS_LY, AXIS_RY
 };
 
 const uint32_t axes_to_btn_mask_p[6] =
@@ -139,15 +137,18 @@ const uint32_t axes_to_btn_mask_n[6] =
     (1U << BTN_LL), (1U << BTN_LD), (1U << BTN_RL), (1U << BTN_RD), 0, 0
 };
 
+const struct axis_meta n64_axes_meta =
+{
+    .abs_max = 0x54,
+    .sign = 1,
+};
+
 const struct axis_meta wiiu_pro_axes_meta =
 {
     .neutral = 0x800,
     .deadzone = 0x00F,
-    .halfway_n = 0x600,
-    .halfway_p = 0x1000,
-    .min = 0x0310,
-    .max = 0x1290,
-    .sign = 0,
+    .abs_btn_thrs = 0x200,
+    .abs_max = 0x490,
 };
 
 static atomic_t io_flags = 0;
@@ -171,11 +172,11 @@ void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     }
     for (i = 0; i < sizeof(specific->io.wiiu_pro.axes)/sizeof(*specific->io.wiiu_pro.axes); i++) {
         generic->axes[i].meta = &wiiu_pro_axes_meta;
-        generic->axes[i].value.unsign = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]];
-        if (generic->axes[i].value.unsign > generic->axes[i].meta->halfway_p) {
+        generic->axes[i].value = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] - wiiu_pro_axes_meta.neutral;
+        if (generic->axes[i].value > generic->axes[i].meta->abs_btn_thrs) {
             generic->buttons |= generic_mask[axes_to_btn_mask_p[wiiu_axes_idx[i]]];
         }
-        else if (generic->axes[i].value.unsign < generic->axes[i].meta->halfway_n) {
+        else if (generic->axes[i].value < -generic->axes[i].meta->abs_btn_thrs) {
             generic->buttons |= generic_mask[axes_to_btn_mask_n[wiiu_axes_idx[i]]];
         }
     }
@@ -316,9 +317,6 @@ void translate_status(struct io *input, struct io* output) {
 
     /* Set responce curve */
 
-    /* Clear flag, will be reset if any buttons is pressed */
-    atomic_clear_bit(&io_flags, IO_NO_BTNS_PRESSED);
-
     /* Map axis to */
     map_axis_to_buttons_axis(output, BTN_LL, BTN_LR, scaled_lx);
     map_axis_to_buttons_axis(output, BTN_LD, BTN_LU, scaled_ly);
@@ -335,6 +333,8 @@ void translate_status(struct io *input, struct io* output) {
     }
 #endif
 
-    convert_from_generic_func[output->format](output, &generic);
+    if (output->format) {
+        convert_from_generic_func[output->format](output, &generic);
+    }
 }
 
