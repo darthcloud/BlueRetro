@@ -193,39 +193,6 @@ const convert_generic_func_t convert_to_generic_func[16] =
     wiiu_pro_to_generic
 };
 
-const convert_generic_func_t convert_from_generic_func[16] =
-{
-    NULL, /* Generic */
-    NULL, /* NES */
-    NULL, /* SNES */
-    NULL, /* N64 */
-    NULL, /* GC */
-    NULL, /* Wii */
-    NULL
-};
-
-static inline void set_calibration(int32_t *var, struct axis *axis)
-{
-    *var = axis->meta->neutral - axis->value.unsign;
-}
-
-static inline void apply_calibration(int32_t cal, struct axis *axis) {
-    /* no clamping, controller really bad if required */
-    axis->value.unsign += cal;
-}
-
-static inline void apply_deadzone(struct axis *axis) {
-    if (axis->value.unsign >= axis->meta->deadzone) {
-        axis->value.unsign -= axis->meta->deadzone;
-    }
-    else if (axis->value.unsign <= axis->meta->deadzone) {
-        axis->value.unsign += axis->meta->deadzone;
-    }
-    else {
-        axis->value.unsign = axis->meta->neutral;
-    }
-}
-
 static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     switch (btn_id) {
         case BTN_LU:
@@ -251,12 +218,61 @@ static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     }
 };
 
-static void map_axis_to_buttons_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
+static void map_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
     if (value >= 0x0) {
         map_to_n64_axis(output, map_table[btn_p], value);
     }
     else {
         map_to_n64_axis(output, map_table[btn_n], -value);
+    }
+}
+
+void n64_from_generic(struct io *specific, struct generic_map *generic) {
+    /* Map axis to */
+    map_axis(specific, BTN_LL, BTN_LR, generic->axes[AXIS_LX].value);
+    map_axis(specific, BTN_LD, BTN_LU, generic->axes[AXIS_LY].value);
+    map_axis(specific, BTN_RL, BTN_RR, generic->axes[AXIS_RX].value);
+    map_axis(specific, BTN_RD, BTN_RU, generic->axes[AXIS_RY].value);
+
+    /* Map buttons to */
+    for (uint8_t i = 0; i < 32; i++) {
+        if (generic->buttons & generic_mask[i]) {
+            specific->io.n64.buttons |= n64_mask[map_table[i]];
+            map_to_n64_axis(specific, map_table[i], 0x54);
+        }
+    }
+}
+
+const convert_generic_func_t convert_from_generic_func[16] =
+{
+    NULL, /* Generic */
+    NULL, /* NES */
+    NULL, /* SNES */
+    n64_from_generic, /* N64 */
+    NULL, /* GC */
+    NULL, /* Wii */
+    NULL
+};
+
+static inline void set_calibration(int32_t *var, struct axis *axis)
+{
+    *var = -axis->value;
+}
+
+static inline void apply_calibration(int32_t cal, struct axis *axis) {
+    /* no clamping, controller really bad if required */
+    axis->value += cal;
+}
+
+static inline void apply_deadzone(struct axis *axis) {
+    if (axis->value > axis->meta->deadzone) {
+        axis->value -= axis->meta->deadzone;
+    }
+    else if (axis->value < -axis->meta->deadzone) {
+        axis->value += axis->meta->deadzone;
+    }
+    else {
+        axis->value = 0;
     }
 }
 
@@ -271,13 +287,6 @@ static void menu(struct generic_map *input)
 void translate_status(struct io *input, struct io* output) {
     struct generic_map generic = {0};
     uint8_t i;
-    int8_t scaled_lx, scaled_ly, scaled_rx, scaled_ry;
-
-    /* Reset N64 status buffer */
-    //output->buttons = 0x0000000;
-    //for (i = 0; i < sizeof(geberic.axes)/sizeof(*generic.axes); i++) {
-    //    generic.axes[i].axis.unsign = 0;
-    //}
 
     convert_to_generic_func[input->format](input, &generic);
 
@@ -307,31 +316,6 @@ void translate_status(struct io *input, struct io* output) {
     if (atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
         menu(&generic);
     }
-
-#ifdef OLD
-    /* Scale axis */
-    scaled_lx = (input->io.wiiu_pro.ls_x_axis >> 4) - 0x80;
-    scaled_ly = (input->io.wiiu_pro.ls_y_axis >> 4) - 0x80;
-    scaled_rx = (input->io.wiiu_pro.rs_x_axis >> 4) - 0x80;
-    scaled_ry = (input->io.wiiu_pro.rs_y_axis >> 4) - 0x80;
-
-    /* Set responce curve */
-
-    /* Map axis to */
-    map_axis_to_buttons_axis(output, BTN_LL, BTN_LR, scaled_lx);
-    map_axis_to_buttons_axis(output, BTN_LD, BTN_LU, scaled_ly);
-    map_axis_to_buttons_axis(output, BTN_RL, BTN_RR, scaled_rx);
-    map_axis_to_buttons_axis(output, BTN_RD, BTN_RU, scaled_ry);
-
-    /* Map buttons to */
-    for (i = 0; i < 32; i++) {
-        if (~input->io.wiiu_pro.buttons & wiiu_mask[i]) {
-            atomic_set_bit(&io_flags, IO_NO_BTNS_PRESSED);
-            output->io.n64.buttons |= n64_mask[map_table[i]];
-            map_to_n64_axis(output, map_table[i], 0x54);
-        }
-    }
-#endif
 
     if (output->format) {
         convert_from_generic_func[output->format](output, &generic);
