@@ -81,20 +81,20 @@ extern const uint8_t generic_axes_idx[6];
 struct nes_map {
     uint8_t buttons;
 } __packed;
-extern const uint8_t nes_mask[32];
+extern const uint32_t nes_mask[32];
 
 #define IO_FORMAT_SNES     0x02
 struct snes_map {
     uint16_t buttons;
 } __packed;
-extern const uint16_t snes_mask[32];
+extern const uint32_t snes_mask[32];
 
 #define IO_FORMAT_N64      0x03
 struct n64_map {
     uint16_t buttons;
     int8_t axes[2];
 } __packed;
-extern const uint16_t n64_mask[32];
+extern const uint32_t n64_mask[32];
 
 #define IO_FORMAT_GC       0x04
 struct gc_map {

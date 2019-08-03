@@ -86,7 +86,7 @@ const uint8_t generic_axes_idx[6] =
     AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R
 };
 
-const uint8_t nes_mask[32] =
+const uint32_t nes_mask[32] =
 {
 /*  DU    DL    DR    DD    LU    LL    LR    LD    BU    BL    BR    BD    RU    RL    RR    RD    */
     0x08, 0x02, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00,
@@ -94,7 +94,7 @@ const uint8_t nes_mask[32] =
 /*  LA    LM    RA    RM    LS    LG    LJ    RS    RG    RJ    SL    HM    ST    BE                */
 };
 
-const uint16_t snes_mask[32] =
+const uint32_t snes_mask[32] =
 {
 /*  DU      DL      DR      DD      LU      LL      LR      LD      BU      BL      BR      BD      RU      RL      RR      RD      */
     0x0008, 0x0002, 0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000, 0x4000, 0x0040, 0x8000, 0x0080, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -102,7 +102,7 @@ const uint16_t snes_mask[32] =
 /*  LA      LM      RA      RM      LS      LG      LJ      RS      RG      RJ      SL      HM      ST      BE                      */
 };
 
-const uint16_t n64_mask[32] =
+const uint32_t n64_mask[32] =
 {
 /*  DU      DL      DR      DD      LU      LL      LR      LD      BU      BL      BR      BD      RU      RL      RR      RD      */
     0x0008, 0x0002, 0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0040, 0x0000, 0x0080, 0x0800, 0x0200, 0x0100, 0x0400,
@@ -264,10 +264,10 @@ void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
         //generic->axes[i].value = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] - wiiu_pro_axes_meta.neutral;
         generic->axes[i].value = (specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] >> 4) - 0x80;
         if (generic->axes[i].value > generic->axes[i].meta->abs_btn_thrs) {
-            generic->buttons |= generic_mask[axes_to_btn_mask_p[wiiu_axes_idx[i]]];
+            generic->buttons |= generic_mask[axes_to_btn_mask_p[i]];
         }
         else if (generic->axes[i].value < -generic->axes[i].meta->abs_btn_thrs) {
-            generic->buttons |= generic_mask[axes_to_btn_mask_n[wiiu_axes_idx[i]]];
+            generic->buttons |= generic_mask[axes_to_btn_mask_n[i]];
         }
     }
 }
