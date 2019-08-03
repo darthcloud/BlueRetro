@@ -14,6 +14,14 @@
 #define BT_TX 0
 #define BT_RX 1
 
+#ifndef min
+#define min(A,B) ((A) <= (B) ? (A) : (B))
+#endif
+
+#ifndef max
+#define max(A,B) ((A) < (B) ? (B) : (A))
+#endif
+
 struct bt_hci_tx_frame {
     uint8_t h4_type;
     struct bt_hci_cmd_hdr cmd_hdr;
@@ -200,6 +208,16 @@ static uint16_t ctrl_scid = 0x0060;
 static uint16_t intr_scid = 0x0061;
 static uint16_t ctrl_dcid;
 static uint16_t intr_dcid;
+#if 0
+static uint16_t min_lx = 0xFFFF;
+static uint16_t min_ly = 0xFFFF;
+static uint16_t min_rx = 0xFFFF;
+static uint16_t min_ry = 0xFFFF;
+static uint16_t max_lx = 0;
+static uint16_t max_ly = 0;
+static uint16_t max_rx = 0;
+static uint16_t max_ry = 0;
+#endif
 static bt_class_t allowed_class[] = {
     {{0x08, 0x05, 0x00}},
     {{0x04, 0x25, 0x00}}
@@ -729,6 +747,18 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                     input.format = IO_FORMAT_WIIU_PRO;
                     memcpy(&input.io.wiiu_pro, wiiu_pro, sizeof(*wiiu_pro));
                     translate_status(&input, output);
+#if 0
+                    min_lx = min(min_lx, wiiu_pro->axes[0]);
+                    min_ly = min(min_ly, wiiu_pro->axes[2]);
+                    min_rx = min(min_rx, wiiu_pro->axes[1]);
+                    min_ry = min(min_ry, wiiu_pro->axes[3]);
+                    max_lx = max(max_lx, wiiu_pro->axes[0]);
+                    max_ly = max(max_ly, wiiu_pro->axes[2]);
+                    max_rx = max(max_rx, wiiu_pro->axes[1]);
+                    max_ry = max(max_ry, wiiu_pro->axes[3]);
+                    printf("JG2019 MIN LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", min_lx, min_ly, min_rx, min_ry);
+                    printf("JG2019 MAX LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", max_lx, max_ly, max_rx, max_ry);
+#endif
                     break;
                 }
             }
