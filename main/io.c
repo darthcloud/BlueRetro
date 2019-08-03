@@ -127,14 +127,14 @@ const uint8_t wiiu_axes_idx[6] =
     AXIS_LX, AXIS_RX, AXIS_LY, AXIS_RY
 };
 
-const uint32_t axes_to_btn_mask_p[6] =
+const uint8_t axes_to_btn_mask_p[6] =
 {
-    (1U << BTN_LR), (1U << BTN_LU), (1U << BTN_RR), (1U << BTN_RU), (1U << BTN_LA), (1U << BTN_RA)
+    BTN_LR, BTN_LU, BTN_RR, BTN_RU, BTN_LA, BTN_RA
 };
 
 const uint32_t axes_to_btn_mask_n[6] =
 {
-    (1U << BTN_LL), (1U << BTN_LD), (1U << BTN_RL), (1U << BTN_RD), 0, 0
+    BTN_LL, BTN_LD, BTN_RL, BTN_RD, BTN_NN, BTN_NN
 };
 
 const struct axis_meta n64_axes_meta =
@@ -228,6 +228,8 @@ static void map_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t val
 }
 
 void n64_from_generic(struct io *specific, struct generic_map *generic) {
+    memset(&specific->io.n64, 0, sizeof(specific->io.n64));
+
     /* Map axis to */
     map_axis(specific, BTN_LL, BTN_LR, generic->axes[AXIS_LX].value);
     map_axis(specific, BTN_LD, BTN_LU, generic->axes[AXIS_LY].value);
@@ -309,7 +311,9 @@ void translate_status(struct io *input, struct io* output) {
 
     /* Apply deadzone */
     for (i = 0; i < sizeof(generic.axes)/sizeof(*generic.axes); i++) {
-        apply_deadzone(&generic.axes[i]);
+        if (generic.axes[i].meta) {
+            apply_deadzone(&generic.axes[i]);
+        }
     }
 
     /* Execute menu if Home buttons pressed */
