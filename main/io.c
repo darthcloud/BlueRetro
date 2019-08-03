@@ -218,22 +218,21 @@ static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
     }
 };
 
-static void map_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t value) {
-    if (value >= 0x0) {
-        map_to_n64_axis(output, map_table[btn_p], value);
-    }
-    else {
-        map_to_n64_axis(output, map_table[btn_n], -value);
-    }
-}
-
 void n64_from_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
     memset(&specific->io.n64, 0, sizeof(specific->io.n64));
 
-    for (i = 0; i < sizeof(specific->io.n64.axes)/sizeof(*specific->io.n64.axes); i++) {
-        map_axis(specific, axes_to_btn_mask_n[i], axes_to_btn_mask_p[i], generic->axes[i].value);
+    for (i = 0; i < sizeof(generic->axes)/sizeof(*generic->axes); i++) {
+        if (generic->axes[i].meta) {
+            if (generic->axes[i].value < 0) {
+                map_to_n64_axis(specific, map_table[axes_to_btn_mask_n[i]], -generic->axes[i].value);
+            }
+            else {
+                map_to_n64_axis(specific, map_table[axes_to_btn_mask_p[i]], generic->axes[i].value);
+
+            }
+        }
     }
 
     /* Map buttons to */
