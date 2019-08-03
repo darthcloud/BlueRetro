@@ -132,10 +132,90 @@ const uint8_t axes_to_btn_mask_p[6] =
     BTN_LR, BTN_LU, BTN_RR, BTN_RU, BTN_LA, BTN_RA
 };
 
-const uint32_t axes_to_btn_mask_n[6] =
+const uint8_t axes_to_btn_mask_n[6] =
 {
     BTN_LL, BTN_LD, BTN_RL, BTN_RD, BTN_NN, BTN_NN
 };
+
+static uint8_t btn_mask_to_axis(uint8_t btn_mask) {
+    switch (btn_mask) {
+        case BTN_LR:
+        case BTN_LL:
+            return AXIS_LX;
+        case BTN_LU:
+        case BTN_LD:
+            return AXIS_LY;
+        case BTN_RR:
+        case BTN_RL:
+            return AXIS_RX;
+        case BTN_RU:
+        case BTN_RD:
+            return AXIS_RY;
+        case BTN_LA:
+            return TRIG_L;
+        case BTN_RA:
+            return TRIG_R;
+    }
+    return AXIS_LX;
+}
+
+static int8_t btn_mask_sign(uint8_t btn_mask) {
+    switch (btn_mask) {
+        case BTN_LR:
+        case BTN_LU:
+        case BTN_RR:
+        case BTN_RU:
+        case BTN_LA:
+        case BTN_RA:
+            return 1;
+        case BTN_LL:
+        case BTN_LD:
+        case BTN_RL:
+        case BTN_RD:
+            return -1;
+    }
+    return 0;
+}
+
+static int8_t btn_mask_is_axis(uint8_t btn_mask, uint8_t axis) {
+    switch (axis) {
+        case AXIS_LX:
+            switch (btn_mask) {
+                case BTN_LL:
+                case BTN_LR:
+                    return 1;
+            }
+        case AXIS_LY:
+            switch (btn_mask) {
+                case BTN_LU:
+                case BTN_LD:
+                    return 1;
+            }
+        case AXIS_RX:
+            switch (btn_mask) {
+                case BTN_RL:
+                case BTN_RR:
+                    return 1;
+            }
+        case AXIS_RY:
+            switch (btn_mask) {
+                case BTN_RU:
+                case BTN_RD:
+                    return 1;
+            }
+        case TRIG_L:
+            switch (btn_mask) {
+                case BTN_LA:
+                    return 1;
+            }
+        case TRIG_R:
+            switch (btn_mask) {
+                case BTN_RA:
+                    return 1;
+            }
+    }
+    return 0;
+}
 
 const struct axis_meta n64_axes_meta =
 {
@@ -147,13 +227,13 @@ const struct axis_meta wiiu_pro_axes_meta =
 {
     .neutral = 0x800,
     .deadzone = 0x00F,
-    .abs_btn_thrs = 0x200,
+    .abs_btn_thrs = 0x20,
     .abs_max = 0x490,
 };
 
 static atomic_t io_flags = 0;
 static int32_t axis_cal[6] = {0};
-
+#if 0
 static uint8_t map_table[32] =
 {
     /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
@@ -161,6 +241,15 @@ static uint8_t map_table[32] =
     /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
+#endif
+static uint8_t map_table[32] =
+{
+    /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LD, /*LL*/BTN_LR, /*LR*/BTN_LL, /*LD*/BTN_LU,
+    /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_RU, /*RL*/BTN_RL, /*RR*/BTN_RR, /*RD*/BTN_RD,
+    /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
+    /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
+};
+
 
 void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
@@ -172,7 +261,8 @@ void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     }
     for (i = 0; i < sizeof(specific->io.wiiu_pro.axes)/sizeof(*specific->io.wiiu_pro.axes); i++) {
         generic->axes[i].meta = &wiiu_pro_axes_meta;
-        generic->axes[i].value = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] - wiiu_pro_axes_meta.neutral;
+        //generic->axes[i].value = specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] - wiiu_pro_axes_meta.neutral;
+        generic->axes[i].value = (specific->io.wiiu_pro.axes[wiiu_axes_idx[i]] >> 4) - 0x80;
         if (generic->axes[i].value > generic->axes[i].meta->abs_btn_thrs) {
             generic->buttons |= generic_mask[axes_to_btn_mask_p[wiiu_axes_idx[i]]];
         }
@@ -193,31 +283,6 @@ const convert_generic_func_t convert_to_generic_func[16] =
     wiiu_pro_to_generic
 };
 
-static void map_to_n64_axis(struct io* output, uint8_t btn_id, int8_t value) {
-    switch (btn_id) {
-        case BTN_LU:
-            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LY]])) {
-                output->io.n64.axes[n64_axes_idx[AXIS_LY]] = value;
-            }
-            break;
-        case BTN_LD:
-            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LY]])) {
-                output->io.n64.axes[n64_axes_idx[AXIS_LY]] = -value;
-            }
-            break;
-        case BTN_LL:
-            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LX]])) {
-                output->io.n64.axes[n64_axes_idx[AXIS_LX]] = -value;
-            }
-            break;
-        case BTN_LR:
-            if (abs(value) > abs(output->io.n64.axes[n64_axes_idx[AXIS_LX]])) {
-                output->io.n64.axes[n64_axes_idx[AXIS_LX]] = value;
-            }
-            break;
-    }
-};
-
 void n64_from_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
@@ -226,11 +291,18 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
     for (i = 0; i < sizeof(generic->axes)/sizeof(*generic->axes); i++) {
         if (generic->axes[i].meta) {
             if (generic->axes[i].value < 0) {
-                map_to_n64_axis(specific, map_table[axes_to_btn_mask_n[i]], -generic->axes[i].value);
+                if (btn_mask_is_axis(map_table[axes_to_btn_mask_n[i]], i)) {
+                    if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
+                            specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = (int8_t)btn_mask_sign(axes_to_btn_mask_n[i]) * -generic->axes[i].value;
+                    }
+                }
             }
             else {
-                map_to_n64_axis(specific, map_table[axes_to_btn_mask_p[i]], generic->axes[i].value);
-
+                if (btn_mask_is_axis(map_table[axes_to_btn_mask_p[i]], i)) {
+                    if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
+                            specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = (int8_t)btn_mask_sign(axes_to_btn_mask_p[i]) * generic->axes[i].value;
+                    }
+                }
             }
         }
     }
@@ -239,7 +311,7 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             specific->io.n64.buttons |= n64_mask[map_table[i]];
-            map_to_n64_axis(specific, map_table[i], 0x54);
+            //map_to_n64_axis(specific, map_table[i], 0x54);
         }
     }
 }
