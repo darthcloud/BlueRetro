@@ -228,16 +228,16 @@ static void map_axis(struct io* output, uint8_t btn_n, uint8_t btn_p, int8_t val
 }
 
 void n64_from_generic(struct io *specific, struct generic_map *generic) {
+    uint8_t i;
+
     memset(&specific->io.n64, 0, sizeof(specific->io.n64));
 
-    /* Map axis to */
-    map_axis(specific, BTN_LL, BTN_LR, generic->axes[AXIS_LX].value);
-    map_axis(specific, BTN_LD, BTN_LU, generic->axes[AXIS_LY].value);
-    map_axis(specific, BTN_RL, BTN_RR, generic->axes[AXIS_RX].value);
-    map_axis(specific, BTN_RD, BTN_RU, generic->axes[AXIS_RY].value);
+    for (i = 0; i < sizeof(specific->io.n64.axes)/sizeof(*specific->io.n64.axes); i++) {
+        map_axis(specific, axes_to_btn_mask_n[i], axes_to_btn_mask_p[i], generic->axes[i].value);
+    }
 
     /* Map buttons to */
-    for (uint8_t i = 0; i < 32; i++) {
+    for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             specific->io.n64.buttons |= n64_mask[map_table[i]];
             map_to_n64_axis(specific, map_table[i], 0x54);
