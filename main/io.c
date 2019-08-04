@@ -245,7 +245,7 @@ static uint8_t map_table[32] =
 static uint8_t map_table[32] =
 {
     /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LD, /*LL*/BTN_LR, /*LR*/BTN_LL, /*LD*/BTN_LU,
-    /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_RU, /*RL*/BTN_RL, /*RR*/BTN_RR, /*RD*/BTN_RD,
+    /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_LD, /*RL*/BTN_LR, /*RR*/BTN_LL, /*RD*/BTN_LU,
     /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
@@ -293,14 +293,14 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
             if (generic->axes[i].value < 0) {
                 if (btn_mask_is_axis(map_table[axes_to_btn_mask_n[i]], i)) {
                     if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
-                            specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = (int8_t)btn_mask_sign(axes_to_btn_mask_n[i]) * -generic->axes[i].value;
+                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = (int8_t)btn_mask_sign(map_table[axes_to_btn_mask_n[i]]) * -generic->axes[i].value;
                     }
                 }
             }
             else {
                 if (btn_mask_is_axis(map_table[axes_to_btn_mask_p[i]], i)) {
                     if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
-                            specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = (int8_t)btn_mask_sign(axes_to_btn_mask_p[i]) * generic->axes[i].value;
+                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = (int8_t)btn_mask_sign(map_table[axes_to_btn_mask_p[i]]) * generic->axes[i].value;
                     }
                 }
             }
