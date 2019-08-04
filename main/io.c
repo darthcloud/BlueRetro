@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <esp_private/esp_timer_impl.h>
 #include "zephyr/atomic.h"
 
 typedef void (*convert_generic_func_t)(struct io*, struct generic_map *);
@@ -233,7 +234,7 @@ const struct axis_meta wiiu_pro_axes_meta =
 
 static atomic_t io_flags = 0;
 static int32_t axis_cal[6] = {0};
-#if 0
+
 static uint8_t map_table[32] =
 {
     /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
@@ -241,15 +242,6 @@ static uint8_t map_table[32] =
     /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
-#endif
-static uint8_t map_table[32] =
-{
-    /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LD, /*LL*/BTN_LR, /*LR*/BTN_LL, /*LD*/BTN_LU,
-    /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_LD, /*RL*/BTN_LR, /*RR*/BTN_LL, /*RD*/BTN_LU,
-    /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
-    /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
-};
-
 
 void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
@@ -291,14 +283,14 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
     for (i = 0; i < sizeof(generic->axes)/sizeof(*generic->axes); i++) {
         if (generic->axes[i].meta) {
             if (generic->axes[i].value < 0) {
-                if (btn_mask_is_axis(map_table[axes_to_btn_mask_n[i]], i)) {
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LY) {
                     if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
                         specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = (int8_t)btn_mask_sign(map_table[axes_to_btn_mask_n[i]]) * -generic->axes[i].value;
                     }
                 }
             }
             else {
-                if (btn_mask_is_axis(map_table[axes_to_btn_mask_p[i]], i)) {
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LY) {
                     if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
                         specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = (int8_t)btn_mask_sign(map_table[axes_to_btn_mask_p[i]]) * generic->axes[i].value;
                     }
@@ -351,7 +343,7 @@ static inline void apply_deadzone(struct axis *axis) {
 
 static void menu(struct generic_map *input)
 {
-    if (~input->buttons & BTN_HM) {
+    if (input->buttons & BTN_HM) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         printf("JG2019 In Menu\n");
     }
@@ -360,6 +352,9 @@ static void menu(struct generic_map *input)
 void translate_status(struct io *input, struct io* output) {
     struct generic_map generic = {0};
     uint8_t i;
+    uint64_t start_us, end_us;
+
+    start_us = esp_timer_impl_get_time();
 
     convert_to_generic_func[input->format](input, &generic);
 
@@ -388,12 +383,14 @@ void translate_status(struct io *input, struct io* output) {
     }
 
     /* Execute menu if Home buttons pressed */
-    if (atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
+    if (!atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
         menu(&generic);
     }
 
     if (output->format) {
         convert_from_generic_func[output->format](output, &generic);
     }
+    end_us = esp_timer_impl_get_time();
+    //printf("%llu us\n", (end_us - start_us));
 }
 
