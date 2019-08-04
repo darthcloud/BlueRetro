@@ -343,7 +343,7 @@ static inline void apply_deadzone(struct axis *axis) {
 
 static void menu(struct generic_map *input)
 {
-    if (input->buttons & BTN_HM) {
+    if (input->buttons & generic_mask[BTN_HM]) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         printf("JG2019 In Menu\n");
     }
