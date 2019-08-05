@@ -178,46 +178,6 @@ static int8_t btn_mask_sign(uint8_t btn_mask) {
     return 0;
 }
 
-static int8_t btn_mask_is_axis(uint8_t btn_mask, uint8_t axis) {
-    switch (axis) {
-        case AXIS_LX:
-            switch (btn_mask) {
-                case BTN_LL:
-                case BTN_LR:
-                    return 1;
-            }
-        case AXIS_LY:
-            switch (btn_mask) {
-                case BTN_LU:
-                case BTN_LD:
-                    return 1;
-            }
-        case AXIS_RX:
-            switch (btn_mask) {
-                case BTN_RL:
-                case BTN_RR:
-                    return 1;
-            }
-        case AXIS_RY:
-            switch (btn_mask) {
-                case BTN_RU:
-                case BTN_RD:
-                    return 1;
-            }
-        case TRIG_L:
-            switch (btn_mask) {
-                case BTN_LA:
-                    return 1;
-            }
-        case TRIG_R:
-            switch (btn_mask) {
-                case BTN_RA:
-                    return 1;
-            }
-    }
-    return 0;
-}
-
 const struct axis_meta n64_axes_meta =
 {
     .abs_max = 0x54,
