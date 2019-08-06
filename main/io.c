@@ -312,9 +312,33 @@ static inline void apply_deadzone(struct axis *axis) {
 
 static void menu(struct generic_map *input)
 {
-    if (input->buttons & generic_mask[BTN_HM]) {
+    if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
+        if (input->buttons) {
+            atomic_clear_bit(&io_flags, IO_MENU_LEVEL1);
+            atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
+            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            printf("JG2019 In Menu 2\n");
+        }
+    }
+    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL2)) {
+        if (input->buttons) {
+            atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
+            atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
+            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            printf("JG2019 In Menu 3\n");
+        }
+    }
+    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL3)) {
+        if (input->buttons) {
+            atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
+            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            printf("JG2019 Menu exit\n");
+        }
+    }
+    else if (input->buttons & generic_mask[BTN_HM]) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-        printf("JG2019 In Menu\n");
+        atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
+        printf("JG2019 In Menu 1\n");
     }
 }
 
