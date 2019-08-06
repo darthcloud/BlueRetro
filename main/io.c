@@ -188,7 +188,7 @@ const struct axis_meta wiiu_pro_axes_meta =
 {
     .neutral = 0x800,
     .deadzone = 0x00F,
-    .abs_btn_thrs = 0x294,
+    .abs_btn_thrs = 0x250,
     .abs_max = 0x44C,
 };
 
@@ -236,7 +236,7 @@ const convert_generic_func_t convert_to_generic_func[16] =
 
 void n64_from_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
-    float axis_tmp;
+    int8_t axis_int;
 
     memset(&specific->io.n64, 0, sizeof(specific->io.n64));
 
@@ -246,19 +246,18 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
 
     for (i = 0; i < sizeof(generic->axes)/sizeof(*generic->axes); i++) {
         if (generic->axes[i].meta) {
+            axis_int = (int8_t)((float)generic->axes[i].value * ((float)n64_axes_meta.abs_max / (float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone)));
             if (generic->axes[i].value < 0) {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LY) {
-                    if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
-                        axis_tmp = (float)generic->axes[i].value * ((float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone) / (float)n64_axes_meta.abs_max);
-                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = (int8_t)(btn_mask_sign(map_table[axes_to_btn_mask_n[i]]) * -axis_tmp);
+                    if (abs(axis_int) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
+                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]]) * -axis_int;
                     }
                 }
             }
             else {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]]) == AXIS_LY) {
-                    if (abs(generic->axes[i].value) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
-                        axis_tmp = (float)generic->axes[i].value * ((float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone) / (float)n64_axes_meta.abs_max);
-                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = (int8_t)(btn_mask_sign(map_table[axes_to_btn_mask_p[i]]) * axis_tmp);
+                    if (abs(axis_int) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
+                        specific->io.n64.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]]) * axis_int;
                     }
                 }
             }
@@ -269,7 +268,11 @@ void n64_from_generic(struct io *specific, struct generic_map *generic) {
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             specific->io.n64.buttons |= n64_mask[map_table[i]];
-            //map_to_n64_axis(specific, map_table[i], 0x54);
+            if (btn_mask_to_axis(map_table[i]) == AXIS_LX || btn_mask_to_axis(map_table[i]) == AXIS_LY) {
+                if (abs(n64_axes_meta.abs_max) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[i])])) {
+                    specific->io.n64.axes[btn_mask_to_axis(map_table[i])] = btn_mask_sign(map_table[i]) * n64_axes_meta.abs_max;
+                }
+            }
         }
     }
 }
