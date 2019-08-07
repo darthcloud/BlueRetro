@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <esp_private/esp_timer_impl.h>
+#include <driver/timer.h>
 #include "zephyr/atomic.h"
 
 typedef void (*convert_generic_func_t)(struct io*, struct generic_map *);
@@ -193,6 +194,7 @@ const struct axis_meta wiiu_pro_axes_meta =
 };
 
 static atomic_t io_flags = 0;
+static uint8_t leds_rumble = 0x10;
 static int32_t axis_cal[6] = {0};
 
 static uint8_t map_table[32] =
@@ -203,7 +205,11 @@ static uint8_t map_table[32] =
     /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
 };
 
-void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
+static int in_menu(void) {
+    return (io_flags & ((1U << IO_MENU_LEVEL1) | (1U << IO_MENU_LEVEL2) | (1U << IO_MENU_LEVEL3))) ? 1 : 0;
+}
+
+static void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
     for (i = 0; i < 30; i++) {
@@ -234,13 +240,13 @@ const convert_generic_func_t convert_to_generic_func[16] =
     wiiu_pro_to_generic
 };
 
-void n64_from_generic(struct io *specific, struct generic_map *generic) {
+static void n64_from_generic(struct io *specific, struct generic_map *generic) {
     uint8_t i;
     int8_t axis_int;
 
     memset(&specific->io.n64, 0, sizeof(specific->io.n64));
 
-    if (io_flags & ((1U << IO_MENU_LEVEL1) | (1U << IO_MENU_LEVEL2) | (1U << IO_MENU_LEVEL3))) {
+    if (in_menu()) {
         return;
     }
 
@@ -310,6 +316,106 @@ static inline void apply_deadzone(struct axis *axis) {
     }
 }
 
+#define TIMER_DIVIDER 16
+#define TIMER_SCALE (TIMER_BASE_CLK / TIMER_DIVIDER)
+static void leds_flash_timer_start(float interval_sec)
+{
+    timer_config_t config = {
+        .divider = 16,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .intr_type = TIMER_INTR_LEVEL,
+        .auto_reload = TIMER_AUTORELOAD_EN
+    };
+
+    timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, interval_sec * TIMER_SCALE);
+    timer_start(TIMER_GROUP_0, TIMER_0);
+}
+
+static int leds_flash_timer_alert(void) {
+    int sts;
+    if ((sts = (TIMERG0.int_st_timers.val & 0x01) ? 1 : 0)) {
+        TIMERG0.int_clr_timers.t0 = 1;
+        TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
+    }
+    return sts;
+}
+
+static void rumble_timer_start(float interval_sec)
+{
+    timer_config_t config = {
+        .divider = 16,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .intr_type = TIMER_INTR_LEVEL,
+        .auto_reload = TIMER_AUTORELOAD_DIS
+    };
+
+    timer_init(TIMER_GROUP_0, TIMER_1, &config);
+    timer_enable_intr(TIMER_GROUP_0, TIMER_1);
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_1, 0);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_1, interval_sec * TIMER_SCALE);
+    timer_start(TIMER_GROUP_0, TIMER_1);
+}
+
+static int rumble_timer_alert(void) {
+    int sts;
+    if ((sts = (TIMERG0.int_st_timers.val & 0x02) ? 1 : 0)) {
+        TIMERG0.int_clr_timers.t1 = 1;
+    }
+    return sts;
+}
+
+static void update_leds_rumble(struct io *input) {
+    uint8_t old_leds_rumble = leds_rumble;
+
+    if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
+        leds_rumble &= 0x11;
+        if (leds_flash_timer_alert()) {
+            leds_rumble ^= 0x10;
+        }
+    }
+    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL2)) {
+        leds_rumble &= 0x21;
+        if (leds_flash_timer_alert()) {
+            leds_rumble ^= 0x20;
+        }
+    }
+    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL3)) {
+        leds_rumble &= 0x41;
+        if (leds_flash_timer_alert()) {
+            leds_rumble ^= 0x40;
+        }
+    }
+    else {
+        leds_rumble &= 0x01;
+        leds_rumble |= 0x10;
+    }
+
+    if (atomic_test_bit(&io_flags, IO_RUMBLE_MOTOR_ON)) {
+        if (rumble_timer_alert()) {
+            atomic_clear_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            leds_rumble &= 0xFE;
+        }
+        else {
+            leds_rumble |= 0x01;
+        }
+    }
+    else {
+        leds_rumble &= 0xFE;
+    }
+
+    if (old_leds_rumble != leds_rumble) {
+        atomic_set_bit(&input->flags, BTIO_UPDATE_CTRL);
+        input->leds_rumble = leds_rumble;
+    }
+}
+
 static void menu(struct generic_map *input)
 {
     if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
@@ -317,6 +423,8 @@ static void menu(struct generic_map *input)
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL1);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            rumble_timer_start(0.5);
             printf("JG2019 In Menu 2\n");
         }
     }
@@ -325,6 +433,8 @@ static void menu(struct generic_map *input)
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            rumble_timer_start(0.5);
             printf("JG2019 In Menu 3\n");
         }
     }
@@ -332,12 +442,17 @@ static void menu(struct generic_map *input)
         if (input->buttons) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            rumble_timer_start(0.5);
             printf("JG2019 Menu exit\n");
         }
     }
     else if (input->buttons & generic_mask[BTN_HM]) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
+        leds_flash_timer_start(0.5);
+        atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+        rumble_timer_start(0.5);
         printf("JG2019 In Menu 1\n");
     }
 }
@@ -374,6 +489,8 @@ void translate_status(struct io *input, struct io* output) {
             apply_deadzone(&generic.axes[i]);
         }
     }
+
+    update_leds_rumble(input);
 
     /* Execute menu if Home buttons pressed */
     if (!atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {

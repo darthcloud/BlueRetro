@@ -56,6 +56,10 @@
 #define WIIU_PRO_AXIS_HALFWAY  0x200
 #define WIIU_PRO_AXIS_MAX      0x490
 
+enum {
+    BTIO_UPDATE_CTRL
+};
+
 struct axis_meta {
     int32_t neutral;
     int32_t deadzone;
@@ -110,7 +114,9 @@ struct wiiu_pro_map {
 extern const uint32_t wiiu_mask[32];
 
 struct io {
+    int32_t flags;
     uint8_t format;
+    uint8_t leds_rumble;
     union {
         struct nes_map nes;
         struct snes_map snes;
