@@ -10,6 +10,7 @@
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
 #include "nsi.h"
+#include "zephyr/atomic.h"
 
 #define BIT_ZERO 0x80020006
 #define BIT_ONE  0x80060002
@@ -192,13 +193,20 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         item = nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 32, &crc, STOP_BIT_2US);
                         nsi_frame.data[0] = crc ^ 0xFF;
-                        ets_printf("%02X\n", nsi_frame.data[0]);
                         nsi_bytes_to_items_crc(channel, item, nsi_frame.data, 1, &crc, STOP_BIT_2US);
                         break;
                     case 0x03:
-                        item = nsi_items_to_bytes_crc(channel, item + 16, nsi_frame.data, 32, &crc);
+                        item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data, 2, &crc);
+                        item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data + 2, 32, &crc);
+                        if (nsi_frame.data[0] == 0xC0) {
+                            if (nsi_frame.data[2] & 0x01) {
+                                atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);
+                            }
+                            else {
+                                atomic_clear_bit(&output->flags, WRIO_RUMBLE_ON);
+                            }
+                        }
                         nsi_frame.data[0] = crc ^ 0xFF;
-                        ets_printf("%02X\n", nsi_frame.data[0]);
                         nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 1, &crc, STOP_BIT_2US);
                         break;
                 }

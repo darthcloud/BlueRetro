@@ -371,8 +371,15 @@ static int rumble_timer_alert(void) {
     return sts;
 }
 
-static void update_leds_rumble(struct io *input) {
+static void update_leds_rumble(struct io *input, struct io *output) {
     uint8_t old_leds_rumble = leds_rumble;
+
+    if (atomic_test_bit(&output->flags, WRIO_RUMBLE_ON) || atomic_test_bit(&io_flags, IO_RUMBLE_FEEDBACK)) {
+        atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+    }
+    else {
+        atomic_clear_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+    }
 
     if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
         leds_rumble &= 0x11;
@@ -399,7 +406,7 @@ static void update_leds_rumble(struct io *input) {
 
     if (atomic_test_bit(&io_flags, IO_RUMBLE_MOTOR_ON)) {
         if (rumble_timer_alert()) {
-            atomic_clear_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            atomic_clear_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             leds_rumble &= 0xFE;
         }
         else {
@@ -423,7 +430,7 @@ static void menu(struct generic_map *input)
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL1);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
             printf("JG2019 In Menu 2\n");
         }
@@ -433,7 +440,7 @@ static void menu(struct generic_map *input)
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
             printf("JG2019 In Menu 3\n");
         }
@@ -442,7 +449,7 @@ static void menu(struct generic_map *input)
         if (input->buttons) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-            atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+            atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
             printf("JG2019 Menu exit\n");
         }
@@ -451,7 +458,7 @@ static void menu(struct generic_map *input)
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
         leds_flash_timer_start(0.3);
-        atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
+        atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
         rumble_timer_start(0.3);
         printf("JG2019 In Menu 1\n");
     }
@@ -490,7 +497,7 @@ void translate_status(struct io *input, struct io* output) {
         }
     }
 
-    update_leds_rumble(input);
+    update_leds_rumble(input, output);
 
     /* Execute menu if Home buttons pressed */
     if (!atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {

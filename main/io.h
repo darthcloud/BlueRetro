@@ -60,6 +60,10 @@ enum {
     BTIO_UPDATE_CTRL
 };
 
+enum {
+    WRIO_RUMBLE_ON
+};
+
 struct axis_meta {
     int32_t neutral;
     int32_t deadzone;
