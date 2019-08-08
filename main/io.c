@@ -424,7 +424,7 @@ static void menu(struct generic_map *input)
             atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
             atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
-            rumble_timer_start(0.5);
+            rumble_timer_start(0.3);
             printf("JG2019 In Menu 2\n");
         }
     }
@@ -434,7 +434,7 @@ static void menu(struct generic_map *input)
             atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
             atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
-            rumble_timer_start(0.5);
+            rumble_timer_start(0.3);
             printf("JG2019 In Menu 3\n");
         }
     }
@@ -443,16 +443,16 @@ static void menu(struct generic_map *input)
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
             atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
-            rumble_timer_start(0.5);
+            rumble_timer_start(0.3);
             printf("JG2019 Menu exit\n");
         }
     }
     else if (input->buttons & generic_mask[BTN_HM]) {
         atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
         atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
-        leds_flash_timer_start(0.5);
+        leds_flash_timer_start(0.3);
         atomic_set_bit(&io_flags, IO_RUMBLE_MOTOR_ON);
-        rumble_timer_start(0.5);
+        rumble_timer_start(0.3);
         printf("JG2019 In Menu 1\n");
     }
 }
