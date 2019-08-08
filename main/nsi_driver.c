@@ -52,14 +52,14 @@ static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items(nsi_channel_t channel, nsi_frame_t *frame) {
-    uint8_t byte, bit,*val;//, crc = 0xFF;
-    uint16_t item, idx;
+    uint8_t *val;//, crc = 0xFF;
+    uint16_t item;
 
     //int16_t crc_bit = nsi[channel].nsi_mode ? 0 : -24;
 
     //printf("len %d stop %d\n", frame->len, frame->stop_len);
 
-    for (idx = item = (channel * RMT_MEM_ITEM_NUM), val = frame->data; item < frame->len; val++) {
+    for (item = (channel * RMT_MEM_ITEM_NUM), val = frame->data; item < frame->len; val++) {
         //printf("%02X\n", val);
         //if (byte == 3) {
         //    RMT.conf_ch[channel].conf1.tx_start = 1;
@@ -196,11 +196,6 @@ void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *o
     RMT.conf_ch[channel].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
     RMT.conf_ch[channel].conf1.rx_filter_thres = 0; /* No minimum length */
     RMT.conf_ch[channel].conf1.rx_filter_en = 0;
-
-    for (uint16_t i = 0; i < 512; i++) {
-        rmt_items[i].level0 = 0;
-        rmt_items[i].level1 = 1;
-    }
 
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
     gpio_set_direction(gpio, GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
