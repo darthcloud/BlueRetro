@@ -158,7 +158,7 @@ static uint8_t btn_mask_to_axis(uint8_t btn_mask) {
         case BTN_RA:
             return TRIG_R;
     }
-    return AXIS_LX;
+    return 0xFF;
 }
 
 static int8_t btn_mask_sign(uint8_t btn_mask) {
@@ -274,7 +274,7 @@ static void n64_from_generic(struct io *specific, struct generic_map *generic) {
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             specific->io.n64.buttons |= n64_mask[map_table[i]];
-            if (btn_mask_to_axis(map_table[i]) == AXIS_LX || btn_mask_to_axis(map_table[i]) == AXIS_LY) {
+            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i]) == AXIS_LX || btn_mask_to_axis(map_table[i]) == AXIS_LY)) {
                 if (abs(n64_axes_meta.abs_max) > abs(specific->io.n64.axes[btn_mask_to_axis(map_table[i])])) {
                     specific->io.n64.axes[btn_mask_to_axis(map_table[i])] = btn_mask_sign(map_table[i]) * n64_axes_meta.abs_max;
                 }
