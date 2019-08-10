@@ -56,28 +56,6 @@ typedef struct {
 static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint32_t stop_bit) {
-    uint16_t item;
-    uint16_t bit_len = len * 8;
-
-    for (item = (channel * RMT_MEM_ITEM_NUM + ch_offset); item < bit_len; data++) {
-        do {
-            if (*data & 0x80) {
-                rmt_items[item].val = BIT_ONE;
-            }
-            else {
-                rmt_items[item].val = BIT_ZERO;
-            }
-            item++;
-            *data <<= 1;
-        } while ((item % 8));
-    }
-    if (stop_bit) {
-        rmt_items[item].val = stop_bit;
-    }
-    return item;
-}
-
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint8_t *crc, uint32_t stop_bit) {
     uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     uint16_t crc_bit = item;
@@ -116,33 +94,8 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t
             }
             item++;
         } while ((item % 8));
-        //ets_printf("%02X\n", *data);
     }
     return item;
-}
-
-static uint8_t IRAM_ATTR nsi_items_to_bytes(nsi_channel_t channel, nsi_frame_t *frame) {
-    uint8_t byte, bit, crc = 0xFF;
-    uint16_t item, idx;
-    int16_t crc_bit = nsi[channel].nsi_mode ? -24: 0;
-
-    for (idx = item = (channel * RMT_MEM_ITEM_NUM), byte = 0; rmt_items[idx].duration1; byte++) {
-        for (bit = 0; bit < 8; bit++, item++, idx = (item & 0x1FF), crc_bit++) {
-            if (crc_bit == 0)
-                crc = 0xFF;
-            frame->data[byte] <<= 1;
-            if (rmt_items[idx].duration1 > (NSI_BIT_PERIOD_TICKS * 1/2)) {
-                if (crc_bit < 256)
-                    crc ^= nsi_crc_table[crc_bit];
-                frame->data[byte] |= 1;
-            }
-        }
-    }
-    frame->stop_len = rmt_items[idx].duration0 / 2;
-    //if (frame.crc)
-    //    *frame.crc = crc;
-    //printf("crc: 0x%02X or 0x%02X\n", crc, crc ^ 0xFF);
-    return (frame->len = byte);
 }
 
 static void IRAM_ATTR nsi_isr(void *arg) {
