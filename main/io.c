@@ -248,6 +248,8 @@ const struct axis_meta wiiu_pro_axes_meta =
 static atomic_t io_flags = 0;
 static uint8_t leds_rumble = 0x10;
 static int32_t axis_cal[6] = {0};
+static uint8_t lv2_btn = BTN_NN;
+static uint8_t lv3_btn = BTN_NN;
 
 static int in_menu(void) {
     return (io_flags & ((1U << IO_MENU_LEVEL1) | (1U << IO_MENU_LEVEL2) | (1U << IO_MENU_LEVEL3))) ? 1 : 0;
@@ -467,13 +469,35 @@ static void update_leds_rumble(struct io *input, struct io *output) {
     }
 }
 
-static void menu(struct generic_map *input)
+static void io_remap(struct config *config) {
+    printf("JG2019 src: %d dest: %d\n", lv2_btn, lv3_btn);
+    config->mapping[config->set_map][lv2_btn] = lv3_btn;
+    sd_update_config(config);
+}
+
+static void menu(struct config *config, struct generic_map *input)
 {
+    uint8_t i, btn_id = BTN_NN;
+
+    if (input->buttons) {
+        for (i = 0; i < 30; i++) {
+            if (input->buttons & generic_mask[i]) {
+                btn_id = i;
+                break;
+            }
+        }
+    }
+
     if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
         if (input->buttons) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL1);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+
+            if (input->buttons & generic_mask[BTN_HM]) {
+                atomic_set_bit(&io_flags, IO_REMAP);
+            }
+
             atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
             printf("JG2019 In Menu 2\n");
@@ -483,6 +507,9 @@ static void menu(struct generic_map *input)
         if (input->buttons) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
+
+            lv2_btn = btn_id;
+
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
             atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
@@ -493,6 +520,13 @@ static void menu(struct generic_map *input)
         if (input->buttons) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+
+            lv3_btn = btn_id;
+            if (atomic_test_bit(&io_flags, IO_REMAP)) {
+                io_remap(config);
+                atomic_clear_bit(&io_flags, IO_REMAP);
+            }
+
             atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
             printf("JG2019 Menu exit\n");
@@ -545,7 +579,7 @@ void translate_status(struct config *config, struct io *input, struct io* output
 
     /* Execute menu if Home buttons pressed */
     if (!atomic_test_bit(&io_flags, IO_WAITING_FOR_RELEASE)) {
-        menu(&generic);
+        menu(config, &generic);
     }
 
     if (output->format) {

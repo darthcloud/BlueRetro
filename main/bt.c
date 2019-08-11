@@ -538,7 +538,7 @@ static void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t
 
 static void bt_hid_cmd_wii_set_led(uint16_t handle, uint16_t cid, uint8_t conf) {
     struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame.pl.hidp;
-    printf("# %s\n", __FUNCTION__);
+    //printf("# %s\n", __FUNCTION__);
 
     bt_hidp_data->hidp_data.wii_conf.conf = conf;
 
@@ -776,7 +776,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
  *         controller is ready to receive command
  */
 static void bt_ctrl_rcv_pkt_ready(void) {
-    printf("# %s\n", __FUNCTION__);
+    //printf("# %s\n", __FUNCTION__);
     atomic_set_bit(&bt_flags, BT_CTRL_READY);
 }
 
