@@ -64,6 +64,8 @@ enum {
     WRIO_RUMBLE_ON
 };
 
+extern const uint8_t map_presets[8][32];
+
 struct axis_meta {
     int32_t neutral;
     int32_t deadzone;
