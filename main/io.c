@@ -516,7 +516,7 @@ static void menu(struct generic_map *input)
     }
 }
 
-void translate_status(struct io *input, struct io* output) {
+void translate_status(struct config *config, struct io *input, struct io* output) {
     struct generic_map generic = {0};
     uint8_t i;
     uint64_t start_us, end_us;

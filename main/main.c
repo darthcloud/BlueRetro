@@ -3,28 +3,34 @@
 #include <freertos/task.h>
 #include "bt.h"
 #include "nsi.h"
-#include "sd.h"
 
 #define NSI_CH NSI_CH_0
 
 static struct io output[7] = {0};
+static struct config config;
 
-static TaskHandle_t nsi_task_handle;
+static TaskHandle_t wired_task_handle;
+static TaskHandle_t wireless_task_handle;
 
-static void nsi_wait_for_cmd_task(void *arg) {
+static void wired_init_task(void *arg) {
     nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
-    vTaskDelete(nsi_task_handle);
+    vTaskDelete(wired_task_handle);
+}
+
+static void wireless_init_task(void *arg) {
+    if (sd_init(&config)) {
+        printf("SD init fail!\n");
+    }
+
+    if (bt_init(&output[0], &config)) {
+        printf("Bluetooth init fail!\n");
+    }
+    vTaskDelete(wireless_task_handle);
 }
 
 void app_main()
 {
-    xTaskCreatePinnedToCore(nsi_wait_for_cmd_task, "nsi_wait_for_cmd_task",
-        2048, &nsi_task_handle, 10, &nsi_task_handle, 1);
-
-    sd_init();
-
-    if (bt_init(&output[0])) {
-        printf("Bluetooth init fail!\n");
-    }
+    xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, &wired_task_handle, 10, &wired_task_handle, 1);
+    xTaskCreatePinnedToCore(wireless_init_task, "wireless_init_task", 2048, &wireless_task_handle, 10, &wireless_task_handle, 0);
 }
 

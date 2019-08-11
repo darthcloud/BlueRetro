@@ -3,6 +3,7 @@
 
 #include <sys/cdefs.h>
 #include <stdint.h>
+#include "sd.h"
 
 #define BTN_DU 0x00
 #define BTN_DL 0x01
@@ -132,7 +133,7 @@ struct io {
     } io;
 } __packed;
 
-void translate_status(struct io *input, struct io* output);
+void translate_status(struct config *config, struct io *input, struct io* output);
 
 #endif /* _IO_H_ */
 

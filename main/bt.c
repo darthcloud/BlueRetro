@@ -193,6 +193,7 @@ enum {
 
 static struct io input;
 static struct io *output;
+static struct config *sd_config;
 static TaskHandle_t xHandle = NULL;
 static uint8_t hci_version = 0;
 static bt_addr_t local_bdaddr;
@@ -750,7 +751,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                         atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);
                     }
                     memcpy(&input.io.wiiu_pro, wiiu_pro, sizeof(*wiiu_pro));
-                    translate_status(&input, output);
+                    translate_status(sd_config, &input, output);
 #if 0
                     min_lx = min(min_lx, wiiu_pro->axes[0]);
                     min_ly = min(min_ly, wiiu_pro->axes[2]);
@@ -915,8 +916,9 @@ static void bt_task(void *param) {
     }
 }
 
-esp_err_t bt_init(struct io *io_data) {
+esp_err_t bt_init(struct io *io_data, struct config *config) {
     output = io_data;
+    sd_config = config;
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
