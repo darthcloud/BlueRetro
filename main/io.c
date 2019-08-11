@@ -7,7 +7,7 @@
 #include <driver/timer.h>
 #include "zephyr/atomic.h"
 
-typedef void (*convert_generic_func_t)(struct io*, struct generic_map *);
+typedef void (*convert_generic_func_t)(uint8_t*, struct io*, struct generic_map*);
 
 enum {
     /* The rumble motor should be on. */
@@ -249,19 +249,11 @@ static atomic_t io_flags = 0;
 static uint8_t leds_rumble = 0x10;
 static int32_t axis_cal[6] = {0};
 
-static uint8_t map_table[32] =
-{
-    /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
-    /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_RU, /*RL*/BTN_RL, /*RR*/BTN_RR, /*RD*/BTN_RD,
-    /*LA*/BTN_NN, /*LM*/BTN_LM, /*RA*/BTN_NN, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_NN, /*LJ*/BTN_NN, /*RS*/BTN_LS,
-    /*RG*/BTN_NN, /*RJ*/BTN_NN, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
-};
-
 static int in_menu(void) {
     return (io_flags & ((1U << IO_MENU_LEVEL1) | (1U << IO_MENU_LEVEL2) | (1U << IO_MENU_LEVEL3))) ? 1 : 0;
 }
 
-static void wiiu_pro_to_generic(struct io *specific, struct generic_map *generic) {
+static void wiiu_pro_to_generic(uint8_t map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
     for (i = 0; i < 30; i++) {
@@ -292,7 +284,7 @@ const convert_generic_func_t convert_to_generic_func[16] =
     wiiu_pro_to_generic
 };
 
-static void n64_from_generic(struct io *specific, struct generic_map *generic) {
+static void n64_from_generic(uint8_t map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
     int8_t axis_int;
 
@@ -523,7 +515,7 @@ void translate_status(struct config *config, struct io *input, struct io* output
 
     start_us = esp_timer_impl_get_time();
 
-    convert_to_generic_func[input->format](input, &generic);
+    convert_to_generic_func[input->format](NULL, input, &generic);
 
     if (!generic.buttons) {
         atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
@@ -557,7 +549,7 @@ void translate_status(struct config *config, struct io *input, struct io* output
     }
 
     if (output->format) {
-        convert_from_generic_func[output->format](output, &generic);
+        convert_from_generic_func[output->format](config->mapping[config->set_map], output, &generic);
     }
     end_us = esp_timer_impl_get_time();
     //printf("%llu us\n", (end_us - start_us));
