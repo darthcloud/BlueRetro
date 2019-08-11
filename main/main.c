@@ -3,6 +3,7 @@
 #include <freertos/task.h>
 #include "bt.h"
 #include "nsi.h"
+#include "sd.h"
 
 #define NSI_CH NSI_CH_0
 
@@ -19,6 +20,8 @@ void app_main()
 {
     xTaskCreatePinnedToCore(nsi_wait_for_cmd_task, "nsi_wait_for_cmd_task",
         2048, &nsi_task_handle, 10, &nsi_task_handle, 1);
+
+    sd_init();
 
     if (bt_init(&output[0])) {
         printf("Bluetooth init fail!\n");
