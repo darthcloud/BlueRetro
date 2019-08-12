@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <esp_err.h>
 #include <esp_private/esp_timer_impl.h>
 #include <driver/timer.h>
 #include "zephyr/atomic.h"
@@ -475,9 +476,21 @@ static void io_remap(struct config *config) {
     sd_update_config(config);
 }
 
+static esp_err_t io_layout_select(struct config *config) {
+    esp_err_t err = ESP_FAIL;
+    if (lv2_btn < 4) {
+        printf("JG2019 layout: %d\n", lv2_btn);
+        config->set_map = lv2_btn;
+        sd_update_config(config);
+        err = ESP_OK;
+    }
+    return err;
+}
+
 static void menu(struct config *config, struct generic_map *input)
 {
     uint8_t i, btn_id = BTN_NN;
+    esp_err_t err = ESP_FAIL;
 
     if (input->buttons) {
         for (i = 0; i < 30; i++) {
@@ -486,38 +499,38 @@ static void menu(struct config *config, struct generic_map *input)
                 break;
             }
         }
-    }
 
-    if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
-        if (input->buttons) {
+        if (atomic_test_bit(&io_flags, IO_MENU_LEVEL1)) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL1);
-            atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
 
             if (input->buttons & generic_mask[BTN_HM]) {
                 atomic_set_bit(&io_flags, IO_REMAP);
+                atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
+                err = ESP_OK;
+            }
+            else if (input->buttons & generic_mask[BTN_DL]) {
+                atomic_set_bit(&io_flags, IO_LAYOUT);
+                atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
+                err = ESP_OK;
             }
 
-            atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
-            rumble_timer_start(0.3);
-            printf("JG2019 In Menu 2\n");
         }
-    }
-    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL2)) {
-        if (input->buttons) {
+        else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL2)) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
-            atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
+            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
 
             lv2_btn = btn_id;
-
-            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-            atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
-            rumble_timer_start(0.3);
-            printf("JG2019 In Menu 3\n");
+            if (atomic_test_bit(&io_flags, IO_LAYOUT)) {
+                err = io_layout_select(config);
+                atomic_clear_bit(&io_flags, IO_LAYOUT);
+            }
+            else if (atomic_test_bit(&io_flags, IO_REMAP)) {
+                atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
+                err = ESP_OK;
+            }
         }
-    }
-    else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL3)) {
-        if (input->buttons) {
+        else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL3)) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL3);
             atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
 
@@ -525,20 +538,20 @@ static void menu(struct config *config, struct generic_map *input)
             if (atomic_test_bit(&io_flags, IO_REMAP)) {
                 io_remap(config);
                 atomic_clear_bit(&io_flags, IO_REMAP);
+                err = ESP_OK;
             }
+        }
+        else if (input->buttons & generic_mask[BTN_HM]) {
+            atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
+            atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
+            leds_flash_timer_start(0.3);
+            err = ESP_OK;
+        }
 
+        if (err == ESP_OK) {
             atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
             rumble_timer_start(0.3);
-            printf("JG2019 Menu exit\n");
         }
-    }
-    else if (input->buttons & generic_mask[BTN_HM]) {
-        atomic_set_bit(&io_flags, IO_WAITING_FOR_RELEASE);
-        atomic_set_bit(&io_flags, IO_MENU_LEVEL1);
-        leds_flash_timer_start(0.3);
-        atomic_set_bit(&io_flags, IO_RUMBLE_FEEDBACK);
-        rumble_timer_start(0.3);
-        printf("JG2019 In Menu 1\n");
     }
 }
 
