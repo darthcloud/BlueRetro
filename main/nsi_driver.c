@@ -56,6 +56,9 @@ typedef struct {
 static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
+static uint8_t mempak[32 * 1024] = {0};
+static uint8_t mode = 0x02;
+
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint8_t *crc, uint32_t stop_bit) {
     uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     uint16_t crc_bit = item;
@@ -131,39 +134,57 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         output->format = IO_FORMAT_N64;
                         memcpy(nsi_frame.data, nsi_ident.data, 3);
                         nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 3, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
                         memcpy(nsi_frame.data, &output->io.n64, 4);
                         nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 4, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
                         item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data, 2, &crc);
                         if (nsi_frame.data[0] == 0x80 && nsi_frame.data[1] == 0x01) {
-                            memcpy(nsi_frame.data, rumble_ident, 32);
+                            if (mode == 0x01) {
+                                memcpy(nsi_frame.data, rumble_ident, 32);
+                            }
+                            else {
+                                memcpy(nsi_frame.data, empty, 32);
+                            }
                         }
                         else {
-                            memcpy(nsi_frame.data, empty, 4);
+                            if (mode == 0x01) {
+                                memcpy(nsi_frame.data, empty, 32);
+                            }
+                            else {
+                                memcpy(nsi_frame.data, mempak + ((nsi_frame.data[0] << 8) | (nsi_frame.data[1] & 0xE0)), 32);
+                            }
                         }
                         item = nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 32, &crc, STOP_BIT_2US);
                         nsi_frame.data[0] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, item, nsi_frame.data, 1, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x03:
                         item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data, 2, &crc);
                         item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data + 2, 32, &crc);
-                        if (nsi_frame.data[0] == 0xC0) {
-                            if (nsi_frame.data[2] & 0x01) {
-                                atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);
-                            }
-                            else {
-                                atomic_clear_bit(&output->flags, WRIO_RUMBLE_ON);
+                        nsi_frame.data[35] = crc ^ 0xFF;
+                        nsi_bytes_to_items_crc(channel, 0, nsi_frame.data + 35, 1, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
+                        if (mode == 0x01) {
+                            if (nsi_frame.data[0] == 0xC0) {
+                                if (nsi_frame.data[2] & 0x01) {
+                                    atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);
+                                }
+                                else {
+                                    atomic_clear_bit(&output->flags, WRIO_RUMBLE_ON);
+                                }
                             }
                         }
-                        nsi_frame.data[0] = crc ^ 0xFF;
-                        nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 1, &crc, STOP_BIT_2US);
+                        else {
+                            memcpy(mempak + ((nsi_frame.data[0] << 8) | (nsi_frame.data[1] & 0xE0)),  nsi_frame.data + 2, 32);
+                        }
                         break;
                 }
-                RMT.conf_ch[channel].conf1.tx_start = 1;
                 break;
             /* Error */
             case 2:
