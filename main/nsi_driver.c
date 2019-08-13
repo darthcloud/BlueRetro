@@ -20,14 +20,17 @@
 #define NSI_BIT_PERIOD_TICKS 8
 
 static struct io *output;
-static nsi_frame_t nsi_frame = {0};
-static nsi_frame_t nsi_ident = {{0x05, 0x00, 0x01}, 3, 2};
+static uint8_t buf[64];
+static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
 static const uint8_t rumble_ident[32] = {
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
 };
+static const uint8_t transfer_ident[32] = {
+    0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84,
+    0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84
+};
 static const uint8_t empty[32] = {0};
-
 static const uint8_t nsi_crc_table[256] = {
     0x8F, 0x85, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0xC2, 0x61, 0xF2, 0x79, 0xFE, 0x7F,
     0xFD, 0xBC, 0x5E, 0x2F, 0xD5, 0xA8, 0x54, 0x2A, 0x15, 0xC8, 0x64, 0x32, 0x19, 0xCE, 0x67, 0xF1,
@@ -102,7 +105,6 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t
 }
 
 static void IRAM_ATTR nsi_isr(void *arg) {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -128,51 +130,57 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 RMT.conf_ch[channel].conf1.rx_en = 0;
                 RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-                item = nsi_items_to_bytes_crc(channel, 0, nsi_frame.data, 1, &crc);
-                switch (nsi_frame.data[0]) {
+                item = nsi_items_to_bytes_crc(channel, 0, buf, 1, &crc);
+                switch (buf[0]) {
                     case 0x00:
                         output->format = IO_FORMAT_N64;
-                        memcpy(nsi_frame.data, nsi_ident.data, 3);
-                        nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 3, &crc, STOP_BIT_2US);
+                        if (mode) {
+                            ctrl_ident[2] = 0x01;
+                        }
+                        else {
+                            ctrl_ident[2] = 0x00;
+                        }
+                        memcpy(buf, ctrl_ident, 3);
+                        nsi_bytes_to_items_crc(channel, 0, buf, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
-                        memcpy(nsi_frame.data, &output->io.n64, 4);
-                        nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 4, &crc, STOP_BIT_2US);
+                        memcpy(buf, &output->io.n64, 4);
+                        nsi_bytes_to_items_crc(channel, 0, buf, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
-                        item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data, 2, &crc);
-                        if (nsi_frame.data[0] == 0x80 && nsi_frame.data[1] == 0x01) {
+                        item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
+                        if (buf[0] == 0x80 && buf[1] == 0x01) {
                             if (mode == 0x01) {
-                                memcpy(nsi_frame.data, rumble_ident, 32);
+                                memcpy(buf, rumble_ident, 32);
                             }
                             else {
-                                memcpy(nsi_frame.data, empty, 32);
+                                memcpy(buf, empty, 32);
                             }
                         }
                         else {
                             if (mode == 0x01) {
-                                memcpy(nsi_frame.data, empty, 32);
+                                memcpy(buf, empty, 32);
                             }
                             else {
-                                memcpy(nsi_frame.data, mempak + ((nsi_frame.data[0] << 8) | (nsi_frame.data[1] & 0xE0)), 32);
+                                memcpy(buf, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32);
                             }
                         }
-                        item = nsi_bytes_to_items_crc(channel, 0, nsi_frame.data, 32, &crc, STOP_BIT_2US);
-                        nsi_frame.data[0] = crc ^ 0xFF;
-                        nsi_bytes_to_items_crc(channel, item, nsi_frame.data, 1, &crc, STOP_BIT_2US);
+                        item = nsi_bytes_to_items_crc(channel, 0, buf, 32, &crc, STOP_BIT_2US);
+                        buf[0] = crc ^ 0xFF;
+                        nsi_bytes_to_items_crc(channel, item, buf, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x03:
-                        item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data, 2, &crc);
-                        item = nsi_items_to_bytes_crc(channel, item, nsi_frame.data + 2, 32, &crc);
-                        nsi_frame.data[35] = crc ^ 0xFF;
-                        nsi_bytes_to_items_crc(channel, 0, nsi_frame.data + 35, 1, &crc, STOP_BIT_2US);
+                        item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
+                        item = nsi_items_to_bytes_crc(channel, item, buf + 2, 32, &crc);
+                        buf[35] = crc ^ 0xFF;
+                        nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         if (mode == 0x01) {
-                            if (nsi_frame.data[0] == 0xC0) {
-                                if (nsi_frame.data[2] & 0x01) {
+                            if (buf[0] == 0xC0) {
+                                if (buf[2] & 0x01) {
                                     atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);
                                 }
                                 else {
@@ -181,7 +189,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             }
                         }
                         else {
-                            memcpy(mempak + ((nsi_frame.data[0] << 8) | (nsi_frame.data[1] & 0xE0)),  nsi_frame.data + 2, 32);
+                            memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
                         break;
                 }
@@ -196,8 +204,6 @@ static void IRAM_ATTR nsi_isr(void *arg) {
         }
     }
     RMT.int_clr.val = intr_st;
-    if (xHigherPriorityTaskWoken)
-        portYIELD_FROM_ISR();
 }
 
 void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data) {
