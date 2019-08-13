@@ -87,18 +87,17 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint16_t
 
 static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint8_t *crc) {
     uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
-    uint16_t crc_bit = item;
+    uint16_t crc_bit;
     uint16_t bit_len = item + len * 8;
 
     *crc = 0xFF;
-    for (; item < bit_len; data++) {
+    for (crc_bit = 0; item < bit_len; data++) {
         do {
             *data <<= 1;
-            if (rmt_items[item].duration1 > (NSI_BIT_PERIOD_TICKS * 1/2)) {
-                *crc ^= nsi_crc_table[item - crc_bit];
+            if (rmt_items[item++].duration1 > (NSI_BIT_PERIOD_TICKS * 1/2)) {
+                *crc ^= nsi_crc_table[crc_bit++];
                 *data |= 1;
             }
-            item++;
         } while ((item % 8));
     }
     return item;
