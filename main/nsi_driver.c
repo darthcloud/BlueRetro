@@ -88,6 +88,26 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t
     return item;
 }
 
+static uint16_t IRAM_ATTR nsi_items_to_bytes(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len) {
+    uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
+    uint32_t bit_len = item + len * 8;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
+
+    for (; item < bit_len; ++data) {
+        do {
+            if (*item_ptr & BIT_ONE_MASK) {
+                *data = (*data << 1) + 1;
+            }
+            else {
+                *data <<= 1;
+            }
+            ++item_ptr;
+            ++item;
+        } while ((item % 8));
+    }
+    return item;
+}
+
 static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     const uint8_t *crc_table = nsi_crc_table;
@@ -99,10 +119,6 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint32_t
         do {
             if (*item_ptr & BIT_ONE_MASK) {
                 *crc ^= *crc_table;
-                *data = (*data << 1) + 1;
-            }
-            else {
-                *data <<= 1;
             }
             ++crc_table;
             ++item_ptr;
@@ -138,7 +154,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 RMT.conf_ch[channel].conf1.rx_en = 0;
                 RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-                item = nsi_items_to_bytes_crc(channel, 0, buf, 1, &crc);
+                item = nsi_items_to_bytes(channel, 0, buf, 1);
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
@@ -157,7 +173,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
-                        item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
+                        item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
                             if (mode == 0x01) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
@@ -179,11 +195,12 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x03:
-                        item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
-                        item = nsi_items_to_bytes_crc(channel, item, buf + 2, 32, &crc);
+                        item = nsi_items_to_bytes(channel, item, buf, 2);
+                        nsi_items_to_bytes_crc(channel, item, buf + 2, 32, &crc);
                         buf[35] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
+                        nsi_items_to_bytes(channel, item, buf + 2, 32);
                         if (mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
