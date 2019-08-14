@@ -14,6 +14,7 @@
 
 #define BIT_ZERO 0x80020006
 #define BIT_ONE  0x80060002
+#define BIT_ONE_MASK 0x7FFC0000
 #define STOP_BIT_1US 0x80000002
 #define STOP_BIT_2US 0x80000004
 
@@ -94,7 +95,7 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t
     for (; item < bit_len; data++) {
         do {
             *data <<= 1;
-            if (rmt_items[item++].duration1 > (NSI_BIT_PERIOD_TICKS * 1/2)) {
+            if (rmt_items[item++].val & BIT_ONE_MASK) {
                 *crc ^= *(crc_table++);
                 *data |= 1;
             }
