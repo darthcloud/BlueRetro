@@ -141,6 +141,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 item = nsi_items_to_bytes_crc(channel, 0, buf, 1, &crc);
                 switch (buf[0]) {
                     case 0x00:
+                    case 0xFF:
                         output->format = IO_FORMAT_N64;
                         if (mode) {
                             ctrl_ident[2] = 0x01;
@@ -149,9 +150,11 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             ctrl_ident[2] = 0x00;
                         }
                         nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
                         nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
                         item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
@@ -166,7 +169,6 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         else {
                             if (mode == 0x01) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
-                                memcpy(buf, empty, 32);
                             }
                             else {
                                 item = nsi_bytes_to_items_crc(channel, 0, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
@@ -174,12 +176,14 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         buf[0] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, item, buf, 1, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x03:
                         item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
                         item = nsi_items_to_bytes_crc(channel, item, buf + 2, 32, &crc);
                         buf[35] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         if (mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
@@ -194,8 +198,14 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
                         break;
+                    default:
+                        /* Bad frame go back RX */
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                        RMT.conf_ch[channel].conf1.rx_en = 1;
+                        break;
                 }
-                RMT.conf_ch[channel].conf1.tx_start = 1;
                 break;
             /* Error */
             case 2:
