@@ -63,7 +63,7 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 static uint8_t mempak[32 * 1024] = {0};
 static uint8_t mode = 0x02;
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint8_t *crc, uint32_t stop_bit) {
+static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     uint16_t crc_bit = item;
     uint16_t bit_len = item + len * 8;
@@ -86,21 +86,25 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint16_t
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t ch_offset, uint8_t *data, uint16_t len, uint8_t *crc) {
-    uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
+static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc) {
+    uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     const uint8_t *crc_table = nsi_crc_table;
-    uint16_t bit_len = item + len * 8;
+    uint32_t bit_len = item + len * 8;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
-    for (; item < bit_len; data++) {
+    for (; item < bit_len; ++data) {
         do {
-            if (rmt_items[item++].val & BIT_ONE_MASK) {
-                *crc ^= *(crc_table++);
+            if (*item_ptr & BIT_ONE_MASK) {
+                *crc ^= *crc_table;
                 *data = (*data << 1) + 1;
             }
             else {
                 *data <<= 1;
             }
+            ++crc_table;
+            ++item_ptr;
+            ++item;
         } while ((item % 8));
     }
     return item;
