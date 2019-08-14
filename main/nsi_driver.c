@@ -94,10 +94,12 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint16_t
     *crc = 0xFF;
     for (; item < bit_len; data++) {
         do {
-            *data <<= 1;
             if (rmt_items[item++].val & BIT_ONE_MASK) {
                 *crc ^= *(crc_table++);
-                *data |= 1;
+                *data = (*data << 1) + 1;
+            }
+            else {
+                *data <<= 1;
             }
         } while ((item % 8));
     }
