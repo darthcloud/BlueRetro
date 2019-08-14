@@ -64,25 +64,28 @@ static uint8_t mempak[32 * 1024] = {0};
 static uint8_t mode = 0x02;
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
-    uint16_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
-    uint16_t crc_bit = item;
-    uint16_t bit_len = item + len * 8;
+    uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
+    const uint8_t *crc_table = nsi_crc_table;
+    uint32_t bit_len = item + len * 8;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
-    for (; item < bit_len; data++) {
+    for (; item < bit_len; ++data) {
         do {
             if (*data & 0x80) {
-                *crc ^= nsi_crc_table[item - crc_bit];
-                rmt_items[item].val = BIT_ONE;
+                *crc ^= *crc_table;
+                *item_ptr = BIT_ONE;
             }
             else {
-                rmt_items[item].val = BIT_ZERO;
+                *item_ptr = BIT_ZERO;
             }
-            item++;
             *data <<= 1;
+            ++crc_table;
+            ++item_ptr;
+            ++item;
         } while ((item % 8));
     }
-    rmt_items[item].val = stop_bit;
+    *item_ptr = stop_bit;
     return item;
 }
 
