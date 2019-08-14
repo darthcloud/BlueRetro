@@ -149,11 +149,9 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             ctrl_ident[2] = 0x00;
                         }
                         nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
                         nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
                         item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
@@ -176,14 +174,12 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         buf[0] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, item, buf, 1, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x03:
                         item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
                         item = nsi_items_to_bytes_crc(channel, item, buf + 2, 32, &crc);
                         buf[35] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         if (mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
@@ -199,6 +195,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         break;
                 }
+                RMT.conf_ch[channel].conf1.tx_start = 1;
                 break;
             /* Error */
             case 2:
