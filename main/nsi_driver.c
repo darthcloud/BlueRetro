@@ -63,7 +63,7 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 static uint8_t mempak[32 * 1024] = {0};
 static uint8_t mode = 0x02;
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
+static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
@@ -71,19 +71,18 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t
 
     *crc = 0xFF;
     for (; item < bit_len; ++data) {
-        do {
-            if (*data & 0x80) {
+        for (uint32_t mask = 0x80; mask; mask >>= 1) {
+            if (*data & mask) {
                 *crc ^= *crc_table;
                 *item_ptr = BIT_ONE;
             }
             else {
                 *item_ptr = BIT_ZERO;
             }
-            *data <<= 1;
             ++crc_table;
             ++item_ptr;
             ++item;
-        } while ((item % 8));
+        }
     }
     *item_ptr = stop_bit;
     return item;
@@ -149,34 +148,32 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         else {
                             ctrl_ident[2] = 0x00;
                         }
-                        memcpy(buf, ctrl_ident, 3);
-                        nsi_bytes_to_items_crc(channel, 0, buf, 3, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
-                        memcpy(buf, &output->io.n64, 4);
-                        nsi_bytes_to_items_crc(channel, 0, buf, 4, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
                         item = nsi_items_to_bytes_crc(channel, item, buf, 2, &crc);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
                             if (mode == 0x01) {
-                                memcpy(buf, rumble_ident, 32);
+                                item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
-                                memcpy(buf, empty, 32);
+                                item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                         }
                         else {
                             if (mode == 0x01) {
+                                item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                                 memcpy(buf, empty, 32);
                             }
                             else {
-                                memcpy(buf, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32);
+                                item = nsi_bytes_to_items_crc(channel, 0, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
                             }
                         }
-                        item = nsi_bytes_to_items_crc(channel, 0, buf, 32, &crc, STOP_BIT_2US);
                         buf[0] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, item, buf, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
