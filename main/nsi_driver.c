@@ -61,7 +61,6 @@ static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 uint8_t mempak[32 * 1024] = {0};
-static uint8_t mode = 0x02;
 
 atomic_t rmt_flags = 0;
 
@@ -167,7 +166,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                     case 0xFF:
                         output->format = IO_FORMAT_N64;
 
-                        if (mode) {
+                        if (output->mode) {
                             ctrl_ident[2] = 0x01;
                         }
                         else {
@@ -191,7 +190,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
-                            if (mode == 0x01) {
+                            if (output->mode == 0x01) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -199,7 +198,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             }
                         }
                         else {
-                            if (mode == 0x01) {
+                            if (output->mode == 0x01) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -217,7 +216,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
-                        if (mode == 0x01) {
+                        if (output->mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
                                     atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);

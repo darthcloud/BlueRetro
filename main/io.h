@@ -119,6 +119,7 @@ struct io {
     int32_t flags;
     uint8_t format;
     uint8_t leds_rumble;
+    uint8_t mode;
     union {
         struct nes_map nes;
         struct snes_map snes;

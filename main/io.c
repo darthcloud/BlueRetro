@@ -489,6 +489,17 @@ static esp_err_t io_layout_select(struct config *config) {
     return err;
 }
 
+static esp_err_t io_mode_select(struct config *config) {
+    esp_err_t err = ESP_FAIL;
+    if (lv2_btn < 4) {
+        printf("JG2019 mode: %d\n", lv2_btn);
+        config->mode = lv2_btn;
+        sd_update_config(config);
+        err = ESP_OK;
+    }
+    return err;
+}
+
 static void menu(struct config *config, struct generic_map *input)
 {
     uint8_t i, btn_id = BTN_NN;
@@ -511,6 +522,11 @@ static void menu(struct config *config, struct generic_map *input)
                 atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
                 err = ESP_OK;
             }
+            else if (input->buttons & generic_mask[BTN_DU]) {
+                atomic_set_bit(&io_flags, IO_MODE);
+                atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
+                err = ESP_OK;
+            }
             else if (input->buttons & generic_mask[BTN_DL]) {
                 atomic_set_bit(&io_flags, IO_LAYOUT);
                 atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
@@ -526,6 +542,10 @@ static void menu(struct config *config, struct generic_map *input)
             if (atomic_test_bit(&io_flags, IO_LAYOUT)) {
                 err = io_layout_select(config);
                 atomic_clear_bit(&io_flags, IO_LAYOUT);
+            }
+            else if (atomic_test_bit(&io_flags, IO_MODE)) {
+                err = io_mode_select(config);
+                atomic_clear_bit(&io_flags, IO_MODE);
             }
             else if (atomic_test_bit(&io_flags, IO_REMAP)) {
                 atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
