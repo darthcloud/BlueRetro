@@ -20,9 +20,9 @@
 
 #define NSI_BIT_PERIOD_TICKS 8
 
-static struct io *output;
-static uint8_t buf[64];
-static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
+enum {
+    RMT_MEM_CHANGE
+};
 static const uint8_t rumble_ident[32] = {
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
@@ -60,8 +60,15 @@ typedef struct {
 static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
-static uint8_t mempak[32 * 1024] = {0};
+uint8_t mempak[32 * 1024] = {0};
 static uint8_t mode = 0x02;
+
+atomic_t rmt_flags = 0;
+
+static struct io *output;
+static uint8_t buf[32 * 1024] = {0};
+static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
+static uint32_t poll_after_mem_wr = 0;
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
@@ -159,6 +166,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                     case 0x00:
                     case 0xFF:
                         output->format = IO_FORMAT_N64;
+
                         if (mode) {
                             ctrl_ident[2] = 0x01;
                         }
@@ -169,6 +177,14 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
+                        poll_after_mem_wr++;
+                        if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
+                            if (!atomic_test_bit(&output->flags, WRIO_SAVE_MEM)) {
+                                atomic_set_bit(&output->flags, WRIO_SAVE_MEM);
+                                atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
+                            }
+                        }
+
                         nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
@@ -212,6 +228,8 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             }
                         }
                         else {
+                            poll_after_mem_wr = 0;
+                            atomic_set_bit(&rmt_flags, RMT_MEM_CHANGE);
                             memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
                         break;
@@ -272,22 +290,6 @@ void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *o
     rmt_isr_register(nsi_isr, NULL,
                      0, &nsi[channel].nsi_isr_handle);
 
-    /* Workaround: ISR give not RX by task until ~10ms */
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-
     rmt_rx_start(channel, 1);
-}
-
-void nsi_reset(nsi_channel_t channel) {
-    rmt_isr_deregister(nsi[channel].nsi_isr_handle);
-    rmt_set_err_intr_en(channel, 0);
-    rmt_set_rx_intr_en(channel, 0);
-    rmt_set_tx_intr_en(channel, 0);
-
-    RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-    RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-    RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-
-    periph_module_disable(PERIPH_RMT_MODULE);
 }
 

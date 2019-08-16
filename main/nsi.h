@@ -9,8 +9,6 @@
 
 #include "io.h"
 
-#define NSI_FRAME_MAX 63
-
 typedef enum {
     NSI_CH_0 = 0,
     NSI_CH_1,
@@ -28,16 +26,9 @@ typedef enum {
     NSI_SLAVE,
 } nsi_mode_t;
 
-typedef struct {
-    uint8_t data[NSI_FRAME_MAX] __attribute__((aligned(8)));
-    uint16_t len;
-    uint8_t stop_len;
-} nsi_frame_t;
+extern uint8_t mempak[32 * 1024];
 
 void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data);
-void nsi_reset(nsi_channel_t channel);
-esp_err_t nsi_rx(nsi_channel_t channel, nsi_frame_t *frame);
-void nsi_tx(nsi_channel_t channel, nsi_frame_t *frame);
 
 #endif  /* _NSI_H_ */
 

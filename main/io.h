@@ -62,7 +62,8 @@ enum {
 };
 
 enum {
-    WRIO_RUMBLE_ON
+    WRIO_RUMBLE_ON,
+    WRIO_SAVE_MEM
 };
 
 extern const uint8_t map_presets[8][32];
@@ -85,27 +86,22 @@ struct generic_map {
     uint32_t buttons;
     struct axis axes[6];
 };
-extern const uint8_t generic_btns_mask[32];
-extern const uint8_t generic_axes_idx[6];
 
 #define IO_FORMAT_NES      0x01
 struct nes_map {
     uint8_t buttons;
 } __packed;
-extern const uint32_t nes_mask[32];
 
 #define IO_FORMAT_SNES     0x02
 struct snes_map {
     uint16_t buttons;
 } __packed;
-extern const uint32_t snes_mask[32];
 
 #define IO_FORMAT_N64      0x03
 struct n64_map {
     uint16_t buttons;
     int8_t axes[2];
 } __packed;
-extern const uint32_t n64_mask[32];
 
 #define IO_FORMAT_GC       0x04
 struct gc_map {
@@ -118,7 +114,6 @@ struct wiiu_pro_map {
     uint16_t axes[4];
     uint32_t buttons;
 } __packed;
-extern const uint32_t wiiu_mask[32];
 
 struct io {
     int32_t flags;

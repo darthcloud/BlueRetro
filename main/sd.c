@@ -7,13 +7,13 @@
 #include <sdmmc_cmd.h>
 #include <esp_private/esp_timer_impl.h>
 #include "sd.h"
-#include "io.h"
+#include "nsi.h"
 
 #define SD_MAGIC 0xA5A55A5A
 
 #define ROOT "/sd"
 #define CONFIG_FILE "/config.bin"
-
+#define MEMPAK_FILE "/mempak.bin"
 
 static esp_err_t sd_create_config(struct config *config) {
     FILE *config_file = fopen(ROOT CONFIG_FILE, "wb");
@@ -52,6 +52,32 @@ static esp_err_t sd_load_config(struct config *config) {
 
     fread(config, sizeof(*config), 1, config_file);
     fclose(config_file);
+
+    return ESP_OK;
+}
+
+esp_err_t sd_update_mempak(void) {
+    FILE *mempak_file = fopen(ROOT MEMPAK_FILE, "wb");
+    if (mempak_file == NULL) {
+        printf("failed to open mempak file for writing\n");
+        return ESP_FAIL;
+    }
+
+    fwrite(mempak, 32*1024, 1, mempak_file);
+    fclose(mempak_file);
+
+    return ESP_OK;
+}
+
+static esp_err_t sd_load_mempak(void) {
+    FILE *mempak_file = fopen(ROOT MEMPAK_FILE, "rb");
+    if (mempak_file == NULL) {
+        printf("Failed to open mempak file for reading\n");
+        return ESP_FAIL;
+    }
+
+    fread(mempak, 32 * 1024, 1, mempak_file);
+    fclose(mempak_file);
 
     return ESP_OK;
 }
@@ -108,6 +134,13 @@ esp_err_t sd_init(struct config *config) {
         printf("%s: Bad Magic\n", __FUNCTION__);
         sd_create_config(config);
     }
+
+    if (stat(ROOT MEMPAK_FILE, &st) != 0) {
+        printf("%s: No mempak on SD. Creating...\n", __FUNCTION__);
+        sd_update_mempak();
+    }
+
+    sd_load_mempak();
 
     return ESP_OK;
 }

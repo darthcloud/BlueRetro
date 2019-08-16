@@ -10,14 +10,16 @@ static struct io output[7] = {0};
 static struct config config;
 
 static TaskHandle_t wired_task_handle;
-static TaskHandle_t wireless_task_handle;
 
 static void wired_init_task(void *arg) {
     nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
     vTaskDelete(wired_task_handle);
 }
 
-static void wireless_init_task(void *arg) {
+void app_main()
+{
+    xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, &wired_task_handle, 10, &wired_task_handle, 1);
+
     if (sd_init(&config)) {
         printf("SD init fail!\n");
     }
@@ -25,12 +27,5 @@ static void wireless_init_task(void *arg) {
     if (bt_init(&output[0], &config)) {
         printf("Bluetooth init fail!\n");
     }
-    vTaskDelete(wireless_task_handle);
-}
-
-void app_main()
-{
-    xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, &wired_task_handle, 10, &wired_task_handle, 1);
-    xTaskCreatePinnedToCore(wireless_init_task, "wireless_init_task", 2048, &wireless_task_handle, 10, &wireless_task_handle, 0);
 }
 

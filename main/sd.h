@@ -13,6 +13,7 @@ struct config {
 
 esp_err_t sd_init(struct config *config);
 esp_err_t sd_update_config(struct config *config);
+esp_err_t sd_update_mempak(void);
 
 #endif /* _SD_H_ */
 

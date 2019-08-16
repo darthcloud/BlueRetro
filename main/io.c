@@ -595,6 +595,12 @@ void translate_status(struct config *config, struct io *input, struct io* output
         menu(config, &generic);
     }
 
+    if (atomic_test_bit(&output->flags, WRIO_SAVE_MEM)) {
+        printf("Saving mem\n");
+        sd_update_mempak();
+        atomic_clear_bit(&output->flags, WRIO_SAVE_MEM);
+    }
+
     if (output->format) {
         convert_from_generic_func[output->format](config->mapping[config->set_map], output, &generic);
     }
