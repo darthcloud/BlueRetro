@@ -500,6 +500,17 @@ static esp_err_t io_mode_select(struct config *config) {
     return err;
 }
 
+static esp_err_t io_apply_preset(struct config *config) {
+    esp_err_t err = ESP_FAIL;
+    if (lv2_btn < 8) {
+        printf("JG2019 apply preset: %d to layout: %d\n", lv2_btn, config->set_map);
+        memcpy(config->mapping[config->set_map], map_presets[lv2_btn], 32);
+        sd_update_config(config);
+        err = ESP_OK;
+    }
+    return err;
+}
+
 static void menu(struct config *config, struct generic_map *input)
 {
     uint8_t i, btn_id = BTN_NN;
@@ -532,7 +543,11 @@ static void menu(struct config *config, struct generic_map *input)
                 atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
                 err = ESP_OK;
             }
-
+            else if (input->buttons & generic_mask[BTN_DD]) {
+                atomic_set_bit(&io_flags, IO_PRESET);
+                atomic_set_bit(&io_flags, IO_MENU_LEVEL2);
+                err = ESP_OK;
+            }
         }
         else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL2)) {
             atomic_clear_bit(&io_flags, IO_MENU_LEVEL2);
@@ -550,6 +565,10 @@ static void menu(struct config *config, struct generic_map *input)
             else if (atomic_test_bit(&io_flags, IO_REMAP)) {
                 atomic_set_bit(&io_flags, IO_MENU_LEVEL3);
                 err = ESP_OK;
+            }
+            else if (atomic_test_bit(&io_flags, IO_PRESET)) {
+                err = io_apply_preset(config);
+                atomic_clear_bit(&io_flags, IO_PRESET);
             }
         }
         else if (atomic_test_bit(&io_flags, IO_MENU_LEVEL3)) {
