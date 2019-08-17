@@ -164,8 +164,6 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        output->format = IO_FORMAT_N64;
-
                         if (output->mode) {
                             ctrl_ident[2] = 0x01;
                         }
@@ -174,18 +172,21 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
+
+                        output->format = IO_FORMAT_N64;
                         break;
                     case 0x01:
-                        poll_after_mem_wr++;
+                        nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
+
+                        ++output->poll_cnt;
+                        ++poll_after_mem_wr;
                         if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
                             if (!atomic_test_bit(&output->flags, WRIO_SAVE_MEM)) {
                                 atomic_set_bit(&output->flags, WRIO_SAVE_MEM);
                                 atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
                             }
                         }
-
-                        nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
@@ -215,6 +216,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         buf[35] = crc ^ 0xFF;
                         nsi_bytes_to_items_crc(channel, 0, buf + 35, 1, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
+
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
                         if (output->mode == 0x01) {
                             if (buf[0] == 0xC0) {

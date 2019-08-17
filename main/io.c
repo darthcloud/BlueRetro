@@ -8,7 +8,7 @@
 #include <driver/timer.h>
 #include "zephyr/atomic.h"
 
-typedef void (*convert_generic_func_t)(uint8_t*, struct io*, struct generic_map*);
+typedef void (*convert_generic_func_t)(struct btn*, struct io*, struct generic_map*);
 
 enum {
     /* The rumble motor should be on. */
@@ -72,7 +72,7 @@ enum {
     IO_MENU_LEVEL3,
 };
 
-const uint8_t map_presets[8][32] =
+const uint32_t map_presets[8][32] =
 {
     {
         /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
@@ -256,7 +256,7 @@ static int in_menu(void) {
     return (io_flags & ((1U << IO_MENU_LEVEL1) | (1U << IO_MENU_LEVEL2) | (1U << IO_MENU_LEVEL3))) ? 1 : 0;
 }
 
-static void wiiu_pro_to_generic(uint8_t map_table[], struct io *specific, struct generic_map *generic) {
+static void wiiu_pro_to_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
 
     for (i = 0; i < 30; i++) {
@@ -287,7 +287,7 @@ const convert_generic_func_t convert_to_generic_func[16] =
     wiiu_pro_to_generic
 };
 
-static void n64_from_generic(uint8_t map_table[], struct io *specific, struct generic_map *generic) {
+static void n64_from_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
     int8_t axis_int;
     struct n64_map tmp = {0};
@@ -302,16 +302,16 @@ static void n64_from_generic(uint8_t map_table[], struct io *specific, struct ge
         if (generic->axes[i].meta) {
             axis_int = (int8_t)((float)generic->axes[i].value * ((float)n64_axes_meta.abs_max / (float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone)));
             if (generic->axes[i].value < 0) {
-                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]]) == AXIS_LY) {
-                    if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]])] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]]) * -axis_int;
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LY) {
+                    if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)])) {
+                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
                     }
                 }
             }
             else {
-                if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]]) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]]) == AXIS_LY) {
-                    if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]])] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]]) * axis_int;
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LY) {
+                    if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)])) {
+                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
                     }
                 }
             }
@@ -321,10 +321,10 @@ static void n64_from_generic(uint8_t map_table[], struct io *specific, struct ge
     /* Map buttons to */
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
-            tmp.buttons |= n64_mask[map_table[i]];
-            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i]) == AXIS_LX || btn_mask_to_axis(map_table[i]) == AXIS_LY)) {
-                if (abs(n64_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i])])) {
-                    tmp.axes[btn_mask_to_axis(map_table[i])] = btn_mask_sign(map_table[i]) * n64_axes_meta.abs_max;
+            tmp.buttons |= n64_mask[map_table[i].btn0];
+            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
+                if (abs(n64_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
+                    tmp.axes[btn_mask_to_axis(map_table[i].btn0)] = btn_mask_sign(map_table[i].btn0) * n64_axes_meta.abs_max;
                 }
             }
         }
@@ -474,7 +474,7 @@ static void update_leds_rumble(struct io *input, struct io *output) {
 
 static void io_remap(struct config *config) {
     printf("JG2019 src: %d dest: %d\n", lv2_btn, lv3_btn);
-    config->mapping[config->set_map][lv2_btn] = lv3_btn;
+    config->mapping[config->set_map][lv2_btn].btn0 = lv3_btn;
     sd_update_config(config);
 }
 
@@ -504,7 +504,7 @@ static esp_err_t io_apply_preset(struct config *config) {
     esp_err_t err = ESP_FAIL;
     if (lv2_btn < 8) {
         printf("JG2019 apply preset: %d to layout: %d\n", lv2_btn, config->set_map);
-        memcpy(config->mapping[config->set_map], map_presets[lv2_btn], 32);
+        memcpy(config->mapping[config->set_map], map_presets[lv2_btn], sizeof(config->mapping[0]));
         sd_update_config(config);
         err = ESP_OK;
     }
@@ -644,6 +644,7 @@ void translate_status(struct config *config, struct io *input, struct io* output
 
     if (output->format) {
         convert_from_generic_func[output->format](config->mapping[config->set_map], output, &generic);
+        output->mode = config->mode;
     }
     end_us = esp_timer_impl_get_time();
     //printf("%llu us\n", (end_us - start_us));

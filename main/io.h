@@ -66,7 +66,7 @@ enum {
     WRIO_SAVE_MEM
 };
 
-extern const uint8_t map_presets[8][32];
+extern const uint32_t map_presets[8][32];
 
 struct axis_meta {
     int32_t neutral;
@@ -120,6 +120,7 @@ struct io {
     uint8_t format;
     uint8_t leds_rumble;
     uint8_t mode;
+    uint8_t poll_cnt;
     union {
         struct nes_map nes;
         struct snes_map snes;
