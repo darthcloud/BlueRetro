@@ -746,7 +746,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                 {
                     struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)bt_hidp_data->hidp_data.wii_core_acc_ext.ext;
                     input.format = IO_FORMAT_WIIU_PRO;
-                    if (atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
+                    if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
                         bt_hid_cmd_wii_set_led(acl_handle, intr_dcid, input.leds_rumble);
                         atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);
                     }
@@ -768,6 +768,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                     break;
                 }
             }
+            break;
     }
 }
 
