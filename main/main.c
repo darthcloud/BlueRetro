@@ -3,6 +3,7 @@
 #include <freertos/task.h>
 #include "bt.h"
 #include "nsi.h"
+#include "bitbang.h"
 
 #define NSI_CH NSI_CH_0
 
@@ -12,7 +13,8 @@ static struct config config;
 static TaskHandle_t wired_task_handle;
 
 static void wired_init_task(void *arg) {
-    nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
+    //nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
+    init_bitbang();
     vTaskDelete(wired_task_handle);
 }
 
