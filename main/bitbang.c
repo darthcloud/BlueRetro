@@ -8,42 +8,31 @@
 #define DEBUG  (1ULL << 25)
 #define MAPLE0 (1ULL << 26)
 #define MAPLE1 (1ULL << 27)
-#define TIMEOUT 14
+#define TIMEOUT 8
 uint32_t intr_cnt = 0;
 
 static void IRAM_ATTR maple_rx(void* arg)
 {
     const uint32_t gpio_intr_status = GPIO.acpu_int;
     uint32_t timeout = 0;
+    uint32_t bit_cnt = 0;
     if (gpio_intr_status) {
         while (1) {
-            while (!(GPIO.in & MAPLE0)) {
-                if (++timeout > TIMEOUT) {
-                    goto maple_end;
-                }
-            };
-            timeout = 0;
-            while ((GPIO.in & MAPLE0)) {
-                if (++timeout > TIMEOUT) {
-                    goto maple_end;
-                }
-            }
-            timeout = 0;
-            while (!(GPIO.in & MAPLE1)) {
-                if (++timeout > TIMEOUT) {
-                    goto maple_end;
-                }
-            }
+            while (!(GPIO.in & MAPLE0));
+            while ((GPIO.in & MAPLE0));
+            ++bit_cnt;
+            while (!(GPIO.in & MAPLE1));
             timeout = 0;
             while ((GPIO.in & MAPLE1)) {
                 if (++timeout > TIMEOUT) {
                     goto maple_end;
                 }
             }
-            timeout = 0;
+            ++bit_cnt;
         }
 maple_end:
         GPIO.out_w1tc = DEBUG;
+        ets_printf("bit: %d\n", bit_cnt);
         GPIO.status_w1tc = gpio_intr_status;
     }
     GPIO.out_w1ts = DEBUG;
