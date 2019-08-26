@@ -21,7 +21,7 @@ static void wired_init_task(void *arg) {
 void app_main()
 {
     xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, &wired_task_handle, 10, &wired_task_handle, 1);
-
+#if 0
     if (sd_init(&config)) {
         printf("SD init fail!\n");
     }
@@ -29,5 +29,6 @@ void app_main()
     if (bt_init(&output[0], &config)) {
         printf("Bluetooth init fail!\n");
     }
+#endif
 }
 
