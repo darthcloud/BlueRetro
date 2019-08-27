@@ -17,10 +17,12 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t timeout = 0;
     uint32_t bit_cnt = 0;
     if (gpio_intr_status) {
+        GPIO.out_w1tc = DEBUG;
         while (1) {
             while (!(GPIO.in & MAPLE0));
             while ((GPIO.in & MAPLE0));
             ++bit_cnt;
+            GPIO.out_w1ts = DEBUG;
             while (!(GPIO.in & MAPLE1));
             timeout = 0;
             while ((GPIO.in & MAPLE1)) {
@@ -29,13 +31,13 @@ static void IRAM_ATTR maple_rx(void* arg)
                 }
             }
             ++bit_cnt;
+            GPIO.out_w1tc = DEBUG;
         }
 maple_end:
-        GPIO.out_w1tc = DEBUG;
+        GPIO.out_w1ts = DEBUG;
         ets_printf("bit: %d\n", bit_cnt);
         GPIO.status_w1tc = gpio_intr_status;
     }
-    GPIO.out_w1ts = DEBUG;
 }
 
 void init_bitbang(void)

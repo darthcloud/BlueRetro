@@ -25,10 +25,10 @@ void app_main()
     if (sd_init(&config)) {
         printf("SD init fail!\n");
     }
+#endif
 
     if (bt_init(&output[0], &config)) {
         printf("Bluetooth init fail!\n");
     }
-#endif
 }
 
