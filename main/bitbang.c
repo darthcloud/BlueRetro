@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "esp_intr_alloc.h"
 #include "driver/gpio.h"
+#include "esp32/dport_access.h"
 
 #define DEBUG  (1ULL << 25)
 #define MAPLE0 (1ULL << 26)
@@ -17,6 +18,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t timeout = 0;
     uint32_t bit_cnt = 0;
     if (gpio_intr_status) {
+        DPORT_STALL_OTHER_CPU_START();
         GPIO.out_w1tc = DEBUG;
         while (1) {
             while (!(GPIO.in & MAPLE0));
@@ -34,6 +36,7 @@ static void IRAM_ATTR maple_rx(void* arg)
             GPIO.out_w1tc = DEBUG;
         }
 maple_end:
+        DPORT_STALL_OTHER_CPU_END();
         GPIO.out_w1ts = DEBUG;
         ets_printf("bit: %d\n", bit_cnt);
         GPIO.status_w1tc = gpio_intr_status;
