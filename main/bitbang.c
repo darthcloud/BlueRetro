@@ -38,7 +38,9 @@ static void IRAM_ATTR maple_rx(void* arg)
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
         GPIO.out_w1ts = DEBUG;
-        ets_printf("bit: %d\n", bit_cnt);
+        if ((bit_cnt - 1) % 8) {
+            ets_printf("bit: %d\n", bit_cnt);
+        }
         GPIO.status_w1tc = gpio_intr_status;
     }
 }
