@@ -12,28 +12,48 @@
 #define TIMEOUT 8
 uint32_t intr_cnt = 0;
 
+uint8_t buffer[544] = {0};
+
 static void IRAM_ATTR maple_rx(void* arg)
 {
     const uint32_t gpio_intr_status = GPIO.acpu_int;
     uint32_t timeout = 0;
     uint32_t bit_cnt = 0;
+    uint32_t gpio;
+    uint8_t *data = buffer;
+
     if (gpio_intr_status) {
         DPORT_STALL_OTHER_CPU_START();
         GPIO.out_w1tc = DEBUG;
         while (1) {
-            while (!(GPIO.in & MAPLE0));
-            while ((GPIO.in & MAPLE0));
-            ++bit_cnt;
-            GPIO.out_w1ts = DEBUG;
-            while (!(GPIO.in & MAPLE1));
-            timeout = 0;
-            while ((GPIO.in & MAPLE1)) {
-                if (++timeout > TIMEOUT) {
-                    goto maple_end;
+            do {
+                while (!(GPIO.in & MAPLE0));
+                while (((gpio = GPIO.in) & MAPLE0));
+                if (gpio & MAPLE1) {
+                    *data = (*data << 1) + 1;
                 }
-            }
-            ++bit_cnt;
-            GPIO.out_w1tc = DEBUG;
+                else {
+                    *data <<= 1;
+                }
+                ++bit_cnt;
+                GPIO.out_w1ts = DEBUG;
+                while (!(GPIO.in & MAPLE1));
+                timeout = 0;
+                while (((gpio = GPIO.in) & MAPLE1)) {
+                    if (++timeout > TIMEOUT) {
+                        goto maple_end;
+                    }
+                }
+                if (gpio & MAPLE0) {
+                    *data = (*data << 1) + 1;
+                }
+                else {
+                    *data <<= 1;
+                }
+                ++bit_cnt;
+                GPIO.out_w1tc = DEBUG;
+            } while ((bit_cnt % 8));
+            ++data;
         }
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
@@ -41,6 +61,13 @@ maple_end:
         if ((bit_cnt - 1) % 8) {
             ets_printf("bit: %d\n", bit_cnt);
         }
+        else {
+            for(uint8_t i = 0; i < ((bit_cnt - 1) / 8); ++i) {
+                ets_printf("%02X", buffer[i]);
+            }
+            ets_printf("\n");
+        }
+
         GPIO.status_w1tc = gpio_intr_status;
     }
 }
