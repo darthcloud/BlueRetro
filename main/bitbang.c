@@ -21,6 +21,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = buffer;
+    uint32_t byte;
 
     if (gpio_intr_status) {
         DPORT_STALL_OTHER_CPU_START();
@@ -58,15 +59,15 @@ static void IRAM_ATTR maple_rx(void* arg)
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
         GPIO.out_w1ts = DEBUG;
+        byte = ((bit_cnt - 1) / 8);
         if ((bit_cnt - 1) % 8) {
-            ets_printf("bit: %d\n", bit_cnt);
+            ets_printf("*");
+            ++byte;
         }
-        else {
-            for(uint8_t i = 0; i < ((bit_cnt - 1) / 8); ++i) {
-                ets_printf("%02X", buffer[i]);
-            }
-            ets_printf("\n");
+        for(uint16_t i = 0; i < byte; ++i) {
+            ets_printf("%02X", buffer[i]);
         }
+        ets_printf("\n");
 
         GPIO.status_w1tc = gpio_intr_status;
     }
