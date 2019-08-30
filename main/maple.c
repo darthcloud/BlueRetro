@@ -73,7 +73,7 @@ maple_end:
     }
 }
 
-void init_bitbang(void)
+void init_maple(void)
 {
     gpio_config_t io_conf0 = {
         .intr_type = GPIO_PIN_INTR_NEGEDGE,
