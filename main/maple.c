@@ -10,9 +10,80 @@
 #define MAPLE0 (1ULL << 26)
 #define MAPLE1 (1ULL << 27)
 #define TIMEOUT 8
+
+#define delay_1_ns() for(uint32_t i = 0; i < 1; ++i);
+#define delay_100_ns() for(uint32_t i = 0; i < 3; ++i);
+#define delay_200_ns() for(uint32_t i = 0; i < 4; ++i);
+#define delay_300_ns() for(uint32_t i = 0; i < 6; ++i);
 uint32_t intr_cnt = 0;
 
 uint8_t buffer[544] = {0};
+
+static void IRAM_ATTR maple_tx(void) {
+    uint8_t *data = buffer;
+
+    GPIO.out_w1ts = MAPLE0 | MAPLE1;
+    gpio_set_direction(26, GPIO_MODE_OUTPUT);
+    gpio_set_direction(27, GPIO_MODE_OUTPUT);
+    DPORT_STALL_OTHER_CPU_START();
+    GPIO.out_w1tc = MAPLE0;
+    delay_300_ns();
+    GPIO.out_w1tc = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1ts = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1tc = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1ts = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1tc = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1ts = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1tc = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1ts = MAPLE1;
+    delay_300_ns();;
+    GPIO.out_w1ts = MAPLE0;
+    delay_200_ns();
+    GPIO.out_w1tc = MAPLE1;
+
+    for (uint32_t bit = 0; bit < 5*8; ++data) {
+        for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit) {
+            GPIO.out_w1ts = MAPLE0;
+            GPIO.out_w1tc = MAPLE1;
+            delay_100_ns();
+            if (*data & mask) {
+                GPIO.out_w1ts = MAPLE1;
+            }
+            else {
+                GPIO.out_w1tc = MAPLE1;
+            }
+            delay_1_ns();
+            GPIO.out_w1tc = MAPLE0;
+            delay_200_ns();
+            mask >>= 1;
+            ++bit;
+            GPIO.out_w1tc = MAPLE0;
+            GPIO.out_w1ts = MAPLE1;
+            delay_100_ns();
+            if (*data & mask) {
+                GPIO.out_w1ts = MAPLE0;
+            }
+            else {
+                GPIO.out_w1tc = MAPLE0;
+            }
+            delay_1_ns();
+            GPIO.out_w1tc = MAPLE1;
+            delay_200_ns();
+        }
+    }
+    DPORT_STALL_OTHER_CPU_END();
+    gpio_set_direction(26, GPIO_MODE_INPUT);
+    gpio_set_direction(27, GPIO_MODE_INPUT);
+    /* Send start sequence */
+
+}
 
 static void IRAM_ATTR maple_rx(void* arg)
 {
@@ -37,7 +108,7 @@ static void IRAM_ATTR maple_rx(void* arg)
                     *data <<= 1;
                 }
                 ++bit_cnt;
-                GPIO.out_w1ts = DEBUG;
+                //GPIO.out_w1ts = DEBUG;
                 while (!(GPIO.in & MAPLE1));
                 timeout = 0;
                 while (((gpio = GPIO.in) & MAPLE1)) {
@@ -52,7 +123,7 @@ static void IRAM_ATTR maple_rx(void* arg)
                     *data <<= 1;
                 }
                 ++bit_cnt;
-                GPIO.out_w1tc = DEBUG;
+                //GPIO.out_w1tc = DEBUG;
             } while ((bit_cnt % 8));
             ++data;
         }
@@ -61,13 +132,14 @@ maple_end:
         GPIO.out_w1ts = DEBUG;
         byte = ((bit_cnt - 1) / 8);
         if ((bit_cnt - 1) % 8) {
-            ets_printf("*");
+            //ets_printf("*");
             ++byte;
         }
-        for(uint16_t i = 0; i < byte; ++i) {
-            ets_printf("%02X", buffer[i]);
-        }
-        ets_printf("\n");
+        //for(uint16_t i = 0; i < byte; ++i) {
+        //    ets_printf("%02X", buffer[i]);
+        //}
+        //ets_printf("\n");
+        maple_tx();
 
         GPIO.status_w1tc = gpio_intr_status;
     }
