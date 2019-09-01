@@ -11,7 +11,7 @@
 #define MAPLE1 (1ULL << 27)
 #define TIMEOUT 8
 
-#define delay_1_ns() for(uint32_t i = 0; i < 1; ++i);
+#define delay_ns(mul) for(uint32_t i = 0; i < mul; ++i);
 #define delay_100_ns() for(uint32_t i = 0; i < 3; ++i);
 #define delay_200_ns() for(uint32_t i = 0; i < 4; ++i);
 #define delay_300_ns() for(uint32_t i = 0; i < 6; ++i);
@@ -22,65 +22,83 @@ uint8_t buffer[544] = {0};
 static void IRAM_ATTR maple_tx(void) {
     uint8_t *data = buffer;
 
+    ets_delay_us(55);
+
     GPIO.out_w1ts = MAPLE0 | MAPLE1;
     gpio_set_direction(26, GPIO_MODE_OUTPUT);
     gpio_set_direction(27, GPIO_MODE_OUTPUT);
     DPORT_STALL_OTHER_CPU_START();
     GPIO.out_w1tc = MAPLE0;
-    delay_300_ns();
+    delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);;
     GPIO.out_w1ts = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1ts = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1ts = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1ts = MAPLE1;
-    delay_300_ns();;
+    delay_ns(6);
     GPIO.out_w1ts = MAPLE0;
-    delay_200_ns();
-    GPIO.out_w1tc = MAPLE1;
 
     for (uint32_t bit = 0; bit < 5*8; ++data) {
         for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit) {
             GPIO.out_w1ts = MAPLE0;
             GPIO.out_w1tc = MAPLE1;
-            delay_100_ns();
+            delay_ns(1);
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE1;
             }
             else {
                 GPIO.out_w1tc = MAPLE1;
             }
-            delay_1_ns();
+            delay_ns(1);
             GPIO.out_w1tc = MAPLE0;
-            delay_200_ns();
+            delay_ns(2);
             mask >>= 1;
             ++bit;
             GPIO.out_w1tc = MAPLE0;
             GPIO.out_w1ts = MAPLE1;
-            delay_100_ns();
+            delay_ns(1);
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE0;
             }
             else {
                 GPIO.out_w1tc = MAPLE0;
             }
-            delay_1_ns();
+            delay_ns(1);
             GPIO.out_w1tc = MAPLE1;
-            delay_200_ns();
+            delay_ns(2);
         }
     }
-    DPORT_STALL_OTHER_CPU_END();
+    GPIO.out_w1ts = MAPLE0;
+    GPIO.out_w1tc = MAPLE1;
+
+    delay_ns(6);
+    GPIO.out_w1ts = MAPLE1;
+    delay_ns(6);
+    GPIO.out_w1tc = MAPLE1;
+    delay_ns(8);
+    GPIO.out_w1tc = MAPLE0;
+    delay_ns(6);
+    GPIO.out_w1ts = MAPLE0;
+    delay_ns(6);
+    GPIO.out_w1tc = MAPLE0;
+    delay_ns(6);
+    GPIO.out_w1ts = MAPLE0;
+    delay_ns(6);
+    GPIO.out_w1ts = MAPLE1;
+
     gpio_set_direction(26, GPIO_MODE_INPUT);
     gpio_set_direction(27, GPIO_MODE_INPUT);
+    DPORT_STALL_OTHER_CPU_END();
     /* Send start sequence */
 
 }
