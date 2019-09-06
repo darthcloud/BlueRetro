@@ -54,37 +54,145 @@ static void IRAM_ATTR maple_tx(void) {
     GPIO.out_w1tc = MAPLE1;
     delay_ns(6);
     GPIO.out_w1ts = MAPLE1;
-    delay_ns(6);
-    GPIO.out_w1ts = MAPLE0;
+    //delay_ns(6);
+    //GPIO.out_w1ts = MAPLE0;
 
-    for (uint32_t bit = 0; bit < sizeof(dev_info)*8; ++data) {
+    for (uint32_t bit = 0; bit < 5*8; ++data) {
         for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit) {
             GPIO.out_w1ts = MAPLE0;
-            GPIO.out_w1tc = MAPLE1;
-            delay_ns(1);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            //delay_ns(3);
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE1;
             }
             else {
                 GPIO.out_w1tc = MAPLE1;
             }
-            delay_ns(1);
+            //delay_ns(1);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
             GPIO.out_w1tc = MAPLE0;
-            delay_ns(2);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            //delay_ns(3);
             mask >>= 1;
             ++bit;
-            GPIO.out_w1tc = MAPLE0;
             GPIO.out_w1ts = MAPLE1;
-            delay_ns(1);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            //delay_ns(3);
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE0;
             }
             else {
                 GPIO.out_w1tc = MAPLE0;
             }
-            delay_ns(1);
+            //delay_ns(1);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
             GPIO.out_w1tc = MAPLE1;
-            delay_ns(2);
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            asm("nop");
+            //delay_ns(3);
         }
     }
     GPIO.out_w1ts = MAPLE0;
@@ -203,10 +311,11 @@ void init_maple(void)
     gpio_config(&io_conf2);
     GPIO.out_w1ts = DEBUG;
 
-    while (!((GPIO.in & (MAPLE0 | MAPLE1)) == (MAPLE0 | MAPLE1)));
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
+    //while (!((GPIO.in & (MAPLE0 | MAPLE1)) == (MAPLE0 | MAPLE1)));
+    //esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
 
     while (1) {
+        maple_tx();
         //printf("JG2019 intr_cnt: %d\n", intr_cnt);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
