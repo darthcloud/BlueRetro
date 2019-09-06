@@ -196,9 +196,18 @@ static void IRAM_ATTR maple_tx(void) {
         }
     }
     GPIO.out_w1ts = MAPLE0;
-    GPIO.out_w1tc = MAPLE1;
-
-    delay_ns(6);
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    //delay_ns(4);
     GPIO.out_w1ts = MAPLE1;
     delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
