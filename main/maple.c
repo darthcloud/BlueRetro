@@ -11,7 +11,15 @@
 #define MAPLE1 (1ULL << 27)
 #define TIMEOUT 8
 
+#define MAPLE_FUNC_DATA_CTRL 0x3FFFFF
+
+const char dev_name_ctrl[] = "BlueRetro Adapter - Controller";
+const char dev_name_mem[] = "BlueRetro Adapter - Memory";
+const char dev_name_rumble[] = "BlueRetro Adapter - Rumble";
+const char dev_license[] = "Jacques Gagnon IoT";
+
 #define delay_ns(mul) for(uint32_t i = 0; i < mul; ++i);
+#define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 
 const uint8_t dev_info[] =
 {
@@ -54,160 +62,41 @@ static void IRAM_ATTR maple_tx(void) {
     GPIO.out_w1tc = MAPLE1;
     delay_ns(6);
     GPIO.out_w1ts = MAPLE1;
-    //delay_ns(6);
-    //GPIO.out_w1ts = MAPLE0;
 
     for (uint32_t bit = 0; bit < sizeof(dev_info)*8; ++data) {
         for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit) {
             GPIO.out_w1ts = MAPLE0;
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            //delay_ns(3);
+            wait_100ns();
+            wait_100ns();
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE1;
             }
             else {
                 GPIO.out_w1tc = MAPLE1;
             }
-            //delay_ns(1);
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
+            wait_100ns();
             GPIO.out_w1tc = MAPLE0;
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            //delay_ns(3);
+            wait_100ns();
+            wait_100ns();
             mask >>= 1;
             ++bit;
             GPIO.out_w1ts = MAPLE1;
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            //delay_ns(3);
+            wait_100ns();
+            wait_100ns();
             if (*data & mask) {
                 GPIO.out_w1ts = MAPLE0;
             }
             else {
                 GPIO.out_w1tc = MAPLE0;
             }
-            //delay_ns(1);
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
+            wait_100ns();
             GPIO.out_w1tc = MAPLE1;
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            //delay_ns(3);
+            wait_100ns();
+            wait_100ns();
         }
     }
     GPIO.out_w1ts = MAPLE0;
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    //delay_ns(4);
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
     delay_ns(6);
     GPIO.out_w1tc = MAPLE1;
