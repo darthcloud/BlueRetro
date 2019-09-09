@@ -18,19 +18,18 @@ const char dev_name_mem[] = "BlueRetro Adapter - Memory";
 const char dev_name_rumble[] = "BlueRetro Adapter - Rumble";
 const char dev_license[] = "Jacques Gagnon IoT";
 
-#define delay_ns(mul) for(uint32_t i = 0; i < mul; ++i);
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 
-const uint8_t dev_info[] =
+uint8_t dev_info[] =
 {
-    0x1C, 0x23, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFE, 0x06, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x1C, 0x20, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFE, 0x06, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61,
     0x74, 0x6E, 0x6F, 0x43, 0x6C, 0x6C, 0x6F, 0x72, 0x20, 0x20, 0x72, 0x65, 0x20, 0x20, 0x20, 0x20,
     0x20, 0x20, 0x20, 0x20, 0x64, 0x6F, 0x72, 0x50, 0x64, 0x65, 0x63, 0x75, 0x20, 0x79, 0x42, 0x20,
     0x55, 0x20, 0x72, 0x6F, 0x72, 0x65, 0x64, 0x6E, 0x63, 0x69, 0x4C, 0x20, 0x65, 0x73, 0x6E, 0x65,
     0x6F, 0x72, 0x46, 0x20, 0x45, 0x53, 0x20, 0x6D, 0x45, 0x20, 0x41, 0x47, 0x52, 0x45, 0x54, 0x4E,
     0x53, 0x49, 0x52, 0x50, 0x4C, 0x2C, 0x53, 0x45, 0x20, 0x2E, 0x44, 0x54, 0x20, 0x20, 0x20, 0x20,
-    0x01, 0xF4, 0x01, 0xAE, 0x1A
+    0x01, 0xF4, 0x01, 0xAE, 0x00
 };
 uint32_t intr_cnt = 0;
 
@@ -38,6 +37,8 @@ uint8_t buffer[544] = {0};
 
 static void IRAM_ATTR maple_tx(void) {
     uint8_t *data = dev_info;
+    uint32_t len = sizeof(dev_info);
+    uint8_t *crc = dev_info + (len - 1);
 
     ets_delay_us(55);
 
@@ -46,24 +47,58 @@ static void IRAM_ATTR maple_tx(void) {
     gpio_set_direction(27, GPIO_MODE_OUTPUT);
     DPORT_STALL_OTHER_CPU_START();
     GPIO.out_w1tc = MAPLE0;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE1;
-    delay_ns(6);;
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
+    wait_100ns();
+    wait_100ns();
 
-    for (uint32_t bit = 0; bit < sizeof(dev_info)*8; ++data) {
+    for (uint32_t bit = 0; bit < len*8; ++data) {
         for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit) {
             GPIO.out_w1ts = MAPLE0;
             wait_100ns();
@@ -94,21 +129,46 @@ static void IRAM_ATTR maple_tx(void) {
             wait_100ns();
             wait_100ns();
         }
+        *crc ^= *data;
     }
     GPIO.out_w1ts = MAPLE0;
     wait_100ns();
     GPIO.out_w1ts = MAPLE1;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE1;
-    delay_ns(8);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE0;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE0;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1tc = MAPLE0;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE0;
-    delay_ns(6);
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
+    wait_100ns();
     GPIO.out_w1ts = MAPLE1;
 
     gpio_set_direction(26, GPIO_MODE_INPUT);
