@@ -12,7 +12,7 @@ static struct config config;
 
 static void wired_init_task(void *arg) {
     //nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
-    init_maple();
+    init_maple(&output[0]);
     vTaskDelete(NULL);
 }
 

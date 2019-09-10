@@ -12,13 +12,13 @@
 #define TIMEOUT 8
 
 #define MAPLE_FUNC_DATA_CTRL 0x3FFFFF
+#define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 
+static struct io *output;
 const char dev_name_ctrl[] = "BlueRetro Adapter - Controller";
 const char dev_name_mem[] = "BlueRetro Adapter - Memory";
 const char dev_name_rumble[] = "BlueRetro Adapter - Rumble";
 const char dev_license[] = "Jacques Gagnon IoT";
-
-#define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 
 uint8_t dev_info[] =
 {
@@ -229,15 +229,10 @@ maple_end:
         GPIO.out_w1ts = DEBUG;
         byte = ((bit_cnt - 1) / 8);
         if ((bit_cnt - 1) % 8) {
-            //ets_printf("*");
-            //++byte;
             GPIO.status_w1tc = gpio_intr_status;
             return;
         }
-        //for(uint16_t i = 0; i < byte; ++i) {
-        //    ets_printf("%02X", buffer[i]);
-        //}
-        //ets_printf("\n");
+
         if (buffer[0] == 0x00 && buffer[3] == 0x01) {
             maple_tx(dev_info, sizeof(dev_info));
         }
@@ -249,8 +244,10 @@ maple_end:
     }
 }
 
-void init_maple(void)
+void init_maple(struct io *output_data)
 {
+    output = output_data;
+
     gpio_config_t io_conf0 = {
         .intr_type = GPIO_PIN_INTR_NEGEDGE,
         .pin_bit_mask = MAPLE0,
