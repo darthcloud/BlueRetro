@@ -31,14 +31,18 @@ uint8_t dev_info[] =
     0x53, 0x49, 0x52, 0x50, 0x4C, 0x2C, 0x53, 0x45, 0x20, 0x2E, 0x44, 0x54, 0x20, 0x20, 0x20, 0x20,
     0x01, 0xF4, 0x01, 0xAE, 0x00
 };
+
+uint8_t status[] =
+{
+    0x03, 0x20, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x80, 0x80, 0x80, 0x00
+};
+
 uint32_t intr_cnt = 0;
 
 uint8_t buffer[544] = {0};
 
-static void IRAM_ATTR maple_tx(void) {
-    uint8_t *data = dev_info;
-    uint32_t len = sizeof(dev_info);
-    uint8_t *crc = dev_info + (len - 1);
+static void IRAM_ATTR maple_tx(uint8_t *data, uint8_t len) {
+    uint8_t *crc = data + (len - 1);
 
     ets_delay_us(55);
 
@@ -226,13 +230,20 @@ maple_end:
         byte = ((bit_cnt - 1) / 8);
         if ((bit_cnt - 1) % 8) {
             //ets_printf("*");
-            ++byte;
+            //++byte;
+            GPIO.status_w1tc = gpio_intr_status;
+            return;
         }
         //for(uint16_t i = 0; i < byte; ++i) {
         //    ets_printf("%02X", buffer[i]);
         //}
         //ets_printf("\n");
-        maple_tx();
+        if (buffer[0] == 0x00 && buffer[3] == 0x01) {
+            maple_tx(dev_info, sizeof(dev_info));
+        }
+        else if (buffer[0] == 0x01 && buffer[3] == 0x09) {
+            maple_tx(status, sizeof(status));
+        }
 
         GPIO.status_w1tc = gpio_intr_status;
     }
