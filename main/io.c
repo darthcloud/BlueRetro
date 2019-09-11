@@ -393,7 +393,7 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
     /* Map buttons to */
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
-            tmp.buttons |= dc_mask[map_table[i].btn0];
+            tmp.buttons &= ~dc_mask[map_table[i].btn0];
             if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
                 if (abs(dc_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
                     tmp.axes[btn_mask_to_axis(map_table[i].btn0)] = btn_mask_sign(map_table[i].btn0) * dc_axes_meta.abs_max + dc_axes_meta.neutral;
