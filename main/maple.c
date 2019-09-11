@@ -237,7 +237,10 @@ maple_end:
         switch (cmd) {
             case 0x01:
                 maple_tx(dev_info, sizeof(dev_info));
-                output->format = IO_FORMAT_DC;
+                if (!output->format) {
+                    output->format = IO_FORMAT_DC;
+                    memcpy((uint8_t *)&output->io.dc, status + 8, sizeof(output->io.dc));
+                }
                 break;
             case 0x09:
                 memcpy(status + 8, (uint8_t *)&output->io.dc, sizeof(output->io.dc));

@@ -17,11 +17,9 @@ static void wired_init_task(void *arg) {
 }
 
 static void wl_init_task(void *arg) {
-#if 0
     if (sd_init(&config)) {
         printf("SD init fail!\n");
     }
-#endif
 
     if (bt_init(&output[0], &config)) {
         printf("Bluetooth init fail!\n");
