@@ -13,6 +13,7 @@
 
 #define MAPLE_FUNC_DATA_CTRL 0x3FFFFF
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
+#define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
 
 static struct io *output;
 const char dev_name_ctrl[] = "BlueRetro Adapter - Controller";
@@ -190,6 +191,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t gpio;
     uint8_t *data = buffer;
     uint32_t byte;
+    uint8_t cmd;
 
     if (gpio_intr_status) {
         DPORT_STALL_OTHER_CPU_START();
@@ -228,16 +230,19 @@ maple_end:
         DPORT_STALL_OTHER_CPU_END();
         GPIO.out_w1ts = DEBUG;
         byte = ((bit_cnt - 1) / 8);
-        if ((bit_cnt - 1) % 8) {
-            GPIO.status_w1tc = gpio_intr_status;
-            return;
-        }
 
-        if (buffer[0] == 0x00 && buffer[3] == 0x01) {
-            maple_tx(dev_info, sizeof(dev_info));
-        }
-        else if (buffer[0] == 0x01 && buffer[3] == 0x09) {
-            maple_tx(status, sizeof(status));
+        cmd = maple_fix_byte((bit_cnt - 1) % 8, buffer[2], buffer[3]);
+        switch (cmd) {
+            case 0x01:
+                maple_tx(dev_info, sizeof(dev_info));
+                break;
+            case 0x09:
+                maple_tx(status, sizeof(status));
+                break;
+            default:
+                ets_printf("Unsupported cmd: 0x%02X\n", cmd);
+                break;
+
         }
 
         GPIO.status_w1tc = gpio_intr_status;
