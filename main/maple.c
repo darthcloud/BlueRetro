@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -5,6 +6,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/gpio.h"
 #include "esp32/dport_access.h"
+#include "maple.h"
 
 #define DEBUG  (1ULL << 25)
 #define MAPLE0 (1ULL << 26)
@@ -235,9 +237,12 @@ maple_end:
         switch (cmd) {
             case 0x01:
                 maple_tx(dev_info, sizeof(dev_info));
+                output->format = IO_FORMAT_DC;
                 break;
             case 0x09:
+                memcpy(status + 8, (uint8_t *)&output->io.dc, sizeof(output->io.dc));
                 maple_tx(status, sizeof(status));
+                ++output->poll_cnt;
                 break;
             default:
                 ets_printf("Unsupported cmd: 0x%02X\n", cmd);

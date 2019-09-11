@@ -358,11 +358,15 @@ static void n64_from_generic(struct btn map_table[], struct io *specific, struct
 static void dc_from_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
     int8_t axis_int;
-    struct dc_map tmp = {0};
+    struct dc_map tmp;
 
+    tmp.trig[0] = 0x00;
+    tmp.trig[1] = 0x00;
+    tmp.buttons = 0xFFFF;
+    memset(specific->io.dc.axes, 0x80, 4);
 
     if (in_menu()) {
-        memset(&specific->io.dc, 0, sizeof(specific->io.dc));
+        memcpy(&specific->io.dc, &tmp, sizeof(specific->io.dc));
         return;
     }
 
