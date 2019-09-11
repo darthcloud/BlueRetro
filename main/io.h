@@ -115,6 +115,13 @@ struct wiiu_pro_map {
     uint32_t buttons;
 } __packed;
 
+#define IO_FORMAT_DC 0x07
+struct dc_map {
+    uint8_t trig[2];
+    uint16_t buttons;
+    uint8_t axes[4];
+} __packed;
+
 struct io {
     int32_t flags;
     uint8_t format;
@@ -127,6 +134,7 @@ struct io {
         struct n64_map n64;
         struct gc_map gc;
         struct wiiu_pro_map wiiu_pro;
+        struct dc_map dc;
     } io;
 } __packed;
 
