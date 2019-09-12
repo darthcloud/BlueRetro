@@ -76,7 +76,7 @@ const uint32_t map_presets[8][32] =
 {
     {
         /*DU*/BTN_DU, /*DL*/BTN_DL, /*DR*/BTN_DR, /*DD*/BTN_DD, /*LU*/BTN_LU, /*LL*/BTN_LL, /*LR*/BTN_LR, /*LD*/BTN_LD,
-        /*BU*/BTN_RL, /*BL*/BTN_BL, /*BR*/BTN_RD, /*BD*/BTN_BD, /*RU*/BTN_RU, /*RL*/BTN_RL, /*RR*/BTN_RR, /*RD*/BTN_RD,
+        /*BU*/BTN_BU, /*BL*/BTN_BL, /*BR*/BTN_BR, /*BD*/BTN_BD, /*RU*/BTN_RU, /*RL*/BTN_RL, /*RR*/BTN_RR, /*RD*/BTN_RD,
         /*LA*/BTN_LA, /*LM*/BTN_LM, /*RA*/BTN_RA, /*RM*/BTN_RM, /*LS*/BTN_LS, /*LG*/BTN_LG, /*LJ*/BTN_LJ, /*RS*/BTN_LS,
         /*RG*/BTN_RG, /*RJ*/BTN_RJ, /*SL*/BTN_SL, /*HM*/BTN_HM, /*ST*/BTN_ST, /*BE*/BTN_BE, BTN_NN, BTN_NN
     },
@@ -233,20 +233,38 @@ static uint8_t btn_mask_to_axis(uint8_t btn_mask) {
     return 0xFF;
 }
 
-static int8_t btn_mask_sign(uint8_t btn_mask) {
-    switch (btn_mask) {
-        case BTN_LR:
-        case BTN_LU:
-        case BTN_RR:
-        case BTN_RU:
-        case BTN_LA:
-        case BTN_RA:
-            return 1;
-        case BTN_LL:
-        case BTN_LD:
-        case BTN_RL:
-        case BTN_RD:
-            return -1;
+static int8_t btn_mask_sign(uint8_t system, uint8_t btn_mask) {
+    if (system == IO_FORMAT_DC) {
+        switch (btn_mask) {
+            case BTN_LR:
+            case BTN_LD:
+            case BTN_RR:
+            case BTN_RD:
+            case BTN_LA:
+            case BTN_RA:
+                return 1;
+            case BTN_LL:
+            case BTN_LU:
+            case BTN_RL:
+            case BTN_RU:
+                return -1;
+        }
+    }
+    else {
+        switch (btn_mask) {
+            case BTN_LR:
+            case BTN_LU:
+            case BTN_RR:
+            case BTN_RU:
+            case BTN_LA:
+            case BTN_RA:
+                return 1;
+            case BTN_LL:
+            case BTN_LD:
+            case BTN_RL:
+            case BTN_RD:
+                return -1;
+        }
     }
     return 0;
 }
@@ -329,14 +347,14 @@ static void n64_from_generic(struct btn map_table[], struct io *specific, struct
             if (generic->axes[i].value < 0) {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LY) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
+                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)] = btn_mask_sign(IO_FORMAT_N64, map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
                     }
                 }
             }
             else {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LY) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
+                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)] = btn_mask_sign(IO_FORMAT_N64, map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
                     }
                 }
             }
@@ -347,9 +365,9 @@ static void n64_from_generic(struct btn map_table[], struct io *specific, struct
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             tmp.buttons |= n64_mask[map_table[i].btn0];
-            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
+            if (btn_mask_sign(IO_FORMAT_N64, i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
                 if (abs(n64_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
-                    tmp.axes[btn_mask_to_axis(map_table[i].btn0)] = btn_mask_sign(map_table[i].btn0) * n64_axes_meta.abs_max;
+                    tmp.axes[btn_mask_to_axis(map_table[i].btn0)] = btn_mask_sign(IO_FORMAT_N64, map_table[i].btn0) * n64_axes_meta.abs_max;
                 }
             }
         }
@@ -380,8 +398,8 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
             if (axis_tmp > 127) {
                 axis_int = 127;
             }
-            else if (axis_tmp < -128) {
-                axis_int = -128;
+            else if (axis_tmp < -127) {
+                axis_int = -127;
             }
             else {
                 axis_int = (int8_t)axis_tmp;
@@ -390,14 +408,14 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
             if (generic->axes[i].value < 0) {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) < sizeof(dc_axes_idx)) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)])) {
-                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
+                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)]] = btn_mask_sign(IO_FORMAT_DC, map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
                     }
                 }
             }
             else {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) < sizeof(dc_axes_idx)) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)])) {
-                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
+                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)]] = btn_mask_sign(IO_FORMAT_DC, map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
                     }
                 }
             }
@@ -408,9 +426,9 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             tmp.buttons &= ~dc_mask[map_table[i].btn0];
-            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) < sizeof(dc_axes_idx))) {
+            if (btn_mask_sign(IO_FORMAT_DC, i) == 0 && (btn_mask_to_axis(map_table[i].btn0) < sizeof(dc_axes_idx))) {
                 if (abs(dc_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
-                    tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[i].btn0)]] = btn_mask_sign(map_table[i].btn0) * dc_axes_meta.abs_max;
+                    tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[i].btn0)]] = btn_mask_sign(IO_FORMAT_DC, map_table[i].btn0) * dc_axes_meta.abs_max;
                 }
             }
         }
