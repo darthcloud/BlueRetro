@@ -119,7 +119,7 @@ struct wiiu_pro_map {
 struct dc_map {
     uint8_t trig[2];
     uint16_t buttons;
-    uint8_t axes[4];
+    int8_t axes[4];
 } __packed;
 
 struct io {

@@ -176,14 +176,16 @@ const uint32_t dc_mask[32] =
     0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000, 0x0040, 0x0100, 0x0000, 0x0080, 0x0008, 0x0000, 0x0800, 0x0010, 0x0020, 0x0000
 /*  LA      LM      RA      RM      LS      LG      LJ      RS      RG      RJ      SL      HM      ST      BE                      */
 };
-const uint8_t dc_axes_idx[6] =
+const uint8_t dc_axes_idx[4] =
 {
-    AXIS_RY, AXIS_RX, AXIS_LY, AXIS_LX
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
+    3,       2,       1,       0
 };
 
 const uint8_t dc_trig_idx[6] =
 {
-    TRIG_L, TRIG_R
+/*  TRIG_L, TRIG_R  */
+    0,      1
 };
 
 
@@ -258,7 +260,7 @@ const struct axis_meta n64_axes_meta =
 const struct axis_meta dc_axes_meta =
 {
     .neutral = 0x80,
-    .abs_max = 0x54,
+    .abs_max = 0x80,
 };
 
 const struct axis_meta wiiu_pro_axes_meta =
@@ -357,33 +359,45 @@ static void n64_from_generic(struct btn map_table[], struct io *specific, struct
 
 static void dc_from_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
-    int8_t axis_int;
+    int16_t axis_tmp;
+    int8_t axis_tmp;
     struct dc_map tmp;
 
     tmp.trig[0] = 0x00;
     tmp.trig[1] = 0x00;
     tmp.buttons = 0xFFFF;
-    memset(tmp.axes, 0x80, 4);
+    memset(tmp.axes, 0x00, 4);
 
     if (in_menu()) {
+        memset(tmp.axes, 0x80, 4);
         memcpy(&specific->io.dc, &tmp, sizeof(specific->io.dc));
         return;
     }
 
     for (i = 0; i < sizeof(generic->axes)/sizeof(*generic->axes); i++) {
         if (generic->axes[i].meta) {
-            axis_int = (int8_t)((float)generic->axes[i].value * ((float)dc_axes_meta.abs_max / (float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone)));
+            axis_tmp = (int16_t)((float)generic->axes[i].value * ((float)dc_axes_meta.abs_max / (float)(generic->axes[i].meta->abs_max - generic->axes[i].meta->deadzone)));
+            if (axis_tmp > 127) {
+                axis_int = 127;
+            }
+            else if (axis_tmp < -128) {
+                axis_int = -128;
+            }
+            else {
+                axis_int = (int8_t)axis_tmp;
+            }
+
             if (generic->axes[i].value < 0) {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LY) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int + dc_axes_meta.neutral;
+                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
                     }
                 }
             }
             else {
                 if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LY) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)])) {
-                        tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int + dc_axes_meta.neutral;
+                        tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
                     }
                 }
             }
@@ -396,11 +410,17 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
             tmp.buttons &= ~dc_mask[map_table[i].btn0];
             if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
                 if (abs(dc_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
-                    tmp.axes[btn_mask_to_axis(map_table[i].btn0)] = btn_mask_sign(map_table[i].btn0) * dc_axes_meta.abs_max + dc_axes_meta.neutral;
+                    tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[i].btn0)]] = btn_mask_sign(map_table[i].btn0) * dc_axes_meta.abs_max;
                 }
             }
         }
     }
+
+    /* unsign axes */
+    for (i = 0; i < sizeof(dc_axes_idx); i++) {
+        tmp.axes[i] += 0x80;
+    }
+
     memcpy(&specific->io.dc, &tmp, sizeof(specific->io.dc));
 }
 
