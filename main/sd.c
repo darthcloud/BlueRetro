@@ -9,7 +9,7 @@
 #include "sd.h"
 #include "nsi.h"
 
-#define SD_MAGIC 0x5A5AA5A5
+#define SD_MAGIC 0xA5A55A5A
 
 #define ROOT "/sd"
 #define CONFIG_FILE "/config.bin"
