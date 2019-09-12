@@ -360,7 +360,7 @@ static void n64_from_generic(struct btn map_table[], struct io *specific, struct
 static void dc_from_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
     uint8_t i;
     int16_t axis_tmp;
-    int8_t axis_tmp;
+    int8_t axis_int;
     struct dc_map tmp;
 
     tmp.trig[0] = 0x00;
@@ -388,14 +388,14 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
             }
 
             if (generic->axes[i].value < 0) {
-                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) == AXIS_LY) {
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) < sizeof(dc_axes_idx)) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)])) {
                         tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_n[i]].btn0) * -axis_int;
                     }
                 }
             }
             else {
-                if (btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LX || btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0) == AXIS_LY) {
+                if (btn_mask_to_axis(map_table[axes_to_btn_mask_n[i]].btn0) < sizeof(dc_axes_idx)) {
                     if (abs(axis_int) > abs(tmp.axes[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)])) {
                         tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[axes_to_btn_mask_p[i]].btn0)]] = btn_mask_sign(map_table[axes_to_btn_mask_p[i]].btn0) * axis_int;
                     }
@@ -408,7 +408,7 @@ static void dc_from_generic(struct btn map_table[], struct io *specific, struct 
     for (i = 0; i < 32; i++) {
         if (generic->buttons & generic_mask[i]) {
             tmp.buttons &= ~dc_mask[map_table[i].btn0];
-            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) == AXIS_LX || btn_mask_to_axis(map_table[i].btn0) == AXIS_LY)) {
+            if (btn_mask_sign(i) == 0 && (btn_mask_to_axis(map_table[i].btn0) < sizeof(dc_axes_idx))) {
                 if (abs(dc_axes_meta.abs_max) > abs(tmp.axes[btn_mask_to_axis(map_table[i].btn0)])) {
                     tmp.axes[dc_axes_idx[btn_mask_to_axis(map_table[i].btn0)]] = btn_mask_sign(map_table[i].btn0) * dc_axes_meta.abs_max;
                 }
