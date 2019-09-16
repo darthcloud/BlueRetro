@@ -290,13 +290,6 @@ void init_maple(struct io *output_data)
     gpio_config(&io_conf2);
     GPIO.out_w1ts = DEBUG;
 
-    while (!((GPIO.in & (MAPLE0 | MAPLE1)) == (MAPLE0 | MAPLE1)));
     esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
-
-    while (1) {
-        //maple_tx();
-        //printf("JG2019 intr_cnt: %d\n", intr_cnt);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 }
 
