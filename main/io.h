@@ -117,9 +117,13 @@ struct wiiu_pro_map {
 
 #define IO_FORMAT_DC 0x07
 struct dc_map {
-    uint8_t trig[2];
-    uint16_t buttons;
-    int8_t axes[4];
+    union {
+        struct {
+            uint16_t pad;
+            uint16_t buttons;
+        };
+        int8_t axes[8];
+    };
 } __packed;
 
 struct io {
