@@ -447,6 +447,12 @@ struct bt_hci_cp_link_key_reply {
 struct bt_hci_cp_link_key_neg_reply {
 	bt_addr_t bdaddr;
 } __packed;
+#ifdef BLUERETRO
+struct bt_hci_rp_link_key_neg_reply {
+	u8_t   status;
+	bt_addr_t bdaddr;
+} __packed;
+#endif /* BLUERETRO */
 
 #define BT_HCI_OP_PIN_CODE_REPLY                BT_OP(BT_OGF_LINK_CTRL, 0x000d)
 struct bt_hci_cp_pin_code_reply {
