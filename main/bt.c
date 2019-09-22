@@ -9,7 +9,7 @@
 #include "bt.h"
 #include "hidp.h"
 
-#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1
@@ -344,8 +344,8 @@ static int32_t bt_get_dev_from_pending_flag(struct bt_dev **device) {
 }
 
 static int32_t bt_get_dev_from_scid(uint16_t scid, struct bt_dev **device) {
-    *device = &bt_dev[(scid & 0xFF0) >> 4];
-    return (scid & 0xFF0) >> 4;
+    *device = &bt_dev[(scid & 0xF)];
+    return (scid & 0xF);
 }
 
 #if 0
@@ -509,7 +509,6 @@ static void bt_l2cap_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint8_t id
 static void bt_l2cap_cmd_conn_req(uint16_t handle, uint16_t cid, uint8_t ident, uint16_t psm, uint16_t scid) {
     printf("# %s\n", __FUNCTION__);
 
-    printf("# ctrl %04X intr %04X\n", scid, scid);
     bt_acl_frame.pl.l2cap_data.conn_req.psm = psm;
     bt_acl_frame.pl.l2cap_data.conn_req.scid = scid;
 
@@ -665,9 +664,8 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                                 atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                                 atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
                                 device->id = bt_dev_id;
-                                device->ctrl_chan.scid = (bt_dev_id << 4) | 0x1000;
-                                device->intr_chan.scid = (bt_dev_id << 4) | 0x1001;
-                                printf("ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
+                                device->ctrl_chan.scid = bt_dev_id | 0x0080;
+                                device->intr_chan.scid = bt_dev_id | 0x0090;
                                 xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, NULL, 0);
                             }
                         }
@@ -807,7 +805,6 @@ inquiry_result_break:
 }
 
 static void bt_acl_handler(uint8_t *data, uint16_t len) {
-    int32_t id;
     struct bt_dev *device = NULL;
     struct bt_acl_frame *bt_acl_frame = (struct bt_acl_frame *)data;
     struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame->pl.hidp;
@@ -815,8 +812,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
     switch (bt_acl_frame->pl.sig_hdr.code) {
         case BT_L2CAP_CONN_RSP:
             printf("# BT_L2CAP_CONN_RSP\n");
-            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conn_rsp.scid, &device);
-            printf("# JG2019 %d %p\n", id, device);
+            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conn_rsp.scid, &device);
             if (bt_acl_frame->pl.l2cap_data.conn_rsp.result == BT_L2CAP_BR_PENDING) {
                 if (bt_acl_frame->pl.l2cap_data.conn_rsp.scid == device->ctrl_chan.scid) {
                     atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
@@ -841,15 +837,13 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_L2CAP_CONF_REQ:
             printf("# BT_L2CAP_CONF_REQ\n");
-            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
-            printf("# JG2019 %d %p\n", id, device);
+            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
             device->l2cap_ident = bt_acl_frame->pl.sig_hdr.ident;
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ);
             break;
         case BT_L2CAP_CONF_RSP:
             printf("# BT_L2CAP_CONF_RSP\n");
-            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_rsp.scid, &device);
-            printf("# JG2019 %d %p\n", id, device);
+            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_rsp.scid, &device);
             device->l2cap_ident = bt_acl_frame->pl.sig_hdr.ident;
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE);
             atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
@@ -952,7 +946,6 @@ static void bt_task(void *param) {
 static void bt_dev_task(void *param) {
     struct bt_dev *device = (struct bt_dev *)param;
 
-    printf("# ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
     while (1) {
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             if (!atomic_test_bit(&bt_flags, BT_CTRL_PENDING)) {
@@ -962,7 +955,6 @@ static void bt_dev_task(void *param) {
                             if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                 device->l2cap_ident = 0x00;
                                 atomic_set_bit(&device->flags, BT_DEV_PENDING);
-                                printf("# ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
                                 bt_l2cap_cmd_conn_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, BT_L2CAP_PSM_HID_CTRL, device->ctrl_chan.scid);
                             }
                             else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ)) {
