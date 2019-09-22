@@ -9,7 +9,7 @@
 #include "bt.h"
 #include "hidp.h"
 
-//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1
@@ -305,7 +305,7 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
 
 static int32_t bt_get_new_dev(struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
-        if (!bt_dev[i].flags) {
+        if (!atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             *device = &bt_dev[i];
             return i;
         }
@@ -344,12 +344,14 @@ static int32_t bt_get_dev_from_pending_flag(struct bt_dev **device) {
 }
 
 static int32_t bt_get_dev_from_scid(uint16_t scid, struct bt_dev **device) {
-    *device = &bt_dev[(scid & 0xF)];
-    return (scid & 0xF);
+    *device = &bt_dev[(scid & 0xFF0) >> 4];
+    return (scid & 0xFF0) >> 4;
 }
 
+#if 0
 static int32_t bt_get_dev_from_dcid(uint16_t dcid, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
+        printf("%04X %04X\n", bt_dev[i].ctrl_chan.dcid, bt_dev[i].intr_chan.dcid);
         if (bt_dev[i].ctrl_chan.dcid == dcid || bt_dev[i].intr_chan.dcid == dcid) {
             *device = &bt_dev[i];
             return i;
@@ -357,6 +359,7 @@ static int32_t bt_get_dev_from_dcid(uint16_t dcid, struct bt_dev **device) {
     }
     return -1;
 }
+#endif
 
 static void bt_hci_cmd(uint16_t opcode, uint16_t len) {
     uint16_t buflen = (sizeof(bt_hci_tx_frame.h4_type) + sizeof(bt_hci_tx_frame.cmd_hdr) + len);
@@ -506,6 +509,7 @@ static void bt_l2cap_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint8_t id
 static void bt_l2cap_cmd_conn_req(uint16_t handle, uint16_t cid, uint8_t ident, uint16_t psm, uint16_t scid) {
     printf("# %s\n", __FUNCTION__);
 
+    printf("# ctrl %04X intr %04X\n", scid, scid);
     bt_acl_frame.pl.l2cap_data.conn_req.psm = psm;
     bt_acl_frame.pl.l2cap_data.conn_req.scid = scid;
 
@@ -645,23 +649,27 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 for (uint8_t j = 0; j < sizeof(allowed_class); j++) {
                     if (memcmp((uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 9*i,
                             allowed_class[j].val, sizeof(bt_class_t)) == 0) {
-                        int32_t bt_dev_id = bt_get_new_dev(&device);
-                        if (device) {
-                            memcpy(device->remote_class.val,
-                                (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 9*i,
-                                sizeof(device->remote_class));
-                            memcpy(device->remote_bdaddr.val,
-                                (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1),
-                                sizeof(device->remote_bdaddr));
-                            printf("# Found class: %s bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", allowed_class_str[j],
-                                device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
-                                device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
-                            atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                            atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-                            device->id = bt_dev_id;
-                            device->ctrl_chan.scid = (0x100 & bt_dev_id);
-                            device->intr_chan.scid = (0x200 & bt_dev_id);
-                            xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, NULL, 0);
+                        bt_get_dev_from_bdaddr((bt_addr_t *)((uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1)), &device);
+                        if (device == NULL) {
+                            int32_t bt_dev_id = bt_get_new_dev(&device);
+                            if (device) {
+                                memcpy(device->remote_class.val,
+                                    (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 9*i,
+                                    sizeof(device->remote_class));
+                                memcpy(device->remote_bdaddr.val,
+                                    (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1),
+                                    sizeof(device->remote_bdaddr));
+                                printf("# Found class: %s bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", allowed_class_str[j],
+                                    device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
+                                    device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
+                                atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                                atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
+                                device->id = bt_dev_id;
+                                device->ctrl_chan.scid = (bt_dev_id << 4) | 0x1000;
+                                device->intr_chan.scid = (bt_dev_id << 4) | 0x1001;
+                                printf("ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
+                                xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, NULL, 0);
+                            }
                         }
                         goto inquiry_result_break;
                     }
@@ -773,9 +781,11 @@ inquiry_result_break:
                         break;
                     case BT_HCI_OP_AUTH_REQUESTED:
                         bt_get_dev_from_pending_flag(&device);
-                        atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATING);
+                        if (device) {
+                            atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATING);
+                            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                        }
                         atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-                        atomic_clear_bit(&device->flags, BT_DEV_PENDING);
                         break;
                 }
             }
@@ -797,6 +807,7 @@ inquiry_result_break:
 }
 
 static void bt_acl_handler(uint8_t *data, uint16_t len) {
+    int32_t id;
     struct bt_dev *device = NULL;
     struct bt_acl_frame *bt_acl_frame = (struct bt_acl_frame *)data;
     struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame->pl.hidp;
@@ -804,7 +815,8 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
     switch (bt_acl_frame->pl.sig_hdr.code) {
         case BT_L2CAP_CONN_RSP:
             printf("# BT_L2CAP_CONN_RSP\n");
-            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conn_rsp.scid, &device);
+            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conn_rsp.scid, &device);
+            printf("# JG2019 %d %p\n", id, device);
             if (bt_acl_frame->pl.l2cap_data.conn_rsp.result == BT_L2CAP_BR_PENDING) {
                 if (bt_acl_frame->pl.l2cap_data.conn_rsp.scid == device->ctrl_chan.scid) {
                     atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
@@ -829,13 +841,15 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_L2CAP_CONF_REQ:
             printf("# BT_L2CAP_CONF_REQ\n");
-            bt_get_dev_from_dcid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
+            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
+            printf("# JG2019 %d %p\n", id, device);
             device->l2cap_ident = bt_acl_frame->pl.sig_hdr.ident;
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ);
             break;
         case BT_L2CAP_CONF_RSP:
             printf("# BT_L2CAP_CONF_RSP\n");
-            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_rsp.scid, &device);
+            id = bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_rsp.scid, &device);
+            printf("# JG2019 %d %p\n", id, device);
             device->l2cap_ident = bt_acl_frame->pl.sig_hdr.ident;
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE);
             atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
@@ -938,6 +952,7 @@ static void bt_task(void *param) {
 static void bt_dev_task(void *param) {
     struct bt_dev *device = (struct bt_dev *)param;
 
+    printf("# ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
     while (1) {
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             if (!atomic_test_bit(&bt_flags, BT_CTRL_PENDING)) {
@@ -946,6 +961,8 @@ static void bt_dev_task(void *param) {
                         if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_CONNECTED)) {
                             if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                 device->l2cap_ident = 0x00;
+                                atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                printf("# ctrl %04X intr %04X\n", device->ctrl_chan.scid, device->intr_chan.scid);
                                 bt_l2cap_cmd_conn_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, BT_L2CAP_PSM_HID_CTRL, device->ctrl_chan.scid);
                             }
                             else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ)) {
@@ -955,6 +972,7 @@ static void bt_dev_task(void *param) {
                             }
                             else if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE)) {
                                 device->l2cap_ident++;
+                                atomic_set_bit(&device->flags, BT_DEV_PENDING);
                                 bt_l2cap_cmd_conf_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->ctrl_chan.dcid);
                             }
                             else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE)) {
@@ -967,6 +985,7 @@ static void bt_dev_task(void *param) {
                         else if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_CONNECTED)) {
                             if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                 device->l2cap_ident++;
+                                atomic_set_bit(&device->flags, BT_DEV_PENDING);
                                 bt_l2cap_cmd_conn_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, BT_L2CAP_PSM_HID_INTR, device->intr_chan.scid);
                             }
                             else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ)) {
@@ -976,6 +995,7 @@ static void bt_dev_task(void *param) {
                             }
                             else if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE)) {
                                 device->l2cap_ident++;
+                                atomic_set_bit(&device->flags, BT_DEV_PENDING);
                                 bt_l2cap_cmd_conf_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->intr_chan.dcid);
                             }
                             else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE)) {
@@ -988,7 +1008,7 @@ static void bt_dev_task(void *param) {
                         else {
                             /* HID report config */
                             if (!atomic_test_bit(&device->flags, BT_DEV_WII_LED_SET)) {
-                                bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, led_dev_id_map[device->id]);
+                                bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, led_dev_id_map[device->id] << 4);
                                 atomic_set_bit(&device->flags, BT_DEV_WII_LED_SET);
                             }
                             else if (!atomic_test_bit(&device->flags, BT_DEV_WII_REP_MODE_SET)) {
@@ -1003,24 +1023,28 @@ static void bt_dev_task(void *param) {
                         }
                     }
                     else if (!atomic_test_bit(&device->flags, BT_DEV_AUTHENTICATING)) {
+                        atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         bt_hci_cmd_auth_requested(device->acl_handle);
                     }
                     else if (atomic_test_bit(&device->flags, BT_DEV_LINK_KEY_REQ)) {
+                        atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         bt_hci_cmd_link_key_neg_reply(device->remote_bdaddr);
                     }
                     else if (atomic_test_bit(&device->flags, BT_DEV_PIN_CODE_REQ)) {
+                        atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, local_bdaddr.val);
                     }
                 }
                 else {
                     if (!atomic_test_bit(&device->flags, BT_DEV_NAME_READ)) {
+                        atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                     }
                     else {
+                        atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         bt_hci_cmd_connect(&device->remote_bdaddr);
                     }
                 }
-                atomic_set_bit(&device->flags, BT_DEV_PENDING);
             }
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
