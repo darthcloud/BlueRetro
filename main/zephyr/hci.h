@@ -571,8 +571,11 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_DISABLED                  0x00
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
-
 #ifdef BLUERETRO
+struct bt_hci_cp_write_scan_enable {
+    u8_t scan_enable;
+} __packed;
+
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
 struct bt_hci_cp_write_class_of_device {
     bt_class_t dev_class;

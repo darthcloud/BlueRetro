@@ -52,6 +52,7 @@ struct bt_hci_tx_frame {
         struct bt_hci_cp_user_passkey_neg_reply user_passkey_neg_reply;
         struct bt_hci_cp_io_capability_neg_reply io_capability_neg_reply;
         struct bt_hci_cp_set_event_mask set_event_mask;
+        struct bt_hci_cp_write_scan_enable write_scan_enable;
         struct bt_hci_cp_write_class_of_device write_class_of_device;
         struct bt_hci_cp_read_tx_power_level read_tx_power_level;
         struct bt_hci_cp_set_ctl_to_host_flow set_ctl_to_host_flow;
@@ -194,6 +195,7 @@ enum {
     BT_CTRL_CLASS_SET,
     BT_CTRL_BDADDR_READ,
     BT_CTRL_VER_READ,
+    BT_CTRL_PAGE_ENABLE,
     BT_CTRL_INQUIRY,
     /* BT device connection flags */
     BT_DEV_PENDING,
@@ -495,6 +497,14 @@ static void bt_hci_cmd_reset(void) {
     bt_hci_cmd(BT_HCI_OP_RESET, 0);
 }
 
+static void bt_hci_cmd_write_scan_enable(uint8_t scan_enable) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_scan_enable.scan_enable = scan_enable;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_SCAN_ENABLE, sizeof(bt_hci_tx_frame.cmd_cp.write_scan_enable));
+}
+
 static void bt_hci_cmd_write_class_of_device(bt_class_t dev_class) {
     printf("# %s\n", __FUNCTION__);
 
@@ -737,6 +747,9 @@ inquiry_result_break:
                 atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             }
             break;
+        case BT_HCI_EVT_CONN_REQUEST:
+            printf("# BT_HCI_EVT_CONN_REQUEST\n");
+            break;
         case BT_HCI_EVT_AUTH_COMPLETE:
             printf("# BT_HCI_EVT_AUTH_COMPLETE\n");
             bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.auth_complete.handle, &device);
@@ -779,6 +792,9 @@ inquiry_result_break:
                         break;
                     case BT_HCI_OP_RESET:
                         atomic_set_bit(&bt_flags, BT_CTRL_ENABLE);
+                        break;
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
                         break;
                     case BT_HCI_OP_LINK_KEY_NEG_REPLY:
                         bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.link_key_neg_reply.bdaddr, &device);
@@ -1011,6 +1027,9 @@ static void bt_task(void *param) {
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_VER_READ)) {
                         bt_hci_cmd_read_local_version_info();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_ENABLE)) {
+                        bt_hci_cmd_write_scan_enable(BT_BREDR_SCAN_PAGE);
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY)) {
                         bt_hci_cmd_inquiry();
