@@ -8,8 +8,9 @@
 #include "zephyr/atomic.h"
 #include "bt.h"
 #include "hidp.h"
+#include "adapter.h"
 
-//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1
@@ -152,9 +153,19 @@ struct bt_acl_frame {
                 struct bt_l2cap_conn_param_rsp conn_param_rsp;
             } l2cap_data;
         };
-        uint8_t hidp[0];
+        struct bt_hidp_data hidp;
     } pl;
 } __packed;
+
+struct bt_name_type {
+    char name[249];
+    uint8_t type;
+};
+
+struct bt_wii_ext_type {
+    uint8_t ext_type[6];
+    uint8_t type;
+};
 
 struct l2cap_chan {
     uint16_t scid;
@@ -165,8 +176,10 @@ struct l2cap_chan {
 struct bt_dev {
     int32_t id;
     atomic_t flags;
+    TaskHandle_t xHandle;
     bt_addr_t remote_bdaddr;
     bt_class_t remote_class;
+    uint8_t type;
     uint16_t acl_handle;
     uint8_t l2cap_ident;
     struct l2cap_chan ctrl_chan;
@@ -201,8 +214,11 @@ enum {
     BT_DEV_HID_INTR_CONNECTED,
     /* HID Conf */
     BT_DEV_WII_LED_SET,
+    BT_DEV_WII_STATUS_RX,
+    BT_DEV_WII_EXT_CONF_PENDING,
+    BT_DEV_WII_EXT_CONF_DONE,
+    BT_DEV_WII_EXT_ID_READ,
     BT_DEV_WII_REP_MODE_SET,
-    BT_DEV_REPORTING,
 };
 
 #define H4_TYPE_COMMAND 1
@@ -241,6 +257,19 @@ static const bt_class_t allowed_class[] = {
 static const char *allowed_class_str[] = {
     "WiiU Pro CTRL",
     "Wiimote"
+};
+
+static const struct bt_name_type bt_name_type[] = {
+    {"Nintendo RVL-CNT-01", WII_CORE},
+    {"Nintendo RVL-CNT-01-TR", WII_CORE},
+    {"Nintendo RVL-CNT-01-UC", WIIU_PRO}
+};
+
+static const struct bt_wii_ext_type bt_wii_ext_type[] = {
+    {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, WII_NUNCHUCK},
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC},
+    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC}, /* Classic Pro */
+    {{0x01, 0x00, 0xA4, 0x20, 0x00, 0x00}, WIIU_PRO}
 };
 
 #ifdef H4_TRACE
@@ -348,18 +377,23 @@ static int32_t bt_get_dev_from_scid(uint16_t scid, struct bt_dev **device) {
     return (scid & 0xF);
 }
 
-#if 0
-static int32_t bt_get_dev_from_dcid(uint16_t dcid, struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
-        printf("%04X %04X\n", bt_dev[i].ctrl_chan.dcid, bt_dev[i].intr_chan.dcid);
-        if (bt_dev[i].ctrl_chan.dcid == dcid || bt_dev[i].intr_chan.dcid == dcid) {
-            *device = &bt_dev[i];
-            return i;
+static int32_t bt_get_type_from_name(const uint8_t* name) {
+    for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
+        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
+            return bt_name_type[i].type;
         }
     }
     return -1;
 }
-#endif
+
+static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
+    for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
+        if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, strlen(bt_name_type[i].name)) == 0) {
+            return bt_name_type[i].type;
+        }
+    }
+    return -1;
+}
 
 static void bt_hci_cmd(uint16_t opcode, uint16_t len) {
     uint16_t buflen = (sizeof(bt_hci_tx_frame.h4_type) + sizeof(bt_hci_tx_frame.cmd_hdr) + len);
@@ -585,9 +619,8 @@ static void bt_l2cap_cmd_info_rsp(uint16_t handle, uint16_t cid, uint8_t ident, 
 }
 
 static void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len) {
-    struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame.pl.hidp;
     uint16_t buflen = (sizeof(bt_acl_frame.h4_type) + sizeof(bt_acl_frame.acl_hdr)
-                       + sizeof(bt_acl_frame.l2cap_hdr) + sizeof(bt_hidp_data->hidp_hdr) + len);
+                       + sizeof(bt_acl_frame.l2cap_hdr) + sizeof(bt_acl_frame.pl.hidp.hidp_hdr) + len);
 
     atomic_clear_bit(&bt_flags, BT_CTRL_READY);
 
@@ -599,8 +632,8 @@ static void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t
     bt_acl_frame.l2cap_hdr.len = bt_acl_frame.acl_hdr.len - sizeof(bt_acl_frame.l2cap_hdr);
     bt_acl_frame.l2cap_hdr.cid = cid;
 
-    bt_hidp_data->hidp_hdr.hdr = BT_HIDP_DATA_OUT;
-    bt_hidp_data->hidp_hdr.protocol = protocol;
+    bt_acl_frame.pl.hidp.hidp_hdr.hdr = BT_HIDP_DATA_OUT;
+    bt_acl_frame.pl.hidp.hidp_hdr.protocol = protocol;
 
 #ifdef H4_TRACE
     bt_h4_trace((uint8_t *)&bt_acl_frame, buflen, BT_TX);
@@ -610,22 +643,36 @@ static void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t
 }
 
 static void bt_hid_cmd_wii_set_led(uint16_t handle, uint16_t cid, uint8_t conf) {
-    struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame.pl.hidp;
     //printf("# %s\n", __FUNCTION__);
 
-    bt_hidp_data->hidp_data.wii_conf.conf = conf;
+    bt_acl_frame.pl.hidp.hidp_data.wii_conf.conf = conf;
 
-    bt_hid_cmd(handle, cid, BT_HIDP_WII_LED_REPORT, sizeof(bt_hidp_data->hidp_data.wii_conf));
+    bt_hid_cmd(handle, cid, BT_HIDP_WII_LED_REPORT, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_conf));
 }
 
 static void bt_hid_cmd_wii_set_rep_mode(uint16_t handle, uint16_t cid, uint8_t continuous, uint8_t mode) {
-    struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame.pl.hidp;
     printf("# %s\n", __FUNCTION__);
 
-    bt_hidp_data->hidp_data.wii_rep_mode.options = (continuous ? 0x04 : 0x00);
-    bt_hidp_data->hidp_data.wii_rep_mode.mode = mode;
+    bt_acl_frame.pl.hidp.hidp_data.wii_rep_mode.options = (continuous ? 0x04 : 0x00);
+    bt_acl_frame.pl.hidp.hidp_data.wii_rep_mode.mode = mode;
 
-    bt_hid_cmd(handle, cid, BT_HIDP_WII_REP_MODE, sizeof(bt_hidp_data->hidp_data.wii_rep_mode));
+    bt_hid_cmd(handle, cid, BT_HIDP_WII_REP_MODE, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_rep_mode));
+}
+
+static void bt_hid_cmd_wii_read(uint16_t handle, uint16_t cid, struct bt_hidp_wii_rd_mem *wii_rd_mem) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_acl_frame.pl.hidp.hidp_data.wii_rd_mem, (void *)wii_rd_mem, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_rd_mem));
+
+    bt_hid_cmd(handle, cid, BT_HIDP_WII_RD_MEM, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_rd_mem));
+}
+
+static void bt_hid_cmd_wii_write(uint16_t handle, uint16_t cid, struct bt_hidp_wii_wr_mem *wii_wr_mem) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_acl_frame.pl.hidp.hidp_data.wii_wr_mem, (void *)wii_wr_mem, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_wr_mem));
+
+    bt_hid_cmd(handle, cid, BT_HIDP_WII_WR_MEM, sizeof(bt_acl_frame.pl.hidp.hidp_data.wii_wr_mem));
 }
 
 static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
@@ -666,7 +713,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                                 device->id = bt_dev_id;
                                 device->ctrl_chan.scid = bt_dev_id | 0x0080;
                                 device->intr_chan.scid = bt_dev_id | 0x0090;
-                                xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, NULL, 0);
+                                xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, device->xHandle, 0);
                             }
                         }
                         goto inquiry_result_break;
@@ -711,7 +758,8 @@ inquiry_result_break:
                     bt_hci_rx_frame->evt_data.remote_name_req_complete.status);
             }
             else {
-                printf("# dev: %d %s\n", device->id, bt_hci_rx_frame->evt_data.remote_name_req_complete.name);
+                device->type = bt_get_type_from_name(bt_hci_rx_frame->evt_data.remote_name_req_complete.name);
+                printf("# dev: %d type: %d %s\n", device->id, device->type, bt_hci_rx_frame->evt_data.remote_name_req_complete.name);
                 atomic_set_bit(&device->flags, BT_DEV_NAME_READ);
                 atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
                 atomic_clear_bit(&device->flags, BT_DEV_PENDING);
@@ -807,7 +855,6 @@ inquiry_result_break:
 static void bt_acl_handler(uint8_t *data, uint16_t len) {
     struct bt_dev *device = NULL;
     struct bt_acl_frame *bt_acl_frame = (struct bt_acl_frame *)data;
-    struct bt_hidp_data *bt_hidp_data = (struct bt_hidp_data *)bt_acl_frame->pl.hidp;
 
     switch (bt_acl_frame->pl.sig_hdr.code) {
         case BT_L2CAP_CONN_RSP:
@@ -851,10 +898,46 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_HIDP_DATA_IN:
             bt_get_dev_from_scid(bt_acl_frame->l2cap_hdr.cid, &device);
-            switch (bt_hidp_data->hidp_hdr.protocol) {
+            switch (bt_acl_frame->pl.hidp.hidp_hdr.protocol) {
+                case BT_HIDP_WII_STATUS:
+                    printf("# BT_HIDP_WII_STATUS\n");
+                    atomic_set_bit(&device->flags, BT_DEV_WII_STATUS_RX);
+                    atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_CONF_PENDING);
+                    atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_CONF_DONE);
+                    atomic_clear_bit(&device->flags, BT_DEV_WII_REP_MODE_SET);
+                    if ((bt_acl_frame->pl.hidp.hidp_data.wii_status.flags & BT_HIDP_WII_FLAGS_EXT_CONN) && device->type == WII_CORE) {
+                        printf("# dev: %d Skip ext id ext: %d type: %d\n", device->id,
+                            (bt_acl_frame->pl.hidp.hidp_data.wii_status.flags & BT_HIDP_WII_FLAGS_EXT_CONN), device->type);
+                        atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_ID_READ);
+                    }
+                    else {
+                        atomic_set_bit(&device->flags, BT_DEV_WII_EXT_ID_READ);
+                    }
+                    if (device->xHandle == NULL) {
+                        printf("# dev: %d respwawn config thread\n", device->id);
+                        xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, device->xHandle, 0);
+                    }
+                    break;
+                case BT_HIDP_WII_RD_DATA:
+                    printf("# BT_HIDP_WII_RD_DATA\n");
+                    device->type = bt_get_type_from_wii_ext(bt_acl_frame->pl.hidp.hidp_data.wii_rd_data.data);
+                    printf("# dev: %d wii ext: %d\n", device->id, device->type);
+                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                    break;
+                case BT_HIDP_WII_ACK:
+                    printf("# BT_HIDP_WII_ACK\n");
+                    switch(bt_acl_frame->pl.hidp.hidp_data.wii_ack.report) {
+                        case BT_HIDP_WII_WR_MEM:
+                            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            break;
+                    }
+                    if (bt_acl_frame->pl.hidp.hidp_data.wii_ack.err) {
+                        printf("# dev: %d ask err: 0x%02X\n", device->id, bt_acl_frame->pl.hidp.hidp_data.wii_ack.err);
+                    }
+                    break;
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
-                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)bt_hidp_data->hidp_data.wii_core_acc_ext.ext;
+                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_acl_frame->pl.hidp.hidp_data.wii_core_acc_ext.ext;
                     input.format = IO_FORMAT_WIIU_PRO;
                     if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
                         bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
@@ -1003,14 +1086,48 @@ static void bt_dev_task(void *param) {
                                 bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, led_dev_id_map[device->id] << 4);
                                 atomic_set_bit(&device->flags, BT_DEV_WII_LED_SET);
                             }
-                            else if (!atomic_test_bit(&device->flags, BT_DEV_WII_REP_MODE_SET)) {
-                                bt_hid_cmd_wii_set_rep_mode(device->acl_handle, device->intr_chan.dcid, 1, BT_HIDP_WII_CORE_ACC_EXT);
-                                atomic_set_bit(&device->flags, BT_DEV_WII_REP_MODE_SET);
-                            }
-                            else {
-                                atomic_set_bit(&device->flags, BT_DEV_REPORTING);
-                                vTaskDelete(NULL);
-                                return;
+                            else if (atomic_test_bit(&device->flags, BT_DEV_WII_STATUS_RX)) {
+                                if (atomic_test_bit(&device->flags, BT_DEV_WII_EXT_ID_READ)) {
+                                    bt_hid_cmd_wii_set_rep_mode(device->acl_handle, device->intr_chan.dcid, 1, BT_HIDP_WII_CORE_ACC_EXT);
+                                    atomic_set_bit(&device->flags, BT_DEV_WII_REP_MODE_SET);
+                                    device->xHandle = NULL;
+                                    vTaskDelete(NULL);
+                                }
+                                else if (!atomic_test_bit(&device->flags, BT_DEV_WII_EXT_CONF_PENDING)) {
+                                    struct bt_hidp_wii_wr_mem wii_wr_mem =
+                                    {
+                                        BT_HIDP_WII_REG,
+                                        {0xA4, 0x00, 0xF0},
+                                        0x01,
+                                        {0x55}
+                                    };
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_hid_cmd_wii_write(device->acl_handle, device->intr_chan.dcid, &wii_wr_mem);
+                                    atomic_set_bit(&device->flags, BT_DEV_WII_EXT_CONF_PENDING);
+                                }
+                                else if (!atomic_test_bit(&device->flags, BT_DEV_WII_EXT_CONF_DONE)) {
+                                    struct bt_hidp_wii_wr_mem wii_wr_mem =
+                                    {
+                                        BT_HIDP_WII_REG,
+                                        {0xA4, 0x00, 0xFB},
+                                        0x01,
+                                        {0x00}
+                                    };
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_hid_cmd_wii_write(device->acl_handle, device->intr_chan.dcid, &wii_wr_mem);
+                                    atomic_set_bit(&device->flags, BT_DEV_WII_EXT_CONF_DONE);
+                                }
+                                else {
+                                    struct bt_hidp_wii_rd_mem wii_rd_mem =
+                                    {
+                                        BT_HIDP_WII_REG,
+                                        {0xA4, 0x00, 0xFA},
+                                        0x0600,
+                                    };
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_hid_cmd_wii_read(device->acl_handle, device->intr_chan.dcid, &wii_rd_mem);
+                                    atomic_set_bit(&device->flags, BT_DEV_WII_EXT_ID_READ);
+                                }
                             }
                         }
                     }

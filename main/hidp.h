@@ -21,6 +21,8 @@ struct bt_hidp_wii_rep_mode {
     uint8_t mode;
 } __packed;
 
+#define BT_HIDP_WII_EEPROM     0x00
+#define BT_HIDP_WII_REG        0x04
 #define BT_HIDP_WII_WR_MEM     0x16
 struct bt_hidp_wii_wr_mem {
     uint8_t bank;
@@ -42,6 +44,14 @@ struct bt_hidp_wii_spkr_wr {
     uint8_t data[20];
 } __packed;
 
+#define BT_HIDP_WII_FLAGS_BATT_LOW (1 << 0)
+#define BT_HIDP_WII_FLAGS_EXT_CONN (1 << 1)
+#define BT_HIDP_WII_FLAGS_SPKR_ON  (1 << 2)
+#define BT_HIDP_WII_FLAGS_IR_ON    (1 << 3)
+#define BT_HIDP_WII_FLAGS_LED1     (1 << 4)
+#define BT_HIDP_WII_FLAGS_LED2     (1 << 5)
+#define BT_HIDP_WII_FLAGS_LED3     (1 << 6)
+#define BT_HIDP_WII_FLAGS_LED4     (1 << 7)
 #define BT_HIDP_WII_STATUS     0x20
 struct bt_hidp_wii_status {
     uint8_t buttons[2];
@@ -58,8 +68,8 @@ struct bt_hidp_wii_rd_data {
     uint8_t data[16];
 } __packed;
 
-#define BT_HIDP_WII_ERROR      0x22
-struct bt_hidp_wii_error {
+#define BT_HIDP_WII_ACK        0x22
+struct bt_hidp_wii_ack {
     uint8_t buttons[2];
     uint8_t report;
     uint8_t err;
@@ -139,8 +149,8 @@ struct bt_hidp_data {
         struct bt_hidp_wii_rd_mem wii_rd_mem;
         struct bt_hidp_wii_spkr_wr wii_spkr_wr;
         struct bt_hidp_wii_status wii_status;
-        struct bt_hidp_wii_rd_data rd_data;
-        struct bt_hidp_wii_error wii_error;
+        struct bt_hidp_wii_rd_data wii_rd_data;
+        struct bt_hidp_wii_ack wii_ack;
         struct bt_hidp_wii_core wii_core;
         struct bt_hidp_wii_core_acc wii_core_acc;
         struct bt_hidp_wii_core_ext8 wii_core_ext8;
