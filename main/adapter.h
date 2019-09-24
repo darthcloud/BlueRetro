@@ -3,7 +3,8 @@
 
 #include "zephyr/atomic.h"
 
-#define BT_MAX_DEV   7
+#define BT_MAX_DEV   7 /* BT limitation */
+#define WIRED_MAX_DEV 12 /* Saturn limit */
 
 /* BT device ID */
 #define BT_NONE      -1
@@ -40,7 +41,8 @@ struct bt_data {
     /* from adapter */
     uint8_t output[4];
     /* from wireless */
-    int32_t device_id;
+    int32_t dev_id
+    int32_t dev_type;
     uint8_t input[24];
 } __packed;
 
@@ -51,7 +53,7 @@ struct wired_data {
     uint32_t frame_cnt;
     uint8_t input[4];
     /* from adapter */
-    int32_t acc_mode;
+    int32_t dev_mode;
     uint8_t output[24];
 } __packed;
 
@@ -59,9 +61,9 @@ struct wired_adapter {
     /* from wired driver */
     int32_t system_id;
     /* from adapter */
-    int32_t dev_mode;
+    int32_t driver_mode;
     /* Bi-directional */
-    struct wired_data data[BT_MAX_DEV];
+    struct wired_data data[WIRED_MAX_DEV];
 };
 
 struct bt_adapter {
