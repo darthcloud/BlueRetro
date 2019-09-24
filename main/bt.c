@@ -160,12 +160,12 @@ struct bt_acl_frame {
 
 struct bt_name_type {
     char name[249];
-    uint8_t type;
+    int8_t type;
 };
 
 struct bt_wii_ext_type {
     uint8_t ext_type[6];
-    uint8_t type;
+    int8_t type;
 };
 
 struct l2cap_chan {
@@ -180,7 +180,7 @@ struct bt_dev {
     TaskHandle_t xHandle;
     bt_addr_t remote_bdaddr;
     bt_class_t remote_class;
-    uint8_t type;
+    int8_t type;
     uint16_t acl_handle;
     uint8_t l2cap_ident;
     struct l2cap_chan ctrl_chan;
@@ -248,9 +248,11 @@ static uint16_t max_ly = 0;
 static uint16_t max_rx = 0;
 static uint16_t max_ry = 0;
 #endif
+
 static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
+
 static const bt_class_t allowed_class[] = {
     {{0x08, 0x05, 0x00}},
     {{0x04, 0x25, 0x00}}
@@ -948,13 +950,13 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                             break;
                     }
                     if (bt_acl_frame->pl.hidp.hidp_data.wii_ack.err) {
-                        printf("# dev: %d ask err: 0x%02X\n", device->id, bt_acl_frame->pl.hidp.hidp_data.wii_ack.err);
+                        printf("# dev: %d ack err: 0x%02X\n", device->id, bt_acl_frame->pl.hidp.hidp_data.wii_ack.err);
                     }
                     break;
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
                     struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_acl_frame->pl.hidp.hidp_data.wii_core_acc_ext.ext;
-                    input.format = IO_FORMAT_WIIU_PRO;
+                    input.format = device->type;
                     if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
                         bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
                         atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);

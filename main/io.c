@@ -1,4 +1,5 @@
 #include "io.h"
+#include "adapter.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -319,13 +320,22 @@ static void wiiu_pro_to_generic(struct btn map_table[], struct io *specific, str
 
 const convert_generic_func_t convert_to_generic_func[16] =
 {
-    NULL, /* Generic */
-    NULL, /* NES */
-    NULL, /* SNES */
-    NULL, /* N64 */
-    NULL, /* GC */
-    NULL, /* Wii */
-    wiiu_pro_to_generic
+    NULL, /* WII_CORE */
+    NULL, /* WII_NUNCHUCK */
+    NULL, /* WII_CLASSIC */
+    wiiu_pro_to_generic, /* WIIU_PRO */
+    NULL, /* SWITCH_PRO */
+    NULL, /* PS3_DS3 */
+    NULL, /* PS4_DS4 */
+    NULL, /* XBONE_S */
+    NULL, /* HID_PAD */
+    NULL, /* HID_KB */
+    NULL, /* HID_MOUSE */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 static void n64_from_generic(struct btn map_table[], struct io *specific, struct generic_map *generic) {
@@ -712,7 +722,12 @@ void translate_status(struct config *config, struct io *input, struct io* output
 
     start_us = esp_timer_impl_get_time();
 
-    convert_to_generic_func[input->format](NULL, input, &generic);
+    if (input->format >= 0 && convert_to_generic_func[input->format]) {
+        convert_to_generic_func[input->format](NULL, input, &generic);
+    }
+    else {
+        return;
+    }
 
     if (!generic.buttons) {
         atomic_clear_bit(&io_flags, IO_WAITING_FOR_RELEASE);
