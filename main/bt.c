@@ -237,7 +237,7 @@ static bt_addr_t local_bdaddr;
 static atomic_t bt_flags = 0;
 static struct bt_hci_tx_frame bt_hci_tx_frame;
 static struct bt_acl_frame bt_acl_frame;
-static bt_class_t local_class = {{0x04, 0x08, 0x00}};
+static bt_class_t local_class = {{0x00, 0x01, 0x00}}; /* Computer */
 #if 0
 static uint16_t min_lx = 0xFFFF;
 static uint16_t min_ly = 0xFFFF;
