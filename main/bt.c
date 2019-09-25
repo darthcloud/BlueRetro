@@ -346,6 +346,16 @@ static int32_t bt_get_new_dev(struct bt_dev **device) {
     return -1;
 }
 
+static int32_t bt_get_active_dev(struct bt_dev **device) {
+    for (uint32_t i = 0; i < 7; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
+            *device = &bt_dev[i];
+            return i;
+        }
+    }
+    return -1;
+}
+
 static int32_t bt_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
         if (memcmp(bdaddr->val, bt_dev[i].remote_bdaddr.val, 6) == 0) {
@@ -913,6 +923,15 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE);
             atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
             atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+            break;
+        case BT_L2CAP_DISCONN_REQ:
+            printf("# BT_L2CAP_DISCONN_REQ\n");
+            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
+            memset(&bt_dev[device->id], 0, sizeof(bt_dev[0]));
+            if (bt_get_active_dev(&device) == -1) {
+                printf("# No paired device left, restart inquiry\n");
+                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, NULL, 0);
+            }
             break;
         case BT_HIDP_DATA_IN:
             bt_get_dev_from_scid(bt_acl_frame->l2cap_hdr.cid, &device);
