@@ -560,6 +560,40 @@ struct bt_hci_cp_set_event_mask {
 
 #define BT_HCI_OP_RESET                         BT_OP(BT_OGF_BASEBAND, 0x0003)
 
+#ifdef BLUERETRO
+#define BT_HCI_OP_SET_EVENT_FILTER              BT_OP(BT_OGF_BASEBAND, 0x0005)
+#define BT_BREDR_FILTER_TYPE_CLEAR              0x00
+#define BT_BREDR_FILTER_TYPE_INQUIRY            0x01
+#define BT_BREDR_FILTER_TYPE_CONN               0x02
+#define BT_BDEDR_COND_TYPE_NONE                 0x00
+#define BT_BDEDR_COND_TYPE_CLASS                0x01
+#define BT_BDEDR_COND_TYPE_BDADDR               0x02
+#define BT_BREDR_AUTO_OFF                       0x01
+#define BT_BREDR_AUTO_ON_SW_OFF                 0x02
+#define BT_BREDR_AUTO_ON_SW_ON                  0x03
+struct bt_hci_cp_set_event_filter {
+	u8_t filter_type;
+	u8_t condition_type;
+	union {
+		struct {
+			u8_t dev_class[3];
+			u8_t dev_class_mask[3];
+		} inquiry_class;
+		bt_addr_t bdaddr;
+		u8_t auto_accept_flag;
+		struct {
+			u8_t dev_class[3];
+			u8_t dev_class_mask[3];
+			u8_t auto_accept_flag;
+		} conn_class;
+		struct {
+			bt_addr_t bdaddr;
+			u8_t auto_accept_flag;
+		} conn_bdaddr;
+	};
+} __packed;
+#endif
+
 #define BT_HCI_OP_WRITE_LOCAL_NAME              BT_OP(BT_OGF_BASEBAND, 0x0013)
 struct bt_hci_write_local_name {
 	u8_t local_name[248];

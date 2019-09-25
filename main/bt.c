@@ -52,6 +52,7 @@ struct bt_hci_tx_frame {
         struct bt_hci_cp_user_passkey_neg_reply user_passkey_neg_reply;
         struct bt_hci_cp_io_capability_neg_reply io_capability_neg_reply;
         struct bt_hci_cp_set_event_mask set_event_mask;
+        struct bt_hci_cp_set_event_filter set_event_filter;
         struct bt_hci_cp_write_scan_enable write_scan_enable;
         struct bt_hci_cp_write_class_of_device write_class_of_device;
         struct bt_hci_cp_read_tx_power_level read_tx_power_level;
@@ -177,6 +178,7 @@ struct l2cap_chan {
 struct bt_dev {
     int32_t id;
     atomic_t flags;
+    uint32_t report_cnt;
     TaskHandle_t xHandle;
     bt_addr_t remote_bdaddr;
     bt_class_t remote_class;
@@ -195,6 +197,7 @@ enum {
     BT_CTRL_CLASS_SET,
     BT_CTRL_BDADDR_READ,
     BT_CTRL_VER_READ,
+    BT_CTRL_INQUIRY_FILTER,
     BT_CTRL_PAGE_ENABLE,
     BT_CTRL_INQUIRY,
     /* BT device connection flags */
@@ -434,7 +437,7 @@ static void bt_hci_cmd_inquiry(void) {
     bt_hci_tx_frame.cmd_cp.inquiry.lap[0] = 0x33;
     bt_hci_tx_frame.cmd_cp.inquiry.lap[1] = 0x8B;
     bt_hci_tx_frame.cmd_cp.inquiry.lap[2] = 0x9E;
-    bt_hci_tx_frame.cmd_cp.inquiry.length = 0x30; /* 0x30 * 1.28 s = 61.44 s */
+    bt_hci_tx_frame.cmd_cp.inquiry.length = 0x02; /* 0x02 * 1.28 s = 2.56 s */
     bt_hci_tx_frame.cmd_cp.inquiry.num_rsp = 0xFF;
 
     bt_hci_cmd(BT_HCI_OP_INQUIRY, sizeof(bt_hci_tx_frame.cmd_cp.inquiry));
@@ -508,6 +511,21 @@ static void bt_hci_cmd_reset(void) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_RESET, 0);
+}
+
+static void bt_hci_cmd_set_event_filter(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.set_event_filter.filter_type = BT_BREDR_FILTER_TYPE_INQUIRY;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.condition_type = BT_BDEDR_COND_TYPE_CLASS;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[0] = 0x00;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[1] = 0x05;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[2] = 0x00;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[0] = 0x00;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[1] = 0x1F;
+    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[2] = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_SET_EVENT_FILTER, 2 + 3 + 3);
 }
 
 static void bt_hci_cmd_write_scan_enable(uint8_t scan_enable) {
@@ -748,8 +766,8 @@ inquiry_result_break:
         case BT_HCI_EVT_CONN_COMPLETE:
             printf("# BT_HCI_EVT_CONN_COMPLETE\n");
             bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.conn_complete.bdaddr, &device);
-            if (bt_hci_rx_frame->evt_data.conn_complete.status) {
-                printf("# dev: %d error: 0x%02X\n", device->id,
+            if (!device || bt_hci_rx_frame->evt_data.conn_complete.status) {
+                printf("# dev: %d error: 0x%02X\n", device->id ? device->id : -1,
                     bt_hci_rx_frame->evt_data.conn_complete.status);
             }
             else {
@@ -762,6 +780,22 @@ inquiry_result_break:
             break;
         case BT_HCI_EVT_CONN_REQUEST:
             printf("# BT_HCI_EVT_CONN_REQUEST\n");
+            bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.conn_request.bdaddr, &device);
+            if (device == NULL) {
+                int32_t bt_dev_id = bt_get_new_dev(&device);
+                if (device) {
+                    memcpy(device->remote_class.val, bt_hci_rx_frame->evt_data.conn_request.dev_class,
+                        sizeof(device->remote_class));
+                    memcpy(device->remote_bdaddr.val, bt_hci_rx_frame->evt_data.conn_request.bdaddr.val,
+                        sizeof(device->remote_bdaddr));
+                    device->id = bt_dev_id;
+                    device->ctrl_chan.scid = bt_dev_id | 0x0080;
+                    device->intr_chan.scid = bt_dev_id | 0x0090;
+                }
+            }
+            printf("# Page dev: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
+                device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
+                device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
             break;
         case BT_HCI_EVT_AUTH_COMPLETE:
             printf("# BT_HCI_EVT_AUTH_COMPLETE\n");
@@ -805,6 +839,9 @@ inquiry_result_break:
                         break;
                     case BT_HCI_OP_RESET:
                         atomic_set_bit(&bt_flags, BT_CTRL_ENABLE);
+                        break;
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                        atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
                         break;
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                         atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
@@ -976,6 +1013,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
                     struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_acl_frame->pl.hidp.hidp_data.wii_core_acc_ext.ext;
+                    device->report_cnt++;
                     input.format = device->type;
                     if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
                         bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
@@ -1050,12 +1088,14 @@ static void bt_task(void *param) {
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_VER_READ)) {
                         bt_hci_cmd_read_local_version_info();
                     }
-#if 0
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
+                        bt_hci_cmd_set_event_filter();
+                    }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_ENABLE)) {
                         bt_hci_cmd_write_scan_enable(BT_BREDR_SCAN_PAGE);
                     }
-#endif
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY)) {
+                        vTaskDelay(2560 / portTICK_PERIOD_MS); /* Stay in page scan as much as in inquiry */
                         bt_hci_cmd_inquiry();
                         xHandle = NULL;
                         vTaskDelete(NULL);
