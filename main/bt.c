@@ -1050,9 +1050,11 @@ static void bt_task(void *param) {
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_VER_READ)) {
                         bt_hci_cmd_read_local_version_info();
                     }
+#if 0
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_ENABLE)) {
                         bt_hci_cmd_write_scan_enable(BT_BREDR_SCAN_PAGE);
                     }
+#endif
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY)) {
                         bt_hci_cmd_inquiry();
                         xHandle = NULL;
