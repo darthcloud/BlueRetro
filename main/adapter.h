@@ -41,7 +41,7 @@ struct bt_data {
     /* from adapter */
     uint8_t output[4];
     /* from wireless */
-    int32_t dev_id
+    int32_t dev_id;
     int32_t dev_type;
     uint8_t input[24];
 } __packed;

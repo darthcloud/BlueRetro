@@ -229,6 +229,7 @@ enum {
 #define H4_TYPE_EVENT   4
 
 static struct bt_dev bt_dev[7] = {0};
+TaskHandle_t xHandle;
 static struct io input;
 static struct io *output;
 static struct config *sd_config;
@@ -402,8 +403,8 @@ static int32_t bt_get_type_from_name(const uint8_t* name) {
 
 static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
     for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
-        if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, strlen(bt_name_type[i].name)) == 0) {
-            return bt_name_type[i].type;
+        if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
+            return bt_wii_ext_type[i].type;
         }
     }
     return -1;
@@ -706,8 +707,8 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
             atomic_clear_bit(&bt_flags, BT_CTRL_INQUIRY);
             atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-            if (!bt_dev[0].flags) {
-                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, NULL, 0);
+            if (!bt_dev[0].flags && xHandle == NULL) {
+                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
             }
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
@@ -928,9 +929,9 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             printf("# BT_L2CAP_DISCONN_REQ\n");
             bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
             memset(&bt_dev[device->id], 0, sizeof(bt_dev[0]));
-            if (bt_get_active_dev(&device) == -1) {
+            if (bt_get_active_dev(&device) == -1 && xHandle == NULL) {
                 printf("# No paired device left, restart inquiry\n");
-                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, NULL, 0);
+                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
             }
             break;
         case BT_HIDP_DATA_IN:
@@ -1054,6 +1055,7 @@ static void bt_task(void *param) {
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY)) {
                         bt_hci_cmd_inquiry();
+                        xHandle = NULL;
                         vTaskDelete(NULL);
                     }
                 }
@@ -1236,7 +1238,7 @@ esp_err_t bt_init(struct io *io_data, struct config *config) {
 
     bt_ctrl_rcv_pkt_ready();
 
-    xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
     return ret;
 }
 
