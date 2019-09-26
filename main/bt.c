@@ -219,6 +219,7 @@ enum {
     BT_DEV_L2CAP_RCONF_DONE,
     BT_DEV_SDP_PENDING,
     BT_DEV_SDP_CONNECTED,
+    BT_DEV_HID_DESCRIPTOR_READ,
     BT_DEV_HID_CTRL_PENDING,
     BT_DEV_HID_CTRL_CONNECTED,
     BT_DEV_HID_INTR_PENDING,
@@ -851,7 +852,12 @@ inquiry_result_break:
                         atomic_set_bit(&bt_flags, BT_CTRL_ENABLE);
                         break;
                     case BT_HCI_OP_SET_EVENT_FILTER:
-                        atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
+                        if (atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
+                            atomic_set_bit(&bt_flags, BT_CTRL_CONN_FILTER);
+                        }
+                        else {
+                            atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
+                        }
                         break;
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                         atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
@@ -1103,7 +1109,18 @@ static void bt_task(void *param) {
                             .filter_type = BT_BREDR_FILTER_TYPE_INQUIRY,
                             .condition_type = BT_BDEDR_COND_TYPE_CLASS,
                             .inquiry_class.dev_class = {0x00, 0x05, 0x00},
-                            .inquiry_class.dev_class_mask = {0x00, 0x1F, 0x00},
+                            .inquiry_class.dev_class_mask = {0x00, 0x1F, 0x00}
+                        };
+
+                        bt_hci_cmd_set_event_filter(&event_filter);
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CONN_FILTER)) {
+                        struct bt_hci_cp_set_event_filter event_filter = {
+                            .filter_type = BT_BREDR_FILTER_TYPE_CONN,
+                            .condition_type = BT_BDEDR_COND_TYPE_CLASS,
+                            .conn_class.dev_class = {0x00, 0x05, 0x00},
+                            .conn_class.dev_class_mask = {0x00, 0x1F, 0x00},
+                            .conn_class.auto_accept_flag =  BT_BREDR_AUTO_OFF
                         };
 
                         bt_hci_cmd_set_event_filter(&event_filter);
