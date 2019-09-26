@@ -198,8 +198,12 @@ enum {
     BT_CTRL_BDADDR_READ,
     BT_CTRL_VER_READ,
     BT_CTRL_INQUIRY_FILTER,
+    BT_CTRL_CONN_FILTER,
     BT_CTRL_PAGE_ENABLE,
     BT_CTRL_INQUIRY,
+};
+
+enum {
     /* BT device connection flags */
     BT_DEV_PENDING,
     BT_DEV_DEVICE_FOUND,
@@ -213,6 +217,8 @@ enum {
     BT_DEV_L2CAP_LCONF_DONE,
     BT_DEV_L2CAP_RCONF_REQ,
     BT_DEV_L2CAP_RCONF_DONE,
+    BT_DEV_SDP_PENDING,
+    BT_DEV_SDP_CONNECTED,
     BT_DEV_HID_CTRL_PENDING,
     BT_DEV_HID_CTRL_CONNECTED,
     BT_DEV_HID_INTR_PENDING,
@@ -513,19 +519,23 @@ static void bt_hci_cmd_reset(void) {
     bt_hci_cmd(BT_HCI_OP_RESET, 0);
 }
 
-static void bt_hci_cmd_set_event_filter(void) {
+static void bt_hci_cmd_set_event_filter(struct bt_hci_cp_set_event_filter *event_filter) {
+    uint32_t len = 0;
     printf("# %s\n", __FUNCTION__);
 
-    bt_hci_tx_frame.cmd_cp.set_event_filter.filter_type = BT_BREDR_FILTER_TYPE_INQUIRY;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.condition_type = BT_BDEDR_COND_TYPE_CLASS;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[0] = 0x00;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[1] = 0x05;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class[2] = 0x00;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[0] = 0x00;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[1] = 0x1F;
-    bt_hci_tx_frame.cmd_cp.set_event_filter.inquiry_class.dev_class_mask[2] = 0x00;
+    memcpy((void *)&bt_hci_tx_frame.cmd_cp.set_event_filter, (void *)event_filter, sizeof(bt_hci_tx_frame.cmd_cp.set_event_filter));
 
-    bt_hci_cmd(BT_HCI_OP_SET_EVENT_FILTER, 2 + 3 + 3);
+    if (event_filter->filter_type == BT_BREDR_FILTER_TYPE_INQUIRY) {
+        len += 2;
+    }
+    else if (event_filter->filter_type == BT_BREDR_FILTER_TYPE_CONN) {
+        len += 3;
+    }
+    if (event_filter->condition_type) {
+        len += 6;
+    }
+
+    bt_hci_cmd(BT_HCI_OP_SET_EVENT_FILTER, len);
 }
 
 static void bt_hci_cmd_write_scan_enable(uint8_t scan_enable) {
@@ -1089,7 +1099,14 @@ static void bt_task(void *param) {
                         bt_hci_cmd_read_local_version_info();
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
-                        bt_hci_cmd_set_event_filter();
+                        struct bt_hci_cp_set_event_filter event_filter = {
+                            .filter_type = BT_BREDR_FILTER_TYPE_INQUIRY,
+                            .condition_type = BT_BDEDR_COND_TYPE_CLASS,
+                            .inquiry_class.dev_class = {0x00, 0x05, 0x00},
+                            .inquiry_class.dev_class_mask = {0x00, 0x1F, 0x00},
+                        };
+
+                        bt_hci_cmd_set_event_filter(&event_filter);
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_ENABLE)) {
                         bt_hci_cmd_write_scan_enable(BT_BREDR_SCAN_PAGE);
