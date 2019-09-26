@@ -181,10 +181,10 @@ struct bt_dev {
     uint32_t report_cnt;
     TaskHandle_t xHandle;
     bt_addr_t remote_bdaddr;
-    bt_class_t remote_class;
     int8_t type;
     uint16_t acl_handle;
     uint8_t l2cap_ident;
+    struct l2cap_chan sdp_chan;
     struct l2cap_chan ctrl_chan;
     struct l2cap_chan intr_chan;
 };
@@ -262,16 +262,6 @@ static uint16_t max_ry = 0;
 
 static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
-};
-
-static const bt_class_t allowed_class[] = {
-    {{0x08, 0x05, 0x00}},
-    {{0x04, 0x25, 0x00}}
-};
-
-static const char *allowed_class_str[] = {
-    "WiiU Pro CTRL",
-    "Wiimote"
 };
 
 static const struct bt_name_type bt_name_type[] = {
@@ -744,35 +734,25 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
             printf("# Number of responce: %d\n", bt_hci_rx_frame->evt_data.inquiry_result.nb_rsp);
             for (uint8_t i = 1; i <= bt_hci_rx_frame->evt_data.inquiry_result.nb_rsp; i++) {
-                for (uint8_t j = 0; j < sizeof(allowed_class); j++) {
-                    if (memcmp((uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 9*i,
-                            allowed_class[j].val, sizeof(bt_class_t)) == 0) {
-                        bt_get_dev_from_bdaddr((bt_addr_t *)((uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1)), &device);
-                        if (device == NULL) {
-                            int32_t bt_dev_id = bt_get_new_dev(&device);
-                            if (device) {
-                                memcpy(device->remote_class.val,
-                                    (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 9*i,
-                                    sizeof(device->remote_class));
-                                memcpy(device->remote_bdaddr.val,
-                                    (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1),
-                                    sizeof(device->remote_bdaddr));
-                                printf("# Found class: %s bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", allowed_class_str[j],
-                                    device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
-                                    device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
-                                atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                                atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-                                device->id = bt_dev_id;
-                                device->ctrl_chan.scid = bt_dev_id | 0x0080;
-                                device->intr_chan.scid = bt_dev_id | 0x0090;
-                                xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, device->xHandle, 0);
-                            }
-                        }
-                        goto inquiry_result_break;
+                bt_get_dev_from_bdaddr((bt_addr_t *)((uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1)), &device);
+                if (device == NULL) {
+                    int32_t bt_dev_id = bt_get_new_dev(&device);
+                    if (device) {
+                        memcpy(device->remote_bdaddr.val,
+                            (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1),
+                            sizeof(device->remote_bdaddr));
+                        atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                        atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
+                        device->id = bt_dev_id;
+                        device->ctrl_chan.scid = bt_dev_id | 0x0080;
+                        device->intr_chan.scid = bt_dev_id | 0x0090;
+                        xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, device->xHandle, 0);
                     }
                 }
+                printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
+                    device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
+                    device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
             }
-inquiry_result_break:
             break;
         case BT_HCI_EVT_CONN_COMPLETE:
             printf("# BT_HCI_EVT_CONN_COMPLETE\n");
@@ -795,8 +775,6 @@ inquiry_result_break:
             if (device == NULL) {
                 int32_t bt_dev_id = bt_get_new_dev(&device);
                 if (device) {
-                    memcpy(device->remote_class.val, bt_hci_rx_frame->evt_data.conn_request.dev_class,
-                        sizeof(device->remote_class));
                     memcpy(device->remote_bdaddr.val, bt_hci_rx_frame->evt_data.conn_request.bdaddr.val,
                         sizeof(device->remote_bdaddr));
                     device->id = bt_dev_id;
