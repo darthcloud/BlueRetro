@@ -207,6 +207,7 @@ enum {
     /* BT device connection flags */
     BT_DEV_PENDING,
     BT_DEV_DEVICE_FOUND,
+    BT_DEV_PAGE,
     BT_DEV_NAME_READ,
     BT_DEV_CONNECTED,
     BT_DEV_AUTHENTICATING,
@@ -457,6 +458,15 @@ static void bt_hci_cmd_connect(bt_addr_t *bdaddr) {
     bt_hci_tx_frame.cmd_cp.connect.allow_role_switch = 0x00;
 
     bt_hci_cmd(BT_HCI_OP_CONNECT, sizeof(bt_hci_tx_frame.cmd_cp.connect));
+}
+
+static void bt_hci_cmd_accept_conn_req(bt_addr_t *bdaddr) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_hci_tx_frame.cmd_cp.accept_conn_req.bdaddr, (void *)bdaddr, sizeof(bdaddr));
+    bt_hci_tx_frame.cmd_cp.accept_conn_req.role = 0x00; /* Become master */
+
+    bt_hci_cmd(BT_HCI_OP_ACCEPT_CONN_REQ, sizeof(bt_hci_tx_frame.cmd_cp.accept_conn_req));
 }
 
 static void bt_hci_cmd_link_key_neg_reply(bt_addr_t bdaddr) {
@@ -742,7 +752,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                             (uint8_t *)&bt_hci_rx_frame->evt_data.inquiry_result + 1 + 6*(i - 1),
                             sizeof(device->remote_bdaddr));
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                        atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
                         device->id = bt_dev_id;
                         device->ctrl_chan.scid = bt_dev_id | 0x0080;
                         device->intr_chan.scid = bt_dev_id | 0x0090;
@@ -780,6 +789,8 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     device->id = bt_dev_id;
                     device->ctrl_chan.scid = bt_dev_id | 0x0080;
                     device->intr_chan.scid = bt_dev_id | 0x0090;
+                    atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                    atomic_set_bit(&device->flags, BT_DEV_PAGE);
                 }
             }
             printf("# Page dev: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
@@ -891,9 +902,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                             atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATING);
                             atomic_clear_bit(&device->flags, BT_DEV_PENDING);
                         }
-                        atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
                         break;
                 }
+                atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
             }
             break;
         case BT_HCI_EVT_PIN_CODE_REQ:
