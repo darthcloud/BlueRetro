@@ -946,7 +946,6 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             }
             else {
                 device->ctrl_chan.dcid = bt_acl_frame->pl.l2cap_data.conn_req.scid;
-                printf("JG2019 req ctrl %d %d\n", atomic_test_bit(&bt_flags, BT_CTRL_PENDING), atomic_test_bit(&device->flags, BT_DEV_PENDING));
                 //atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATED);
             }
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ);
@@ -1164,7 +1163,7 @@ static void bt_dev_task(void *param) {
             if (!atomic_test_bit(&bt_flags, BT_CTRL_PENDING)) {
                 if (!atomic_test_bit(&device->flags, BT_DEV_PENDING)) {
                     if (atomic_test_bit(&device->flags, BT_DEV_CONNECTED)) {
-                        if (atomic_test_bit(&device->flags, BT_DEV_AUTHENTICATED)) {
+                        if (atomic_test_bit(&device->flags, BT_DEV_AUTHENTICATED) || atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                             if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_CONNECTED)) {
                                 if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
@@ -1190,6 +1189,7 @@ static void bt_dev_task(void *param) {
                                     bt_l2cap_cmd_conf_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->ctrl_chan.dcid);
                                 }
                                 else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE)) {
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ);
                                     atomic_clear_bit(&device->flags, BT_DEV_L2CAP_CONNECTED);
                                     atomic_clear_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE);
                                     atomic_clear_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE);
@@ -1200,7 +1200,7 @@ static void bt_dev_task(void *param) {
                                 if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                                         if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ)) {
-                                            bt_l2cap_cmd_conn_rsp(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->intr_chan.dcid, device->intr_chan.scid, 0);
+                                            bt_l2cap_cmd_conn_rsp(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->intr_chan.scid, device->intr_chan.dcid, 0);
                                             atomic_set_bit(&device->flags, BT_DEV_L2CAP_CONNECTED);
                                         }
                                     }
