@@ -51,6 +51,10 @@ struct bt_hci_tx_frame {
         struct bt_hci_cp_user_passkey_reply user_passkey_reply;
         struct bt_hci_cp_user_passkey_neg_reply user_passkey_neg_reply;
         struct bt_hci_cp_io_capability_neg_reply io_capability_neg_reply;
+        struct bt_hci_cp_switch_role switch_role;
+        struct bt_hci_cp_read_link_policy read_link_policy;
+        struct bt_hci_cp_write_link_policy write_link_policy;
+        struct bt_hci_cp_write_default_link_policy write_default_link_policy;
         struct bt_hci_cp_set_event_mask set_event_mask;
         struct bt_hci_cp_set_event_filter set_event_filter;
         struct bt_hci_cp_write_scan_enable write_scan_enable;
@@ -96,6 +100,9 @@ struct bt_hci_rx_frame {
                 struct bt_hci_rp_pin_code_neg_reply pin_code_neg_reply;
                 struct bt_hci_rp_remote_name_cancel remote_name_cancel;
                 struct bt_hci_rp_user_confirm_reply user_confirm_reply;
+                struct bt_hci_rp_read_link_policy read_link_policy;
+                struct bt_hci_rp_write_link_policy write_link_policy;
+                struct bt_hci_rp_read_default_link_policy read_default_link_policy;
                 struct bt_hci_rp_read_tx_power_level read_tx_power_level;
                 struct bt_hci_rp_read_auth_payload_timeout read_auth_payload_timeout;
                 struct bt_hci_rp_write_auth_payload_timeout write_auth_payload_timeout;
@@ -513,6 +520,46 @@ static void bt_hci_cmd_remote_name_request(bt_addr_t bdaddr) {
     bt_hci_tx_frame.cmd_cp.remote_name_request.clock_offset = 0x0000;
 
     bt_hci_cmd(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(bt_hci_tx_frame.cmd_cp.remote_name_request));
+}
+
+static void bt_hci_cmd_switch_role(bt_addr_t *bdaddr, uint8_t role) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_hci_tx_frame.cmd_cp.switch_role.bdaddr, (void* )bdaddr, sizeof(*bdaddr));
+    bt_hci_tx_frame.cmd_cp.switch_role.role = role;
+
+    bt_hci_cmd(BT_HCI_OP_SWITCH_ROLE, sizeof(bt_hci_tx_frame.cmd_cp.switch_role));
+}
+
+static void bt_hci_cmd_read_link_policy(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.read_link_policy.handle = handle;
+
+    bt_hci_cmd(BT_HCI_OP_READ_LINK_POLICY, sizeof(bt_hci_tx_frame.cmd_cp.read_link_policy));
+}
+
+static void bt_hci_cmd_write_link_policy(uint16_t handle, uint16_t link_policy) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_link_policy.handle = handle;
+    bt_hci_tx_frame.cmd_cp.write_link_policy.link_policy = link_policy;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_LINK_POLICY, sizeof(bt_hci_tx_frame.cmd_cp.write_link_policy));
+}
+
+static void bt_hci_cmd_read_default_link_policy(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_DEFAULT_LINK_POLICY, 0);
+}
+
+static void bt_hci_cmd_write_default_link_policy(uint16_t link_policy) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_default_link_policy.link_policy = link_policy;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY, sizeof(bt_hci_tx_frame.cmd_cp.write_default_link_policy));
 }
 
 static void bt_hci_cmd_reset(void) {
