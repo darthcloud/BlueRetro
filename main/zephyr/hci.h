@@ -348,6 +348,9 @@ struct bt_hci_cmd_hdr {
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL                        0x01
+#ifdef BLUERETRO
+#define BT_OGF_LINK_POLICY                      0x02
+#endif /* BLUERETRO */
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_STATUS                           0x05
@@ -552,6 +555,50 @@ struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
 	u8_t   reason;
 } __packed;
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_SWITCH_ROLE                   BT_OP(BT_OGF_LINK_POLICY, 0x000B)
+struct bt_hci_cp_switch_role {
+	bt_addr_t bdaddr;
+	u8_t  role;
+} __packed;
+
+#define BT_HCI_OP_READ_LINK_POLICY              BT_OP(BT_OGF_LINK_POLICY, 0x000C)
+#define BT_BREDR_ENABLE_ROLE_SW                 BIT(0)
+#define BT_BREDR_ENABLE_HOLD_MODE               BIT(1)
+#define BT_BREDR_ENABLE_SNIFF_MODE              BIT(2)
+struct bt_hci_cp_read_link_policy {
+	u16_t handle;
+} __packed;
+
+struct bt_hci_rp_read_link_policy {
+	u8_t  status;
+	u16_t handle;
+	u16_t link_policy;
+} __packed;
+
+#define BT_HCI_OP_WRITE_LINK_POLICY             BT_OP(BT_OGF_LINK_POLICY, 0x000D)
+struct bt_hci_cp_write_link_policy {
+	u16_t handle;
+	u16_t link_policy;
+} __packed;
+
+struct bt_hci_rp_write_link_policy {
+	u8_t  status;
+	u16_t handle;
+} __packed;
+
+#define BT_HCI_OP_READ_DEFAULT_LINK_POLICY      BT_OP(BT_OGF_LINK_POLICY, 0x000E)
+struct bt_hci_rp_read_default_link_policy {
+	u8_t  status;
+	u16_t link_policy;
+} __packed;
+
+#define BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY     BT_OP(BT_OGF_LINK_POLICY, 0x000F)
+struct bt_hci_cp_write_default_link_policy {
+	u16_t link_policy;
+} __packed;
+#endif /* BLUERETRO */
 
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001)
 struct bt_hci_cp_set_event_mask {
