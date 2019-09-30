@@ -1345,7 +1345,7 @@ static void bt_dev_task(void *param) {
                         }
                         else if (atomic_test_bit(&device->flags, BT_DEV_PIN_CODE_REQ)) {
                             atomic_set_bit(&device->flags, BT_DEV_PENDING);
-                            if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                            if (device->type == WII_CORE) {
                                 bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, device->remote_bdaddr.val);
                             }
                             else {
