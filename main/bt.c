@@ -206,6 +206,7 @@ enum {
     BT_CTRL_CLASS_SET,
     BT_CTRL_BDADDR_READ,
     BT_CTRL_VER_READ,
+    BT_CTRL_SSP_ENABLE,
     BT_CTRL_INQUIRY_FILTER,
     BT_CTRL_CONN_FILTER,
     BT_CTRL_PAGE_ENABLE,
@@ -615,6 +616,14 @@ static void bt_hci_cmd_write_class_of_device(bt_class_t dev_class) {
     bt_hci_cmd(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(bt_hci_tx_frame.cmd_cp.write_class_of_device));
 }
 
+static void bt_hci_cmd_write_ssp_mode(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_ssp_mode.mode = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_SSP_MODE, sizeof(bt_hci_tx_frame.cmd_cp.write_ssp_mode));
+}
+
 static void bt_hci_cmd_read_local_version_info(void) {
     printf("# %s\n", __FUNCTION__);
 
@@ -935,6 +944,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
                         atomic_set_bit(&bt_flags, BT_CTRL_CLASS_SET);
                         break;
+                    case BT_HCI_OP_WRITE_SSP_MODE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_SSP_ENABLE);
+                        break;
                     case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
                         hci_version = bt_hci_rx_frame->
                             evt_data.complete_data.read_local_version_info.hci_version;
@@ -1182,6 +1194,9 @@ static void bt_task(void *param) {
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_VER_READ)) {
                         bt_hci_cmd_read_local_version_info();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_SSP_ENABLE)) {
+                        bt_hci_cmd_write_ssp_mode();
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
                         struct bt_hci_cp_set_event_filter event_filter = {
