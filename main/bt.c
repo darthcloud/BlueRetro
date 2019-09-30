@@ -849,6 +849,15 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
                 device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
             break;
+        case BT_HCI_EVT_DISCONN_COMPLETE:
+            printf("# BT_HCI_EVT_DISCONN_COMPLETE\n");
+            bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.disconn_complete.handle, &device);
+            memset(&bt_dev[device->id], 0, sizeof(bt_dev[0]));
+            if (bt_get_active_dev(&device) == -1 && xHandle == NULL) {
+                printf("# No paired device left, restart inquiry\n");
+                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
+            }
+            break;
         case BT_HCI_EVT_AUTH_COMPLETE:
             printf("# BT_HCI_EVT_AUTH_COMPLETE\n");
             bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.auth_complete.handle, &device);
@@ -1038,12 +1047,6 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_L2CAP_DISCONN_REQ:
             printf("# BT_L2CAP_DISCONN_REQ\n");
-            bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conf_req.dcid, &device);
-            memset(&bt_dev[device->id], 0, sizeof(bt_dev[0]));
-            if (bt_get_active_dev(&device) == -1 && xHandle == NULL) {
-                printf("# No paired device left, restart inquiry\n");
-                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
-            }
             break;
         case BT_HIDP_DATA_IN:
             bt_get_dev_from_scid(bt_acl_frame->l2cap_hdr.cid, &device);
