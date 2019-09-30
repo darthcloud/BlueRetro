@@ -100,6 +100,7 @@ struct bt_hci_rx_frame {
                 struct bt_hci_rp_pin_code_reply pin_code_reply;
                 struct bt_hci_rp_pin_code_neg_reply pin_code_neg_reply;
                 struct bt_hci_rp_remote_name_cancel remote_name_cancel;
+                struct bt_hci_rp_io_capability_reply io_capability_reply;
                 struct bt_hci_rp_user_confirm_reply user_confirm_reply;
                 struct bt_hci_rp_read_link_policy read_link_policy;
                 struct bt_hci_rp_write_link_policy write_link_policy;
@@ -224,6 +225,8 @@ enum {
     BT_DEV_AUTHENTICATED,
     BT_DEV_LINK_KEY_REQ,
     BT_DEV_PIN_CODE_REQ,
+    BT_DEV_IO_CAP_REQ,
+    BT_DEV_USER_CONFIRM_REQ,
     BT_DEV_L2CAP_CONN_REQ,
     BT_DEV_L2CAP_CONNECTED,
     BT_DEV_L2CAP_LCONF_DONE,
@@ -523,6 +526,25 @@ static void bt_hci_cmd_remote_name_request(bt_addr_t bdaddr) {
     bt_hci_tx_frame.cmd_cp.remote_name_request.clock_offset = 0x0000;
 
     bt_hci_cmd(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(bt_hci_tx_frame.cmd_cp.remote_name_request));
+}
+
+static void bt_hci_cmd_io_capability_reply(bt_addr_t *bdaddr) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_hci_tx_frame.cmd_cp.io_capability_reply.bdaddr, (void* )bdaddr, sizeof(*bdaddr));
+    bt_hci_tx_frame.cmd_cp.io_capability_reply.capability = 0x03;
+    bt_hci_tx_frame.cmd_cp.io_capability_reply.oob_data = 0x00;
+    bt_hci_tx_frame.cmd_cp.io_capability_reply.authentication = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_IO_CAPABILITY_REPLY, sizeof(bt_hci_tx_frame.cmd_cp.io_capability_reply));
+}
+
+static void bt_hci_cmd_user_confirm_reply(bt_addr_t *bdaddr) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&bt_hci_tx_frame.cmd_cp.user_confirm_reply.bdaddr, (void* )bdaddr, sizeof(*bdaddr));
+
+    bt_hci_cmd(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(bt_hci_tx_frame.cmd_cp.user_confirm_reply));
 }
 
 static void bt_hci_cmd_switch_role(bt_addr_t *bdaddr, uint8_t role) {
@@ -940,6 +962,14 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     case BT_HCI_OP_PIN_CODE_REPLY:
                         bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.pin_code_reply.bdaddr, &device);
                         atomic_clear_bit(&device->flags, BT_DEV_PIN_CODE_REQ);
+                        break;
+                    case BT_HCI_OP_IO_CAPABILITY_REPLY:
+                        bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.io_capability_reply.bdaddr, &device);
+                        atomic_clear_bit(&device->flags, BT_DEV_IO_CAP_REQ);
+                        break;
+                    case BT_HCI_OP_USER_CONFIRM_REPLY:
+                        bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.user_confirm_reply.bdaddr, &device);
+                        atomic_clear_bit(&device->flags, BT_DEV_USER_CONFIRM_REQ);
                         break;
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
                         atomic_set_bit(&bt_flags, BT_CTRL_CLASS_SET);
@@ -1387,6 +1417,14 @@ static void bt_dev_task(void *param) {
                             else {
                                 bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, local_bdaddr.val);
                             }
+                        }
+                        else if (atomic_test_bit(&device->flags, BT_DEV_IO_CAP_REQ)) {
+                            atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                            bt_hci_cmd_io_capability_reply(&device->remote_bdaddr);
+                        }
+                        else if (atomic_test_bit(&device->flags, BT_DEV_USER_CONFIRM_REQ)) {
+                            atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                            bt_hci_cmd_user_confirm_reply(&device->remote_bdaddr);
                         }
                     }
                     else {

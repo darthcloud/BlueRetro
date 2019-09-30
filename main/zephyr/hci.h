@@ -528,6 +528,12 @@ struct bt_hci_cp_io_capability_reply {
 	u8_t   oob_data;
 	u8_t   authentication;
 } __packed;
+#ifdef BLUERETRO
+struct bt_hci_rp_io_capability_reply {
+	u8_t      status;
+	bt_addr_t bdaddr;
+} __packed;
+#endif
 
 #define BT_HCI_OP_USER_CONFIRM_REPLY            BT_OP(BT_OGF_LINK_CTRL, 0x002c)
 #define BT_HCI_OP_USER_CONFIRM_NEG_REPLY        BT_OP(BT_OGF_LINK_CTRL, 0x002d)
