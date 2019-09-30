@@ -642,7 +642,11 @@ struct bt_hci_cp_set_event_filter {
 #endif
 
 #define BT_HCI_OP_WRITE_LOCAL_NAME              BT_OP(BT_OGF_BASEBAND, 0x0013)
+#ifdef BLUERETRO
+struct bt_hci_cp_write_local_name {
+#else
 struct bt_hci_write_local_name {
+#endif
 	u8_t local_name[248];
 } __packed;
 

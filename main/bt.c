@@ -57,6 +57,7 @@ struct bt_hci_tx_frame {
         struct bt_hci_cp_write_default_link_policy write_default_link_policy;
         struct bt_hci_cp_set_event_mask set_event_mask;
         struct bt_hci_cp_set_event_filter set_event_filter;
+        struct bt_hci_cp_write_local_name write_local_name;
         struct bt_hci_cp_write_scan_enable write_scan_enable;
         struct bt_hci_cp_write_class_of_device write_class_of_device;
         struct bt_hci_cp_read_tx_power_level read_tx_power_level;
@@ -201,6 +202,7 @@ enum {
     BT_CTRL_ENABLE,
     BT_CTRL_READY,
     BT_CTRL_PENDING,
+    BT_CTRL_NAME_SET,
     BT_CTRL_CLASS_SET,
     BT_CTRL_BDADDR_READ,
     BT_CTRL_VER_READ,
@@ -587,6 +589,16 @@ static void bt_hci_cmd_set_event_filter(struct bt_hci_cp_set_event_filter *event
     bt_hci_cmd(BT_HCI_OP_SET_EVENT_FILTER, len);
 }
 
+static void bt_hci_cmd_write_local_name(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    memset((void *)&bt_hci_tx_frame.cmd_cp.write_local_name, 0, sizeof(bt_hci_tx_frame.cmd_cp.write_local_name));
+    snprintf((char *)bt_hci_tx_frame.cmd_cp.write_local_name.local_name, sizeof(bt_hci_tx_frame.cmd_cp.write_local_name.local_name),
+        "BLUERETRO");
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(bt_hci_tx_frame.cmd_cp.write_local_name));
+}
+
 static void bt_hci_cmd_write_scan_enable(uint8_t scan_enable) {
     printf("# %s\n", __FUNCTION__);
 
@@ -906,6 +918,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                             atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
                         }
                         break;
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                        atomic_set_bit(&bt_flags, BT_CTRL_NAME_SET);
+                        break;
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                         atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
                         break;
@@ -1156,7 +1171,10 @@ static void bt_task(void *param) {
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             if (!atomic_test_bit(&bt_flags, BT_CTRL_PENDING)) {
                 if (atomic_test_bit(&bt_flags, BT_CTRL_ENABLE)) {
-                    if (!atomic_test_bit(&bt_flags, BT_CTRL_CLASS_SET)) {
+                    if (!atomic_test_bit(&bt_flags, BT_CTRL_NAME_SET)) {
+                        bt_hci_cmd_write_local_name();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CLASS_SET)) {
                         bt_hci_cmd_write_class_of_device(local_class);
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_BDADDR_READ)) {
