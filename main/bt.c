@@ -1346,6 +1346,20 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 }
             }
             break;
+        case BT_HCI_EVT_IO_CAPA_REQ:
+            printf("BT_HCI_EVT_IO_CAPA_REQ\n");
+            bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.io_capa_req.bdaddr, &device);
+            if (device) {
+                 atomic_set_bit(&device->flags, BT_DEV_IO_CAP_REQ);
+            }
+            break;
+        case BT_HCI_EVT_USER_CONFIRM_REQ:
+            printf("BT_HCI_EVT_USER_CONFIRM_REQ\n");
+            bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.user_confirm_req.bdaddr, &device);
+            if (device) {
+                 atomic_set_bit(&device->flags, BT_DEV_USER_CONFIRM_REQ);
+            }
+            break;
     }
 }
 
