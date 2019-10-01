@@ -242,6 +242,8 @@ enum {
     BT_DEV_PENDING,
     BT_DEV_DEVICE_FOUND,
     BT_DEV_PAGE,
+    BT_DEV_FEATURES_READ,
+    BT_DEV_EXT_FEATURES_READ,
     BT_DEV_NAME_READ,
     BT_DEV_CONNECTED,
     BT_DEV_AUTHENTICATING,
@@ -549,6 +551,23 @@ static void bt_hci_cmd_remote_name_request(bt_addr_t bdaddr) {
     bt_hci_tx_frame.cmd_cp.remote_name_request.clock_offset = 0x0000;
 
     bt_hci_cmd(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(bt_hci_tx_frame.cmd_cp.remote_name_request));
+}
+
+static void bt_hci_cmd_read_remote_features(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.read_remote_features.handle = handle;
+
+    bt_hci_cmd(BT_HCI_OP_READ_REMOTE_FEATURES, sizeof(bt_hci_tx_frame.cmd_cp.read_remote_features));
+}
+
+static void bt_hci_cmd_read_remote_ext_features(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.read_remote_ext_features.handle = handle;
+    bt_hci_tx_frame.cmd_cp.read_remote_ext_features.page = handle;
+
+    bt_hci_cmd(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(bt_hci_tx_frame.cmd_cp.read_local_ext_features));
 }
 
 static void bt_hci_cmd_io_capability_reply(bt_addr_t *bdaddr) {
@@ -999,6 +1018,8 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             }
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
+        case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+        case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
             printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
             printf("# Number of responce: %d\n", bt_hci_rx_frame->evt_data.inquiry_result.nb_rsp);
             for (uint8_t i = 1; i <= bt_hci_rx_frame->evt_data.inquiry_result.nb_rsp; i++) {
@@ -1019,6 +1040,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
                     device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
                     device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
+                break; /* Only support one result for now */
             }
             break;
         case BT_HCI_EVT_CONN_COMPLETE:
@@ -1091,6 +1113,22 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             else {
                 device->type = bt_get_type_from_name(bt_hci_rx_frame->evt_data.remote_name_req_complete.name);
                 printf("# dev: %d type: %d %s\n", device->id, device->type, bt_hci_rx_frame->evt_data.remote_name_req_complete.name);
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                }
+            }
+            break;
+        case BT_HCI_EVT_REMOTE_FEATURES:
+            printf("# BT_HCI_EVT_REMOTE_FEATURES\n");
+            bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.remote_features.handle, &device);
+            if (bt_hci_rx_frame->evt_data.remote_features.status) {
+                printf("# dev: %d error: 0x%02X\n", device->id ? device->id : -1,
+                    bt_hci_rx_frame->evt_data.remote_features.status);
+            }
+            else if (device) {
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                }
             }
             break;
         case BT_HCI_EVT_CMD_COMPLETE:
@@ -1248,7 +1286,27 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         bt_get_dev_from_pending_flag(&device);
                         if (device) {
                             atomic_set_bit(&device->flags, BT_DEV_NAME_READ);
-                            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                                atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            }
+                        }
+                        break;
+                    case BT_HCI_OP_READ_REMOTE_FEATURES:
+                        bt_get_dev_from_pending_flag(&device);
+                        if (device) {
+                            atomic_set_bit(&device->flags, BT_DEV_FEATURES_READ);
+                            if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                                atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            }
+                        }
+                        break;
+                    case BT_HCI_OP_READ_REMOTE_EXT_FEATURES:
+                        bt_get_dev_from_pending_flag(&device);
+                        if (device) {
+                            atomic_set_bit(&device->flags, BT_DEV_EXT_FEATURES_READ);
+                            if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                                atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            }
                         }
                         break;
                     case BT_HCI_OP_AUTH_REQUESTED:
@@ -1274,6 +1332,19 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_HCI_EVT_LINK_KEY_NOTIFY:
             printf("# BT_HCI_EVT_LINK_KEY_NOTIFY\n");
+            break;
+        case BT_HCI_EVT_REMOTE_EXT_FEATURES:
+            printf("# BT_HCI_EVT_REMOTE_EXT_FEATURES\n");
+            bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.remote_ext_features.handle, &device);
+            if (bt_hci_rx_frame->evt_data.remote_ext_features.status) {
+                printf("# dev: %d error: 0x%02X\n", device->id ? device->id : -1,
+                    bt_hci_rx_frame->evt_data.remote_ext_features.status);
+            }
+            else if (device) {
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                }
+            }
             break;
     }
 }
@@ -1693,6 +1764,14 @@ static void bt_dev_task(void *param) {
                                     vTaskDelete(NULL);
                                 }
                             }
+                        }
+                        else if (!atomic_test_bit(&device->flags, BT_DEV_FEATURES_READ)) {
+                            atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                            bt_hci_cmd_read_remote_features(device->acl_handle);
+                        }
+                        else if (!atomic_test_bit(&device->flags, BT_DEV_EXT_FEATURES_READ)) {
+                            atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                            bt_hci_cmd_read_remote_ext_features(device->acl_handle);
                         }
                         else if (!atomic_test_bit(&device->flags, BT_DEV_NAME_READ)) {
                             atomic_set_bit(&device->flags, BT_DEV_PENDING);
