@@ -645,16 +645,39 @@ struct bt_hci_cp_set_event_filter {
 		} conn_bdaddr;
 	};
 } __packed;
+
+#define BT_HCI_OP_READ_STORED_LINK_KEY          BT_OP(BT_OGF_BASEBAND, 0x000d)
+struct bt_hci_cp_read_stored_link_key {
+	bt_addr_t bdaddr;
+	u8_t read_all_flag;
+} __packed;
+
+#define BT_HCI_OP_WRITE_STORED_LINK_KEY         BT_OP(BT_OGF_BASEBAND, 0x0011)
+
+#define BT_HCI_OP_DELETE_STORED_LINK_KEY        BT_OP(BT_OGF_BASEBAND, 0x0012)
+struct bt_hci_cp_delete_stored_link_key {
+	bt_addr_t bdaddr;
+	u8_t delete_all_flag;
+} __packed;
+
 #endif
 
 #define BT_HCI_OP_WRITE_LOCAL_NAME              BT_OP(BT_OGF_BASEBAND, 0x0013)
 #ifdef BLUERETRO
+#define BT_HCI_OP_READ_LOCAL_NAME               BT_OP(BT_OGF_BASEBAND, 0x0014)
 struct bt_hci_cp_write_local_name {
 #else
 struct bt_hci_write_local_name {
 #endif
 	u8_t local_name[248];
 } __packed;
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x0016)
+struct bt_hci_cp_write_conn_accept_timeout {
+    u16_t conn_accept_timeout;
+} __packed;
+#endif
 
 #define BT_HCI_OP_WRITE_PAGE_TIMEOUT            BT_OP(BT_OGF_BASEBAND, 0x0018)
 
@@ -667,10 +690,16 @@ struct bt_hci_cp_write_scan_enable {
     u8_t scan_enable;
 } __packed;
 
+#define BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY       BT_OP(BT_OGF_BASEBAND, 0x001b)
+
+#define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023)
+
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
 struct bt_hci_cp_write_class_of_device {
     bt_class_t dev_class;
 } __packed;
+
+#define BT_HCI_OP_READ_VOICE_SETTING            BT_OP(BT_OGF_BASEBAND, 0x0025)
 #endif /* BLUERETRO */
 
 #define BT_TX_POWER_LEVEL_CURRENT               0x00
@@ -713,15 +742,28 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+#ifdef BLUERETRO
+#define BT_HCI_OP_READ_NUM_SUPPORTED_IAC        BT_OP(BT_OGF_BASEBAND, 0x0038)
+#define BT_HCI_OP_READ_CURRENT_IAC_LAP          BT_OP(BT_OGF_BASEBAND, 0x0039)
+#endif
+
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045)
 struct bt_hci_cp_write_inquiry_mode {
 	u8_t  mode;
 } __packed;
 
+#ifdef BLUERETRO
+#define BT_HCI_OP_READ_PAGE_SCAN_TYPE           BT_OP(BT_OGF_BASEBAND, 0x0046)
+#endif
+
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056)
 struct bt_hci_cp_write_ssp_mode {
 	u8_t mode;
 } __packed;
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL   BT_OP(BT_OGF_BASEBAND, 0x0058)
+#endif
 
 #define BT_HCI_OP_SET_EVENT_MASK_PAGE_2         BT_OP(BT_OGF_BASEBAND, 0x0063)
 struct bt_hci_cp_set_event_mask_page_2 {
@@ -821,6 +863,12 @@ struct bt_hci_rp_read_bd_addr {
 	u8_t      status;
 	bt_addr_t bdaddr;
 } __packed;
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_READ_DATA_BLOCK_SIZE          BT_OP(BT_OGF_INFO, 0x000A)
+#define BT_HCI_OP_READ_LOCAL_CODECS             BT_OP(BT_OGF_INFO, 0x000B)
+#define BT_HCI_OP_READ_LOCAL_SP_OPTIONS         BT_OP(BT_OGF_INFO, 0x000C)
+#endif
 
 #define BT_HCI_OP_READ_RSSI                     BT_OP(BT_OGF_STATUS, 0x0005)
 struct bt_hci_cp_read_rssi {

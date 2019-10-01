@@ -57,7 +57,10 @@ struct bt_hci_tx_frame {
         struct bt_hci_cp_write_default_link_policy write_default_link_policy;
         struct bt_hci_cp_set_event_mask set_event_mask;
         struct bt_hci_cp_set_event_filter set_event_filter;
+        struct bt_hci_cp_read_stored_link_key read_stored_link_key;
+        struct bt_hci_cp_delete_stored_link_key delete_stored_link_key;
         struct bt_hci_cp_write_local_name write_local_name;
+        struct bt_hci_cp_write_conn_accept_timeout write_conn_accept_timeout;
         struct bt_hci_cp_write_scan_enable write_scan_enable;
         struct bt_hci_cp_write_class_of_device write_class_of_device;
         struct bt_hci_cp_read_tx_power_level read_tx_power_level;
@@ -203,14 +206,34 @@ enum {
     BT_CTRL_ENABLE,
     BT_CTRL_READY,
     BT_CTRL_PENDING,
-    BT_CTRL_NAME_SET,
-    BT_CTRL_CLASS_SET,
-    BT_CTRL_BDADDR_READ,
+    BT_CTRL_FEATURES_READ,
     BT_CTRL_VER_READ,
+    BT_CTRL_BDADDR_READ,
+    BT_CTRL_BUFFER_READ,
+    BT_CTRL_CLASS_READ,
+    BT_CTRL_NAME_READ,
+    BT_CTRL_VOICE_READ,
+    BT_CTRL_IAC_READ,
+    BT_CTRL_IAC_LAP_READ,
+    BT_CTRL_FILTER_CLEAR,
+    BT_CTRL_CONN_TIMEOUT_SET,
+    BT_CTRL_CMD_READ,
     BT_CTRL_SSP_ENABLE,
+    BT_CTRL_INQUIRY_MODE_SET,
+    BT_CTRL_TX_POWER_READ,
+    BT_CTRL_EXT_FEATURES_READ,
+    BT_CTRL_EVT_FILTER_SET,
+    BT_CTRL_KEY_READ,
+    BT_CTRL_LINK_POLICY_SET,
+    BT_CTRL_PAGE_SCAN_ACT_READ,
+    BT_CTRL_PAGE_SCAN_TYPE_READ,
+    BT_CTRL_LE_SUPPORT_SET,
+    BT_CTRL_KEY_CLEAR,
+    BT_CTRL_PAGE_ENABLE,
+    BT_CTRL_CLASS_SET,
+    BT_CTRL_NAME_SET,
     BT_CTRL_INQUIRY_FILTER,
     BT_CTRL_CONN_FILTER,
-    BT_CTRL_PAGE_ENABLE,
     BT_CTRL_INQUIRY,
 };
 
@@ -263,7 +286,7 @@ static bt_addr_t local_bdaddr;
 static atomic_t bt_flags = 0;
 static struct bt_hci_tx_frame bt_hci_tx_frame;
 static struct bt_acl_frame bt_acl_frame;
-static bt_class_t local_class = {{0x00, 0x01, 0x00}}; /* Computer */
+static bt_class_t local_class = {{0x1c, 0x01, 0x0c}}; /* Laptop */
 #if 0
 static uint16_t min_lx = 0xFFFF;
 static uint16_t min_ly = 0xFFFF;
@@ -449,7 +472,7 @@ static void bt_hci_cmd_inquiry(void) {
     bt_hci_tx_frame.cmd_cp.inquiry.lap[0] = 0x33;
     bt_hci_tx_frame.cmd_cp.inquiry.lap[1] = 0x8B;
     bt_hci_tx_frame.cmd_cp.inquiry.lap[2] = 0x9E;
-    bt_hci_tx_frame.cmd_cp.inquiry.length = 0x02; /* 0x02 * 1.28 s = 2.56 s */
+    bt_hci_tx_frame.cmd_cp.inquiry.length = 0x20; /* 0x02 * 1.28 s = 2.56 s */
     bt_hci_tx_frame.cmd_cp.inquiry.num_rsp = 0xFF;
 
     bt_hci_cmd(BT_HCI_OP_INQUIRY, sizeof(bt_hci_tx_frame.cmd_cp.inquiry));
@@ -587,6 +610,15 @@ static void bt_hci_cmd_write_default_link_policy(uint16_t link_policy) {
     bt_hci_cmd(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY, sizeof(bt_hci_tx_frame.cmd_cp.write_default_link_policy));
 }
 
+static void bt_hci_cmd_set_event_mask(void) {
+    uint8_t events[8] = {0xff, 0xff, 0xfb, 0xff, 0x07, 0xf8, 0xbf, 0x3d};
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy(bt_hci_tx_frame.cmd_cp.set_event_mask.events, events, sizeof(bt_hci_tx_frame.cmd_cp.set_event_mask));
+
+    bt_hci_cmd(BT_HCI_OP_SET_EVENT_MASK, sizeof(bt_hci_tx_frame.cmd_cp.set_event_mask));
+}
+
 static void bt_hci_cmd_reset(void) {
     printf("# %s\n", __FUNCTION__);
 
@@ -594,22 +626,40 @@ static void bt_hci_cmd_reset(void) {
 }
 
 static void bt_hci_cmd_set_event_filter(struct bt_hci_cp_set_event_filter *event_filter) {
-    uint32_t len = 0;
+    uint32_t len = 1;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&bt_hci_tx_frame.cmd_cp.set_event_filter, (void *)event_filter, sizeof(bt_hci_tx_frame.cmd_cp.set_event_filter));
 
     if (event_filter->filter_type == BT_BREDR_FILTER_TYPE_INQUIRY) {
-        len += 2;
+        len += 1;
     }
     else if (event_filter->filter_type == BT_BREDR_FILTER_TYPE_CONN) {
-        len += 3;
+        len += 2;
     }
     if (event_filter->condition_type) {
         len += 6;
     }
 
     bt_hci_cmd(BT_HCI_OP_SET_EVENT_FILTER, len);
+}
+
+static void bt_hci_cmd_read_stored_link_key(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    memset(bt_hci_tx_frame.cmd_cp.read_stored_link_key.bdaddr.val, 0, sizeof(bt_hci_tx_frame.cmd_cp.read_stored_link_key.bdaddr));
+    bt_hci_tx_frame.cmd_cp.read_stored_link_key.read_all_flag = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_READ_STORED_LINK_KEY, sizeof(bt_hci_tx_frame.cmd_cp.read_stored_link_key));
+}
+
+static void bt_hci_cmd_delete_stored_link_key(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    memset(bt_hci_tx_frame.cmd_cp.delete_stored_link_key.bdaddr.val, 0, sizeof(bt_hci_tx_frame.cmd_cp.delete_stored_link_key.bdaddr));
+    bt_hci_tx_frame.cmd_cp.delete_stored_link_key.delete_all_flag = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_DELETE_STORED_LINK_KEY, sizeof(bt_hci_tx_frame.cmd_cp.delete_stored_link_key));
 }
 
 static void bt_hci_cmd_write_local_name(void) {
@@ -622,12 +672,38 @@ static void bt_hci_cmd_write_local_name(void) {
     bt_hci_cmd(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(bt_hci_tx_frame.cmd_cp.write_local_name));
 }
 
+static void bt_hci_cmd_read_local_name(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_LOCAL_NAME, 0);
+}
+
+static void bt_hci_cmd_write_conn_accept_timeout(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_conn_accept_timeout.conn_accept_timeout = 0x7d00;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, sizeof(bt_hci_tx_frame.cmd_cp.write_conn_accept_timeout));
+}
+
 static void bt_hci_cmd_write_scan_enable(uint8_t scan_enable) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_tx_frame.cmd_cp.write_scan_enable.scan_enable = scan_enable;
 
     bt_hci_cmd(BT_HCI_OP_WRITE_SCAN_ENABLE, sizeof(bt_hci_tx_frame.cmd_cp.write_scan_enable));
+}
+
+static void bt_hci_cmd_read_page_scan_activity(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY, 0);
+}
+
+static void bt_hci_cmd_read_class_of_device(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_CLASS_OF_DEVICE, 0);
 }
 
 static void bt_hci_cmd_write_class_of_device(bt_class_t dev_class) {
@@ -638,6 +714,38 @@ static void bt_hci_cmd_write_class_of_device(bt_class_t dev_class) {
     bt_hci_cmd(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(bt_hci_tx_frame.cmd_cp.write_class_of_device));
 }
 
+static void bt_hci_cmd_read_voice_setting(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_VOICE_SETTING, 0);
+}
+
+static void bt_hci_cmd_read_num_supported_iac(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_NUM_SUPPORTED_IAC, 0);
+}
+
+static void bt_hci_cmd_read_current_iac_lap(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_CURRENT_IAC_LAP, 0);
+}
+
+static void bt_hci_cmd_write_inquiry_mode(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_inquiry_mode.mode = 0x02;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_INQUIRY_MODE, sizeof(bt_hci_tx_frame.cmd_cp.write_inquiry_mode));
+}
+
+static void bt_hci_cmd_read_page_scan_type(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_PAGE_SCAN_TYPE, 0);
+}
+
 static void bt_hci_cmd_write_ssp_mode(void) {
     printf("# %s\n", __FUNCTION__);
 
@@ -646,16 +754,75 @@ static void bt_hci_cmd_write_ssp_mode(void) {
     bt_hci_cmd(BT_HCI_OP_WRITE_SSP_MODE, sizeof(bt_hci_tx_frame.cmd_cp.write_ssp_mode));
 }
 
+static void bt_hci_cmd_read_inquiry_rsp_tx_pwr_lvl(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL, 0);
+}
+
+static void bt_hci_cmd_write_le_host_supp(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.write_le_host_supp.le = 0x00;
+    bt_hci_tx_frame.cmd_cp.write_le_host_supp.simul = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, sizeof(bt_hci_tx_frame.cmd_cp.write_le_host_supp));
+}
+
 static void bt_hci_cmd_read_local_version_info(void) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_READ_LOCAL_VERSION_INFO, 0);
 }
 
+static void bt_hci_cmd_read_supported_commands(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_SUPPORTED_COMMANDS, 0);
+}
+
+static void bt_hci_cmd_read_local_features(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_LOCAL_FEATURES, 0);
+}
+
+static void bt_hci_cmd_read_local_ext_features(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.read_local_ext_features.page = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_READ_LOCAL_EXT_FEATURES, sizeof(bt_hci_tx_frame.cmd_cp.read_local_ext_features));
+}
+
+static void bt_hci_cmd_read_buffer_size(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_BUFFER_SIZE, 0);
+}
+
 static void bt_hci_cmd_read_bd_addr(void) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_READ_BD_ADDR, 0);
+}
+
+static void bt_hci_cmd_read_data_block_size(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_DATA_BLOCK_SIZE, 0);
+}
+
+static void bt_hci_cmd_read_local_codecs(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_LOCAL_CODECS, 0);
+}
+
+static void bt_hci_cmd_read_local_sp_options(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_READ_LOCAL_SP_OPTIONS, 0);
 }
 
 static void bt_l2cap_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint8_t ident, uint16_t len) {
@@ -938,23 +1105,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     case BT_HCI_OP_INQUIRY_CANCEL:
                         atomic_clear_bit(&bt_flags, BT_CTRL_INQUIRY);
                         break;
-                    case BT_HCI_OP_RESET:
-                        atomic_set_bit(&bt_flags, BT_CTRL_ENABLE);
-                        break;
-                    case BT_HCI_OP_SET_EVENT_FILTER:
-                        if (atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
-                            atomic_set_bit(&bt_flags, BT_CTRL_CONN_FILTER);
-                        }
-                        else {
-                            atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
-                        }
-                        break;
-                    case BT_HCI_OP_WRITE_LOCAL_NAME:
-                        atomic_set_bit(&bt_flags, BT_CTRL_NAME_SET);
-                        break;
-                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
-                        atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
-                        break;
                     case BT_HCI_OP_LINK_KEY_NEG_REPLY:
                         bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.link_key_neg_reply.bdaddr, &device);
                         atomic_clear_bit(&device->flags, BT_DEV_LINK_KEY_REQ);
@@ -971,17 +1121,94 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.complete_data.user_confirm_reply.bdaddr, &device);
                         atomic_clear_bit(&device->flags, BT_DEV_USER_CONFIRM_REQ);
                         break;
+                    case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                        atomic_set_bit(&bt_flags, BT_CTRL_LINK_POLICY_SET);
+                        break;
+                    case BT_HCI_OP_SET_EVENT_MASK:
+                        atomic_set_bit(&bt_flags, BT_CTRL_EVT_FILTER_SET);
+                        break;
+                    case BT_HCI_OP_RESET:
+                        atomic_set_bit(&bt_flags, BT_CTRL_ENABLE);
+                        break;
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                        if (!atomic_test_bit(&bt_flags, BT_CTRL_FILTER_CLEAR)) {
+                            atomic_set_bit(&bt_flags, BT_CTRL_FILTER_CLEAR);
+                        }
+                        if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
+                            atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER);
+                        }
+                        else {
+                            atomic_set_bit(&bt_flags, BT_CTRL_CONN_FILTER);
+                        }
+                        break;
+                    case BT_HCI_OP_READ_STORED_LINK_KEY:
+                        atomic_set_bit(&bt_flags, BT_CTRL_KEY_READ);
+                        break;
+                    case BT_HCI_OP_DELETE_STORED_LINK_KEY:
+                        atomic_set_bit(&bt_flags, BT_CTRL_KEY_CLEAR);
+                        break;
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                        atomic_set_bit(&bt_flags, BT_CTRL_NAME_SET);
+                        break;
+                    case BT_HCI_OP_READ_LOCAL_NAME:
+                        atomic_set_bit(&bt_flags, BT_CTRL_NAME_READ);
+                        break;
+                    case BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT:
+                        atomic_set_bit(&bt_flags, BT_CTRL_CONN_TIMEOUT_SET);
+                        break;
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_PAGE_ENABLE);
+                        break;
+                    case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
+                        atomic_set_bit(&bt_flags, BT_CTRL_PAGE_SCAN_ACT_READ);
+                        break;
+                    case BT_HCI_OP_READ_CLASS_OF_DEVICE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_CLASS_READ);
+                        break;
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
                         atomic_set_bit(&bt_flags, BT_CTRL_CLASS_SET);
                         break;
+                    case BT_HCI_OP_READ_VOICE_SETTING:
+                        atomic_set_bit(&bt_flags, BT_CTRL_VOICE_READ);
+                        break;
+                    case BT_HCI_OP_READ_NUM_SUPPORTED_IAC:
+                        atomic_set_bit(&bt_flags, BT_CTRL_IAC_READ);
+                        break;
+                    case BT_HCI_OP_READ_CURRENT_IAC_LAP:
+                        atomic_set_bit(&bt_flags, BT_CTRL_IAC_LAP_READ);
+                        break;
+                    case BT_HCI_OP_WRITE_INQUIRY_MODE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_INQUIRY_MODE_SET);
+                        break;
+                    case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_PAGE_SCAN_TYPE_READ);
+                        break;
                     case BT_HCI_OP_WRITE_SSP_MODE:
                         atomic_set_bit(&bt_flags, BT_CTRL_SSP_ENABLE);
+                        break;
+                    case BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL:
+                        atomic_set_bit(&bt_flags, BT_CTRL_TX_POWER_READ);
+                        break;
+                    case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                        atomic_set_bit(&bt_flags, BT_CTRL_LE_SUPPORT_SET);
                         break;
                     case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
                         hci_version = bt_hci_rx_frame->
                             evt_data.complete_data.read_local_version_info.hci_version;
                         printf("# hci_version: %02X\n", hci_version);
                         atomic_set_bit(&bt_flags, BT_CTRL_VER_READ);
+                        break;
+                    case BT_HCI_OP_READ_SUPPORTED_COMMANDS:
+                        atomic_set_bit(&bt_flags, BT_CTRL_CMD_READ);
+                        break;
+                    case BT_HCI_OP_READ_LOCAL_FEATURES:
+                        atomic_set_bit(&bt_flags, BT_CTRL_FEATURES_READ);
+                        break;
+                    case BT_HCI_OP_READ_LOCAL_EXT_FEATURES:
+                        atomic_set_bit(&bt_flags, BT_CTRL_EXT_FEATURES_READ);
+                        break;
+                    case BT_HCI_OP_READ_BUFFER_SIZE:
+                        atomic_set_bit(&bt_flags, BT_CTRL_BUFFER_READ);
                         break;
                     case BT_HCI_OP_READ_BD_ADDR:
                         memcpy(local_bdaddr.val,
@@ -991,6 +1218,12 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                             local_bdaddr.val[5], local_bdaddr.val[4], local_bdaddr.val[3],
                             local_bdaddr.val[2], local_bdaddr.val[1], local_bdaddr.val[0]);
                         atomic_set_bit(&bt_flags, BT_CTRL_BDADDR_READ);
+                        break;
+                    case BT_HCI_OP_READ_DATA_BLOCK_SIZE:
+                        break;
+                    case BT_HCI_OP_READ_LOCAL_CODECS:
+                        break;
+                    case BT_HCI_OP_READ_LOCAL_SP_OPTIONS:
                         break;
                 }
                 atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
@@ -1213,20 +1446,84 @@ static void bt_task(void *param) {
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             if (!atomic_test_bit(&bt_flags, BT_CTRL_PENDING)) {
                 if (atomic_test_bit(&bt_flags, BT_CTRL_ENABLE)) {
-                    if (!atomic_test_bit(&bt_flags, BT_CTRL_NAME_SET)) {
-                        bt_hci_cmd_write_local_name();
-                    }
-                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CLASS_SET)) {
-                        bt_hci_cmd_write_class_of_device(local_class);
-                    }
-                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_BDADDR_READ)) {
-                        bt_hci_cmd_read_bd_addr();
+                    if (!atomic_test_bit(&bt_flags, BT_CTRL_FEATURES_READ)) {
+                        bt_hci_cmd_read_local_features();
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_VER_READ)) {
                         bt_hci_cmd_read_local_version_info();
                     }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_BDADDR_READ)) {
+                        bt_hci_cmd_read_bd_addr();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_BUFFER_READ)) {
+                        bt_hci_cmd_read_buffer_size();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CLASS_READ)) {
+                        bt_hci_cmd_read_class_of_device();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_NAME_READ)) {
+                        bt_hci_cmd_read_local_name();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_VOICE_READ)) {
+                        bt_hci_cmd_read_voice_setting();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_IAC_READ)) {
+                        bt_hci_cmd_read_num_supported_iac();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_IAC_LAP_READ)) {
+                        bt_hci_cmd_read_current_iac_lap();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_FILTER_CLEAR)) {
+                        struct bt_hci_cp_set_event_filter event_filter = {
+                            .filter_type = BT_BREDR_FILTER_TYPE_CLEAR
+                        };
+
+                        bt_hci_cmd_set_event_filter(&event_filter);
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CONN_TIMEOUT_SET)) {
+                        bt_hci_cmd_write_conn_accept_timeout();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CMD_READ)) {
+                        bt_hci_cmd_read_supported_commands();
+                    }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_SSP_ENABLE)) {
                         bt_hci_cmd_write_ssp_mode();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_MODE_SET)) {
+                        bt_hci_cmd_write_inquiry_mode();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_TX_POWER_READ)) {
+                        bt_hci_cmd_read_inquiry_rsp_tx_pwr_lvl();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_EXT_FEATURES_READ)) {
+                        bt_hci_cmd_read_local_ext_features();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_EVT_FILTER_SET)) {
+                        bt_hci_cmd_set_event_mask();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_KEY_READ)) {
+                        bt_hci_cmd_read_stored_link_key();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_LINK_POLICY_SET)) {
+                        bt_hci_cmd_write_default_link_policy(0x0005);
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_SCAN_ACT_READ)) {
+                        bt_hci_cmd_read_page_scan_activity();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_SCAN_TYPE_READ)) {
+                        bt_hci_cmd_read_page_scan_type();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_LE_SUPPORT_SET)) {
+                        bt_hci_cmd_write_le_host_supp();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_KEY_CLEAR)) {
+                        bt_hci_cmd_delete_stored_link_key();
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_CLASS_SET)) {
+                        bt_hci_cmd_write_class_of_device(local_class);
+                    }
+                    else if (!atomic_test_bit(&bt_flags, BT_CTRL_NAME_SET)) {
+                        bt_hci_cmd_write_local_name();
                     }
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY_FILTER)) {
                         struct bt_hci_cp_set_event_filter event_filter = {
