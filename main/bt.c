@@ -565,9 +565,9 @@ static void bt_hci_cmd_read_remote_ext_features(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_tx_frame.cmd_cp.read_remote_ext_features.handle = handle;
-    bt_hci_tx_frame.cmd_cp.read_remote_ext_features.page = handle;
+    bt_hci_tx_frame.cmd_cp.read_remote_ext_features.page = 0x01;
 
-    bt_hci_cmd(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(bt_hci_tx_frame.cmd_cp.read_local_ext_features));
+    bt_hci_cmd(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(bt_hci_tx_frame.cmd_cp.read_remote_ext_features));
 }
 
 static void bt_hci_cmd_io_capability_reply(bt_addr_t *bdaddr) {
@@ -1126,6 +1126,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     bt_hci_rx_frame->evt_data.remote_features.status);
             }
             else if (device) {
+                if (!(bt_hci_rx_frame->evt_data.remote_features.features[8] & 0x80)) {
+                    atomic_set_bit(&device->flags, BT_DEV_EXT_FEATURES_READ);
+                }
                 if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                     atomic_clear_bit(&device->flags, BT_DEV_PENDING);
                 }
@@ -1347,14 +1350,14 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             }
             break;
         case BT_HCI_EVT_IO_CAPA_REQ:
-            printf("BT_HCI_EVT_IO_CAPA_REQ\n");
+            printf("# BT_HCI_EVT_IO_CAPA_REQ\n");
             bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.io_capa_req.bdaddr, &device);
             if (device) {
                  atomic_set_bit(&device->flags, BT_DEV_IO_CAP_REQ);
             }
             break;
         case BT_HCI_EVT_USER_CONFIRM_REQ:
-            printf("BT_HCI_EVT_USER_CONFIRM_REQ\n");
+            printf("# BT_HCI_EVT_USER_CONFIRM_REQ\n");
             bt_get_dev_from_bdaddr(&bt_hci_rx_frame->evt_data.user_confirm_req.bdaddr, &device);
             if (device) {
                  atomic_set_bit(&device->flags, BT_DEV_USER_CONFIRM_REQ);
