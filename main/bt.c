@@ -288,7 +288,7 @@ static bt_addr_t local_bdaddr;
 static atomic_t bt_flags = 0;
 static struct bt_hci_tx_frame bt_hci_tx_frame;
 static struct bt_acl_frame bt_acl_frame;
-static bt_class_t local_class = {{0x1c, 0x01, 0x0c}}; /* Laptop */
+static bt_class_t local_class = {{0x0c, 0x01, 0x1c}}; /* Laptop */
 #if 0
 static uint16_t min_lx = 0xFFFF;
 static uint16_t min_ly = 0xFFFF;
@@ -1819,6 +1819,9 @@ static void bt_dev_task(void *param) {
                             atomic_set_bit(&device->flags, BT_DEV_PENDING);
                             bt_hci_cmd_user_confirm_reply(&device->remote_bdaddr);
                         }
+                    }
+                    else if (atomic_test_bit(&bt_flags, BT_CTRL_INQUIRY)) {
+                        bt_hci_cmd_inquiry_cancel();
                     }
                     else {
                         atomic_set_bit(&device->flags, BT_DEV_PENDING);
