@@ -1725,7 +1725,7 @@ static void bt_dev_task(void *param) {
                                     atomic_set_bit(&device->flags, BT_DEV_HID_INTR_CONNECTED);
                                 }
                             }
-                            else {
+                            else if (device->type == WII_CORE || device->type == WII_NUNCHUCK || device->type == WII_CLASSIC || device->type == WIIU_PRO) {
                                 /* HID report config */
                                 if (atomic_test_bit(&device->flags, BT_DEV_WII_STATUS_RX)) {
                                     if (atomic_test_bit(&device->flags, BT_DEV_WII_EXT_ID_READ)) {
