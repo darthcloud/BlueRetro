@@ -252,6 +252,7 @@ enum {
     BT_DEV_PIN_CODE_REQ,
     BT_DEV_IO_CAP_REQ,
     BT_DEV_USER_CONFIRM_REQ,
+    BT_DEV_ENCRYPT_SET,
     BT_DEV_L2CAP_CONN_REQ,
     BT_DEV_L2CAP_CONNECTED,
     BT_DEV_L2CAP_LCONF_DONE,
@@ -450,6 +451,18 @@ static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
     return -1;
 }
 
+static int32_t wii_wiiu_ctrl(int8_t type) {
+    switch (type) {
+        case WII_CORE:
+        case WII_NUNCHUCK:
+        case WII_CLASSIC:
+        case WIIU_PRO:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 static void bt_hci_cmd(uint16_t opcode, uint16_t len) {
     uint16_t buflen = (sizeof(bt_hci_tx_frame.h4_type) + sizeof(bt_hci_tx_frame.cmd_hdr) + len);
 
@@ -540,6 +553,15 @@ static void bt_hci_cmd_auth_requested(uint16_t handle) {
     bt_hci_tx_frame.cmd_cp.auth_requested.handle = handle;
 
     bt_hci_cmd(BT_HCI_OP_AUTH_REQUESTED, sizeof(bt_hci_tx_frame.cmd_cp.auth_requested));
+}
+
+static void bt_hci_cmd_set_conn_encrypt(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_tx_frame.cmd_cp.set_conn_encrypt.handle = handle;
+    bt_hci_tx_frame.cmd_cp.set_conn_encrypt.encrypt = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(bt_hci_tx_frame.cmd_cp.set_conn_encrypt));
 }
 
 static void bt_hci_cmd_remote_name_request(bt_addr_t bdaddr) {
@@ -1118,6 +1140,17 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 }
             }
             break;
+        case BT_HCI_EVT_ENCRYPT_CHANGE:
+            printf("# BT_HCI_EVT_ENCRYPT_CHANGE\n");
+            bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.encrypt_change.handle, &device);
+            if (bt_hci_rx_frame->evt_data.encrypt_change.status) {
+                printf("# dev: %d error: 0x%02X\n", device->id ? device->id : -1,
+                    bt_hci_rx_frame->evt_data.encrypt_change.status);
+            }
+            else if (device) {
+                atomic_set_bit(&device->flags, BT_DEV_ENCRYPT_SET);
+            }
+            break;
         case BT_HCI_EVT_REMOTE_FEATURES:
             printf("# BT_HCI_EVT_REMOTE_FEATURES\n");
             bt_get_dev_from_handle(bt_hci_rx_frame->evt_data.remote_features.handle, &device);
@@ -1662,7 +1695,11 @@ static void bt_dev_task(void *param) {
                 if (!atomic_test_bit(&device->flags, BT_DEV_PENDING)) {
                     if (atomic_test_bit(&device->flags, BT_DEV_CONNECTED)) {
                         if (atomic_test_bit(&device->flags, BT_DEV_AUTHENTICATED) || atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                            if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_CONNECTED)) {
+                            if (!wii_wiiu_ctrl(device->type) && !atomic_test_bit(&device->flags, BT_DEV_ENCRYPT_SET)) {
+                                atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                bt_hci_cmd_set_conn_encrypt(device->acl_handle);
+                            }
+                            else if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_CONNECTED)) {
                                 if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
                                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                                         if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ)) {
@@ -1725,7 +1762,7 @@ static void bt_dev_task(void *param) {
                                     atomic_set_bit(&device->flags, BT_DEV_HID_INTR_CONNECTED);
                                 }
                             }
-                            else if (device->type == WII_CORE || device->type == WII_NUNCHUCK || device->type == WII_CLASSIC || device->type == WIIU_PRO) {
+                            else if (wii_wiiu_ctrl(device->type)) {
                                 /* HID report config */
                                 if (atomic_test_bit(&device->flags, BT_DEV_WII_STATUS_RX)) {
                                     if (atomic_test_bit(&device->flags, BT_DEV_WII_EXT_ID_READ)) {
