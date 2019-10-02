@@ -1149,6 +1149,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             }
             else if (device) {
                 atomic_set_bit(&device->flags, BT_DEV_ENCRYPT_SET);
+                atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             }
             break;
         case BT_HCI_EVT_REMOTE_FEATURES:
