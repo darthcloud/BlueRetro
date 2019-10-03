@@ -407,7 +407,7 @@ static int32_t bt_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device)
 
 static int32_t bt_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
-        if ((handle & 0xFFF) == bt_dev[i].acl_handle) {
+        if (bt_acl_handle(handle) == bt_dev[i].acl_handle) {
             *device = &bt_dev[i];
             return i;
         }
@@ -1450,6 +1450,7 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_L2CAP_DISCONN_RSP:
             printf("# BT_L2CAP_DISCONN_RSP\n");
+            bt_get_dev_from_handle(bt_acl_frame->acl_hdr.handle, &device);
             atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
             atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             break;
