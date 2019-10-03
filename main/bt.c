@@ -258,12 +258,9 @@ enum {
     BT_DEV_L2CAP_LCONF_DONE,
     BT_DEV_L2CAP_RCONF_REQ,
     BT_DEV_L2CAP_RCONF_DONE,
-    BT_DEV_SDP_PENDING,
     BT_DEV_SDP_CONNECTED,
     BT_DEV_HID_DESCRIPTOR_READ,
-    BT_DEV_HID_CTRL_PENDING,
     BT_DEV_HID_CTRL_CONNECTED,
-    BT_DEV_HID_INTR_PENDING,
     BT_DEV_HID_INTR_CONNECTED,
     /* HID Conf */
     BT_DEV_WII_LED_SET,
@@ -1414,21 +1411,12 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             }
             else {
                 device->ctrl_chan.dcid = bt_acl_frame->pl.l2cap_data.conn_req.scid;
-                //atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATED);
             }
             atomic_set_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ);
             break;
         case BT_L2CAP_CONN_RSP:
             printf("# BT_L2CAP_CONN_RSP\n");
             bt_get_dev_from_scid(bt_acl_frame->pl.l2cap_data.conn_rsp.scid, &device);
-            if (bt_acl_frame->pl.l2cap_data.conn_rsp.result == BT_L2CAP_BR_PENDING) {
-                if (bt_acl_frame->pl.l2cap_data.conn_rsp.scid == device->ctrl_chan.scid) {
-                    atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
-                }
-                else {
-                    atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
-                }
-            }
             if (bt_acl_frame->pl.l2cap_data.conn_rsp.result == BT_L2CAP_BR_SUCCESS
                 && bt_acl_frame->pl.l2cap_data.conn_rsp.status == BT_L2CAP_CS_NO_INFO) {
                 device->l2cap_ident = bt_acl_frame->pl.sig_hdr.ident;
@@ -1459,6 +1447,11 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             break;
         case BT_L2CAP_DISCONN_REQ:
             printf("# BT_L2CAP_DISCONN_REQ\n");
+            break;
+        case BT_L2CAP_DISCONN_RSP:
+            printf("# BT_L2CAP_DISCONN_RSP\n");
+            atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
+            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             break;
         case BT_HIDP_DATA_IN:
             bt_get_dev_from_scid(bt_acl_frame->l2cap_hdr.cid, &device);
@@ -1699,6 +1692,32 @@ static void bt_dev_task(void *param) {
                             if (!wii_wiiu_ctrl(device->type) && !atomic_test_bit(&device->flags, BT_DEV_ENCRYPT_SET)) {
                                 atomic_set_bit(&device->flags, BT_DEV_PENDING);
                                 bt_hci_cmd_set_conn_encrypt(device->acl_handle);
+                            }
+                            else if (!atomic_test_bit(&device->flags, BT_DEV_SDP_CONNECTED) && !atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                                if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {
+                                    device->l2cap_ident = 0x00;
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_l2cap_cmd_conn_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, BT_L2CAP_PSM_SDP, device->ctrl_chan.scid);
+                                }
+                                else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ)) {
+                                    bt_l2cap_cmd_conf_rsp(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->ctrl_chan.dcid);
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_RCONF_REQ);
+                                    atomic_set_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE);
+                                }
+                                else if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE)) {
+                                    device->l2cap_ident++;
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_l2cap_cmd_conf_req(device->acl_handle, BT_L2CAP_CID_BR_SIG, device->l2cap_ident, device->ctrl_chan.dcid);
+                                }
+                                else if (atomic_test_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE)) {
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_CONN_REQ);
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_CONNECTED);
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_LCONF_DONE);
+                                    atomic_clear_bit(&device->flags, BT_DEV_L2CAP_RCONF_DONE);
+                                    atomic_set_bit(&device->flags, BT_DEV_SDP_CONNECTED);
+                                    atomic_set_bit(&device->flags, BT_DEV_PENDING);
+                                    bt_l2cap_cmd_disconn_req(device->acl_handle, BT_L2CAP_CID_BR_SIG,  device->l2cap_ident, device->ctrl_chan.dcid, device->ctrl_chan.scid);
+                                }
                             }
                             else if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_CONNECTED)) {
                                 if (!atomic_test_bit(&device->flags, BT_DEV_L2CAP_CONNECTED)) {

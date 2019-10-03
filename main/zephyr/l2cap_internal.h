@@ -23,10 +23,13 @@ enum l2cap_conn_list_action {
 #define BT_L2CAP_CID_SMP		0x0006
 #define BT_L2CAP_CID_BR_SMP		0x0007
 
+#ifdef BLUERETRO
+#define BT_L2CAP_PSM_SDP		0x0001
+#endif /* BLUERETRO */
 #define BT_L2CAP_PSM_RFCOMM		0x0003
 #ifdef BLUERETRO
 #define BT_L2CAP_PSM_HID_CTRL	0x0011
-#define BT_L2CAP_PSM_HID_INTR 	0x0013
+#define BT_L2CAP_PSM_HID_INTR	0x0013
 #endif /* BLUERETRO */
 
 struct bt_l2cap_hdr {
