@@ -680,6 +680,12 @@ struct bt_hci_cp_write_conn_accept_timeout {
 #endif
 
 #define BT_HCI_OP_WRITE_PAGE_TIMEOUT            BT_OP(BT_OGF_BASEBAND, 0x0018)
+#ifdef BLUERETRO
+struct bt_hci_cp_write_page_scan_timeout {
+	u16_t  timeout;
+} __packed;
+#endif
+
 
 #define BT_HCI_OP_WRITE_SCAN_ENABLE             BT_OP(BT_OGF_BASEBAND, 0x001a)
 #define BT_BREDR_SCAN_DISABLED                  0x00
@@ -692,6 +698,27 @@ struct bt_hci_cp_write_scan_enable {
 
 #define BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY       BT_OP(BT_OGF_BASEBAND, 0x001b)
 
+#define BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY      BT_OP(BT_OGF_BASEBAND, 0x001c)
+struct bt_hci_cp_write_page_scan_activity {
+    u16_t interval;
+    u16_t window;
+} __packed;
+
+#define BT_HCI_OP_READ_INQUIRY_SCAN_ACTIVITY    BT_OP(BT_OGF_BASEBAND, 0x001d)
+
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e)
+struct bt_hci_cp_write_inquiry_scan_activity {
+    u16_t interval;
+    u16_t window;
+} __packed;
+
+#define BT_HCI_OP_READ_AUTH_ENABLE              BT_OP(BT_OGF_BASEBAND, 0x001f)
+
+#define BT_HCI_OP_WRITE_AUTH_ENABLE             BT_OP(BT_OGF_BASEBAND, 0x0020)
+struct bt_hci_cp_write_auth_enable {
+    u8_t auth_enable;
+} __packed;
+
 #define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023)
 
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
@@ -700,6 +727,11 @@ struct bt_hci_cp_write_class_of_device {
 } __packed;
 
 #define BT_HCI_OP_READ_VOICE_SETTING            BT_OP(BT_OGF_BASEBAND, 0x0025)
+
+#define BT_HCI_OP_WRITE_HOLD_MODE_ACT           BT_OP(BT_OGF_BASEBAND, 0x002c)
+struct bt_hci_cp_write_hold_mode_act {
+    u8_t activity;
+} __packed;
 #endif /* BLUERETRO */
 
 #define BT_TX_POWER_LEVEL_CURRENT               0x00
@@ -754,6 +786,11 @@ struct bt_hci_cp_write_inquiry_mode {
 
 #ifdef BLUERETRO
 #define BT_HCI_OP_READ_PAGE_SCAN_TYPE           BT_OP(BT_OGF_BASEBAND, 0x0046)
+
+#define BT_HCI_OP_WRITE_PAGE_SCAN_TYPE          BT_OP(BT_OGF_BASEBAND, 0x0047)
+struct bt_hci_cp_write_page_scan_type {
+	u8_t  type;
+} __packed;
 #endif
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056)
