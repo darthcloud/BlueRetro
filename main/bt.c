@@ -1143,9 +1143,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 //if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                 //    atomic_set_bit(&device->flags, BT_DEV_AUTHENTICATING);
                 //}
-                atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-                atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             }
+            atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
+            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             break;
         case BT_HCI_EVT_CONN_REQUEST:
             printf("# BT_HCI_EVT_CONN_REQUEST\n");
@@ -1759,9 +1759,9 @@ static void bt_task(void *param) {
                     else if (!atomic_test_bit(&bt_flags2, BT_CTRL_PAGE_TIMEOUT)) {
                         bt_hci_cmd_write_page_scan_timeout();
                     }
-                    else if (!atomic_test_bit(&bt_flags2, BT_CTRL_HOLD_ACT)) {
-                        bt_hci_cmd_write_hold_mode_act();
-                    }
+                    //else if (!atomic_test_bit(&bt_flags2, BT_CTRL_HOLD_ACT)) {
+                    //    bt_hci_cmd_write_hold_mode_act();
+                    //}
                     else if (!atomic_test_bit(&bt_flags, BT_CTRL_PAGE_ENABLE)) {
                         bt_hci_cmd_write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
                     }
@@ -1971,12 +1971,12 @@ static void bt_dev_task(void *param) {
                         }
                         else if (atomic_test_bit(&device->flags, BT_DEV_PIN_CODE_REQ)) {
                             atomic_set_bit(&device->flags, BT_DEV_PENDING);
-                            if (device->type == WII_CORE) {
-                                bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, device->remote_bdaddr.val);
-                            }
-                            else {
+                            //if (device->type == WII_CORE) {
+                            //    bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, device->remote_bdaddr.val);
+                            //}
+                            //else {
                                 bt_hci_cmd_pin_code_reply(device->remote_bdaddr, 6, local_bdaddr.val);
-                            }
+                            //}
                         }
                         else if (atomic_test_bit(&device->flags, BT_DEV_IO_CAP_REQ)) {
                             atomic_set_bit(&device->flags, BT_DEV_PENDING);
@@ -1993,6 +1993,7 @@ static void bt_dev_task(void *param) {
                     else {
                         atomic_set_bit(&device->flags, BT_DEV_PENDING);
                         if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                            vTaskDelay(100 / portTICK_PERIOD_MS);
                             bt_hci_cmd_accept_conn_req(&device->remote_bdaddr);
                         }
                         else {
