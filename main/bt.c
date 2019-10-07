@@ -1,6 +1,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/ringbuf.h"
 #include <esp_bt.h>
 #include <nvs_flash.h>
 #include "zephyr/hci.h"
@@ -291,6 +292,7 @@ enum {
 #define H4_TYPE_SCO     3
 #define H4_TYPE_EVENT   4
 
+static RingbufHandle_t buf_handle;
 static struct bt_dev bt_dev[7] = {0};
 TaskHandle_t xHandle;
 static struct io input;
@@ -2007,6 +2009,15 @@ static void bt_dev_task(void *param) {
     }
 }
 
+static void bt_tx_ringbuf_task(void *param) {
+    size_t item_size;
+
+    while(1) {
+        xRingbufferReceive(buf_handle, &item_size, pdMS_TO_TICKS(1));
+        printf("%s rx timeout\n", __FUNCTION__);
+    }
+}
+
 esp_err_t bt_init(struct io *io_data, struct config *config) {
     output = io_data;
     sd_config = config;
@@ -2035,6 +2046,13 @@ esp_err_t bt_init(struct io *io_data, struct config *config) {
 
     bt_ctrl_rcv_pkt_ready();
 
+    buf_handle = xRingbufferCreate(256*8, RINGBUF_TYPE_NOSPLIT);
+    if (buf_handle == NULL) {
+        printf("Failed to create ring buffer\n");
+        return ret;
+    }
+
+    xTaskCreatePinnedToCore(&bt_tx_ringbuf_task, "bt_tx_ringbuf_task", 2048, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
     return ret;
 }
