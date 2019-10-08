@@ -139,27 +139,3 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t acc;
     uint8_t ir[18];
 } __packed;
-
-struct bt_hidp_data {
-    struct bt_hidp_hdr hidp_hdr;
-    union {
-        struct bt_hidp_wii_conf wii_conf;
-        struct bt_hidp_wii_rep_mode wii_rep_mode;
-        struct bt_hidp_wii_wr_mem wii_wr_mem;
-        struct bt_hidp_wii_rd_mem wii_rd_mem;
-        struct bt_hidp_wii_spkr_wr wii_spkr_wr;
-        struct bt_hidp_wii_status wii_status;
-        struct bt_hidp_wii_rd_data wii_rd_data;
-        struct bt_hidp_wii_ack wii_ack;
-        struct bt_hidp_wii_core wii_core;
-        struct bt_hidp_wii_core_acc wii_core_acc;
-        struct bt_hidp_wii_core_ext8 wii_core_ext8;
-        struct bt_hidp_wii_core_acc_ir wii_core_acc_ir;
-        struct bt_hidp_wii_core_ext19 wii_core_ext19;
-        struct bt_hidp_wii_core_acc_ext wii_core_acc_ext;
-        struct bt_hidp_wii_core_ir_ext wii_core_ir_ext;
-        struct bt_hidp_wii_core_acc_ir_ext wii_core_acc_ir_ext;
-        struct bt_hidp_wii_ext wii_ext;
-        struct bt_hidp_wii_core_acc_ir_i wii_core_acc_ir_i;
-    } hidp_data;
-} __packed;

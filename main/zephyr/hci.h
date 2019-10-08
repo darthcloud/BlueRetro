@@ -189,6 +189,17 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_LE_AD_GENERAL                0x02 /* General Discoverable */
 #define BT_LE_AD_NO_BREDR               0x04 /* BR/EDR not supported */
 
+#ifdef BLUERETRO
+#define BT_HCI_H4_TYPE_CMD              0x01
+#define BT_HCI_H4_TYPE_ACL              0x02
+#define BT_HCI_H4_TYPE_SCO              0x03
+#define BT_HCI_H4_TYPE_EVT              0x04
+struct bt_hci_h4_hdr {
+	u8_t  type;
+} __packed;
+#define BT_HCI_H4_HDR_SIZE              1
+#endif /* BLUERETRO */
+
 struct bt_hci_evt_hdr {
 	u8_t  evt;
 	u8_t  len;

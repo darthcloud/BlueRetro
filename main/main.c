@@ -1,9 +1,11 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "bt.h"
+#include "io.h"
+#include "sd.h"
 #include "nsi.h"
 #include "maple.h"
+#include "bt_host.h"
 
 #define NSI_CH NSI_CH_0
 
@@ -21,7 +23,7 @@ static void wl_init_task(void *arg) {
         printf("SD init fail!\n");
     }
 
-    if (bt_init(&output[0], &config)) {
+    if (bt_host_init()) {
         printf("Bluetooth init fail!\n");
     }
     vTaskDelete(NULL);
