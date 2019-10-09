@@ -402,9 +402,11 @@ int _compare(const uint8_t *a, const uint8_t *b, size_t size);
  */
 static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
 {
+#ifndef BLUERETRO
     __ASSERT(((src < dst && (src + length) <= dst) ||
               (src > dst && (dst + length) <= src)),
              "Source and destination buffers must not overlap");
+#endif
 
     src += length - 1;
 

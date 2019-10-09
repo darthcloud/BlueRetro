@@ -1593,7 +1593,7 @@ struct bt_hci_evt_inquiry_complete {
 #ifdef BLUERETRO
 #define BT_HCI_EVT_INQUIRY_RESULT               0x02
 struct bt_hci_evt_inquiry_result {
-	u8_t      nb_rsp;
+	u8_t      num_reports;
 	bt_addr_t *addr;
 	u8_t      *pscan_rep_mode;
 	u8_t      *reserved;
