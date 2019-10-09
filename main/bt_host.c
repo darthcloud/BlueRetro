@@ -52,26 +52,6 @@ struct bt_wii_ext_type {
     int8_t type;
 };
 
-struct l2cap_chan {
-    uint16_t scid;
-    uint16_t dcid;
-    uint8_t  indent;
-};
-
-struct bt_dev {
-    int32_t id;
-    atomic_t flags;
-    uint32_t report_cnt;
-    TaskHandle_t xHandle;
-    bt_addr_t remote_bdaddr;
-    int8_t type;
-    uint16_t acl_handle;
-    uint8_t l2cap_ident;
-    struct l2cap_chan sdp_chan;
-    struct l2cap_chan ctrl_chan;
-    struct l2cap_chan intr_chan;
-};
-
 enum {
     /* BT CTRL flags */
     BT_CTRL_READY,
@@ -121,8 +101,7 @@ uint32_t bt_host_state = BT_CONFIG_STATE;
 uint32_t bt_config_state = 0;
 RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev[7] = {0};
-TaskHandle_t xHandle;
-static bt_addr_t local_bdaddr;
+static uint8_t local_bdaddr[6];
 static atomic_t bt_flags = 0;
 #if 0
 static uint16_t min_lx = 0xFFFF;
@@ -214,7 +193,7 @@ static int32_t bt_get_active_dev(struct bt_dev **device) {
 
 static int32_t bt_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
-        if (memcmp(bdaddr->val, bt_dev[i].remote_bdaddr.val, 6) == 0) {
+        if (memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
             *device = &bt_dev[i];
             return i;
         }
@@ -296,10 +275,10 @@ static struct bt_hci_cp_set_event_filter conn_evt_filter = {
     .conn_class.auto_accept_flag =  BT_BREDR_AUTO_OFF
 };
 
-typedef void (*bt_hci_config_func_t)(void *cp);
+typedef void (*bt_cmd_func_t)(void *param);
 
 struct bt_hci_config {
-    bt_hci_config_func_t cmd;
+    bt_cmd_func_t cmd;
     void *param;
 };
 
@@ -379,17 +358,17 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 if (device == NULL) {
                     int32_t bt_dev_id = bt_get_new_dev(&device);
                     if (device) {
-                        memcpy((void *)&device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
+                        memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
                         device->ctrl_chan.scid = bt_dev_id | 0x0080;
                         device->intr_chan.scid = bt_dev_id | 0x0090;
                         bt_hci_cmd_inquiry_cancel(NULL);
-                        bt_hci_cmd_connect(&device->remote_bdaddr);
+                        bt_hci_cmd_connect(device->remote_bdaddr);
                     }
                 }
                 printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
-                    device->remote_bdaddr.val[5], device->remote_bdaddr.val[4], device->remote_bdaddr.val[3],
-                    device->remote_bdaddr.val[2], device->remote_bdaddr.val[1], device->remote_bdaddr.val[0]);
+                    device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                    device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 break; /* Only support one result for now */
             }
             break;
@@ -502,7 +481,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             uint8_t status = bt_hci_evt_packet->evt_data[sizeof(*cmd_complete)];
             printf("# BT_HCI_EVT_CMD_COMPLETE\n");
             if (status != BT_HCI_ERR_SUCCESS && status != BT_HCI_ERR_UNKNOWN_CMD) {
-            printf("# BT_HCI_EVT_CMD_COMPLETE2\n");
                 printf("# opcode: 0x%04X error: 0x%02X retry: %d\n", cmd_complete->opcode, status, bt_pkt_retry);
                 if (bt_host_state == BT_CONFIG_STATE) {
                     bt_pkt_retry++;
@@ -520,17 +498,15 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 }
             }
             else {
-            printf("# BT_HCI_EVT_CMD_COMPLETE3\n");
                 if (bt_host_state == BT_CONFIG_STATE) {
-            printf("# BT_HCI_EVT_CMD_COMPLETE4\n");
                     switch (cmd_complete->opcode) {
                         case BT_HCI_OP_READ_BD_ADDR:
                         {
                             struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_packet->evt_data[sizeof(*cmd_complete)];
-                            memcpy((void *)&local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
+                            memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
                             printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
-                                local_bdaddr.val[5], local_bdaddr.val[4], local_bdaddr.val[3],
-                                local_bdaddr.val[2], local_bdaddr.val[1], local_bdaddr.val[0]);
+                                local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
+                                local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
                             break;
                         }
                     }
@@ -539,7 +515,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     bt_host_config_q_cmd();
                 }
                 else {
-            printf("# BT_HCI_EVT_CMD_COMPLETE5\n");
                 }
             }
             break;
