@@ -1,40 +1,6 @@
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/ringbuf.h"
-#include <esp_bt.h>
-#include <nvs_flash.h>
-#include "zephyr/hci.h"
-#include "zephyr/l2cap_internal.h"
-#include "zephyr/atomic.h"
-#include "hidp.h"
-#include "adapter.h"
+#include "bt_host.h"
 
 #ifdef WIP
-static void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len) {
-    uint16_t buflen = (sizeof(bt_acl_frame.h4_type) + sizeof(bt_acl_frame.acl_hdr)
-                       + sizeof(bt_acl_frame.l2cap_hdr) + sizeof(bt_acl_frame.pl.hidp.hidp_hdr) + len);
-
-    atomic_clear_bit(&bt_flags, BT_CTRL_READY);
-
-    bt_acl_frame.h4_type = H4_TYPE_ACL;
-
-    bt_acl_frame.acl_hdr.handle = handle | (0x2 << 12); /* BC/PB Flags (2 bits each) */
-    bt_acl_frame.acl_hdr.len = buflen - sizeof(bt_acl_frame.h4_type) - sizeof(bt_acl_frame.acl_hdr);
-
-    bt_acl_frame.l2cap_hdr.len = bt_acl_frame.acl_hdr.len - sizeof(bt_acl_frame.l2cap_hdr);
-    bt_acl_frame.l2cap_hdr.cid = cid;
-
-    bt_acl_frame.pl.hidp.hidp_hdr.hdr = BT_HIDP_DATA_OUT;
-    bt_acl_frame.pl.hidp.hidp_hdr.protocol = protocol;
-
-#ifdef H4_TRACE
-    bt_h4_trace((uint8_t *)&bt_acl_frame, buflen, BT_TX);
-#endif /* H4_TRACE */
-
-    esp_vhci_host_send_packet((uint8_t *)&bt_acl_frame, buflen);
-}
-
 static void bt_hid_cmd_wii_set_led(uint16_t handle, uint16_t cid, uint8_t conf) {
     //printf("# %s\n", __FUNCTION__);
 

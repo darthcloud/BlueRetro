@@ -3,10 +3,7 @@
 #include <freertos/ringbuf.h>
 #include <esp_bt.h>
 #include <nvs_flash.h>
-#include "zephyr/hci.h"
-#include "zephyr/l2cap_internal.h"
 #include "zephyr/atomic.h"
-#include "hidp.h"
 #include "adapter.h"
 #include "bt_host.h"
 #include "bt_hci.h"
@@ -20,27 +17,7 @@
 
 #define BT_MAX_RETRY 3
 
-struct bt_hci_acl_packet {
-    struct bt_hci_h4_hdr h4_hdr;
-    struct bt_hci_acl_hdr acl_hdr;
-    struct bt_l2cap_hdr l2cap_hdr;
-    union {
-        struct {
-            struct bt_l2cap_sig_hdr sig_hdr;
-            uint8_t sig_data[0];
-        };
-        struct {
-            struct bt_hidp_hdr hidp_hdr;
-            uint8_t hidp_data[0];
-        };
-    };
-} __packed;
-
-struct bt_hci_evt_packet {
-    struct bt_hci_h4_hdr h4_hdr;
-    struct bt_hci_evt_hdr evt_hdr;
-    uint8_t evt_data[0];
-} __packed;
+struct bt_hci_pkt bt_hci_pkt_tmp;
 
 struct bt_name_type {
     char name[249];
@@ -333,9 +310,9 @@ static void bt_host_config_q_cmd(void) {
 
 static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     struct bt_dev *device = NULL;
-    struct bt_hci_evt_packet *bt_hci_evt_packet = (struct bt_hci_evt_packet *)data;
+    struct bt_hci_pkt *bt_hci_evt_pkt = (struct bt_hci_pkt *)data;
 
-    switch (bt_hci_evt_packet->evt_hdr.evt) {
+    switch (bt_hci_evt_pkt->evt_hdr.evt) {
 #ifdef WIP
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
@@ -350,7 +327,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
         case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
         case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
         {
-            struct bt_hci_evt_inquiry_result *inquiry_result = (struct bt_hci_evt_inquiry_result *)bt_hci_evt_packet->evt_data;
+            struct bt_hci_evt_inquiry_result *inquiry_result = (struct bt_hci_evt_inquiry_result *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
             printf("# Number of responce: %d\n", inquiry_result->num_reports);
             for (uint8_t i = 1; i <= inquiry_result->num_reports; i++) {
@@ -375,7 +352,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
         }
         case BT_HCI_EVT_CONN_COMPLETE:
         {
-            struct bt_hci_evt_conn_complete *conn_complete = (struct bt_hci_evt_conn_complete *)bt_hci_evt_packet->evt_data;
+            struct bt_hci_evt_conn_complete *conn_complete = (struct bt_hci_evt_conn_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_CONN_COMPLETE\n");
             bt_get_dev_from_bdaddr(&conn_complete->bdaddr, &device);
             printf("# BT_HCI_EVT_CONN_COMPLETE2\n");
@@ -477,8 +454,8 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
 #endif
         case BT_HCI_EVT_CMD_COMPLETE:
         {
-            struct bt_hci_evt_cmd_complete *cmd_complete = (struct bt_hci_evt_cmd_complete *)bt_hci_evt_packet->evt_data;
-            uint8_t status = bt_hci_evt_packet->evt_data[sizeof(*cmd_complete)];
+            struct bt_hci_evt_cmd_complete *cmd_complete = (struct bt_hci_evt_cmd_complete *)bt_hci_evt_pkt->evt_data;
+            uint8_t status = bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
             printf("# BT_HCI_EVT_CMD_COMPLETE\n");
             if (status != BT_HCI_ERR_SUCCESS && status != BT_HCI_ERR_UNKNOWN_CMD) {
                 printf("# opcode: 0x%04X error: 0x%02X retry: %d\n", cmd_complete->opcode, status, bt_pkt_retry);
@@ -502,7 +479,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     switch (cmd_complete->opcode) {
                         case BT_HCI_OP_READ_BD_ADDR:
                         {
-                            struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_packet->evt_data[sizeof(*cmd_complete)];
+                            struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
                             memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
                             printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
                                 local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],

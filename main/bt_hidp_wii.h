@@ -1,9 +1,5 @@
-#define BT_HIDP_DATA_IN        0xa1
-#define BT_HIDP_DATA_OUT       0xa2
-struct bt_hidp_hdr {
-    uint8_t hdr;
-    uint8_t protocol;
-} __packed;
+#ifndef _BT_HIDP_WII_H_
+#define _BT_HIDP_WII_H_
 
 #define BT_HIDP_WII_LED_REPORT 0x11
 #define BT_HIPD_WII_IR_CAM_EN1 0x13
@@ -139,3 +135,4 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t acc;
     uint8_t ir[18];
 } __packed;
+#endif /* _BT_HIDP_WII_H_ */

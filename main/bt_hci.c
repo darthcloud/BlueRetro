@@ -1,28 +1,19 @@
 #include <stdio.h>
-#include "zephyr/hci.h"
 #include "bt_host.h"
-
-struct bt_hci_tx_packet {
-    struct bt_hci_h4_hdr h4_hdr;
-    struct bt_hci_cmd_hdr cmd_hdr;
-    uint8_t cp[512];
-} __packed;
-
-static struct bt_hci_tx_packet bt_hci_tx_pkt_tmp;
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len) {
     uint32_t packet_len = BT_HCI_H4_HDR_SIZE + BT_HCI_CMD_HDR_SIZE + cp_len;
 
-    bt_hci_tx_pkt_tmp.h4_hdr.type = BT_HCI_H4_TYPE_CMD;
+    bt_hci_pkt_tmp.h4_hdr.type = BT_HCI_H4_TYPE_CMD;
 
-    bt_hci_tx_pkt_tmp.cmd_hdr.opcode = opcode;
-    bt_hci_tx_pkt_tmp.cmd_hdr.param_len = cp_len;
+    bt_hci_pkt_tmp.cmd_hdr.opcode = opcode;
+    bt_hci_pkt_tmp.cmd_hdr.param_len = cp_len;
 
-    bt_host_txq_add((uint8_t *)&bt_hci_tx_pkt_tmp, packet_len);
+    bt_host_txq_add((uint8_t *)&bt_hci_pkt_tmp, packet_len);
 }
 
 void bt_hci_cmd_inquiry(void *cp) {
-    struct bt_hci_cp_inquiry *inquiry = (struct bt_hci_cp_inquiry *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_inquiry *inquiry = (struct bt_hci_cp_inquiry *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     inquiry->lap[0] = 0x33;
@@ -41,7 +32,7 @@ void bt_hci_cmd_inquiry_cancel(void *cp) {
 }
 
 void bt_hci_cmd_connect(void *bdaddr) {
-    struct bt_hci_cp_connect *connect = (struct bt_hci_cp_connect *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_connect *connect = (struct bt_hci_cp_connect *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&connect->bdaddr, bdaddr, sizeof(connect->bdaddr));
@@ -55,7 +46,7 @@ void bt_hci_cmd_connect(void *bdaddr) {
 }
 
 void bt_hci_cmd_accept_conn_req(void *bdaddr) {
-    struct bt_hci_cp_accept_conn_req *accept_conn_req = (struct bt_hci_cp_accept_conn_req *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_accept_conn_req *accept_conn_req = (struct bt_hci_cp_accept_conn_req *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&accept_conn_req->bdaddr, bdaddr, sizeof(accept_conn_req->bdaddr));
@@ -65,7 +56,7 @@ void bt_hci_cmd_accept_conn_req(void *bdaddr) {
 }
 
 void bt_hci_cmd_link_key_neg_reply(void *bdaddr) {
-    struct bt_hci_cp_link_key_neg_reply *link_key_neg_reply = (struct bt_hci_cp_link_key_neg_reply *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_link_key_neg_reply *link_key_neg_reply = (struct bt_hci_cp_link_key_neg_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&link_key_neg_reply->bdaddr, bdaddr, sizeof(link_key_neg_reply->bdaddr));
@@ -74,7 +65,7 @@ void bt_hci_cmd_link_key_neg_reply(void *bdaddr) {
 }
 
 void bt_hci_cmd_pin_code_reply(void *cp) {
-    struct bt_hci_cp_pin_code_reply *pin_code_reply = (struct bt_hci_cp_pin_code_reply *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_pin_code_reply *pin_code_reply = (struct bt_hci_cp_pin_code_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)pin_code_reply, cp, sizeof(*pin_code_reply));
@@ -83,7 +74,7 @@ void bt_hci_cmd_pin_code_reply(void *cp) {
 }
 
 void bt_hci_cmd_pin_code_neg_reply(void *bdaddr) {
-    struct bt_hci_cp_pin_code_neg_reply *pin_code_neg_reply = (struct bt_hci_cp_pin_code_neg_reply *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_pin_code_neg_reply *pin_code_neg_reply = (struct bt_hci_cp_pin_code_neg_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&pin_code_neg_reply->bdaddr, bdaddr, sizeof(pin_code_neg_reply->bdaddr));
@@ -92,7 +83,7 @@ void bt_hci_cmd_pin_code_neg_reply(void *bdaddr) {
 }
 
 void bt_hci_cmd_auth_requested(void *handle) {
-    struct bt_hci_cp_auth_requested *auth_requested = (struct bt_hci_cp_auth_requested *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_auth_requested *auth_requested = (struct bt_hci_cp_auth_requested *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     auth_requested->handle = *(uint16_t *)handle;
@@ -101,7 +92,7 @@ void bt_hci_cmd_auth_requested(void *handle) {
 }
 
 void bt_hci_cmd_set_conn_encrypt(void *handle) {
-    struct bt_hci_cp_set_conn_encrypt *set_conn_encrypt = (struct bt_hci_cp_set_conn_encrypt *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_set_conn_encrypt *set_conn_encrypt = (struct bt_hci_cp_set_conn_encrypt *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     set_conn_encrypt->handle = *(uint16_t *)handle;
@@ -111,7 +102,7 @@ void bt_hci_cmd_set_conn_encrypt(void *handle) {
 }
 
 void bt_hci_cmd_remote_name_request(void *bdaddr) {
-    struct bt_hci_cp_remote_name_request *remote_name_request = (struct bt_hci_cp_remote_name_request *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_remote_name_request *remote_name_request = (struct bt_hci_cp_remote_name_request *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&remote_name_request->bdaddr, bdaddr, sizeof(remote_name_request->bdaddr));
@@ -123,7 +114,7 @@ void bt_hci_cmd_remote_name_request(void *bdaddr) {
 }
 
 void bt_hci_cmd_read_remote_features(void *handle) {
-    struct bt_hci_cp_read_remote_features *read_remote_features = (struct bt_hci_cp_read_remote_features *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_read_remote_features *read_remote_features = (struct bt_hci_cp_read_remote_features *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     read_remote_features->handle = *(uint16_t *)handle;
@@ -132,7 +123,7 @@ void bt_hci_cmd_read_remote_features(void *handle) {
 }
 
 void bt_hci_cmd_read_remote_ext_features(void *handle) {
-    struct bt_hci_cp_read_remote_ext_features *read_remote_ext_features = (struct bt_hci_cp_read_remote_ext_features *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_read_remote_ext_features *read_remote_ext_features = (struct bt_hci_cp_read_remote_ext_features *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     read_remote_ext_features->handle = *(uint16_t *)handle;
@@ -142,7 +133,7 @@ void bt_hci_cmd_read_remote_ext_features(void *handle) {
 }
 
 void bt_hci_cmd_io_capability_reply(void *bdaddr) {
-    struct bt_hci_cp_io_capability_reply *io_capability_reply = (struct bt_hci_cp_io_capability_reply *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_io_capability_reply *io_capability_reply = (struct bt_hci_cp_io_capability_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&io_capability_reply->bdaddr, bdaddr, sizeof(io_capability_reply->bdaddr));
@@ -154,7 +145,7 @@ void bt_hci_cmd_io_capability_reply(void *bdaddr) {
 }
 
 void bt_hci_cmd_user_confirm_reply(void *bdaddr) {
-    struct bt_hci_cp_user_confirm_reply *user_confirm_reply = (struct bt_hci_cp_user_confirm_reply *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_user_confirm_reply *user_confirm_reply = (struct bt_hci_cp_user_confirm_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)&user_confirm_reply->bdaddr, bdaddr, sizeof(user_confirm_reply->bdaddr));
@@ -163,7 +154,7 @@ void bt_hci_cmd_user_confirm_reply(void *bdaddr) {
 }
 
 void bt_hci_cmd_switch_role(void *cp) {
-    struct bt_hci_cp_switch_role *switch_role = (struct bt_hci_cp_switch_role *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_switch_role *switch_role = (struct bt_hci_cp_switch_role *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)switch_role, cp, sizeof(*switch_role));
@@ -172,7 +163,7 @@ void bt_hci_cmd_switch_role(void *cp) {
 }
 
 void bt_hci_cmd_read_link_policy(void *handle) {
-    struct bt_hci_cp_read_link_policy *read_link_policy = (struct bt_hci_cp_read_link_policy *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_read_link_policy *read_link_policy = (struct bt_hci_cp_read_link_policy *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     read_link_policy->handle = *(uint16_t *)handle;
@@ -181,7 +172,7 @@ void bt_hci_cmd_read_link_policy(void *handle) {
 }
 
 void bt_hci_cmd_write_link_policy(void *cp) {
-    struct bt_hci_cp_write_link_policy *write_link_policy = (struct bt_hci_cp_write_link_policy *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_link_policy *write_link_policy = (struct bt_hci_cp_write_link_policy *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)write_link_policy, cp, sizeof(*write_link_policy));
@@ -196,7 +187,7 @@ void bt_hci_cmd_read_default_link_policy(void *cp) {
 }
 
 void bt_hci_cmd_write_default_link_policy(void *cp) {
-    struct bt_hci_cp_write_default_link_policy *write_default_link_policy = (struct bt_hci_cp_write_default_link_policy *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_default_link_policy *write_default_link_policy = (struct bt_hci_cp_write_default_link_policy *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_default_link_policy->link_policy = 0x000F;
@@ -205,7 +196,7 @@ void bt_hci_cmd_write_default_link_policy(void *cp) {
 }
 
 void bt_hci_cmd_set_event_mask(void *cp) {
-    struct bt_hci_cp_set_event_mask *set_event_mask = (struct bt_hci_cp_set_event_mask *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_set_event_mask *set_event_mask = (struct bt_hci_cp_set_event_mask *)&bt_hci_pkt_tmp.cp;
     uint8_t events[8] = {0xff, 0xff, 0xfb, 0xff, 0x07, 0xf8, 0xbf, 0x3d};
     printf("# %s\n", __FUNCTION__);
 
@@ -221,7 +212,7 @@ void bt_hci_cmd_reset(void *cp) {
 }
 
 void bt_hci_cmd_set_event_filter(void *cp) {
-    struct bt_hci_cp_set_event_filter *set_event_filter = (struct bt_hci_cp_set_event_filter *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_set_event_filter *set_event_filter = (struct bt_hci_cp_set_event_filter *)&bt_hci_pkt_tmp.cp;
     uint32_t len = 1;
     printf("# %s\n", __FUNCTION__);
 
@@ -241,7 +232,7 @@ void bt_hci_cmd_set_event_filter(void *cp) {
 }
 
 void bt_hci_cmd_read_stored_link_key(void *cp) {
-    struct bt_hci_cp_read_stored_link_key *read_stored_link_key = (struct bt_hci_cp_read_stored_link_key *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_read_stored_link_key *read_stored_link_key = (struct bt_hci_cp_read_stored_link_key *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memset((void *)&read_stored_link_key->bdaddr, 0, sizeof(read_stored_link_key->bdaddr));
@@ -251,7 +242,7 @@ void bt_hci_cmd_read_stored_link_key(void *cp) {
 }
 
 void bt_hci_cmd_delete_stored_link_key(void *cp) {
-    struct bt_hci_cp_delete_stored_link_key *delete_stored_link_key = (struct bt_hci_cp_delete_stored_link_key *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_delete_stored_link_key *delete_stored_link_key = (struct bt_hci_cp_delete_stored_link_key *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memset((void *)&delete_stored_link_key->bdaddr, 0, sizeof(delete_stored_link_key->bdaddr));
@@ -261,7 +252,7 @@ void bt_hci_cmd_delete_stored_link_key(void *cp) {
 }
 
 void bt_hci_cmd_write_local_name(void *cp) {
-    struct bt_hci_cp_write_local_name *write_local_name = (struct bt_hci_cp_write_local_name *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_local_name *write_local_name = (struct bt_hci_cp_write_local_name *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     memset((void *)write_local_name, 0, sizeof(*write_local_name));
@@ -277,7 +268,7 @@ void bt_hci_cmd_read_local_name(void *cp) {
 }
 
 void bt_hci_cmd_write_conn_accept_timeout(void *cp) {
-    struct bt_hci_cp_write_conn_accept_timeout *write_conn_accept_timeout = (struct bt_hci_cp_write_conn_accept_timeout *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_conn_accept_timeout *write_conn_accept_timeout = (struct bt_hci_cp_write_conn_accept_timeout *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_conn_accept_timeout->conn_accept_timeout = 0x7d00;
@@ -286,7 +277,7 @@ void bt_hci_cmd_write_conn_accept_timeout(void *cp) {
 }
 
 void bt_hci_cmd_write_page_scan_timeout(void *cp) {
-    struct bt_hci_cp_write_page_scan_timeout *write_page_scan_timeout = (struct bt_hci_cp_write_page_scan_timeout *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_page_scan_timeout *write_page_scan_timeout = (struct bt_hci_cp_write_page_scan_timeout *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_page_scan_timeout->timeout = 0x2000;
@@ -295,7 +286,7 @@ void bt_hci_cmd_write_page_scan_timeout(void *cp) {
 }
 
 void bt_hci_cmd_write_scan_enable(void *cp) {
-    struct bt_hci_cp_write_scan_enable *write_scan_enable = (struct bt_hci_cp_write_scan_enable *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_scan_enable *write_scan_enable = (struct bt_hci_cp_write_scan_enable *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_scan_enable->scan_enable = BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE;
@@ -304,7 +295,7 @@ void bt_hci_cmd_write_scan_enable(void *cp) {
 }
 
 void bt_hci_cmd_write_page_scan_activity(void *cp) {
-    struct bt_hci_cp_write_page_scan_activity *write_page_scan_activity = (struct bt_hci_cp_write_page_scan_activity *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_page_scan_activity *write_page_scan_activity = (struct bt_hci_cp_write_page_scan_activity *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_page_scan_activity->interval = 0x50;
@@ -314,7 +305,7 @@ void bt_hci_cmd_write_page_scan_activity(void *cp) {
 }
 
 void bt_hci_cmd_write_inquiry_scan_activity(void *cp) {
-    struct bt_hci_cp_write_inquiry_scan_activity *write_inquiry_scan_activity = (struct bt_hci_cp_write_inquiry_scan_activity *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_inquiry_scan_activity *write_inquiry_scan_activity = (struct bt_hci_cp_write_inquiry_scan_activity *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_inquiry_scan_activity->interval = 0x50;
@@ -324,7 +315,7 @@ void bt_hci_cmd_write_inquiry_scan_activity(void *cp) {
 }
 
 void bt_hci_cmd_write_auth_enable(void *cp) {
-    struct bt_hci_cp_write_auth_enable *write_auth_enable = (struct bt_hci_cp_write_auth_enable *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_auth_enable *write_auth_enable = (struct bt_hci_cp_write_auth_enable *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_auth_enable->auth_enable = 0x00;
@@ -345,7 +336,7 @@ void bt_hci_cmd_read_class_of_device(void *cp) {
 }
 
 void bt_hci_cmd_write_class_of_device(void *cp) {
-    struct bt_hci_cp_write_class_of_device *write_class_of_device = (struct bt_hci_cp_write_class_of_device *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_class_of_device *write_class_of_device = (struct bt_hci_cp_write_class_of_device *)&bt_hci_pkt_tmp.cp;
     bt_class_t local_class = {{0x0c, 0x01, 0x1c}}; /* Laptop */
     printf("# %s\n", __FUNCTION__);
 
@@ -361,7 +352,7 @@ void bt_hci_cmd_read_voice_setting(void *cp) {
 }
 
 void bt_hci_cmd_write_hold_mode_act(void *cp) {
-    struct bt_hci_cp_write_hold_mode_act *write_hold_mode_act = (struct bt_hci_cp_write_hold_mode_act *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_hold_mode_act *write_hold_mode_act = (struct bt_hci_cp_write_hold_mode_act *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_hold_mode_act->activity = 0x00;
@@ -382,7 +373,7 @@ void bt_hci_cmd_read_current_iac_lap(void *cp) {
 }
 
 void bt_hci_cmd_write_inquiry_mode(void *cp) {
-    struct bt_hci_cp_write_inquiry_mode *write_inquiry_mode = (struct bt_hci_cp_write_inquiry_mode *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_inquiry_mode *write_inquiry_mode = (struct bt_hci_cp_write_inquiry_mode *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_inquiry_mode->mode = 0x02;
@@ -397,7 +388,7 @@ void bt_hci_cmd_read_page_scan_type(void *cp) {
 }
 
 void bt_hci_cmd_write_page_scan_type(void *cp) {
-    struct bt_hci_cp_write_page_scan_type *write_page_scan_type = (struct bt_hci_cp_write_page_scan_type *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_page_scan_type *write_page_scan_type = (struct bt_hci_cp_write_page_scan_type *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_page_scan_type->type = 0x01;
@@ -406,7 +397,7 @@ void bt_hci_cmd_write_page_scan_type(void *cp) {
 }
 
 void bt_hci_cmd_write_ssp_mode(void *cp) {
-    struct bt_hci_cp_write_ssp_mode *write_ssp_mode = (struct bt_hci_cp_write_ssp_mode *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_ssp_mode *write_ssp_mode = (struct bt_hci_cp_write_ssp_mode *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_ssp_mode->mode = 0x01;
@@ -421,7 +412,7 @@ void bt_hci_cmd_read_inquiry_rsp_tx_pwr_lvl(void *cp) {
 }
 
 void bt_hci_cmd_write_le_host_supp(void *cp) {
-    struct bt_hci_cp_write_le_host_supp *write_le_host_supp = (struct bt_hci_cp_write_le_host_supp *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_write_le_host_supp *write_le_host_supp = (struct bt_hci_cp_write_le_host_supp *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     write_le_host_supp->le = 0x00;
@@ -449,7 +440,7 @@ void bt_hci_cmd_read_local_features(void *cp) {
 }
 
 void bt_hci_cmd_read_local_ext_features(void *cp) {
-    struct bt_hci_cp_read_local_ext_features *read_local_ext_features = (struct bt_hci_cp_read_local_ext_features *)&bt_hci_tx_pkt_tmp.cp;
+    struct bt_hci_cp_read_local_ext_features *read_local_ext_features = (struct bt_hci_cp_read_local_ext_features *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     read_local_ext_features->page = 0x01;
