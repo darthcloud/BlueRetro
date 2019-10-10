@@ -135,4 +135,9 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t acc;
     uint8_t ir[18];
 } __packed;
+
+void bt_hid_cmd_wii_set_led(uint16_t handle, uint16_t cid, uint8_t conf);
+void bt_hid_cmd_wii_set_rep_mode(uint16_t handle, uint16_t cid, uint8_t continuous, uint8_t mode);
+void bt_hid_cmd_wii_read(uint16_t handle, uint16_t cid, struct bt_hidp_wii_rd_mem *data);
+void bt_hid_cmd_wii_write(uint16_t handle, uint16_t cid, struct bt_hidp_wii_wr_mem *data);
 #endif /* _BT_HIDP_WII_H_ */
