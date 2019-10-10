@@ -212,6 +212,10 @@ static int32_t bt_get_type_from_name(const uint8_t* name) {
     return -1;
 }
 
+static void bt_host_reset_dev(struct bt_dev *device) {
+    memset((void *)device, 0, sizeof(*device));
+}
+
 static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
     for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
         if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
@@ -254,13 +258,14 @@ static struct bt_hci_cp_set_event_filter conn_evt_filter = {
 
 typedef void (*bt_cmd_func_t)(void *param);
 
-struct bt_hci_config {
+struct bt_hci_cmd_cp {
     bt_cmd_func_t cmd;
-    void *param;
+    void *cp;
 };
 
-static struct bt_hci_config bt_hci_config[] =
+static struct bt_hci_cmd_cp bt_hci_config[] =
 {
+    {bt_hci_cmd_reset, NULL},
     {bt_hci_cmd_read_local_features, NULL},
     {bt_hci_cmd_read_local_version_info, NULL},
     {bt_hci_cmd_read_bd_addr, NULL},
@@ -300,11 +305,48 @@ static struct bt_hci_config bt_hci_config[] =
 
 static void bt_host_config_q_cmd(void) {
     if (bt_config_state < ARRAY_SIZE(bt_hci_config)) {
-        bt_hci_config[bt_config_state].cmd(bt_hci_config[bt_config_state].param);
+        bt_hci_config[bt_config_state].cmd(bt_hci_config[bt_config_state].cp);
     }
 
     if (bt_config_state == (ARRAY_SIZE(bt_hci_config) - 1)) {
         bt_host_state = BT_READY_STATE;
+    }
+}
+
+enum {
+    BT_CMD_PARAM_BDADDR,
+    BT_CMD_PARAM_HANDLE,
+    BT_CMD_PARAM_DEV
+};
+
+struct bt_hci_cmd_param {
+    bt_cmd_func_t cmd;
+    uint32_t param;
+};
+
+static struct bt_hci_cmd_param bt_dev_tx_conn[] =
+{
+    {bt_hci_cmd_connect, BT_CMD_PARAM_BDADDR},
+    {bt_hci_cmd_remote_name_request, BT_CMD_PARAM_BDADDR},
+};
+
+static void bt_host_dev_tx_conn_q_cmd(struct bt_dev *device) {
+    if (device->conn_state < ARRAY_SIZE(bt_dev_tx_conn)) {
+        switch (bt_dev_tx_conn[device->conn_state].param) {
+            case BT_CMD_PARAM_BDADDR:
+                bt_dev_tx_conn[device->conn_state].cmd((void *)device->remote_bdaddr);
+                break;
+            case BT_CMD_PARAM_HANDLE:
+                bt_dev_tx_conn[device->conn_state].cmd((void *)&device->acl_handle);
+                break;
+            case BT_CMD_PARAM_DEV:
+                bt_dev_tx_conn[device->conn_state].cmd((void *)device);
+                break;
+        }
+    }
+
+    if (device->conn_state == (ARRAY_SIZE(bt_dev_tx_conn) - 1)) {
+        //device->dev_state = BT_CONN_STATE;
     }
 }
 
@@ -313,16 +355,12 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     struct bt_hci_pkt *bt_hci_evt_pkt = (struct bt_hci_pkt *)data;
 
     switch (bt_hci_evt_pkt->evt_hdr.evt) {
-#ifdef WIP
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
-            atomic_clear_bit(&bt_flags, BT_CTRL_INQUIRY);
-            atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-            if (!bt_dev[0].flags && xHandle == NULL) {
-                xTaskCreatePinnedToCore(&bt_task, "bt_task", 2048, NULL, 5, &xHandle, 0);
+            if (!atomic_test_bit(&bt_dev[0].flags, BT_DEV_DEVICE_FOUND)) {
+                bt_hci_cmd_inquiry(NULL);
             }
             break;
-#endif
         case BT_HCI_EVT_INQUIRY_RESULT:
         case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
         case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
@@ -337,10 +375,13 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     if (device) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
+                        device->sdp_chan.scid = bt_dev_id | 0x0070;
                         device->ctrl_chan.scid = bt_dev_id | 0x0080;
                         device->intr_chan.scid = bt_dev_id | 0x0090;
+                        atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_inquiry_cancel(NULL);
-                        bt_hci_cmd_connect(device->remote_bdaddr);
+
+                        bt_host_dev_tx_conn_q_cmd(device);
                     }
                 }
                 printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
@@ -355,13 +396,27 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             struct bt_hci_evt_conn_complete *conn_complete = (struct bt_hci_evt_conn_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_CONN_COMPLETE\n");
             bt_get_dev_from_bdaddr(&conn_complete->bdaddr, &device);
-            printf("# BT_HCI_EVT_CONN_COMPLETE2\n");
-            if (!device || conn_complete->status) {
-                printf("# dev: %d error: 0x%02X\n", device ? device->id : -1, conn_complete->status);
+            if (device) {
+                if (conn_complete->status) {
+                    device->pkt_retry++;
+                    printf("# dev: %d error: 0x%02X\n", device->id, conn_complete->status);
+                    if (device->pkt_retry < BT_MAX_RETRY) {
+                        bt_host_dev_tx_conn_q_cmd(device);
+                    }
+                    else {
+                        bt_host_reset_dev(device);
+                    }
+                }
+                else {
+                    device->acl_handle = conn_complete->handle;
+                    device->pkt_retry = 0;
+                    device->conn_state++;
+                    printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    bt_host_dev_tx_conn_q_cmd(device);
+                }
             }
             else {
-                device->acl_handle = conn_complete->handle;
-                printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                printf("# dev NULL!\n");
             }
             break;
         }
@@ -1030,7 +1085,7 @@ int32_t bt_host_init(void) {
 
     xTaskCreatePinnedToCore(&bt_tx_ringbuf_task, "bt_tx_ringbuf_task", 2048, NULL, 5, NULL, 0);
 
-    bt_hci_cmd_reset(NULL);
+    bt_host_config_q_cmd();
 
     return ret;
 }

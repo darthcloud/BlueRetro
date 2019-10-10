@@ -14,6 +14,9 @@ struct l2cap_chan {
 struct bt_dev {
     int32_t id;
     int32_t flags;
+    uint32_t pkt_retry;
+    uint32_t conn_state;
+    uint32_t dev_state;
     uint32_t report_cnt;
     uint8_t remote_bdaddr[6];
     int8_t type;
