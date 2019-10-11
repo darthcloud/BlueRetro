@@ -1,6 +1,8 @@
 #ifndef _BT_HIDP_WII_H_
 #define _BT_HIDP_WII_H_
 
+#include "bt_hidp.h"
+
 #define BT_HIDP_WII_LED_REPORT 0x11
 #define BT_HIPD_WII_IR_CAM_EN1 0x13
 #define BT_HIDP_WII_SPKR_EN    0x14
@@ -11,6 +13,7 @@ struct bt_hidp_wii_conf {
     uint8_t conf;
 } __packed;
 
+#define BT_HIDP_WII_CONTINUOUS 0x04
 #define BT_HIDP_WII_REP_MODE   0x12
 struct bt_hidp_wii_rep_mode {
     uint8_t options;
@@ -136,8 +139,12 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t ir[18];
 } __packed;
 
-void bt_hid_cmd_wii_set_led(uint16_t handle, uint16_t cid, uint8_t conf);
-void bt_hid_cmd_wii_set_rep_mode(uint16_t handle, uint16_t cid, uint8_t continuous, uint8_t mode);
-void bt_hid_cmd_wii_read(uint16_t handle, uint16_t cid, struct bt_hidp_wii_rd_mem *data);
-void bt_hid_cmd_wii_write(uint16_t handle, uint16_t cid, struct bt_hidp_wii_wr_mem *data);
+extern struct bt_hidp_cmd bt_hipd_wii_conf[8];
+
+void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report);
+void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report);
+void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report);
+void bt_hid_cmd_wii_read(void *bt_dev, void *report);
+void bt_hid_cmd_wii_write(void *bt_dev, void *report);
+
 #endif /* _BT_HIDP_WII_H_ */

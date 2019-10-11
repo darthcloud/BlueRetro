@@ -16,6 +16,7 @@ struct bt_dev {
     int32_t flags;
     uint32_t pkt_retry;
     uint32_t conn_state;
+    uint32_t hid_state;
     uint32_t dev_state;
     uint32_t report_cnt;
     uint8_t remote_bdaddr[6];
@@ -56,6 +57,7 @@ struct bt_hci_pkt {
 } __packed;
 
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
+extern const uint8_t led_dev_id_map[];
 
 int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);

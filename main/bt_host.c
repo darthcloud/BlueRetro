@@ -7,6 +7,8 @@
 #include "adapter.h"
 #include "bt_host.h"
 #include "bt_hci.h"
+#include "bt_l2cap.h"
+#include "bt_hidp_wii.h"
 #include "util.h"
 
 
@@ -17,7 +19,18 @@
 
 #define BT_MAX_RETRY 3
 
-struct bt_hci_pkt bt_hci_pkt_tmp;
+typedef void (*bt_cmd_func_t)(void *param);
+
+enum {
+    BT_CMD_PARAM_BDADDR,
+    BT_CMD_PARAM_HANDLE,
+    BT_CMD_PARAM_DEV
+};
+
+struct bt_hci_cmd_param {
+    bt_cmd_func_t cmd;
+    uint32_t param;
+};
 
 struct bt_name_type {
     char name[249];
@@ -73,10 +86,11 @@ enum {
     BT_READY_STATE
 };
 
-uint32_t bt_pkt_retry = 0;
-uint32_t bt_host_state = BT_CONFIG_STATE;
-uint32_t bt_config_state = 0;
-RingbufHandle_t txq_hdl;
+struct bt_hci_pkt bt_hci_pkt_tmp;
+static uint32_t bt_pkt_retry = 0;
+static uint32_t bt_host_state = BT_CONFIG_STATE;
+static uint32_t bt_config_state = 0;
+static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev[7] = {0};
 static uint8_t local_bdaddr[6];
 static atomic_t bt_flags = 0;
@@ -91,11 +105,9 @@ static uint16_t max_rx = 0;
 static uint16_t max_ry = 0;
 #endif
 
-#ifdef WIP
-static const uint8_t led_dev_id_map[] = {
+const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
-#endif
 
 static const struct bt_name_type bt_name_type[] = {
     {"Nintendo RVL-CNT-01-UC", WIIU_PRO},
@@ -256,8 +268,6 @@ static struct bt_hci_cp_set_event_filter conn_evt_filter = {
     .conn_class.auto_accept_flag =  BT_BREDR_AUTO_OFF
 };
 
-typedef void (*bt_cmd_func_t)(void *param);
-
 struct bt_hci_cmd_cp {
     bt_cmd_func_t cmd;
     void *cp;
@@ -313,21 +323,17 @@ static void bt_host_config_q_cmd(void) {
     }
 }
 
-enum {
-    BT_CMD_PARAM_BDADDR,
-    BT_CMD_PARAM_HANDLE,
-    BT_CMD_PARAM_DEV
-};
-
-struct bt_hci_cmd_param {
-    bt_cmd_func_t cmd;
-    uint32_t param;
-};
-
 static struct bt_hci_cmd_param bt_dev_tx_conn[] =
 {
     {bt_hci_cmd_connect, BT_CMD_PARAM_BDADDR},
     {bt_hci_cmd_remote_name_request, BT_CMD_PARAM_BDADDR},
+    {bt_hci_cmd_read_remote_features, BT_CMD_PARAM_HANDLE},
+    {bt_hci_cmd_read_remote_ext_features, BT_CMD_PARAM_HANDLE},
+    {bt_hci_cmd_auth_requested, BT_CMD_PARAM_HANDLE},
+    {bt_hci_cmd_set_conn_encrypt, BT_CMD_PARAM_HANDLE},
+    {bt_l2cap_cmd_sdp_conn_req, BT_CMD_PARAM_DEV},
+    {bt_l2cap_cmd_hid_ctrl_conn_req, BT_CMD_PARAM_DEV},
+    {bt_l2cap_cmd_hid_intr_conn_req, BT_CMD_PARAM_DEV},
 };
 
 static void bt_host_dev_tx_conn_q_cmd(struct bt_dev *device) {
@@ -347,6 +353,52 @@ static void bt_host_dev_tx_conn_q_cmd(struct bt_dev *device) {
 
     if (device->conn_state == (ARRAY_SIZE(bt_dev_tx_conn) - 1)) {
         //device->dev_state = BT_CONN_STATE;
+    }
+}
+
+static struct bt_hci_cmd_param bt_dev_rx_conn[] =
+{
+    {bt_hci_cmd_accept_conn_req, BT_CMD_PARAM_BDADDR},
+};
+
+static void bt_host_dev_rx_conn_q_cmd(struct bt_dev *device) {
+    if (device->conn_state < ARRAY_SIZE(bt_dev_rx_conn)) {
+        switch (bt_dev_rx_conn[device->conn_state].param) {
+            case BT_CMD_PARAM_BDADDR:
+                bt_dev_rx_conn[device->conn_state].cmd((void *)device->remote_bdaddr);
+                break;
+            case BT_CMD_PARAM_HANDLE:
+                bt_dev_rx_conn[device->conn_state].cmd((void *)&device->acl_handle);
+                break;
+            case BT_CMD_PARAM_DEV:
+                bt_dev_rx_conn[device->conn_state].cmd((void *)device);
+                break;
+        }
+    }
+
+    if (device->conn_state == (ARRAY_SIZE(bt_dev_tx_conn) - 1)) {
+        //device->dev_state = BT_CONN_STATE;
+    }
+}
+
+static struct bt_hidp_cmd (*bt_hipd_conf[])[8] =
+{
+    &bt_hipd_wii_conf, /* WII_CORE */
+    &bt_hipd_wii_conf, /* WII_NUNCHUCK */
+    &bt_hipd_wii_conf, /* WII_CLASSIC */
+    &bt_hipd_wii_conf, /* WIIU_PRO */
+    NULL, /* SWITCH_PRO */
+    NULL, /* PS3_DS3 */
+    NULL, /* PS4_DS4 */
+    NULL, /* XB1_S */
+    NULL, /* HID_PAD */
+    NULL, /* HID_KB */
+    NULL, /* HID_MOUSE */
+};
+
+static void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
+    if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
+        (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
     }
 }
 

@@ -15,7 +15,7 @@
 #define SWITCH_PRO   0x04
 #define PS3_DS3      0x05
 #define PS4_DS4      0x06
-#define XBONE_S      0x07
+#define XB1_S        0x07
 #define HID_PAD      0x08
 #define HID_KB       0x09
 #define HID_MOUSE    0x0A

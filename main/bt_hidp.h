@@ -1,7 +1,13 @@
 #ifndef _BT_HIDP_H_
 #define _BT_HIDP_H_
 
-#include "bt_hidp_wii.h"
+typedef void (*bt_hid_cmd_func_t)(void *bt_dev, void *report);
+
+struct bt_hidp_cmd {
+    bt_hid_cmd_func_t cmd;
+    void *report;
+};
+
 
 #define BT_HIDP_DATA_IN        0xa1
 #define BT_HIDP_DATA_OUT       0xa2
