@@ -517,23 +517,29 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             }
             break;
+#endif
         case BT_HCI_EVT_REMOTE_FEATURES:
+        {
+            struct bt_hci_evt_remote_features *remote_features = (struct bt_hci_evt_remote_features *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_REMOTE_FEATURES\n");
-            bt_get_dev_from_handle(bt_hci_evt_packet->evt_data.remote_features.handle, &device);
-            if (bt_hci_evt_packet->evt_data.remote_features.status) {
-                printf("# dev: %d error: 0x%02X\n", device->id ? device->id : -1,
-                    bt_hci_evt_packet->evt_data.remote_features.status);
+            bt_get_dev_from_handle(remote_features->handle, &device);
+            if (device) {
+                if (remote_features->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_features->status);
+                    device->conn_state++;
+                }
+                else if (!(remote_features->features[8] & 0x80)) {
+                    device->conn_state++;
+                }
+                device->conn_state++;
+                device->pkt_retry = 0;
+                bt_host_dev_conn_q_cmd(device);
             }
-            else if (device) {
-                if (!(bt_hci_evt_packet->evt_data.remote_features.features[8] & 0x80)) {
-                    atomic_set_bit(&device->flags, BT_DEV_EXT_FEATURES_READ);
-                }
-                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
-                }
+            else {
+                printf("# dev NULL!\n");
             }
             break;
-#endif
+        }
         case BT_HCI_EVT_CMD_COMPLETE:
         {
             struct bt_hci_evt_cmd_complete *cmd_complete = (struct bt_hci_evt_cmd_complete *)bt_hci_evt_pkt->evt_data;
