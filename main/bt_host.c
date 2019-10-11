@@ -81,14 +81,8 @@ enum {
     BT_DEV_WII_REP_MODE_SET,
 };
 
-enum {
-    BT_CONFIG_STATE,
-    BT_READY_STATE
-};
-
 struct bt_hci_pkt bt_hci_pkt_tmp;
 static uint32_t bt_pkt_retry = 0;
-static uint32_t bt_host_state = BT_CONFIG_STATE;
 static uint32_t bt_config_state = 0;
 static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev[7] = {0};
@@ -317,10 +311,6 @@ static void bt_host_config_q_cmd(void) {
     if (bt_config_state < ARRAY_SIZE(bt_hci_config)) {
         bt_hci_config[bt_config_state].cmd(bt_hci_config[bt_config_state].cp);
     }
-
-    if (bt_config_state == (ARRAY_SIZE(bt_hci_config) - 1)) {
-        bt_host_state = BT_READY_STATE;
-    }
 }
 
 static struct bt_hci_cmd_param bt_dev_tx_conn[] =
@@ -350,10 +340,6 @@ static void bt_host_dev_tx_conn_q_cmd(struct bt_dev *device) {
                 break;
         }
     }
-
-    if (device->conn_state == (ARRAY_SIZE(bt_dev_tx_conn) - 1)) {
-        //device->dev_state = BT_CONN_STATE;
-    }
 }
 
 static struct bt_hci_cmd_param bt_dev_rx_conn[] =
@@ -374,10 +360,6 @@ static void bt_host_dev_rx_conn_q_cmd(struct bt_dev *device) {
                 bt_dev_rx_conn[device->conn_state].cmd((void *)device);
                 break;
         }
-    }
-
-    if (device->conn_state == (ARRAY_SIZE(bt_dev_tx_conn) - 1)) {
-        //device->dev_state = BT_CONN_STATE;
     }
 }
 
@@ -409,7 +391,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     switch (bt_hci_evt_pkt->evt_hdr.evt) {
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
-            if (!atomic_test_bit(&bt_dev[0].flags, BT_DEV_DEVICE_FOUND)) {
+            if (bt_get_active_dev(&device) == BT_NONE) {
                 bt_hci_cmd_inquiry(NULL);
             }
             break;
@@ -457,6 +439,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     }
                     else {
                         bt_host_reset_dev(device);
+                        if (bt_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_cmd_inquiry(NULL);
+                        }
                     }
                 }
                 else {
@@ -566,39 +551,99 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             printf("# BT_HCI_EVT_CMD_COMPLETE\n");
             if (status != BT_HCI_ERR_SUCCESS && status != BT_HCI_ERR_UNKNOWN_CMD) {
                 printf("# opcode: 0x%04X error: 0x%02X retry: %d\n", cmd_complete->opcode, status, bt_pkt_retry);
-                if (bt_host_state == BT_CONFIG_STATE) {
-                    bt_pkt_retry++;
-                    if (bt_pkt_retry > BT_MAX_RETRY) {
-                        bt_pkt_retry = 0;
-                        bt_config_state = 0;
-                        bt_hci_cmd_reset(NULL);
-                    }
-                    else {
-                        bt_host_config_q_cmd();
-                    }
-                }
-                else {
-                    //bt_hci_cmd_disconnect();
+                switch (cmd_complete->opcode) {
+                    case BT_HCI_OP_READ_BD_ADDR:
+                    case BT_HCI_OP_RESET:
+                    case BT_HCI_OP_READ_LOCAL_FEATURES:
+                    case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
+                    case BT_HCI_OP_READ_BUFFER_SIZE:
+                    case BT_HCI_OP_READ_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_READ_LOCAL_NAME:
+                    case BT_HCI_OP_READ_VOICE_SETTING:
+                    case BT_HCI_OP_READ_NUM_SUPPORTED_IAC:
+                    case BT_HCI_OP_READ_CURRENT_IAC_LAP:
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                    case BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT:
+                    case BT_HCI_OP_READ_SUPPORTED_COMMANDS:
+                    case BT_HCI_OP_WRITE_SSP_MODE:
+                    case BT_HCI_OP_WRITE_INQUIRY_MODE:
+                    case BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL:
+                    case BT_HCI_OP_READ_LOCAL_EXT_FEATURES:
+                    case BT_HCI_OP_READ_STORED_LINK_KEY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_DELETE_STORED_LINK_KEY:
+                    case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                    case BT_HCI_OP_WRITE_AUTH_ENABLE:
+                    case BT_HCI_OP_SET_EVENT_MASK:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_WRITE_PAGE_TIMEOUT:
+                    case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                    case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                        bt_pkt_retry++;
+                        if (bt_pkt_retry > BT_MAX_RETRY) {
+                            bt_pkt_retry = 0;
+                            bt_config_state = 0;
+                            bt_hci_cmd_reset(NULL);
+                        }
+                        else {
+                            bt_host_config_q_cmd();
+                        }
+                        break;
                 }
             }
             else {
-                if (bt_host_state == BT_CONFIG_STATE) {
-                    switch (cmd_complete->opcode) {
-                        case BT_HCI_OP_READ_BD_ADDR:
-                        {
-                            struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
-                            memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
-                            printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
-                                local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
-                                local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
-                            break;
-                        }
+                switch (cmd_complete->opcode) {
+                    case BT_HCI_OP_READ_BD_ADDR:
+                    {
+                        struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
+                        printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                            local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
+                            local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
                     }
-                    bt_pkt_retry = 0;
-                    bt_config_state++;
-                    bt_host_config_q_cmd();
-                }
-                else {
+                        /* Fall-through */
+                    case BT_HCI_OP_RESET:
+                    case BT_HCI_OP_READ_LOCAL_FEATURES:
+                    case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
+                    case BT_HCI_OP_READ_BUFFER_SIZE:
+                    case BT_HCI_OP_READ_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_READ_LOCAL_NAME:
+                    case BT_HCI_OP_READ_VOICE_SETTING:
+                    case BT_HCI_OP_READ_NUM_SUPPORTED_IAC:
+                    case BT_HCI_OP_READ_CURRENT_IAC_LAP:
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                    case BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT:
+                    case BT_HCI_OP_READ_SUPPORTED_COMMANDS:
+                    case BT_HCI_OP_WRITE_SSP_MODE:
+                    case BT_HCI_OP_WRITE_INQUIRY_MODE:
+                    case BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL:
+                    case BT_HCI_OP_READ_LOCAL_EXT_FEATURES:
+                    case BT_HCI_OP_READ_STORED_LINK_KEY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_DELETE_STORED_LINK_KEY:
+                    case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                    case BT_HCI_OP_WRITE_AUTH_ENABLE:
+                    case BT_HCI_OP_SET_EVENT_MASK:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_WRITE_PAGE_TIMEOUT:
+                    case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                    case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                        bt_pkt_retry = 0;
+                        bt_config_state++;
+                        bt_host_config_q_cmd();
+                        break;
                 }
             }
             break;
