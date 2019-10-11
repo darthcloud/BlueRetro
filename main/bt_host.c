@@ -500,21 +500,40 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 atomic_clear_bit(&device->flags, BT_DEV_AUTHENTICATING);
             }
             break;
+#endif
         case BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:
+        {
+            struct bt_hci_evt_remote_name_req_complete *remote_name_req_complete = (struct bt_hci_evt_remote_name_req_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:\n");
-            bt_get_dev_from_bdaddr(&bt_hci_evt_packet->evt_data.remote_name_req_complete.bdaddr, &device);
-            if (bt_hci_evt_packet->evt_data.remote_name_req_complete.status) {
-                printf("# dev: %d error: 0x%02X\n", device->id,
-                    bt_hci_evt_packet->evt_data.remote_name_req_complete.status);
-            }
-            else {
-                device->type = bt_get_type_from_name(bt_hci_evt_packet->evt_data.remote_name_req_complete.name);
-                printf("# dev: %d type: %d %s\n", device->id, device->type, bt_hci_evt_packet->evt_data.remote_name_req_complete.name);
-                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+            bt_get_dev_from_bdaddr(&remote_name_req_complete->bdaddr, &device);
+            if (device) {
+                if (remote_name_req_complete->status) {
+                    device->pkt_retry++;
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_name_req_complete->status);
+                    if (device->pkt_retry < BT_MAX_RETRY) {
+                        bt_host_dev_tx_conn_q_cmd(device);
+                    }
+                    else {
+                        bt_host_reset_dev(device);
+                        if (bt_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_cmd_inquiry(NULL);
+                        }
+                    }
+                }
+                else {
+                    device->type = bt_get_type_from_name(remote_name_req_complete->name);
+                    printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
+                    device->pkt_retry = 0;
+                    device->conn_state++;
+                    bt_host_dev_tx_conn_q_cmd(device);
                 }
             }
+            else {
+                printf("# dev NULL!\n");
+            }
             break;
+        }
+#ifdef WIP
         case BT_HCI_EVT_ENCRYPT_CHANGE:
             printf("# BT_HCI_EVT_ENCRYPT_CHANGE\n");
             bt_get_dev_from_handle(bt_hci_evt_packet->evt_data.encrypt_change.handle, &device);
