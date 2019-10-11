@@ -49,36 +49,8 @@ enum {
 
 enum {
     /* BT device connection flags */
-    BT_DEV_PENDING,
     BT_DEV_DEVICE_FOUND,
     BT_DEV_PAGE,
-    BT_DEV_FEATURES_READ,
-    BT_DEV_EXT_FEATURES_READ,
-    BT_DEV_NAME_READ,
-    BT_DEV_CONNECTED,
-    BT_DEV_AUTHENTICATING,
-    BT_DEV_AUTHENTICATED,
-    BT_DEV_LINK_KEY_REQ,
-    BT_DEV_PIN_CODE_REQ,
-    BT_DEV_IO_CAP_REQ,
-    BT_DEV_USER_CONFIRM_REQ,
-    BT_DEV_ENCRYPT_SET,
-    BT_DEV_L2CAP_CONN_REQ,
-    BT_DEV_L2CAP_CONNECTED,
-    BT_DEV_L2CAP_LCONF_DONE,
-    BT_DEV_L2CAP_RCONF_REQ,
-    BT_DEV_L2CAP_RCONF_DONE,
-    BT_DEV_SDP_CONNECTED,
-    BT_DEV_HID_DESCRIPTOR_READ,
-    BT_DEV_HID_CTRL_CONNECTED,
-    BT_DEV_HID_INTR_CONNECTED,
-    /* HID Conf */
-    BT_DEV_WII_LED_SET,
-    BT_DEV_WII_STATUS_RX,
-    BT_DEV_WII_EXT_CONF_PENDING,
-    BT_DEV_WII_EXT_CONF_DONE,
-    BT_DEV_WII_EXT_ID_READ,
-    BT_DEV_WII_REP_MODE_SET,
 };
 
 struct bt_hci_pkt bt_hci_pkt_tmp;
@@ -187,16 +159,6 @@ static int32_t bt_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device)
 static int32_t bt_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
         if (bt_acl_handle(handle) == bt_dev[i].acl_handle) {
-            *device = &bt_dev[i];
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int32_t bt_get_dev_from_pending_flag(struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
-        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_PENDING)) {
             *device = &bt_dev[i];
             return i;
         }
@@ -363,6 +325,15 @@ static void bt_host_dev_rx_conn_q_cmd(struct bt_dev *device) {
     }
 }
 
+static void bt_host_dev_conn_q_cmd(struct bt_dev *device) {
+    if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+        bt_host_dev_rx_conn_q_cmd(device);
+    }
+    else {
+        bt_host_dev_tx_conn_q_cmd(device);
+    }
+}
+
 static struct bt_hidp_cmd (*bt_hipd_conf[])[8] =
 {
     &bt_hipd_wii_conf, /* WII_CORE */
@@ -415,7 +386,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_inquiry_cancel(NULL);
 
-                        bt_host_dev_tx_conn_q_cmd(device);
+                        bt_host_dev_conn_q_cmd(device);
                     }
                 }
                 printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
@@ -435,7 +406,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     device->pkt_retry++;
                     printf("# dev: %d error: 0x%02X\n", device->id, conn_complete->status);
                     if (device->pkt_retry < BT_MAX_RETRY) {
-                        bt_host_dev_tx_conn_q_cmd(device);
+                        bt_host_dev_conn_q_cmd(device);
                     }
                     else {
                         bt_host_reset_dev(device);
@@ -449,7 +420,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     device->pkt_retry = 0;
                     device->conn_state++;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
-                    bt_host_dev_tx_conn_q_cmd(device);
+                    bt_host_dev_conn_q_cmd(device);
                 }
             }
             else {
@@ -511,7 +482,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     device->pkt_retry++;
                     printf("# dev: %d error: 0x%02X\n", device->id, remote_name_req_complete->status);
                     if (device->pkt_retry < BT_MAX_RETRY) {
-                        bt_host_dev_tx_conn_q_cmd(device);
+                        bt_host_dev_conn_q_cmd(device);
                     }
                     else {
                         bt_host_reset_dev(device);
@@ -525,7 +496,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
                     device->pkt_retry = 0;
                     device->conn_state++;
-                    bt_host_dev_tx_conn_q_cmd(device);
+                    bt_host_dev_conn_q_cmd(device);
                 }
             }
             else {
