@@ -37,11 +37,6 @@ struct bt_name_type {
     int8_t type;
 };
 
-struct bt_wii_ext_type {
-    uint8_t ext_type[6];
-    int8_t type;
-};
-
 enum {
     /* BT CTRL flags */
     BT_CTRL_READY,
@@ -51,6 +46,7 @@ enum {
     /* BT device connection flags */
     BT_DEV_DEVICE_FOUND,
     BT_DEV_PAGE,
+    BT_DEV_SSP,
 };
 
 struct bt_hci_pkt bt_hci_pkt_tmp;
@@ -80,13 +76,6 @@ static const struct bt_name_type bt_name_type[] = {
     {"Nintendo RVL-CNT-01-TR", WII_CORE},
     {"Nintendo RVL-CNT-01", WII_CORE},
     {"Pro Controller", SWITCH_PRO}
-};
-
-static const struct bt_wii_ext_type bt_wii_ext_type[] = {
-    {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, WII_NUNCHUCK},
-    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC},
-    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC}, /* Classic Pro */
-    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO}
 };
 
 #ifdef H4_TRACE
@@ -166,11 +155,6 @@ static int32_t bt_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
     return -1;
 }
 
-static int32_t bt_get_dev_from_scid(uint16_t scid, struct bt_dev **device) {
-    *device = &bt_dev[(scid & 0xF)];
-    return (scid & 0xF);
-}
-
 static int32_t bt_get_type_from_name(const uint8_t* name) {
     for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
         if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
@@ -182,27 +166,6 @@ static int32_t bt_get_type_from_name(const uint8_t* name) {
 
 static void bt_host_reset_dev(struct bt_dev *device) {
     memset((void *)device, 0, sizeof(*device));
-}
-
-static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
-    for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
-        if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
-            return bt_wii_ext_type[i].type;
-        }
-    }
-    return -1;
-}
-
-static int32_t wii_wiiu_ctrl(int8_t type) {
-    switch (type) {
-        case WII_CORE:
-        case WII_NUNCHUCK:
-        case WII_CLASSIC:
-        case WIIU_PRO:
-            return 1;
-        default:
-            return 0;
-    }
 }
 
 static struct bt_hci_cp_set_event_filter clr_evt_filter = {
@@ -475,6 +438,11 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 }
                 else {
                     printf("# dev: %d Pairing done\n", device->id);
+                    device->conn_state++;
+                    if (!atomic_test_bit(&device->flags, BT_DEV_SSP)) {
+                        device->conn_state++;
+                    }
+                    bt_host_dev_conn_q_cmd(device);
                 }
             }
             else {
@@ -522,6 +490,10 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             if (device) {
                 if (encrypt_change->status) {
                     printf("# dev: %d error: 0x%02X\n", device->id, encrypt_change->status);
+                }
+                else {
+                    device->conn_state++;
+                    bt_host_dev_conn_q_cmd(device);
                 }
             }
             else {
@@ -721,6 +693,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             printf("# BT_HCI_EVT_USER_CONFIRM_REQ\n");
             bt_get_dev_from_bdaddr(&user_confirm_req->bdaddr, &device);
             if (device) {
+                atomic_set_bit(&device->flags, BT_DEV_SSP);
                 bt_hci_cmd_user_confirm_reply((void *)device->remote_bdaddr);
             }
             break;

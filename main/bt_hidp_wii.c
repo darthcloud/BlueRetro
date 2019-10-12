@@ -1,6 +1,12 @@
 #include <stdio.h>
+#include "adapter.h"
 #include "bt_host.h"
 #include "bt_hidp_wii.h"
+
+struct bt_wii_ext_type {
+    uint8_t ext_type[6];
+    int8_t type;
+};
 
 static struct bt_hidp_wii_rep_mode wii_rep_conf =
 {
@@ -31,6 +37,13 @@ static struct bt_hidp_wii_rd_mem wii_ext_type =
     0x0600,
 };
 
+static const struct bt_wii_ext_type bt_wii_ext_type[] = {
+    {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, WII_NUNCHUCK},
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC},
+    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC}, /* Classic Pro */
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO}
+};
+
 struct bt_hidp_cmd bt_hipd_wii_conf[8] =
 {
     {bt_hid_cmd_wii_set_user_led, NULL},
@@ -39,6 +52,27 @@ struct bt_hidp_cmd bt_hipd_wii_conf[8] =
     {bt_hid_cmd_wii_write, &wii_ext_init1},
     {bt_hid_cmd_wii_read, &wii_ext_type}
 };
+
+int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
+    for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
+        if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
+            return bt_wii_ext_type[i].type;
+        }
+    }
+    return -1;
+}
+
+int32_t bt_dev_is_wii(int8_t type) {
+    switch (type) {
+        case WII_CORE:
+        case WII_NUNCHUCK:
+        case WII_CLASSIC:
+        case WIIU_PRO:
+            return 1;
+        default:
+            return 0;
+    }
+}
 
 void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;

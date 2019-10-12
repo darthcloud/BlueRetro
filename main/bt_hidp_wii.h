@@ -141,6 +141,8 @@ struct bt_hidp_wii_core_acc_ir_i {
 
 extern struct bt_hidp_cmd bt_hipd_wii_conf[8];
 
+int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
+int32_t bt_dev_is_wii(int8_t type);
 void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report);
 void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report);
 void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report);
