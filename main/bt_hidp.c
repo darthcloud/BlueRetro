@@ -1,4 +1,16 @@
 #include "bt_host.h"
+#include "adapter.h"
+
+int8_t bt_hid_minor_class_to_type(uint8_t minor) {
+    int8_t type = HID_PAD;
+    if (minor & 0x80) {
+        type = HID_MOUSE;
+    }
+    else if (minor & 0x40) {
+        type = HID_KB;
+    }
+    return type;
+}
 
 void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE

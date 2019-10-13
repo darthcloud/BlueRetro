@@ -16,6 +16,7 @@ struct bt_hidp_hdr {
     uint8_t protocol;
 } __packed;
 
+int8_t bt_hid_minor_class_to_type(uint8_t minor);
 void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len);
 
 #endif /* _BT_HIDP_H_ */

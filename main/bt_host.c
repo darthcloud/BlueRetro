@@ -75,7 +75,9 @@ static const struct bt_name_type bt_name_type[] = {
     {"Nintendo RVL-CNT-01-UC", WIIU_PRO},
     {"Nintendo RVL-CNT-01-TR", WII_CORE},
     {"Nintendo RVL-CNT-01", WII_CORE},
-    {"Pro Controller", SWITCH_PRO}
+    {"Pro Controller", SWITCH_PRO},
+    {"Xbox Wireless Controller", XB1_S},
+    {"Wireless Controller", PS4_DS4}
 };
 
 #ifdef H4_TRACE
@@ -343,6 +345,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     if (device) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
+                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 1 + 9*i)[0]);
                         device->sdp_chan.scid = bt_dev_id | 0x0070;
                         device->ctrl_chan.scid = bt_dev_id | 0x0080;
                         device->intr_chan.scid = bt_dev_id | 0x0090;
@@ -352,7 +355,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         bt_host_dev_conn_q_cmd(device);
                     }
                 }
-                printf("# dev: %d Found bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
+                printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
                     device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                     device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 break; /* Only support one result for now */
@@ -401,6 +404,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 if (device) {
                     memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
                     device->id = bt_dev_id;
+                    device->type = bt_hid_minor_class_to_type(conn_request->dev_class[0]);
                     device->sdp_chan.scid = bt_dev_id | 0x0070;
                     device->ctrl_chan.scid = bt_dev_id | 0x0080;
                     device->intr_chan.scid = bt_dev_id | 0x0090;
@@ -411,7 +415,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     bt_host_dev_conn_q_cmd(device);
                 }
             }
-            printf("# Page dev: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id,
+            printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
                 device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                 device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
             break;
@@ -470,7 +474,10 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     }
                 }
                 else {
-                    device->type = bt_get_type_from_name(remote_name_req_complete->name);
+                    int8_t type = bt_get_type_from_name(remote_name_req_complete->name);
+                    if (type > 0) {
+                        device->type = bt_get_type_from_name(remote_name_req_complete->name);
+                    }
                     printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
                     device->pkt_retry = 0;
                     device->conn_state++;
