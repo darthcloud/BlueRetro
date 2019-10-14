@@ -800,16 +800,25 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
             }
             break;
         }
-#ifdef WIP
         case BT_L2CAP_DISCONN_REQ:
+        {
+            struct bt_l2cap_disconn_req *disconn_req = (struct bt_l2cap_disconn_req *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_DISCONN_REQ\n");
+            if (disconn_req->dcid == device->sdp_chan.scid) {
+                bt_l2cap_cmd_sdp_disconn_rsp((void *)device);
+            }
+            else if (disconn_req->dcid == device->ctrl_chan.scid) {
+                bt_l2cap_cmd_hid_ctrl_disconn_rsp((void *)device);
+            }
+            else if (disconn_req->dcid == device->intr_chan.scid) {
+                bt_l2cap_cmd_hid_intr_disconn_rsp((void *)device);
+            }
             break;
+        }
         case BT_L2CAP_DISCONN_RSP:
             printf("# BT_L2CAP_DISCONN_RSP\n");
-            bt_get_dev_from_handle(bt_hci_acl_packet->acl_hdr.handle, &device);
-            atomic_clear_bit(&bt_flags, BT_CTRL_PENDING);
-            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
             break;
+#ifdef WIP
         case BT_HIDP_DATA_IN:
             bt_get_dev_from_scid(bt_hci_acl_packet->l2cap_hdr.cid, &device);
             switch (bt_hci_acl_packet->pl.hidp.hidp_hdr.protocol) {
