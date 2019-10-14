@@ -11,7 +11,7 @@ struct bt_wii_ext_type {
 static struct bt_hidp_wii_rep_mode wii_rep_conf =
 {
     BT_HIDP_WII_CONTINUOUS,
-    BT_HIDP_WII_CORE_ACC_EXT
+    BT_HIDP_WII_CORE_ACC_EXT,
 };
 
 static struct bt_hidp_wii_wr_mem wii_ext_init0 =
@@ -19,7 +19,7 @@ static struct bt_hidp_wii_wr_mem wii_ext_init0 =
     BT_HIDP_WII_REG,
     {0xA4, 0x00, 0xF0},
     0x01,
-    {0x55}
+    {0x55},
 };
 
 static struct bt_hidp_wii_wr_mem wii_ext_init1 =
@@ -27,7 +27,7 @@ static struct bt_hidp_wii_wr_mem wii_ext_init1 =
     BT_HIDP_WII_REG,
     {0xA4, 0x00, 0xFB},
     0x01,
-    {0x00}
+    {0x00},
 };
 
 static struct bt_hidp_wii_rd_mem wii_ext_type =
@@ -41,16 +41,17 @@ static const struct bt_wii_ext_type bt_wii_ext_type[] = {
     {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, WII_NUNCHUCK},
     {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC},
     {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC}, /* Classic Pro */
-    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO}
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO},
 };
 
 struct bt_hidp_cmd bt_hipd_wii_conf[8] =
 {
     {bt_hid_cmd_wii_set_user_led, 0, NULL},
-    {bt_hid_cmd_wii_set_rep_mode, 0, &wii_rep_conf},
+    {bt_hid_cmd_wii_set_rep_mode, 1, &wii_rep_conf},
     {bt_hid_cmd_wii_write, 1, &wii_ext_init0},
     {bt_hid_cmd_wii_write, 1, &wii_ext_init1},
-    {bt_hid_cmd_wii_read, 1, &wii_ext_type}
+    {bt_hid_cmd_wii_read, 1, &wii_ext_type},
+    {bt_hid_cmd_wii_set_rep_mode, 1, &wii_rep_conf},
 };
 
 int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
@@ -87,6 +88,7 @@ void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report) {
 void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;
     struct bt_hidp_wii_conf wii_conf = {.conf = (led_dev_id_map[device->id] << 4)};
+    printf("# %s\n", __FUNCTION__);
     bt_hid_cmd_wii_set_feedback(bt_dev, (void *)&wii_conf);
 }
 
