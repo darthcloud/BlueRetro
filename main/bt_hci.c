@@ -31,6 +31,27 @@ void bt_hci_cmd_inquiry_cancel(void *cp) {
     bt_hci_cmd(BT_HCI_OP_INQUIRY_CANCEL, 0);
 }
 
+void bt_hci_cmd_periodic_inquiry(void *cp) {
+    struct bt_hci_cp_periodic_inquiry *periodic_inquiry = (struct bt_hci_cp_periodic_inquiry *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    periodic_inquiry->max_period_length = 0x04;
+    periodic_inquiry->min_period_length = 0x03;
+    periodic_inquiry->lap[0] = 0x33;
+    periodic_inquiry->lap[1] = 0x8B;
+    periodic_inquiry->lap[2] = 0x9E;
+    periodic_inquiry->length = 0x02; /* 0x02 * 1.28 s = 2.56 s */
+    periodic_inquiry->num_rsp = 0xFF;
+
+    bt_hci_cmd(BT_HCI_OP_PERIODIC_INQUIRY, sizeof(*periodic_inquiry));
+}
+
+void bt_hci_cmd_exit_periodic_inquiry(void *cp) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_EXIT_PERIODIC_INQUIRY, 0);
+}
+
 void bt_hci_cmd_connect(void *bdaddr) {
     struct bt_hci_cp_connect *connect = (struct bt_hci_cp_connect *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
@@ -289,7 +310,7 @@ void bt_hci_cmd_write_scan_enable(void *cp) {
     struct bt_hci_cp_write_scan_enable *write_scan_enable = (struct bt_hci_cp_write_scan_enable *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
-    write_scan_enable->scan_enable = BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE;
+    write_scan_enable->scan_enable = BT_BREDR_SCAN_PAGE;
 
     bt_hci_cmd(BT_HCI_OP_WRITE_SCAN_ENABLE, sizeof(*write_scan_enable));
 }

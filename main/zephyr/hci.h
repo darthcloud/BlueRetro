@@ -392,6 +392,19 @@ struct bt_hci_op_inquiry {
 
 #define BT_HCI_OP_INQUIRY_CANCEL                BT_OP(BT_OGF_LINK_CTRL, 0x0002)
 
+#ifdef BLUERETRO
+#define BT_HCI_OP_PERIODIC_INQUIRY              BT_OP(BT_OGF_LINK_CTRL, 0x0003)
+struct bt_hci_cp_periodic_inquiry {
+	u16_t max_period_length;
+	u16_t min_period_length;
+	u8_t lap[3];
+	u8_t length;
+	u8_t num_rsp;
+} __packed;
+
+#define BT_HCI_OP_EXIT_PERIODIC_INQUIRY         BT_OP(BT_OGF_LINK_CTRL, 0x0004)
+#endif /* BLUERETRO */
+
 #define BT_HCI_OP_CONNECT                       BT_OP(BT_OGF_LINK_CTRL, 0x0005)
 struct bt_hci_cp_connect {
 	bt_addr_t bdaddr;

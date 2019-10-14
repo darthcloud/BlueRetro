@@ -3,6 +3,8 @@
 
 void bt_hci_cmd_inquiry(void *cp);
 void bt_hci_cmd_inquiry_cancel(void *cp);
+void bt_hci_cmd_periodic_inquiry(void *cp);
+void bt_hci_cmd_exit_periodic_inquiry(void *cp);
 void bt_hci_cmd_connect(void *bdaddr);
 void bt_hci_cmd_accept_conn_req(void *bdaddr);
 void bt_hci_cmd_link_key_neg_reply(void *bdaddr);

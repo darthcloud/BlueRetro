@@ -231,7 +231,7 @@ static struct bt_hci_cmd_cp bt_hci_config[] =
     {bt_hci_cmd_write_hold_mode_act, NULL},
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
-    {bt_hci_cmd_inquiry, NULL}
+    {bt_hci_cmd_periodic_inquiry, NULL}
 };
 
 static void bt_host_config_q_cmd(void) {
@@ -338,9 +338,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     switch (bt_hci_evt_pkt->evt_hdr.evt) {
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
-            if (bt_get_active_dev(&device) == BT_NONE) {
-                bt_hci_cmd_inquiry(NULL);
-            }
+            //if (bt_get_active_dev(&device) == BT_NONE) {
+            //    bt_hci_cmd_inquiry(NULL);
+            //}
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
         case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
@@ -361,8 +361,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         device->ctrl_chan.scid = bt_dev_id | 0x0080;
                         device->intr_chan.scid = bt_dev_id | 0x0090;
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                        bt_hci_cmd_inquiry_cancel(NULL);
-
+                        bt_hci_cmd_exit_periodic_inquiry(NULL);
                         bt_host_dev_conn_q_cmd(device);
                     }
                 }
@@ -421,9 +420,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     device->intr_chan.scid = bt_dev_id | 0x0090;
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
-                    bt_hci_cmd_inquiry_cancel(NULL);
-
-                    bt_host_dev_conn_q_cmd(device);
+                    bt_hci_cmd_exit_periodic_inquiry(NULL);
+                    bt_hci_cmd_remote_name_request(device->remote_bdaddr);
+                    bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
                 }
             }
             printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
@@ -490,9 +489,11 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         device->type = bt_get_type_from_name(remote_name_req_complete->name);
                     }
                     printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
-                    device->pkt_retry = 0;
-                    device->conn_state++;
-                    bt_host_dev_conn_q_cmd(device);
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                        device->pkt_retry = 0;
+                        device->conn_state++;
+                        bt_host_dev_conn_q_cmd(device);
+                    }
                 }
             }
             else {
