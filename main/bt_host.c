@@ -315,8 +315,11 @@ static struct bt_hidp_cmd (*bt_hipd_conf[])[8] =
 };
 
 static void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
-    if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
-        (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
+    while (!(*bt_hipd_conf[device->type])[device->hid_state].sync) {
+        if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
+            (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
+        }
+        device->hid_state++;
     }
 }
 

@@ -46,11 +46,11 @@ static const struct bt_wii_ext_type bt_wii_ext_type[] = {
 
 struct bt_hidp_cmd bt_hipd_wii_conf[8] =
 {
-    {bt_hid_cmd_wii_set_user_led, NULL},
-    {bt_hid_cmd_wii_set_rep_mode, &wii_rep_conf},
-    {bt_hid_cmd_wii_write, &wii_ext_init0},
-    {bt_hid_cmd_wii_write, &wii_ext_init1},
-    {bt_hid_cmd_wii_read, &wii_ext_type}
+    {bt_hid_cmd_wii_set_user_led, 0, NULL},
+    {bt_hid_cmd_wii_set_rep_mode, 0, &wii_rep_conf},
+    {bt_hid_cmd_wii_write, 1, &wii_ext_init0},
+    {bt_hid_cmd_wii_write, 1, &wii_ext_init1},
+    {bt_hid_cmd_wii_read, 1, &wii_ext_type}
 };
 
 int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {

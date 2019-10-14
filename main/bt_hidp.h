@@ -5,6 +5,7 @@ typedef void (*bt_hid_cmd_func_t)(void *bt_dev, void *report);
 
 struct bt_hidp_cmd {
     bt_hid_cmd_func_t cmd;
+    uint32_t sync;
     void *report;
 };
 
