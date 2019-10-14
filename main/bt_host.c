@@ -818,46 +818,39 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
         case BT_L2CAP_DISCONN_RSP:
             printf("# BT_L2CAP_DISCONN_RSP\n");
             break;
-#ifdef WIP
         case BT_HIDP_DATA_IN:
-            bt_get_dev_from_scid(bt_hci_acl_packet->l2cap_hdr.cid, &device);
-            switch (bt_hci_acl_packet->pl.hidp.hidp_hdr.protocol) {
+            switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_WII_STATUS:
+                {
+                    struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
-                    atomic_set_bit(&device->flags, BT_DEV_WII_STATUS_RX);
-                    atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_CONF_PENDING);
-                    atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_CONF_DONE);
-                    atomic_clear_bit(&device->flags, BT_DEV_WII_REP_MODE_SET);
-                    if ((bt_hci_acl_packet->pl.hidp.hidp_data.wii_status.flags & BT_HIDP_WII_FLAGS_EXT_CONN) && device->type == WII_CORE) {
-                        printf("# dev: %d Skip ext id ext: %d type: %d\n", device->id,
-                            (bt_hci_acl_packet->pl.hidp.hidp_data.wii_status.flags & BT_HIDP_WII_FLAGS_EXT_CONN), device->type);
-                        atomic_clear_bit(&device->flags, BT_DEV_WII_EXT_ID_READ);
-                    }
-                    else {
-                        atomic_set_bit(&device->flags, BT_DEV_WII_EXT_ID_READ);
-                    }
-                    if (device->xHandle == NULL) {
-                        printf("# dev: %d respawn config thread\n", device->id);
-                        xTaskCreatePinnedToCore(&bt_dev_task, "bt_dev_task", 2048, device, 5, device->xHandle, 0);
+                    if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN && device->type != WIIU_PRO) {
+                        bt_host_dev_hid_q_cmd(device);
                     }
                     break;
+                }
                 case BT_HIDP_WII_RD_DATA:
+                {
+                    struct bt_hidp_wii_rd_data *rd_data = (struct bt_hidp_wii_rd_data *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_RD_DATA\n");
-                    device->type = bt_get_type_from_wii_ext(bt_hci_acl_packet->pl.hidp.hidp_data.wii_rd_data.data);
+                    device->type = bt_get_type_from_wii_ext(rd_data->data);
                     printf("# dev: %d wii ext: %d\n", device->id, device->type);
-                    atomic_clear_bit(&device->flags, BT_DEV_PENDING);
                     break;
+                }
                 case BT_HIDP_WII_ACK:
+                {
+                    struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_ACK\n");
-                    switch(bt_hci_acl_packet->pl.hidp.hidp_data.wii_ack.report) {
+                    switch(ack->report) {
                         case BT_HIDP_WII_WR_MEM:
-                            atomic_clear_bit(&device->flags, BT_DEV_PENDING);
+                            bt_host_dev_hid_q_cmd(device);
                             break;
                     }
-                    if (bt_hci_acl_packet->pl.hidp.hidp_data.wii_ack.err) {
-                        printf("# dev: %d ack err: 0x%02X\n", device->id, bt_hci_acl_packet->pl.hidp.hidp_data.wii_ack.err);
+                    if (ack->err) {
+                        printf("# dev: %d ack err: 0x%02X\n", device->id, ack->err);
                     }
                     break;
+                }
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
 #if 0
@@ -886,7 +879,6 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                 }
             }
             break;
-#endif
     }
 }
 
