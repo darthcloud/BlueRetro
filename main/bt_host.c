@@ -454,7 +454,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                 else {
                     printf("# dev: %d Pairing done\n", device->id);
                     device->conn_state++;
-                    if (device->type != WIIU_PRO) {
+                    if (device->type != SWITCH_PRO) {
                         device->conn_state++;
                     }
                     bt_host_dev_conn_q_cmd(device);
