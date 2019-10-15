@@ -1,6 +1,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/ringbuf.h>
+#include <esp_system.h>
 #include <esp_bt.h>
 #include <nvs_flash.h>
 #include "zephyr/atomic.h"
@@ -996,6 +997,8 @@ static void bt_tx_ringbuf_task(void *param) {
 }
 
 int32_t bt_host_init(void) {
+    uint8_t test_mac[6] = {0x84, 0x4b, 0xf5, 0xa7, 0x41, 0xea};
+
     /* Initialize NVS — it is used to store PHY calibration data */
     int32_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -1003,6 +1006,8 @@ int32_t bt_host_init(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    esp_base_mac_addr_set(test_mac);
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
