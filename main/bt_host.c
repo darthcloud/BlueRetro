@@ -80,6 +80,12 @@ static const struct bt_name_type bt_name_type[] = {
     {"Wireless Controller", PS4_DS4}
 };
 
+static const char bt_default_pin[][5] = {
+    "0000",
+    "1234",
+    "1111",
+};
+
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
@@ -664,8 +670,14 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             printf("# BT_HCI_EVT_PIN_CODE_REQ\n");
             bt_get_dev_from_bdaddr(&pin_code_req->bdaddr, &device);
             memcpy((void *)&pin_code_reply.bdaddr, device->remote_bdaddr, sizeof(pin_code_reply.bdaddr));
-            memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
-            pin_code_reply.pin_len = sizeof(local_bdaddr);
+            if (bt_dev_is_wii(device->type)) {
+                memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
+                pin_code_reply.pin_len = sizeof(local_bdaddr);
+            }
+            else {
+                memcpy(pin_code_reply.pin_code, bt_default_pin[0], strlen(bt_default_pin[0]));
+                pin_code_reply.pin_len = strlen(bt_default_pin[0]);
+            }
             bt_hci_cmd_pin_code_reply(&pin_code_reply);
             break;
         }
