@@ -83,10 +83,14 @@ static const struct bt_name_type bt_name_type[] = {
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
-static void bt_ctrl_rcv_pkt_ready(void);
-static int bt_host_rcv_pkt(uint8_t *data, uint16_t len);
+static int32_t bt_get_type_from_name(const uint8_t* name);
+static void bt_host_config_q_cmd(void);
 static void bt_hci_event_handler(uint8_t *data, uint16_t len);
 static void bt_acl_handler(uint8_t *data, uint16_t len);
+static void bt_ctrl_rcv_pkt_ready(void);
+static int bt_host_rcv_pkt(uint8_t *data, uint16_t len);
+static void bt_host_q_wait_pkt(uint32_t ms);
+static void bt_tx_ringbuf_task(void *param);
 
 static esp_vhci_host_callback_t vhci_host_cb = {
     bt_ctrl_rcv_pkt_ready,
@@ -315,11 +319,8 @@ static struct bt_hidp_cmd (*bt_hipd_conf[])[8] =
 };
 
 static void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
-    printf("# %s type: %d\n", __FUNCTION__, device->type);
     if ((*bt_hipd_conf[device->type])) {
-        printf("# Array not null\n");
         if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
-            printf("# CMD not null\n");
             (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
         }
         while (!(*bt_hipd_conf[device->type])[device->hid_state].sync) {
@@ -422,6 +423,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_exit_periodic_inquiry(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
+                    bt_host_q_wait_pkt(90);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
                 }
             }
@@ -946,6 +948,12 @@ static int bt_host_rcv_pkt(uint8_t *data, uint16_t len) {
     return 0;
 }
 
+static void bt_host_q_wait_pkt(uint32_t ms) {
+    uint8_t packet[2] = {0xFF, ms};
+
+    bt_host_txq_add(packet, sizeof(packet));
+}
+
 static void bt_tx_ringbuf_task(void *param) {
     size_t packet_len;
     uint8_t *packet;
@@ -954,11 +962,17 @@ static void bt_tx_ringbuf_task(void *param) {
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             packet = (uint8_t *)xRingbufferReceive(txq_hdl, &packet_len, 0);
             if (packet) {
+                if (packet[0] == 0xFF) {
+                    /* Internal wait packet */
+                    vTaskDelay(packet[1] / portTICK_PERIOD_MS);
+                }
+                else {
 #ifdef H4_TRACE
-                bt_h4_trace(packet, packet_len, BT_TX);
+                    bt_h4_trace(packet, packet_len, BT_TX);
 #endif /* H4_TRACE */
-                atomic_clear_bit(&bt_flags, BT_CTRL_READY);
-                esp_vhci_host_send_packet(packet, packet_len);
+                    atomic_clear_bit(&bt_flags, BT_CTRL_READY);
+                    esp_vhci_host_send_packet(packet, packet_len);
+                }
                 vRingbufferReturnItem(txq_hdl, (void *)packet);
             }
         }
