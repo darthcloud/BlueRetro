@@ -848,13 +848,16 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
                 {
                     struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
-                    if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN && device->type != WIIU_PRO) {
-                        device->hid_state = 2;
+                    if (device->type != WIIU_PRO) {
+                        if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
+                            device->hid_state = 2;
+                        }
+                        else {
+                            device->hid_state = 1;
+                            device->type = WII_CORE;
+                        }
+                        bt_host_dev_hid_q_cmd(device);
                     }
-                    else {
-                        device->hid_state = 1;
-                    }
-                    bt_host_dev_hid_q_cmd(device);
                     break;
                 }
                 case BT_HIDP_WII_RD_DATA:
