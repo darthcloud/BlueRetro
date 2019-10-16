@@ -1,14 +1,22 @@
 #ifndef _BT_HOST_H_
 #define _BT_HOST_H_
 
+#include "zephyr/atomic.h"
 #include "zephyr/hci.h"
 #include "zephyr/l2cap_internal.h"
 #include "bt_hidp.h"
 
+enum {
+    /* BT device connection flags */
+    BT_DEV_DEVICE_FOUND,
+    BT_DEV_PAGE,
+    BT_DEV_HID_INTR_READY,
+};
+
 struct l2cap_chan {
     uint16_t scid;
     uint16_t dcid;
-    uint8_t  indent;
+    uint8_t  ident;
 };
 
 struct bt_dev {
@@ -58,9 +66,10 @@ struct bt_hci_pkt {
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
 extern const uint8_t led_dev_id_map[];
 
+void bt_host_dev_conn_q_cmd(struct bt_dev *device);
+void bt_host_dev_hid_q_cmd(struct bt_dev *device);
 int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);
-void bt_host_dev_hid_q_cmd(struct bt_dev *device);
 
 #endif /* _BT_HOST_H_ */
 
