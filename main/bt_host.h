@@ -60,6 +60,7 @@ extern const uint8_t led_dev_id_map[];
 
 int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);
+void bt_host_dev_hid_q_cmd(struct bt_dev *device);
 
 #endif /* _BT_HOST_H_ */
 

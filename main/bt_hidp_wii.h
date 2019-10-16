@@ -148,5 +148,6 @@ void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report);
 void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report);
 void bt_hid_cmd_wii_read(void *bt_dev, void *report);
 void bt_hid_cmd_wii_write(void *bt_dev, void *report);
+void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
 
 #endif /* _BT_HIDP_WII_H_ */

@@ -121,3 +121,82 @@ void bt_hid_cmd_wii_write(void *bt_dev, void *report) {
 
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_WR_MEM, sizeof(*wii_wr_mem));
 }
+
+void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+    switch (bt_hci_acl_pkt->sig_hdr.code) {
+        case BT_HIDP_DATA_IN:
+            switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
+                case BT_HIDP_WII_STATUS:
+                {
+                    struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
+                    printf("# BT_HIDP_WII_STATUS\n");
+                    if (device->type != WIIU_PRO) {
+                        if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
+                            device->hid_state = 2;
+                        }
+                        else {
+                            device->hid_state = 1;
+                            device->type = WII_CORE;
+                        }
+                        bt_host_dev_hid_q_cmd(device);
+                    }
+                    break;
+                }
+                case BT_HIDP_WII_RD_DATA:
+                {
+                    struct bt_hidp_wii_rd_data *rd_data = (struct bt_hidp_wii_rd_data *)bt_hci_acl_pkt->hidp_data;
+                    int8_t type = bt_get_type_from_wii_ext(rd_data->data);
+                    printf("# BT_HIDP_WII_RD_DATA\n");
+                    if (type > BT_NONE) {
+                        device->type = type;
+                    }
+                    printf("# dev: %d wii ext: %d\n", device->id, device->type);
+                    device->hid_state++;
+                    bt_host_dev_hid_q_cmd(device);
+                    break;
+                }
+                case BT_HIDP_WII_ACK:
+                {
+                    struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
+                    printf("# BT_HIDP_WII_ACK\n");
+                    switch(ack->report) {
+                        case BT_HIDP_WII_WR_MEM:
+                            device->hid_state++;
+                            bt_host_dev_hid_q_cmd(device);
+                            break;
+                    }
+                    if (ack->err) {
+                        printf("# dev: %d ack err: 0x%02X\n", device->id, ack->err);
+                    }
+                    break;
+                }
+                case BT_HIDP_WII_CORE_ACC_EXT:
+                {
+#if 0
+                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_hci_acl_packet->pl.hidp.hidp_data.wii_core_acc_ext.ext;
+                    device->report_cnt++;
+                    input.format = device->type;
+                    if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
+                        bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
+                        atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);
+                    }
+                    memcpy(&input.io.wiiu_pro, wiiu_pro, sizeof(*wiiu_pro));
+                    translate_status(sd_config, &input, output);
+                    min_lx = min(min_lx, wiiu_pro->axes[0]);
+                    min_ly = min(min_ly, wiiu_pro->axes[2]);
+                    min_rx = min(min_rx, wiiu_pro->axes[1]);
+                    min_ry = min(min_ry, wiiu_pro->axes[3]);
+                    max_lx = max(max_lx, wiiu_pro->axes[0]);
+                    max_ly = max(max_ly, wiiu_pro->axes[2]);
+                    max_rx = max(max_rx, wiiu_pro->axes[1]);
+                    max_ry = max(max_ry, wiiu_pro->axes[3]);
+                    printf("JG2019 MIN LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", min_lx, min_ly, min_rx, min_ry);
+                    printf("JG2019 MAX LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", max_lx, max_ly, max_rx, max_ry);
+                    printf("JG2019 %04X %04X %04X %04X\n", wiiu_pro->axes[0] - 0x800, wiiu_pro->axes[2] - 0x800, wiiu_pro->axes[1] - 0x800, wiiu_pro->axes[3] - 0x800);
+#endif
+                    break;
+                }
+            }
+            break;
+    }
+}

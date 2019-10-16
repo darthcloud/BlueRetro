@@ -20,7 +20,12 @@
 
 #define BT_MAX_RETRY 3
 
+#define BT_HOST_SDP_CHAN      0x0070
+#define BT_HOST_HID_CTRL_CHAN 0x0080
+#define BT_HOST_HID_INTR_CHAN 0x0090
+
 typedef void (*bt_cmd_func_t)(void *param);
+typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
 
 enum {
     BT_CMD_PARAM_BDADDR,
@@ -325,7 +330,7 @@ static struct bt_hidp_cmd (*bt_hipd_conf[])[8] =
     NULL, /* HID_MOUSE */
 };
 
-static void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
+void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
     if ((*bt_hipd_conf[device->type])) {
         if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
             (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
@@ -346,9 +351,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     switch (bt_hci_evt_pkt->evt_hdr.evt) {
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
-            //if (bt_get_active_dev(&device) == BT_NONE) {
-            //    bt_hci_cmd_inquiry(NULL);
-            //}
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
         case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
@@ -365,9 +367,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
                         device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 1 + 9*i)[0]);
-                        device->sdp_chan.scid = bt_dev_id | 0x0070;
-                        device->ctrl_chan.scid = bt_dev_id | 0x0080;
-                        device->intr_chan.scid = bt_dev_id | 0x0090;
+                        device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                        device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
+                        device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_exit_periodic_inquiry(NULL);
                         bt_host_dev_conn_q_cmd(device);
@@ -395,7 +397,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     else {
                         bt_host_reset_dev(device);
                         if (bt_get_active_dev(&device) == BT_NONE) {
-                            bt_hci_cmd_inquiry(NULL);
+                            bt_hci_cmd_periodic_inquiry(NULL);
                         }
                     }
                 }
@@ -423,9 +425,9 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
                     device->id = bt_dev_id;
                     device->type = bt_hid_minor_class_to_type(conn_request->dev_class[0]);
-                    device->sdp_chan.scid = bt_dev_id | 0x0070;
-                    device->ctrl_chan.scid = bt_dev_id | 0x0080;
-                    device->intr_chan.scid = bt_dev_id | 0x0090;
+                    device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                    device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
+                    device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_exit_periodic_inquiry(NULL);
@@ -445,7 +447,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
             bt_get_dev_from_handle(disconn_complete->handle, &device);
             bt_host_reset_dev(device);
             if (bt_get_active_dev(&device) == BT_NONE) {
-                bt_hci_cmd_inquiry(NULL);
+                bt_hci_cmd_periodic_inquiry(NULL);
             }
             break;
         }
@@ -487,7 +489,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     else {
                         bt_host_reset_dev(device);
                         if (bt_get_active_dev(&device) == BT_NONE) {
-                            bt_hci_cmd_inquiry(NULL);
+                            bt_hci_cmd_periodic_inquiry(NULL);
                         }
                     }
                 }
@@ -733,16 +735,7 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
     }
 }
 
-static void bt_acl_handler(uint8_t *data, uint16_t len) {
-    struct bt_dev *device = NULL;
-    struct bt_hci_pkt *bt_hci_acl_pkt = (struct bt_hci_pkt *)data;
-    bt_get_dev_from_handle(bt_hci_acl_pkt->acl_hdr.handle, &device);
-
-    if (device == NULL) {
-        printf("# dev NULL!\n");
-        return;
-    }
-
+static void bt_host_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_L2CAP_CONN_REQ:
         {
@@ -854,80 +847,43 @@ static void bt_acl_handler(uint8_t *data, uint16_t len) {
         case BT_L2CAP_DISCONN_RSP:
             printf("# BT_L2CAP_DISCONN_RSP\n");
             break;
-        case BT_HIDP_DATA_IN:
-            switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
-                case BT_HIDP_WII_STATUS:
-                {
-                    struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
-                    printf("# BT_HIDP_WII_STATUS\n");
-                    if (device->type != WIIU_PRO) {
-                        if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
-                            device->hid_state = 2;
-                        }
-                        else {
-                            device->hid_state = 1;
-                            device->type = WII_CORE;
-                        }
-                        bt_host_dev_hid_q_cmd(device);
-                    }
-                    break;
-                }
-                case BT_HIDP_WII_RD_DATA:
-                {
-                    struct bt_hidp_wii_rd_data *rd_data = (struct bt_hidp_wii_rd_data *)bt_hci_acl_pkt->hidp_data;
-                    int8_t type = bt_get_type_from_wii_ext(rd_data->data);
-                    printf("# BT_HIDP_WII_RD_DATA\n");
-                    if (type > BT_NONE) {
-                        device->type = type;
-                    }
-                    printf("# dev: %d wii ext: %d\n", device->id, device->type);
-                    device->hid_state++;
-                    bt_host_dev_hid_q_cmd(device);
-                    break;
-                }
-                case BT_HIDP_WII_ACK:
-                {
-                    struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
-                    printf("# BT_HIDP_WII_ACK\n");
-                    switch(ack->report) {
-                        case BT_HIDP_WII_WR_MEM:
-                            device->hid_state++;
-                            bt_host_dev_hid_q_cmd(device);
-                            break;
-                    }
-                    if (ack->err) {
-                        printf("# dev: %d ack err: 0x%02X\n", device->id, ack->err);
-                    }
-                    break;
-                }
-                case BT_HIDP_WII_CORE_ACC_EXT:
-                {
-#if 0
-                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_hci_acl_packet->pl.hidp.hidp_data.wii_core_acc_ext.ext;
-                    device->report_cnt++;
-                    input.format = device->type;
-                    if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
-                        bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
-                        atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);
-                    }
-                    memcpy(&input.io.wiiu_pro, wiiu_pro, sizeof(*wiiu_pro));
-                    translate_status(sd_config, &input, output);
-                    min_lx = min(min_lx, wiiu_pro->axes[0]);
-                    min_ly = min(min_ly, wiiu_pro->axes[2]);
-                    min_rx = min(min_rx, wiiu_pro->axes[1]);
-                    min_ry = min(min_ry, wiiu_pro->axes[3]);
-                    max_lx = max(max_lx, wiiu_pro->axes[0]);
-                    max_ly = max(max_ly, wiiu_pro->axes[2]);
-                    max_rx = max(max_rx, wiiu_pro->axes[1]);
-                    max_ry = max(max_ry, wiiu_pro->axes[3]);
-                    printf("JG2019 MIN LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", min_lx, min_ly, min_rx, min_ry);
-                    printf("JG2019 MAX LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", max_lx, max_ly, max_rx, max_ry);
-                    printf("JG2019 %04X %04X %04X %04X\n", wiiu_pro->axes[0] - 0x800, wiiu_pro->axes[2] - 0x800, wiiu_pro->axes[1] - 0x800, wiiu_pro->axes[3] - 0x800);
-#endif
-                    break;
-                }
-            }
-            break;
+    }
+}
+
+static bt_hid_hdlr_t bt_hid_hdlr[] = {
+    bt_hid_wii_hdlr,
+    bt_hid_wii_hdlr,
+    bt_hid_wii_hdlr,
+    bt_hid_wii_hdlr,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+static void bt_acl_handler(uint8_t *data, uint16_t len) {
+    struct bt_dev *device = NULL;
+    struct bt_hci_pkt *bt_hci_acl_pkt = (struct bt_hci_pkt *)data;
+    bt_get_dev_from_handle(bt_hci_acl_pkt->acl_hdr.handle, &device);
+
+    if (device == NULL) {
+        printf("# dev NULL!\n");
+        return;
+    }
+
+    if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
+        bt_host_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
+    }
+    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_chan.scid) {
+    }
+    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
+        bt_hci_acl_pkt->l2cap_hdr.cid == device->intr_chan.scid) {
+        if (device->type > BT_NONE) {
+            bt_hid_hdlr[device->type](device, bt_hci_acl_pkt);
+        }
     }
 }
 
