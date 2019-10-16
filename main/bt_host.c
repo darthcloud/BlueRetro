@@ -430,7 +430,6 @@ static void bt_hci_event_handler(uint8_t *data, uint16_t len) {
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_exit_periodic_inquiry(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
-                    bt_host_q_wait_pkt(90);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
                 }
             }
