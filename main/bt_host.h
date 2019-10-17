@@ -4,7 +4,14 @@
 #include "zephyr/atomic.h"
 #include "zephyr/hci.h"
 #include "zephyr/l2cap_internal.h"
+#include "adapter.h"
 #include "bt_hidp.h"
+
+#define BT_MAX_RETRY 3
+
+#define BT_HOST_SDP_CHAN      0x0070
+#define BT_HOST_HID_CTRL_CHAN 0x0080
+#define BT_HOST_HID_INTR_CHAN 0x0090
 
 enum {
     /* BT device connection flags */
@@ -66,8 +73,18 @@ struct bt_hci_pkt {
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
 extern const uint8_t led_dev_id_map[];
 
+int32_t bt_host_get_new_dev(struct bt_dev **device);
+int32_t bt_host_get_active_dev(struct bt_dev **device);
+void bt_host_dev_conn_q_cmd(struct bt_dev *device);
+int32_t bt_host_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device);
+int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device);
+int32_t bt_host_get_type_from_name(const uint8_t* name);
+void bt_host_reset_dev(struct bt_dev *device);
+void bt_host_restart_config(void);
+void bt_host_config_q_cmd(uint32_t next);
 void bt_host_dev_conn_q_cmd(struct bt_dev *device);
 void bt_host_dev_hid_q_cmd(struct bt_dev *device);
+void bt_host_q_wait_pkt(uint32_t ms);
 int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);
 

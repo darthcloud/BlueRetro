@@ -1,5 +1,4 @@
 #include "bt_host.h"
-#include "adapter.h"
 
 int8_t bt_hid_minor_class_to_type(uint8_t minor) {
     int8_t type = HID_PAD;

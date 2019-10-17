@@ -1,5 +1,15 @@
 #include <stdio.h>
 #include "bt_host.h"
+#include "bt_hidp_wii.h"
+
+static const char bt_default_pin[][5] = {
+    "0000",
+    "1234",
+    "1111",
+};
+
+static uint32_t bt_hci_pkt_retry = 0;
+static uint8_t local_bdaddr[6];
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len) {
     uint32_t packet_len = BT_HCI_H4_HDR_SIZE + BT_HCI_CMD_HDR_SIZE + cp_len;
@@ -497,4 +507,390 @@ void bt_hci_cmd_read_local_sp_options(void *cp) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_READ_LOCAL_SP_OPTIONS, 0);
+}
+
+void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
+    struct bt_dev *device = NULL;
+
+    switch (bt_hci_evt_pkt->evt_hdr.evt) {
+        case BT_HCI_EVT_INQUIRY_COMPLETE:
+            printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
+            break;
+        case BT_HCI_EVT_INQUIRY_RESULT:
+        case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+        case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+        {
+            struct bt_hci_evt_inquiry_result *inquiry_result = (struct bt_hci_evt_inquiry_result *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
+            printf("# Number of responce: %d\n", inquiry_result->num_reports);
+            for (uint8_t i = 1; i <= inquiry_result->num_reports; i++) {
+                bt_host_get_dev_from_bdaddr((bt_addr_t *)((uint8_t *)&inquiry_result + 1 + 6*(i - 1)), &device);
+                if (device == NULL) {
+                    int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                    if (device) {
+                        memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
+                        device->id = bt_dev_id;
+                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 1 + 9*i)[0]);
+                        device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                        device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
+                        device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
+                        atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                        bt_hci_cmd_exit_periodic_inquiry(NULL);
+                        bt_host_dev_conn_q_cmd(device);
+                    }
+                }
+                printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                    device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                    device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+                break; /* Only support one result for now */
+            }
+            break;
+        }
+        case BT_HCI_EVT_CONN_COMPLETE:
+        {
+            struct bt_hci_evt_conn_complete *conn_complete = (struct bt_hci_evt_conn_complete *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_CONN_COMPLETE\n");
+            bt_host_get_dev_from_bdaddr(&conn_complete->bdaddr, &device);
+            if (device) {
+                if (conn_complete->status) {
+                    device->pkt_retry++;
+                    printf("# dev: %d error: 0x%02X\n", device->id, conn_complete->status);
+                    if (device->pkt_retry < BT_MAX_RETRY) {
+                        bt_host_dev_conn_q_cmd(device);
+                    }
+                    else {
+                        bt_host_reset_dev(device);
+                        if (bt_host_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_cmd_periodic_inquiry(NULL);
+                        }
+                    }
+                }
+                else {
+                    device->acl_handle = conn_complete->handle;
+                    device->pkt_retry = 0;
+                    device->conn_state++;
+                    printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    bt_host_dev_conn_q_cmd(device);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_CONN_REQUEST:
+        {
+            struct bt_hci_evt_conn_request *conn_request = (struct bt_hci_evt_conn_request *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_CONN_REQUEST\n");
+            bt_host_get_dev_from_bdaddr(&conn_request->bdaddr, &device);
+            if (device == NULL) {
+                int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                if (device) {
+                    memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
+                    device->id = bt_dev_id;
+                    device->type = bt_hid_minor_class_to_type(conn_request->dev_class[0]);
+                    device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                    device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
+                    device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
+                    atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                    atomic_set_bit(&device->flags, BT_DEV_PAGE);
+                    bt_hci_cmd_exit_periodic_inquiry(NULL);
+                    bt_hci_cmd_remote_name_request(device->remote_bdaddr);
+                    bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
+                }
+            }
+            printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+            break;
+        }
+        case BT_HCI_EVT_DISCONN_COMPLETE:
+        {
+            struct bt_hci_evt_disconn_complete *disconn_complete = (struct bt_hci_evt_disconn_complete *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_DISCONN_COMPLETE\n");
+            bt_host_get_dev_from_handle(disconn_complete->handle, &device);
+            bt_host_reset_dev(device);
+            if (bt_host_get_active_dev(&device) == BT_NONE) {
+                bt_hci_cmd_periodic_inquiry(NULL);
+            }
+            break;
+        }
+        case BT_HCI_EVT_AUTH_COMPLETE:
+        {
+            struct bt_hci_evt_auth_complete *auth_complete = (struct bt_hci_evt_auth_complete *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_AUTH_COMPLETE\n");
+            bt_host_get_dev_from_handle(auth_complete->handle, &device);
+            if (device) {
+                if (auth_complete->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, auth_complete->status);
+                }
+                else {
+                    printf("# dev: %d Pairing done\n", device->id);
+                    device->conn_state++;
+                    if (device->type != SWITCH_PRO) {
+                        device->conn_state++;
+                    }
+                    bt_host_dev_conn_q_cmd(device);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:
+        {
+            struct bt_hci_evt_remote_name_req_complete *remote_name_req_complete = (struct bt_hci_evt_remote_name_req_complete *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:\n");
+            bt_host_get_dev_from_bdaddr(&remote_name_req_complete->bdaddr, &device);
+            if (device) {
+                if (remote_name_req_complete->status) {
+                    device->pkt_retry++;
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_name_req_complete->status);
+                    if (device->pkt_retry < BT_MAX_RETRY) {
+                        bt_host_dev_conn_q_cmd(device);
+                    }
+                    else {
+                        bt_host_reset_dev(device);
+                        if (bt_host_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_cmd_periodic_inquiry(NULL);
+                        }
+                    }
+                }
+                else {
+                    int8_t type = bt_host_get_type_from_name(remote_name_req_complete->name);
+                    if (type > BT_NONE) {
+                        device->type = bt_host_get_type_from_name(remote_name_req_complete->name);
+                    }
+                    printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                        device->pkt_retry = 0;
+                        device->conn_state++;
+                        bt_host_dev_conn_q_cmd(device);
+                    }
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_ENCRYPT_CHANGE:
+        {
+            struct bt_hci_evt_encrypt_change *encrypt_change = (struct bt_hci_evt_encrypt_change *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_ENCRYPT_CHANGE\n");
+            bt_host_get_dev_from_handle(encrypt_change->handle, &device);
+            if (device) {
+                if (encrypt_change->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, encrypt_change->status);
+                }
+                else {
+                    device->conn_state++;
+                    bt_host_dev_conn_q_cmd(device);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_REMOTE_FEATURES:
+        {
+            struct bt_hci_evt_remote_features *remote_features = (struct bt_hci_evt_remote_features *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_REMOTE_FEATURES\n");
+            bt_host_get_dev_from_handle(remote_features->handle, &device);
+            if (device) {
+                if (remote_features->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_features->status);
+                    device->conn_state++;
+                }
+                else if (!(remote_features->features[8] & 0x80)) {
+                    device->conn_state++;
+                }
+                device->conn_state++;
+                device->pkt_retry = 0;
+                bt_host_dev_conn_q_cmd(device);
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_CMD_COMPLETE:
+        {
+            struct bt_hci_evt_cmd_complete *cmd_complete = (struct bt_hci_evt_cmd_complete *)bt_hci_evt_pkt->evt_data;
+            uint8_t status = bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+            printf("# BT_HCI_EVT_CMD_COMPLETE\n");
+            if (status != BT_HCI_ERR_SUCCESS && status != BT_HCI_ERR_UNKNOWN_CMD) {
+                printf("# opcode: 0x%04X error: 0x%02X retry: %d\n", cmd_complete->opcode, status, bt_hci_pkt_retry);
+                switch (cmd_complete->opcode) {
+                    case BT_HCI_OP_READ_BD_ADDR:
+                    case BT_HCI_OP_RESET:
+                    case BT_HCI_OP_READ_LOCAL_FEATURES:
+                    case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
+                    case BT_HCI_OP_READ_BUFFER_SIZE:
+                    case BT_HCI_OP_READ_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_READ_LOCAL_NAME:
+                    case BT_HCI_OP_READ_VOICE_SETTING:
+                    case BT_HCI_OP_READ_NUM_SUPPORTED_IAC:
+                    case BT_HCI_OP_READ_CURRENT_IAC_LAP:
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                    case BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT:
+                    case BT_HCI_OP_READ_SUPPORTED_COMMANDS:
+                    case BT_HCI_OP_WRITE_SSP_MODE:
+                    case BT_HCI_OP_WRITE_INQUIRY_MODE:
+                    case BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL:
+                    case BT_HCI_OP_READ_LOCAL_EXT_FEATURES:
+                    case BT_HCI_OP_READ_STORED_LINK_KEY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_DELETE_STORED_LINK_KEY:
+                    case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                    case BT_HCI_OP_WRITE_AUTH_ENABLE:
+                    case BT_HCI_OP_SET_EVENT_MASK:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_WRITE_PAGE_TIMEOUT:
+                    case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                    case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                        bt_hci_pkt_retry++;
+                        if (bt_hci_pkt_retry > BT_MAX_RETRY) {
+                            bt_hci_pkt_retry = 0;
+                            bt_host_restart_config();
+                        }
+                        bt_host_config_q_cmd(0);
+                        break;
+                }
+            }
+            else {
+                switch (cmd_complete->opcode) {
+                    case BT_HCI_OP_READ_BD_ADDR:
+                    {
+                        struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
+                        printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                            local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
+                            local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
+                    }
+                        /* Fall-through */
+                    case BT_HCI_OP_RESET:
+                    case BT_HCI_OP_READ_LOCAL_FEATURES:
+                    case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
+                    case BT_HCI_OP_READ_BUFFER_SIZE:
+                    case BT_HCI_OP_READ_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_READ_LOCAL_NAME:
+                    case BT_HCI_OP_READ_VOICE_SETTING:
+                    case BT_HCI_OP_READ_NUM_SUPPORTED_IAC:
+                    case BT_HCI_OP_READ_CURRENT_IAC_LAP:
+                    case BT_HCI_OP_SET_EVENT_FILTER:
+                    case BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT:
+                    case BT_HCI_OP_READ_SUPPORTED_COMMANDS:
+                    case BT_HCI_OP_WRITE_SSP_MODE:
+                    case BT_HCI_OP_WRITE_INQUIRY_MODE:
+                    case BT_HCI_OP_READ_INQUIRY_RSP_TX_PWR_LVL:
+                    case BT_HCI_OP_READ_LOCAL_EXT_FEATURES:
+                    case BT_HCI_OP_READ_STORED_LINK_KEY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_DELETE_STORED_LINK_KEY:
+                    case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
+                    case BT_HCI_OP_WRITE_LOCAL_NAME:
+                    case BT_HCI_OP_WRITE_AUTH_ENABLE:
+                    case BT_HCI_OP_SET_EVENT_MASK:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY:
+                    case BT_HCI_OP_WRITE_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_WRITE_PAGE_TIMEOUT:
+                    case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
+                    case BT_HCI_OP_WRITE_SCAN_ENABLE:
+                    case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                        bt_hci_pkt_retry = 0;
+                        bt_host_config_q_cmd(1);
+                        break;
+                }
+            }
+            break;
+        }
+        case BT_HCI_EVT_CMD_STATUS:
+        {
+            struct bt_hci_evt_cmd_status *cmd_status = (struct bt_hci_evt_cmd_status *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_CMD_STATUS\n");
+            if (cmd_status->status) {
+                printf("# opcode: 0x%04X error: 0x%02X\n", cmd_status->opcode, cmd_status->status);
+            }
+            break;
+        }
+        case BT_HCI_EVT_PIN_CODE_REQ:
+        {
+            struct bt_hci_evt_pin_code_req *pin_code_req = (struct bt_hci_evt_pin_code_req *)bt_hci_evt_pkt->evt_data;
+            struct bt_hci_cp_pin_code_reply pin_code_reply = {0};
+            printf("# BT_HCI_EVT_PIN_CODE_REQ\n");
+            bt_host_get_dev_from_bdaddr(&pin_code_req->bdaddr, &device);
+            memcpy((void *)&pin_code_reply.bdaddr, device->remote_bdaddr, sizeof(pin_code_reply.bdaddr));
+            if (bt_dev_is_wii(device->type)) {
+                memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
+                pin_code_reply.pin_len = sizeof(local_bdaddr);
+            }
+            else {
+                memcpy(pin_code_reply.pin_code, bt_default_pin[0], strlen(bt_default_pin[0]));
+                pin_code_reply.pin_len = strlen(bt_default_pin[0]);
+            }
+            bt_hci_cmd_pin_code_reply(&pin_code_reply);
+            break;
+        }
+        case BT_HCI_EVT_LINK_KEY_REQ:
+        {
+            struct bt_hci_evt_link_key_req *link_key_req = (struct bt_hci_evt_link_key_req *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_LINK_KEY_REQ\n");
+            bt_host_get_dev_from_bdaddr(&link_key_req->bdaddr, &device);
+            bt_hci_cmd_link_key_neg_reply((void *)device->remote_bdaddr);
+            break;
+        }
+        case BT_HCI_EVT_LINK_KEY_NOTIFY:
+            printf("# BT_HCI_EVT_LINK_KEY_NOTIFY\n");
+            break;
+        case BT_HCI_EVT_REMOTE_EXT_FEATURES:
+        {
+            struct bt_hci_evt_remote_ext_features *remote_ext_features = (struct bt_hci_evt_remote_ext_features *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_REMOTE_EXT_FEATURES\n");
+            bt_host_get_dev_from_handle(remote_ext_features->handle, &device);
+            if (device) {
+                if (remote_ext_features->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_ext_features->status);
+                }
+                device->conn_state++;
+                device->pkt_retry = 0;
+                bt_host_dev_conn_q_cmd(device);
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_IO_CAPA_REQ:
+        {
+            struct bt_hci_evt_io_capa_req *io_capa_req = (struct bt_hci_evt_io_capa_req *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_IO_CAPA_REQ\n");
+            bt_host_get_dev_from_bdaddr(&io_capa_req->bdaddr, &device);
+            if (device) {
+                bt_hci_cmd_io_capability_reply((void *)device->remote_bdaddr);
+            }
+            break;
+        }
+        case BT_HCI_EVT_USER_CONFIRM_REQ:
+        {
+            struct bt_hci_evt_user_confirm_req *user_confirm_req = (struct bt_hci_evt_user_confirm_req *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_USER_CONFIRM_REQ\n");
+            bt_host_get_dev_from_bdaddr(&user_confirm_req->bdaddr, &device);
+            if (device) {
+                bt_hci_cmd_user_confirm_reply((void *)device->remote_bdaddr);
+            }
+            break;
+        }
+    }
 }

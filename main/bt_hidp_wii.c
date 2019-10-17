@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "adapter.h"
 #include "bt_host.h"
 #include "bt_hidp_wii.h"
 

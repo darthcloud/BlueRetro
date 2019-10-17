@@ -9,7 +9,6 @@ struct bt_hidp_cmd {
     void *report;
 };
 
-
 #define BT_HIDP_DATA_IN        0xa1
 #define BT_HIDP_DATA_OUT       0xa2
 struct bt_hidp_hdr {

@@ -57,5 +57,6 @@ void bt_hci_cmd_read_bd_addr(void *cp);
 void bt_hci_cmd_read_data_block_size(void *cp);
 void bt_hci_cmd_read_local_codecs(void *cp);
 void bt_hci_cmd_read_local_sp_options(void *cp);
+void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt);
 
 #endif /* _BT_HCI_H_ */
