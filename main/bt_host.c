@@ -175,6 +175,11 @@ static void bt_host_tx_pkt_ready(void);
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len);
 static void bt_host_tx_ringbuf_task(void *param);
 
+static esp_vhci_host_callback_t vhci_host_cb = {
+    bt_host_tx_pkt_ready,
+    bt_host_rx_pkt
+};
+
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     uint8_t col;
@@ -408,11 +413,6 @@ void bt_host_q_wait_pkt(uint32_t ms) {
 }
 
 int32_t bt_host_init(void) {
-    esp_vhci_host_callback_t vhci_host_cb = {
-        bt_host_tx_pkt_ready,
-        bt_host_rx_pkt
-    };
-
     uint8_t test_mac[6] = {0x84, 0x4b, 0xf5, 0xa7, 0x41, 0xea};
 
     /* Initialize NVS — it is used to store PHY calibration data */
