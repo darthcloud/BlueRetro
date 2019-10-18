@@ -14,6 +14,9 @@
 #define ROOT "/sd"
 #define CONFIG_FILE "/config.bin"
 #define MEMPAK_FILE "/mempak.bin"
+#define LINK_KEYS_FILE "/linkkeys.bin"
+
+#define LINK_KEYS_SIZE (16 * (6 + 16 + 1) + 1)
 
 static esp_err_t sd_create_config(struct config *config) {
     FILE *config_file = fopen(ROOT CONFIG_FILE, "wb");
@@ -158,3 +161,39 @@ esp_err_t sd_update_config(struct config *config) {
     return ESP_OK;
 }
 
+int32_t sd_load_link_keys(uint8_t *data, uint32_t len) {
+    struct stat st;
+    int32_t ret = -1;
+
+    if (stat(ROOT LINK_KEYS_FILE, &st) != 0) {
+        printf("%s: No link keys on SD. Creating...\n", __FUNCTION__);
+        ret = sd_store_link_keys(data, len);
+    }
+    else {
+        FILE *file = fopen(ROOT LINK_KEYS_FILE, "rb");
+        if (file == NULL) {
+            printf("%s: failed to open file for reading\n", __FUNCTION__);
+        }
+        else {
+            fread(data, len, 1, file);
+            fclose(file);
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+int32_t sd_store_link_keys(uint8_t *data, uint32_t len) {
+    int32_t ret = -1;
+
+    FILE *file = fopen(ROOT LINK_KEYS_FILE, "wb");
+    if (file == NULL) {
+        printf("%s: failed to open file for writing\n", __FUNCTION__);
+    }
+    else {
+        fwrite(data, len, 1, file);
+        fclose(file);
+        ret = 0;
+    }
+    return ret;
+}

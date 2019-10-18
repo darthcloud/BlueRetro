@@ -9,7 +9,7 @@
 #include "bt_l2cap.h"
 #include "bt_hidp_wii.h"
 #include "util.h"
-
+#include "sd.h"
 
 #define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
@@ -45,12 +45,18 @@ struct bt_hci_cmd_cp {
     void *cp;
 };
 
+struct bt_host_link_keys {
+    uint32_t index;
+    struct bt_hci_evt_link_key_notify link_keys[16];
+} __packed;
+
 struct bt_hci_pkt bt_hci_pkt_tmp;
 
 const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
+static struct bt_host_link_keys bt_host_link_keys = {0};
 static uint32_t bt_config_state = 0;
 static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev[7] = {0};
@@ -447,6 +453,8 @@ int32_t bt_host_init(void) {
         return ret;
     }
 
+    sd_load_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
+
     xTaskCreatePinnedToCore(&bt_host_tx_ringbuf_task, "bt_host_tx_task", 2048, NULL, 5, NULL, 0);
 
     bt_host_config_q_cmd(0);
@@ -460,4 +468,24 @@ int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len) {
         printf("# %s txq full!\n", __FUNCTION__);
     }
     return (ret == pdTRUE ? 0 : -1);
+}
+
+int32_t bt_host_load_link_key(struct bt_hci_cp_link_key_reply *link_key_reply) {
+    int32_t ret = -1;
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_link_keys.link_keys); i++) {
+        if (memcmp((void *)&link_key_reply->bdaddr, (void *)&bt_host_link_keys.link_keys[i].bdaddr, sizeof(link_key_reply->bdaddr)) == 0) {
+            memcpy((void *)link_key_reply->link_key, &bt_host_link_keys.link_keys[i].link_key, sizeof(link_key_reply->link_key));
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notify) {
+    int32_t ret = -1;
+    memcpy((void *)&bt_host_link_keys.link_keys[bt_host_link_keys.index], (void *)link_key_notify, sizeof(bt_host_link_keys.link_keys[0]));
+    bt_host_link_keys.index++;
+    bt_host_link_keys.index &= 0xF;
+    ret = sd_store_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
+    return ret;
 }

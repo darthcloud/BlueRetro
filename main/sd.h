@@ -26,6 +26,7 @@ struct config {
 esp_err_t sd_init(struct config *config);
 esp_err_t sd_update_config(struct config *config);
 esp_err_t sd_update_mempak(void);
+int32_t sd_load_link_keys(uint8_t *data, uint32_t len);
+int32_t sd_store_link_keys(uint8_t *data, uint32_t len);
 
 #endif /* _SD_H_ */
-

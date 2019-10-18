@@ -86,6 +86,15 @@ void bt_hci_cmd_accept_conn_req(void *bdaddr) {
     bt_hci_cmd(BT_HCI_OP_ACCEPT_CONN_REQ, sizeof(*accept_conn_req));
 }
 
+void bt_hci_cmd_link_key_reply(void *cp) {
+    struct bt_hci_cp_link_key_reply *link_key_reply = (struct bt_hci_cp_link_key_reply *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)link_key_reply, cp, sizeof(*link_key_reply));
+
+    bt_hci_cmd(BT_HCI_OP_LINK_KEY_REPLY, sizeof(*link_key_reply));
+}
+
 void bt_hci_cmd_link_key_neg_reply(void *bdaddr) {
     struct bt_hci_cp_link_key_neg_reply *link_key_neg_reply = (struct bt_hci_cp_link_key_neg_reply *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
@@ -846,14 +855,26 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         case BT_HCI_EVT_LINK_KEY_REQ:
         {
             struct bt_hci_evt_link_key_req *link_key_req = (struct bt_hci_evt_link_key_req *)bt_hci_evt_pkt->evt_data;
+            struct bt_hci_cp_link_key_reply link_key_reply;
             printf("# BT_HCI_EVT_LINK_KEY_REQ\n");
             bt_host_get_dev_from_bdaddr(&link_key_req->bdaddr, &device);
-            bt_hci_cmd_link_key_neg_reply((void *)device->remote_bdaddr);
+            memcpy((void *)&link_key_reply.bdaddr, (void *)&link_key_req->bdaddr, sizeof(link_key_reply.bdaddr));
+            if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_link_key(&link_key_reply) == 0) {
+                bt_hci_cmd_link_key_reply((void *)&link_key_reply);
+            }
+            else {
+                bt_hci_cmd_link_key_neg_reply((void *)device->remote_bdaddr);
+            }
             break;
         }
         case BT_HCI_EVT_LINK_KEY_NOTIFY:
+        {
+            struct bt_hci_evt_link_key_notify *link_key_notify = (struct bt_hci_evt_link_key_notify *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_LINK_KEY_NOTIFY\n");
+            bt_host_get_dev_from_bdaddr(&link_key_notify->bdaddr, &device);
+            bt_host_store_link_key(link_key_notify);
             break;
+        }
         case BT_HCI_EVT_REMOTE_EXT_FEATURES:
         {
             struct bt_hci_evt_remote_ext_features *remote_ext_features = (struct bt_hci_evt_remote_ext_features *)bt_hci_evt_pkt->evt_data;
