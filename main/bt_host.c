@@ -252,7 +252,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->intr_chan.scid) {
-        if (device->type > BT_NONE) {
+        if (device->type > BT_NONE && bt_hid_hdlr[device->type]) {
             bt_hid_hdlr[device->type](device, bt_hci_acl_pkt);
         }
     }
