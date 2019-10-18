@@ -139,7 +139,7 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t ir[18];
 } __packed;
 
-extern struct bt_hidp_cmd bt_hipd_wii_conf[8];
+extern const struct bt_hidp_cmd bt_hipd_wii_conf[BT_MAX_HID_CONF_CMD];
 
 int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
 int32_t bt_dev_is_wii(int8_t type);

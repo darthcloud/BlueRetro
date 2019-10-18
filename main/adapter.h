@@ -7,33 +7,39 @@
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 
 /* BT device ID */
-#define BT_NONE      -1
-#define WII_CORE     0x00
-#define WII_NUNCHUCK 0x01
-#define WII_CLASSIC  0x02
-#define WIIU_PRO     0x03
-#define SWITCH_PRO   0x04
-#define PS3_DS3      0x05
-#define PS4_DS4      0x06
-#define XB1_S        0x07
-#define HID_PAD      0x08
-#define HID_KB       0x09
-#define HID_MOUSE    0x0A
+enum {
+    BT_NONE = -1,
+    HID_PAD,
+    HID_KB,
+    HID_MOUSE,
+    PS3_DS3,
+    WII_CORE,
+    WII_NUNCHUCK,
+    WII_CLASSIC,
+    WIIU_PRO,
+    PS4_DS4,
+    XB1_S,
+    SWITCH_PRO,
+    BT_MAX,
+};
 
 /* Wired system ID */
-#define WIRED_NONE   -1
-#define NES          0x00
-#define SNES         0x01
-#define N64          0x02
-#define GC           0x03
-#define WII_EXT      0x04
-#define SMS          0x05
-#define GENESIS      0x06
-#define SATURN       0x07
-#define DC           0x08
-#define PCE          0x09
-#define PSX          0x0A
-#define PS2          0x0B
+enum {
+    WIRED_NONE = -1,
+    NES,
+    SMS,
+    PCE,
+    GENESIS,
+    SNES,
+    SATURN,
+    PSX,
+    N64,
+    DC,
+    PS2,
+    GC,
+    WII_EXT,
+    WIRED_MAX,
+};
 
 struct bt_data {
     /* Bi-directional */

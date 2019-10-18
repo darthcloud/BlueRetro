@@ -8,6 +8,7 @@
 #include "bt_hidp.h"
 
 #define BT_MAX_RETRY 3
+#define BT_MAX_HID_CONF_CMD 8
 
 #define BT_HOST_SDP_CHAN      0x0070
 #define BT_HOST_HID_CTRL_CHAN 0x0080

@@ -145,32 +145,32 @@ static struct bt_hci_cmd_param bt_dev_rx_conn[] = {
     {bt_hci_cmd_accept_conn_req, BT_CMD_PARAM_BDADDR},
 };
 
-static const struct bt_hidp_cmd (*bt_hipd_conf[])[8] = {
+static const struct bt_hidp_cmd (*bt_hipd_conf[BT_MAX])[BT_MAX_HID_CONF_CMD] = {
+    NULL, /* HID_PAD */
+    NULL, /* HID_KB */
+    NULL, /* HID_MOUSE */
+    NULL, /* PS3_DS3 */
     &bt_hipd_wii_conf, /* WII_CORE */
     &bt_hipd_wii_conf, /* WII_NUNCHUCK */
     &bt_hipd_wii_conf, /* WII_CLASSIC */
     &bt_hipd_wii_conf, /* WIIU_PRO */
-    NULL, /* SWITCH_PRO */
-    NULL, /* PS3_DS3 */
     NULL, /* PS4_DS4 */
     NULL, /* XB1_S */
+    NULL, /* SWITCH_PRO */
+};
+
+static const bt_hid_hdlr_t bt_hid_hdlr[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
-};
-
-static const bt_hid_hdlr_t bt_hid_hdlr[] = {
-    bt_hid_wii_hdlr,
-    bt_hid_wii_hdlr,
-    bt_hid_wii_hdlr,
-    bt_hid_wii_hdlr,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, /* PS3_DS3 */
+    bt_hid_wii_hdlr, /* WII_CORE */
+    bt_hid_wii_hdlr, /* WII_NUNCHUCK */
+    bt_hid_wii_hdlr, /* WII_CLASSIC */
+    bt_hid_wii_hdlr, /* WIIU_PRO */
+    NULL, /* PS4_DS4 */
+    NULL, /* XB1_S */
+    NULL, /* SWITCH_PRO */
 };
 
 #ifdef H4_TRACE
