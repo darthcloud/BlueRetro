@@ -483,9 +483,17 @@ int32_t bt_host_load_link_key(struct bt_hci_cp_link_key_reply *link_key_reply) {
 
 int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notify) {
     int32_t ret = -1;
-    memcpy((void *)&bt_host_link_keys.link_keys[bt_host_link_keys.index], (void *)link_key_notify, sizeof(bt_host_link_keys.link_keys[0]));
-    bt_host_link_keys.index++;
-    bt_host_link_keys.index &= 0xF;
+    uint32_t index = bt_host_link_keys.index;
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_link_keys.link_keys); i++) {
+        if (memcmp((void *)&link_key_notify->bdaddr, (void *)&bt_host_link_keys.link_keys[i].bdaddr, sizeof(link_key_notify->bdaddr)) == 0) {
+            index = i;
+        }
+    }
+    memcpy((void *)&bt_host_link_keys.link_keys[index], (void *)link_key_notify, sizeof(bt_host_link_keys.link_keys[0]));
+    if (index == bt_host_link_keys.index) {
+        bt_host_link_keys.index++;
+        bt_host_link_keys.index &= 0xF;
+    }
     ret = sd_store_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
     return ret;
 }
