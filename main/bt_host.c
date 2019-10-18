@@ -399,7 +399,7 @@ void bt_host_config_q_cmd(uint32_t next) {
 }
 
 void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
-    if ((*bt_hipd_conf[device->type])) {
+    if (bt_hipd_conf[device->type] && (*bt_hipd_conf[device->type])) {
         if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
             (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
         }
