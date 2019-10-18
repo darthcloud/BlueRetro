@@ -49,13 +49,6 @@ typedef struct {
 	bt_addr_t a;
 } bt_addr_le_t;
 
-#ifdef BLUERETRO
-/** Bluetooth Class of Device */
-typedef struct {
-	u8_t  val[3];
-} bt_class_t;
-#endif /* BLUERETRO */
-
 #define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
 #define BT_ADDR_NONE    (&(bt_addr_t) { \
 			 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } })
@@ -747,7 +740,7 @@ struct bt_hci_cp_write_auth_enable {
 
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
 struct bt_hci_cp_write_class_of_device {
-    bt_class_t dev_class;
+    u8_t dev_class[3];
 } __packed;
 
 #define BT_HCI_OP_READ_VOICE_SETTING            BT_OP(BT_OGF_BASEBAND, 0x0025)

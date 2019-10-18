@@ -377,10 +377,10 @@ void bt_hci_cmd_read_class_of_device(void *cp) {
 
 void bt_hci_cmd_write_class_of_device(void *cp) {
     struct bt_hci_cp_write_class_of_device *write_class_of_device = (struct bt_hci_cp_write_class_of_device *)&bt_hci_pkt_tmp.cp;
-    bt_class_t local_class = {{0x0c, 0x01, 0x1c}}; /* Laptop */
+    uint8_t local_class[3] = {0x0c, 0x01, 0x1c}; /* Laptop */
     printf("# %s\n", __FUNCTION__);
 
-    memcpy((void *)&write_class_of_device->dev_class, (void *)&local_class, sizeof(local_class));
+    memcpy((void *)write_class_of_device->dev_class, (void *)local_class, sizeof(local_class));
 
     bt_hci_cmd(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*write_class_of_device));
 }
