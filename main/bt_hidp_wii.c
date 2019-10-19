@@ -166,6 +166,8 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 }
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
+                    device->report_cnt++;
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_wii_core_acc_ext));
 #if 0
                     struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_hci_acl_packet->pl.hidp.hidp_data.wii_core_acc_ext.ext;
                     device->report_cnt++;

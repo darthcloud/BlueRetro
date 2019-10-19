@@ -173,6 +173,20 @@ static const bt_hid_hdlr_t bt_hid_hdlr[BT_MAX] = {
     NULL, /* SWITCH_PRO */
 };
 
+static const bt_hid_cmd_func_t bt_hid_feedback_cmd[BT_MAX] = {
+    NULL, /* HID_PAD */
+    NULL, /* HID_KB */
+    NULL, /* HID_MOUSE */
+    NULL, /* PS3_DS3 */
+    bt_hid_cmd_wii_set_feedback, /* WII_CORE */
+    bt_hid_cmd_wii_set_feedback, /* WII_NUNCHUCK */
+    bt_hid_cmd_wii_set_feedback, /* WII_CLASSIC */
+    bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
+    NULL, /* PS4_DS4 */
+    NULL, /* XB1_S */
+    NULL, /* SWITCH_PRO */
+};
+
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
@@ -496,4 +510,13 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
     }
     ret = sd_store_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
     return ret;
+}
+
+void bt_host_bridge(struct bt_dev *device, uint8_t *data, uint32_t len) {
+    memcpy(bt_adapter.data[device->id].input, data, len);
+    adapter_bridge(device->id);
+    if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK) && device->type > BT_NONE && bt_hid_feedback_cmd[device->type]) {
+        bt_hid_feedback_cmd[device->type](device, bt_adapter.data[device->id].output);
+        atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
+    }
 }
