@@ -7,6 +7,7 @@
 #include "bt_host.h"
 #include "bt_hci.h"
 #include "bt_l2cap.h"
+#include "bt_sdp.h"
 #include "bt_hidp_wii.h"
 #include "util.h"
 #include "sd.h"
@@ -264,6 +265,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
         bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_chan.scid) {
+        bt_sdp_hdlr(device, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->intr_chan.scid) {

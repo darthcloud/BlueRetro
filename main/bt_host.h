@@ -4,6 +4,7 @@
 #include "zephyr/atomic.h"
 #include "zephyr/hci.h"
 #include "zephyr/l2cap_internal.h"
+#include "zephyr/sdp_internal.h"
 #include "adapter.h"
 #include "bt_hidp.h"
 
@@ -57,6 +58,10 @@ struct bt_hci_pkt {
                 struct {
                     struct bt_l2cap_sig_hdr sig_hdr;
                     uint8_t sig_data[1011];
+                };
+                struct {
+                    struct bt_sdp_hdr sdp_hdr;
+                    uint8_t sdp_data[1010];
                 };
                 struct {
                     struct bt_hidp_hdr hidp_hdr;
