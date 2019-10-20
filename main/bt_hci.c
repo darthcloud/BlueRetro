@@ -2,6 +2,8 @@
 #include "bt_host.h"
 #include "bt_hidp_wii.h"
 
+#define BT_INQUIRY_MAX 10
+
 static const char bt_default_pin[][5] = {
     "0000",
     "1234",
@@ -9,6 +11,7 @@ static const char bt_default_pin[][5] = {
 };
 
 static uint32_t bt_hci_pkt_retry = 0;
+static uint32_t bt_nb_inquiry = 0;
 static uint8_t local_bdaddr[6];
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len) {
@@ -29,7 +32,7 @@ void bt_hci_cmd_inquiry(void *cp) {
     inquiry->lap[0] = 0x33;
     inquiry->lap[1] = 0x8B;
     inquiry->lap[2] = 0x9E;
-    inquiry->length = 0x20; /* 0x02 * 1.28 s = 2.56 s */
+    inquiry->length = 0x20;
     inquiry->num_rsp = 0xFF;
 
     bt_hci_cmd(BT_HCI_OP_INQUIRY, sizeof(*inquiry));
@@ -45,12 +48,12 @@ void bt_hci_cmd_periodic_inquiry(void *cp) {
     struct bt_hci_cp_periodic_inquiry *periodic_inquiry = (struct bt_hci_cp_periodic_inquiry *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
-    periodic_inquiry->max_period_length = 0x04;
-    periodic_inquiry->min_period_length = 0x03;
+    periodic_inquiry->max_period_length = 0x0A;
+    periodic_inquiry->min_period_length = 0x08;
     periodic_inquiry->lap[0] = 0x33;
     periodic_inquiry->lap[1] = 0x8B;
     periodic_inquiry->lap[2] = 0x9E;
-    periodic_inquiry->length = 0x02; /* 0x02 * 1.28 s = 2.56 s */
+    periodic_inquiry->length = 0x03; /* 0x03 * 1.28 s = 3.84 s */
     periodic_inquiry->num_rsp = 0xFF;
 
     bt_hci_cmd(BT_HCI_OP_PERIODIC_INQUIRY, sizeof(*periodic_inquiry));
@@ -524,6 +527,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     switch (bt_hci_evt_pkt->evt_hdr.evt) {
         case BT_HCI_EVT_INQUIRY_COMPLETE:
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
+            bt_nb_inquiry++;
+            if (bt_host_get_active_dev(&device) > -1 && bt_nb_inquiry > BT_INQUIRY_MAX) {
+                bt_hci_cmd_exit_periodic_inquiry(NULL);
+            }
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
         case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
@@ -545,7 +552,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
                         device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                        bt_hci_cmd_exit_periodic_inquiry(NULL);
                         bt_host_dev_conn_q_cmd(device);
                     }
                 }
@@ -605,7 +611,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
-                    bt_hci_cmd_exit_periodic_inquiry(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
                 }
