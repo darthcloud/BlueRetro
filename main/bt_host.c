@@ -265,7 +265,8 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
     if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
         bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
     }
-    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_chan.scid) {
+    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
+        bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
         bt_sdp_hdlr(device, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||

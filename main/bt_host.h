@@ -11,7 +11,8 @@
 #define BT_MAX_RETRY 3
 #define BT_MAX_HID_CONF_CMD 8
 
-#define BT_HOST_SDP_CHAN      0x0070
+#define BT_HOST_SDP_RX_CHAN   0x0060
+#define BT_HOST_SDP_TX_CHAN   0x0070
 #define BT_HOST_HID_CTRL_CHAN 0x0080
 #define BT_HOST_HID_INTR_CHAN 0x0090
 
@@ -25,7 +26,7 @@ enum {
 struct l2cap_chan {
     uint16_t scid;
     uint16_t dcid;
-    uint8_t  ident;
+    uint16_t ident;
 };
 
 struct bt_dev {
@@ -39,7 +40,8 @@ struct bt_dev {
     int8_t type;
     uint16_t acl_handle;
     uint8_t l2cap_ident;
-    struct l2cap_chan sdp_chan;
+    struct l2cap_chan sdp_rx_chan;
+    struct l2cap_chan sdp_tx_chan;
     struct l2cap_chan ctrl_chan;
     struct l2cap_chan intr_chan;
 };

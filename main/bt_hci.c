@@ -540,7 +540,8 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
                         device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 1 + 9*i)[0]);
-                        device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                        device->sdp_rx_chan.scid = bt_dev_id | BT_HOST_SDP_RX_CHAN;
+                        device->sdp_tx_chan.scid = bt_dev_id | BT_HOST_SDP_TX_CHAN;
                         device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
                         device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
@@ -598,7 +599,8 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
                     device->id = bt_dev_id;
                     device->type = bt_hid_minor_class_to_type(conn_request->dev_class[0]);
-                    device->sdp_chan.scid = bt_dev_id | BT_HOST_SDP_CHAN;
+                    device->sdp_rx_chan.scid = bt_dev_id | BT_HOST_SDP_RX_CHAN;
+                    device->sdp_tx_chan.scid = bt_dev_id | BT_HOST_SDP_TX_CHAN;
                     device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
                     device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);

@@ -30,24 +30,6 @@ static void bt_l2cap_cmd_conn_req(uint16_t handle, uint8_t ident, uint16_t psm, 
     bt_l2cap_cmd(handle, BT_L2CAP_CONN_REQ, ident, sizeof(*conn_req));
 }
 
-void bt_l2cap_cmd_sdp_conn_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_SDP, device->sdp_chan.scid);
-}
-
-void bt_l2cap_cmd_hid_ctrl_conn_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_HID_CTRL, device->ctrl_chan.scid);
-}
-
-void bt_l2cap_cmd_hid_intr_conn_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_HID_INTR, device->intr_chan.scid);
-}
-
 static void bt_l2cap_cmd_conn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid, uint16_t result) {
     struct bt_l2cap_conn_rsp *conn_rsp = (struct bt_l2cap_conn_rsp *)bt_hci_pkt_tmp.sig_data;
 
@@ -57,24 +39,6 @@ static void bt_l2cap_cmd_conn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid,
     conn_rsp->status = BT_L2CAP_CS_NO_INFO;
 
     bt_l2cap_cmd(handle, BT_L2CAP_CONN_RSP, ident, sizeof(*conn_rsp));
-}
-
-void bt_l2cap_cmd_sdp_conn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->sdp_chan.scid, device->sdp_chan.dcid, BT_L2CAP_BR_SUCCESS);
-}
-
-void bt_l2cap_cmd_hid_ctrl_conn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.scid, device->ctrl_chan.dcid, BT_L2CAP_BR_SUCCESS);
-}
-
-void bt_l2cap_cmd_hid_intr_conn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.scid, device->intr_chan.dcid, BT_L2CAP_BR_SUCCESS);
 }
 
 static void bt_l2cap_cmd_conf_req(uint16_t handle, uint8_t ident, uint16_t dcid) {
@@ -89,24 +53,6 @@ static void bt_l2cap_cmd_conf_req(uint16_t handle, uint8_t ident, uint16_t dcid)
 
     bt_l2cap_cmd(handle, BT_L2CAP_CONF_REQ, ident,
         ((sizeof(*conf_req) - sizeof(conf_req->data)) + (sizeof(*conf_opt) - sizeof(conf_opt->data)) + sizeof(uint16_t)));
-}
-
-void bt_l2cap_cmd_sdp_conf_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->sdp_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_ctrl_conf_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_intr_conf_req(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
 }
 
 static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid) {
@@ -124,24 +70,6 @@ static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid)
         ((sizeof(*conf_rsp) - sizeof(conf_rsp->data)) + (sizeof(*conf_opt) - sizeof(conf_opt->data)) + sizeof(uint16_t)));
 }
 
-void bt_l2cap_cmd_sdp_conf_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_ctrl_conf_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_intr_conf_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
-}
-
 static void bt_l2cap_cmd_disconn_req(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid) {
     struct bt_l2cap_disconn_req *disconn_req = (struct bt_l2cap_disconn_req *)bt_hci_pkt_tmp.sig_data;
 
@@ -151,10 +79,37 @@ static void bt_l2cap_cmd_disconn_req(uint16_t handle, uint8_t ident, uint16_t dc
     bt_l2cap_cmd(handle, BT_L2CAP_DISCONN_REQ, ident, sizeof(*disconn_req));
 }
 
+static void bt_l2cap_cmd_disconn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid) {
+    struct bt_l2cap_disconn_rsp *disconn_rsp = (struct bt_l2cap_disconn_rsp *)bt_hci_pkt_tmp.sig_data;
+
+    disconn_rsp->dcid = dcid;
+    disconn_rsp->scid = scid;
+
+    bt_l2cap_cmd(handle, BT_L2CAP_DISCONN_RSP, ident, sizeof(*disconn_rsp));
+}
+
+void bt_l2cap_cmd_sdp_conn_req(void *bt_dev) {
+    struct bt_dev *device = (struct bt_dev *)bt_dev;
+    printf("# %s\n", __FUNCTION__);
+    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_SDP, device->sdp_tx_chan.scid);
+}
+
+void bt_l2cap_cmd_hid_ctrl_conn_req(void *bt_dev) {
+    struct bt_dev *device = (struct bt_dev *)bt_dev;
+    printf("# %s\n", __FUNCTION__);
+    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_HID_CTRL, device->ctrl_chan.scid);
+}
+
+void bt_l2cap_cmd_hid_intr_conn_req(void *bt_dev) {
+    struct bt_dev *device = (struct bt_dev *)bt_dev;
+    printf("# %s\n", __FUNCTION__);
+    bt_l2cap_cmd_conn_req(device->acl_handle, device->l2cap_ident, BT_L2CAP_PSM_HID_INTR, device->intr_chan.scid);
+}
+
 void bt_l2cap_cmd_sdp_disconn_req(void *bt_dev) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;
     printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_disconn_req(device->acl_handle, device->l2cap_ident, device->sdp_chan.dcid, device->sdp_chan.scid);
+    bt_l2cap_cmd_disconn_req(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid, device->sdp_tx_chan.scid);
 }
 
 void bt_l2cap_cmd_hid_ctrl_disconn_req(void *bt_dev) {
@@ -169,33 +124,6 @@ void bt_l2cap_cmd_hid_intr_disconn_req(void *bt_dev) {
     bt_l2cap_cmd_disconn_req(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid, device->intr_chan.scid);
 }
 
-static void bt_l2cap_cmd_disconn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid) {
-    struct bt_l2cap_disconn_rsp *disconn_rsp = (struct bt_l2cap_disconn_rsp *)bt_hci_pkt_tmp.sig_data;
-
-    disconn_rsp->dcid = dcid;
-    disconn_rsp->scid = scid;
-
-    bt_l2cap_cmd(handle, BT_L2CAP_DISCONN_RSP, ident, sizeof(*disconn_rsp));
-}
-
-void bt_l2cap_cmd_sdp_disconn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->sdp_chan.scid, device->sdp_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_ctrl_disconn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.scid, device->ctrl_chan.dcid);
-}
-
-void bt_l2cap_cmd_hid_intr_disconn_rsp(void *bt_dev) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    printf("# %s\n", __FUNCTION__);
-    bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.scid, device->intr_chan.dcid);
-}
-
 void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_L2CAP_CONN_REQ:
@@ -205,22 +133,25 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
             switch (conn_req->psm) {
                 case BT_L2CAP_PSM_SDP:
-                    device->sdp_chan.dcid = conn_req->scid;
-                    bt_l2cap_cmd_sdp_conn_rsp((void *)device);
+                    device->sdp_rx_chan.dcid = conn_req->scid;
+                    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->sdp_rx_chan.scid,
+                        device->sdp_rx_chan.dcid, BT_L2CAP_BR_SUCCESS);
                     device->l2cap_ident++;
-                    bt_l2cap_cmd_sdp_conf_req((void *)device);
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->sdp_rx_chan.dcid);
                     break;
                 case BT_L2CAP_PSM_HID_CTRL:
                     device->ctrl_chan.dcid = conn_req->scid;
-                    bt_l2cap_cmd_hid_ctrl_conn_rsp((void *)device);
+                    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.scid,
+                        device->ctrl_chan.dcid, BT_L2CAP_BR_SUCCESS);
                     device->l2cap_ident++;
-                    bt_l2cap_cmd_hid_ctrl_conf_req((void *)device);
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
                     break;
                 case BT_L2CAP_PSM_HID_INTR:
                     device->intr_chan.dcid = conn_req->scid;
-                    bt_l2cap_cmd_hid_intr_conn_rsp((void *)device);
+                    bt_l2cap_cmd_conn_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.scid,
+                        device->intr_chan.dcid, BT_L2CAP_BR_SUCCESS);
                     device->l2cap_ident++;
-                    bt_l2cap_cmd_hid_intr_conf_req((void *)device);
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
                     break;
             }
             break;
@@ -232,17 +163,17 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             if (conn_rsp->result == BT_L2CAP_BR_SUCCESS && conn_rsp->status == BT_L2CAP_CS_NO_INFO) {
                 device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
                 device->l2cap_ident++;
-                if (conn_rsp->scid == device->sdp_chan.scid) {
-                    device->sdp_chan.dcid = conn_rsp->dcid;
-                    bt_l2cap_cmd_sdp_conf_req((void *)device);
+                if (conn_rsp->scid == device->sdp_tx_chan.scid) {
+                    device->sdp_tx_chan.dcid = conn_rsp->dcid;
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid);
                 }
                 else if (conn_rsp->scid == device->ctrl_chan.scid) {
                     device->ctrl_chan.dcid = conn_rsp->dcid;
-                    bt_l2cap_cmd_hid_ctrl_conf_req((void *)device);
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
                 }
                 else if (conn_rsp->scid == device->intr_chan.scid) {
                     device->intr_chan.dcid = conn_rsp->dcid;
-                    bt_l2cap_cmd_hid_intr_conf_req((void *)device);
+                    bt_l2cap_cmd_conf_req(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
                 }
             }
             break;
@@ -252,14 +183,17 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             struct bt_l2cap_conf_req *conf_req = (struct bt_l2cap_conf_req *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_REQ\n");
             device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
-            if (conf_req->dcid == device->sdp_chan.scid) {
-                bt_l2cap_cmd_sdp_conf_rsp((void *)device);
+            if (conf_req->dcid == device->sdp_tx_chan.scid) {
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid);
+            }
+            else if (conf_req->dcid == device->sdp_rx_chan.scid) {
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_rx_chan.dcid);
             }
             else if (conf_req->dcid == device->ctrl_chan.scid) {
-                bt_l2cap_cmd_hid_ctrl_conf_rsp((void *)device);
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
             }
             else if (conf_req->dcid == device->intr_chan.scid) {
-                bt_l2cap_cmd_hid_intr_conf_rsp((void *)device);
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
                 if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
                     atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
                 }
@@ -274,7 +208,7 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             struct bt_l2cap_conf_rsp *conf_rsp = (struct bt_l2cap_conf_rsp *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_RSP\n");
             device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
-            if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && (conf_rsp->scid == device->sdp_chan.scid || conf_rsp->scid == device->ctrl_chan.scid)) {
+            if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && (conf_rsp->scid == device->sdp_tx_chan.scid || conf_rsp->scid == device->ctrl_chan.scid)) {
                     device->conn_state++;
                     device->pkt_retry = 0;
                     device->l2cap_ident++;
@@ -294,14 +228,17 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
         {
             struct bt_l2cap_disconn_req *disconn_req = (struct bt_l2cap_disconn_req *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_DISCONN_REQ\n");
-            if (disconn_req->dcid == device->sdp_chan.scid) {
-                bt_l2cap_cmd_sdp_disconn_rsp((void *)device);
+            if (disconn_req->dcid == device->sdp_tx_chan.scid) {
+                bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.scid, device->sdp_tx_chan.dcid);
+            }
+            if (disconn_req->dcid == device->sdp_rx_chan.scid) {
+                bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->sdp_rx_chan.scid, device->sdp_rx_chan.dcid);
             }
             else if (disconn_req->dcid == device->ctrl_chan.scid) {
-                bt_l2cap_cmd_hid_ctrl_disconn_rsp((void *)device);
+                bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.scid, device->ctrl_chan.dcid);
             }
             else if (disconn_req->dcid == device->intr_chan.scid) {
-                bt_l2cap_cmd_hid_intr_disconn_rsp((void *)device);
+                bt_l2cap_cmd_disconn_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.scid, device->intr_chan.dcid);
             }
             break;
         }
