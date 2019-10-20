@@ -139,6 +139,7 @@ static const struct bt_hci_cmd_param bt_dev_tx_conn[] = {
     {bt_hci_cmd_auth_requested, BT_CMD_PARAM_HANDLE},
     {bt_hci_cmd_set_conn_encrypt, BT_CMD_PARAM_HANDLE},
     {bt_l2cap_cmd_sdp_conn_req, BT_CMD_PARAM_DEV},
+    //{bt_sdp_cmd_svc_search_attr_req, BT_CMD_PARAM_DEV},
     {bt_l2cap_cmd_hid_ctrl_conn_req, BT_CMD_PARAM_DEV},
     {bt_l2cap_cmd_hid_intr_conn_req, BT_CMD_PARAM_DEV},
 };
