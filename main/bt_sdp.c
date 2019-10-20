@@ -32,20 +32,25 @@ void bt_sdp_cmd_svc_search_attr_req(void *bt_dev) {
     bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, device->sdp_tx_chan.ident, sizeof(attr_req));
 }
 
-static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid) {
+static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid, uint8_t *data, uint32_t len) {
     struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_pkt_tmp.sdp_data;
     uint8_t *sdp_data = bt_hci_pkt_tmp.sig_data + sizeof(struct bt_sdp_att_rsp);
+    uint8_t *sdp_con_state = sdp_data + len;
 
-    att_rsp->att_list_len = 0;
-    *sdp_data = 0;
-    bt_sdp_cmd(handle, cid, BT_SDP_SVC_SEARCH_ATTR_RSP, tid, sizeof(struct bt_sdp_att_rsp) + 1);
+    att_rsp->att_list_len = len;
+    if (data) {
+        memcpy(sdp_data, data, len);
+    }
+    *sdp_con_state = 0;
+
+    bt_sdp_cmd(handle, cid, BT_SDP_SVC_SEARCH_ATTR_RSP, tid, sizeof(struct bt_sdp_att_rsp) + len + 1);
 }
 
 void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sdp_hdr.op_code) {
         case BT_SDP_SVC_SEARCH_ATTR_REQ:
         {
-            bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid, sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid));
+            bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid, sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), NULL, 0);
             break;
         }
     }
