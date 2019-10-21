@@ -206,7 +206,8 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                     atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
                 }
                 else {
-                    bt_sdp_cmd_svc_search_attr_req(device);
+                    uint8_t cont = 0x00;
+                    bt_sdp_cmd_svc_search_attr_req(device, &cont, 1);
                 }
             }
             else if (conf_req->dcid == device->sdp_rx_chan.scid) {
@@ -243,7 +244,8 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                     atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
                 }
                 else {
-                    bt_sdp_cmd_svc_search_attr_req(device);
+                    uint8_t cont = 0x00;
+                    bt_sdp_cmd_svc_search_attr_req(device, &cont, 1);
                 }
             }
             else if (conf_rsp->scid == device->ctrl_chan.scid) {
