@@ -553,7 +553,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         device->ctrl_chan.scid = bt_dev_id | BT_HOST_HID_CTRL_CHAN;
                         device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                        bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                         bt_hci_cmd_connect(device->remote_bdaddr);
                     }
                 }
@@ -587,8 +586,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    bt_hci_cmd_remote_name_request(device->remote_bdaddr);
+                    bt_hci_cmd_read_remote_features(&device->acl_handle);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                        bt_hci_cmd_read_remote_features(&device->acl_handle);
                         bt_hci_cmd_auth_requested(&device->acl_handle);
                     }
                 }
@@ -615,7 +615,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     device->intr_chan.scid = bt_dev_id | BT_HOST_HID_INTR_CHAN;
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
-                    bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
                 }
             }
@@ -646,12 +645,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     printf("# dev: %d Pairing done\n", device->id);
-                    if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                        if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
-                            bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
-                        }
-                        bt_l2cap_cmd_sdp_conn_req(device);
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
+                        bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
                     }
+                    bt_l2cap_cmd_sdp_conn_req(device);
                 }
             }
             else {
