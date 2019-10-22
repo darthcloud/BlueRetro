@@ -10,11 +10,6 @@
 
 #define BT_MAX_RETRY 3
 
-#define BT_HOST_SDP_RX_CHAN   0x0060
-#define BT_HOST_SDP_TX_CHAN   0x0070
-#define BT_HOST_HID_CTRL_CHAN 0x0080
-#define BT_HOST_HID_INTR_CHAN 0x0090
-
 enum {
     /* BT device connection flags */
     BT_DEV_DEVICE_FOUND,

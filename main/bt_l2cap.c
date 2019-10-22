@@ -2,6 +2,11 @@
 #include "bt_host.h"
 #include "bt_l2cap.h"
 
+#define BT_HOST_SDP_RX_CHAN   0x0060
+#define BT_HOST_SDP_TX_CHAN   0x0070
+#define BT_HOST_HID_CTRL_CHAN 0x0080
+#define BT_HOST_HID_INTR_CHAN 0x0090
+
 static void bt_l2cap_cmd(uint16_t handle, uint8_t code, uint8_t ident, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_l2cap_sig_hdr) + len);
@@ -86,6 +91,13 @@ static void bt_l2cap_cmd_disconn_rsp(uint16_t handle, uint8_t ident, uint16_t dc
     disconn_rsp->scid = scid;
 
     bt_l2cap_cmd(handle, BT_L2CAP_DISCONN_RSP, ident, sizeof(*disconn_rsp));
+}
+
+void bt_l2cap_init_dev_scid(struct bt_dev *device) {
+    device->sdp_rx_chan.scid = device->id | BT_HOST_SDP_RX_CHAN;
+    device->sdp_tx_chan.scid = device->id | BT_HOST_SDP_TX_CHAN;
+    device->ctrl_chan.scid = device->id | BT_HOST_HID_CTRL_CHAN;
+    device->intr_chan.scid = device->id | BT_HOST_HID_INTR_CHAN;
 }
 
 void bt_l2cap_cmd_sdp_conn_req(void *bt_dev) {
