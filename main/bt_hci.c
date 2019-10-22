@@ -2,8 +2,22 @@
 #include "bt_host.h"
 #include "bt_l2cap.h"
 #include "bt_hidp_wii.h"
+#include "bt_hci.h"
+#include "util.h"
 
 #define BT_INQUIRY_MAX 10
+
+typedef void (*bt_cmd_func_t)(void *param);
+
+struct bt_name_type {
+    char name[249];
+    int8_t type;
+};
+
+struct bt_hci_cmd_cp {
+    bt_cmd_func_t cmd;
+    void *cp;
+};
 
 static const char bt_default_pin[][5] = {
     "0000",
@@ -11,9 +25,99 @@ static const char bt_default_pin[][5] = {
     "1111",
 };
 
+static const struct bt_name_type bt_name_type[] = {
+    {"PLAYSTATION(R)3 Controller", PS3_DS3},
+    {"Nintendo RVL-CNT-01-UC", WIIU_PRO}, /* Must be before WII_CORE */
+    {"Nintendo RVL-CNT-01-TR", WII_CORE},
+    {"Nintendo RVL-CNT-01", WII_CORE},
+    {"Wireless Controller", PS4_DS4},
+    {"Xbox Wireless Controller", XB1_S},
+    {"Pro Controller", SWITCH_PRO},
+};
+
+static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
+    .filter_type = BT_BREDR_FILTER_TYPE_CLEAR,
+};
+
+static const struct bt_hci_cp_set_event_filter inquiry_evt_filter = {
+    .filter_type = BT_BREDR_FILTER_TYPE_INQUIRY,
+    .condition_type = BT_BDEDR_COND_TYPE_CLASS,
+    .inquiry_class.dev_class = {0x00, 0x05, 0x00},
+    .inquiry_class.dev_class_mask = {0x00, 0x1F, 0x00},
+};
+
+static const struct bt_hci_cp_set_event_filter conn_evt_filter = {
+    .filter_type = BT_BREDR_FILTER_TYPE_CONN,
+    .condition_type = BT_BDEDR_COND_TYPE_CLASS,
+    .conn_class.dev_class = {0x00, 0x05, 0x00},
+    .conn_class.dev_class_mask = {0x00, 0x1F, 0x00},
+    .conn_class.auto_accept_flag =  BT_BREDR_AUTO_OFF,
+};
+
+static const struct bt_hci_cmd_cp bt_hci_config[] = {
+    {bt_hci_cmd_reset, NULL},
+    {bt_hci_cmd_read_local_features, NULL},
+    {bt_hci_cmd_read_local_version_info, NULL},
+    {bt_hci_cmd_read_bd_addr, NULL},
+    {bt_hci_cmd_read_buffer_size, NULL},
+    {bt_hci_cmd_read_class_of_device, NULL},
+    {bt_hci_cmd_read_local_name, NULL},
+    {bt_hci_cmd_read_voice_setting, NULL},
+    {bt_hci_cmd_read_num_supported_iac, NULL},
+    {bt_hci_cmd_read_current_iac_lap, NULL},
+    {bt_hci_cmd_set_event_filter, (void *)&clr_evt_filter},
+    {bt_hci_cmd_write_conn_accept_timeout, NULL},
+    {bt_hci_cmd_read_supported_commands, NULL},
+    {bt_hci_cmd_write_ssp_mode, NULL},
+    {bt_hci_cmd_write_inquiry_mode, NULL},
+    {bt_hci_cmd_read_inquiry_rsp_tx_pwr_lvl, NULL},
+    {bt_hci_cmd_read_local_ext_features, NULL},
+    {bt_hci_cmd_read_stored_link_key, NULL},
+    {bt_hci_cmd_read_page_scan_activity, NULL},
+    {bt_hci_cmd_read_page_scan_type, NULL},
+    {bt_hci_cmd_write_le_host_supp, NULL},
+    {bt_hci_cmd_delete_stored_link_key, NULL},
+    {bt_hci_cmd_write_class_of_device, NULL},
+    {bt_hci_cmd_write_local_name, NULL},
+    {bt_hci_cmd_set_event_filter, (void *)&inquiry_evt_filter},
+    {bt_hci_cmd_set_event_filter, (void *)&conn_evt_filter},
+    {bt_hci_cmd_write_auth_enable, NULL},
+    {bt_hci_cmd_set_event_mask, NULL},
+    {bt_hci_cmd_write_page_scan_activity, NULL},
+    {bt_hci_cmd_write_inquiry_scan_activity, NULL},
+    {bt_hci_cmd_write_page_scan_type, NULL},
+    {bt_hci_cmd_write_page_scan_timeout, NULL},
+    {bt_hci_cmd_write_hold_mode_act, NULL},
+    {bt_hci_cmd_write_scan_enable, NULL},
+    {bt_hci_cmd_write_default_link_policy, NULL},
+    {bt_hci_cmd_periodic_inquiry, NULL},
+};
+
 static uint32_t bt_hci_pkt_retry = 0;
 static uint32_t bt_nb_inquiry = 0;
 static uint8_t local_bdaddr[6];
+static uint32_t bt_config_state = 0;
+
+static int32_t bt_hci_get_type_from_name(const uint8_t* name);
+static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
+
+static int32_t bt_hci_get_type_from_name(const uint8_t* name) {
+    for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
+        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
+            return bt_name_type[i].type;
+        }
+    }
+    return -1;
+}
+
+static void bt_hci_q_conf(uint32_t next) {
+    if (next) {
+        bt_config_state++;
+    }
+    if (bt_config_state < ARRAY_SIZE(bt_hci_config)) {
+        bt_hci_config[bt_config_state].cmd(bt_hci_config[bt_config_state].cp);
+    }
+}
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len) {
     uint32_t packet_len = BT_HCI_H4_HDR_SIZE + BT_HCI_CMD_HDR_SIZE + cp_len;
@@ -522,6 +626,11 @@ void bt_hci_cmd_read_local_sp_options(void *cp) {
     bt_hci_cmd(BT_HCI_OP_READ_LOCAL_SP_OPTIONS, 0);
 }
 
+void bt_hci_init(void) {
+    bt_config_state = 0;
+    bt_hci_q_conf(0);
+}
+
 void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     struct bt_dev *device = NULL;
 
@@ -676,9 +785,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
-                    int8_t type = bt_host_get_type_from_name(remote_name_req_complete->name);
+                    int8_t type = bt_hci_get_type_from_name(remote_name_req_complete->name);
                     if (type > BT_NONE) {
-                        device->type = bt_host_get_type_from_name(remote_name_req_complete->name);
+                        device->type = bt_hci_get_type_from_name(remote_name_req_complete->name);
                     }
                     printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
                 }
@@ -770,9 +879,11 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_hci_pkt_retry++;
                         if (bt_hci_pkt_retry > BT_MAX_RETRY) {
                             bt_hci_pkt_retry = 0;
-                            bt_host_restart_config();
+                            bt_hci_init();
                         }
-                        bt_host_config_q_cmd(0);
+                        else {
+                            bt_hci_q_conf(0);
+                        }
                         break;
                 }
             }
@@ -820,7 +931,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                     case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
                         bt_hci_pkt_retry = 0;
-                        bt_host_config_q_cmd(1);
+                        bt_hci_q_conf(1);
                         break;
                 }
             }
