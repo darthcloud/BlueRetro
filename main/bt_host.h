@@ -9,7 +9,6 @@
 #include "bt_hidp.h"
 
 #define BT_MAX_RETRY 3
-#define BT_MAX_HID_CONF_CMD 8
 
 #define BT_HOST_SDP_RX_CHAN   0x0060
 #define BT_HOST_SDP_TX_CHAN   0x0070
@@ -81,7 +80,6 @@ struct bt_hci_pkt {
 } __packed;
 
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
-extern const uint8_t led_dev_id_map[];
 
 int32_t bt_host_get_new_dev(struct bt_dev **device);
 int32_t bt_host_get_active_dev(struct bt_dev **device);
@@ -91,8 +89,6 @@ int32_t bt_host_get_type_from_name(const uint8_t* name);
 void bt_host_reset_dev(struct bt_dev *device);
 void bt_host_restart_config(void);
 void bt_host_config_q_cmd(uint32_t next);
-void bt_host_dev_conn_q_cmd(struct bt_dev *device);
-void bt_host_dev_hid_q_cmd(struct bt_dev *device);
 void bt_host_q_wait_pkt(uint32_t ms);
 int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);

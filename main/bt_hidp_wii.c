@@ -39,16 +39,20 @@ static const struct bt_wii_ext_type bt_wii_ext_type[] = {
     {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO},
 };
 
+static uint32_t wr_state = 0;
+
+static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
+static void bt_hid_cmd_wii_set_user_led(struct bt_dev *device, void *report);
+static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report);
+static void bt_hid_cmd_wii_read(struct bt_dev *device, void *report);
+static void bt_hid_cmd_wii_write(struct bt_dev *device, void *report);
+
 const struct bt_hidp_cmd bt_hipd_wii_conf[BT_MAX_HID_CONF_CMD] = {
-    {bt_hid_cmd_wii_set_user_led, 0, NULL},
-    {bt_hid_cmd_wii_set_rep_mode, 1, (void *)&wii_rep_conf},
-    {bt_hid_cmd_wii_write, 1, (void *)&wii_ext_init0},
-    {bt_hid_cmd_wii_write, 1, (void *)&wii_ext_init1},
-    {bt_hid_cmd_wii_read, 1, (void *)&wii_ext_type},
-    {bt_hid_cmd_wii_set_rep_mode, 1, (void *)&wii_rep_conf},
+    {bt_hid_cmd_wii_set_user_led, NULL},
+    {bt_hid_cmd_wii_set_rep_mode, (void *)&wii_rep_conf},
 };
 
-int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
+static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
     for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
         if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
             return bt_wii_ext_type[i].type;
@@ -69,25 +73,13 @@ int32_t bt_dev_is_wii(int8_t type) {
     }
 }
 
-void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    struct bt_hidp_wii_conf *wii_conf = (struct bt_hidp_wii_conf *)bt_hci_pkt_tmp.hidp_data;
-    //printf("# %s\n", __FUNCTION__);
-
-    memcpy((void *)wii_conf, report, sizeof(*wii_conf));
-
-    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_LED_REPORT, sizeof(*wii_conf));
-}
-
-void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
-    struct bt_hidp_wii_conf wii_conf = {.conf = (led_dev_id_map[device->id] << 4)};
+static void bt_hid_cmd_wii_set_user_led(struct bt_dev *device, void *report) {
+    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->id] << 4)};
     printf("# %s\n", __FUNCTION__);
-    bt_hid_cmd_wii_set_feedback(bt_dev, (void *)&wii_conf);
+    bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
 }
 
-void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
+static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report) {
     struct bt_hidp_wii_rep_mode *wii_rep_mode = (struct bt_hidp_wii_rep_mode *)bt_hci_pkt_tmp.hidp_data;
     printf("# %s\n", __FUNCTION__);
 
@@ -96,8 +88,7 @@ void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report) {
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_REP_MODE, sizeof(*wii_rep_mode));
 }
 
-void bt_hid_cmd_wii_read(void *bt_dev, void *report) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
+static void bt_hid_cmd_wii_read(struct bt_dev *device, void *report) {
     struct bt_hidp_wii_rd_mem *wii_rd_mem = (struct bt_hidp_wii_rd_mem *)bt_hci_pkt_tmp.hidp_data;
     printf("# %s\n", __FUNCTION__);
 
@@ -106,14 +97,22 @@ void bt_hid_cmd_wii_read(void *bt_dev, void *report) {
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_RD_MEM, sizeof(*wii_rd_mem));
 }
 
-void bt_hid_cmd_wii_write(void *bt_dev, void *report) {
-    struct bt_dev *device = (struct bt_dev *)bt_dev;
+static void bt_hid_cmd_wii_write(struct bt_dev *device, void *report) {
     struct bt_hidp_wii_wr_mem *wii_wr_mem = (struct bt_hidp_wii_wr_mem *)bt_hci_pkt_tmp.hidp_data;
     printf("# %s\n", __FUNCTION__);
 
     memcpy((void *)wii_wr_mem, report, sizeof(*wii_wr_mem));
 
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_WR_MEM, sizeof(*wii_wr_mem));
+}
+
+void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report) {
+    struct bt_hidp_wii_conf *wii_conf = (struct bt_hidp_wii_conf *)bt_hci_pkt_tmp.hidp_data;
+    //printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)wii_conf, report, sizeof(*wii_conf));
+
+    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_LED_REPORT, sizeof(*wii_conf));
 }
 
 void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
@@ -125,14 +124,13 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
                     if (device->type != WIIU_PRO) {
+                        device->type = WII_CORE;
                         if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
-                            device->hid_state = 2;
+                            bt_hid_cmd_wii_write(device, (void *)&wii_ext_init0);
                         }
                         else {
-                            device->hid_state = 1;
-                            device->type = WII_CORE;
+                            bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                         }
-                        bt_host_dev_hid_q_cmd(device);
                     }
                     break;
                 }
@@ -145,22 +143,34 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                         device->type = type;
                     }
                     printf("# dev: %d wii ext: %d\n", device->id, device->type);
-                    device->hid_state++;
-                    bt_host_dev_hid_q_cmd(device);
+                    bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                     break;
                 }
                 case BT_HIDP_WII_ACK:
                 {
                     struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_ACK\n");
-                    switch(ack->report) {
-                        case BT_HIDP_WII_WR_MEM:
-                            device->hid_state++;
-                            bt_host_dev_hid_q_cmd(device);
-                            break;
-                    }
                     if (ack->err) {
                         printf("# dev: %d ack err: 0x%02X\n", device->id, ack->err);
+                        if (wr_state) {
+                            bt_hid_cmd_wii_write(device, (void *)&wii_ext_init1);
+                        }
+                        else {
+                            bt_hid_cmd_wii_write(device, (void *)&wii_ext_init0);
+                        }
+                    }
+                    else {
+                        wr_state ^= 0x01;
+                        switch(ack->report) {
+                            case BT_HIDP_WII_WR_MEM:
+                                if (wr_state) {
+                                    bt_hid_cmd_wii_write(device, (void *)&wii_ext_init1);
+                                }
+                                else {
+                                    bt_hid_cmd_wii_read(device, (void *)&wii_ext_type);
+                                }
+                                break;
+                        }
                     }
                     break;
                 }

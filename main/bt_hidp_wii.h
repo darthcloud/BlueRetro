@@ -141,13 +141,8 @@ struct bt_hidp_wii_core_acc_ir_i {
 
 extern const struct bt_hidp_cmd bt_hipd_wii_conf[BT_MAX_HID_CONF_CMD];
 
-int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
 int32_t bt_dev_is_wii(int8_t type);
-void bt_hid_cmd_wii_set_feedback(void *bt_dev, void *report);
-void bt_hid_cmd_wii_set_user_led(void *bt_dev, void *report);
-void bt_hid_cmd_wii_set_rep_mode(void *bt_dev, void *report);
-void bt_hid_cmd_wii_read(void *bt_dev, void *report);
-void bt_hid_cmd_wii_write(void *bt_dev, void *report);
+void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report);
 void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
 
 #endif /* _BT_HIDP_WII_H_ */

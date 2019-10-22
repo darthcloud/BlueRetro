@@ -8,7 +8,6 @@
 #include "bt_hci.h"
 #include "bt_l2cap.h"
 #include "bt_sdp.h"
-#include "bt_hidp_wii.h"
 #include "util.h"
 #include "sd.h"
 
@@ -18,7 +17,6 @@
 #define BT_RX 1
 
 typedef void (*bt_cmd_func_t)(void *param);
-typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
 
 enum {
     /* BT CTRL flags */
@@ -41,10 +39,6 @@ struct bt_host_link_keys {
 } __packed;
 
 struct bt_hci_pkt bt_hci_pkt_tmp;
-
-const uint8_t led_dev_id_map[] = {
-    0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
-};
 
 static struct bt_host_link_keys bt_host_link_keys = {0};
 static uint32_t bt_config_state = 0;
@@ -118,48 +112,6 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
     {bt_hci_cmd_periodic_inquiry, NULL},
-};
-
-static const struct bt_hidp_cmd (*bt_hipd_conf[BT_MAX])[BT_MAX_HID_CONF_CMD] = {
-    NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
-    &bt_hipd_wii_conf, /* WII_CORE */
-    &bt_hipd_wii_conf, /* WII_NUNCHUCK */
-    &bt_hipd_wii_conf, /* WII_CLASSIC */
-    &bt_hipd_wii_conf, /* WIIU_PRO */
-    NULL, /* PS4_DS4 */
-    NULL, /* XB1_S */
-    NULL, /* SWITCH_PRO */
-};
-
-static const bt_hid_hdlr_t bt_hid_hdlr[BT_MAX] = {
-    NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
-    bt_hid_wii_hdlr, /* WII_CORE */
-    bt_hid_wii_hdlr, /* WII_NUNCHUCK */
-    bt_hid_wii_hdlr, /* WII_CLASSIC */
-    bt_hid_wii_hdlr, /* WIIU_PRO */
-    NULL, /* PS4_DS4 */
-    NULL, /* XB1_S */
-    NULL, /* SWITCH_PRO */
-};
-
-static const bt_hid_cmd_func_t bt_hid_feedback_cmd[BT_MAX] = {
-    NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
-    bt_hid_cmd_wii_set_feedback, /* WII_CORE */
-    bt_hid_cmd_wii_set_feedback, /* WII_NUNCHUCK */
-    bt_hid_cmd_wii_set_feedback, /* WII_CLASSIC */
-    bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
-    NULL, /* PS4_DS4 */
-    NULL, /* XB1_S */
-    NULL, /* SWITCH_PRO */
 };
 
 #ifdef H4_TRACE
@@ -243,9 +195,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->intr_chan.scid) {
-        if (device->type > BT_NONE && bt_hid_hdlr[device->type]) {
-            bt_hid_hdlr[device->type](device, bt_hci_acl_pkt);
-        }
+        bt_hid_hdlr(device, bt_hci_acl_pkt);
     }
 }
 
@@ -348,20 +298,6 @@ void bt_host_config_q_cmd(uint32_t next) {
     }
 }
 
-void bt_host_dev_hid_q_cmd(struct bt_dev *device) {
-    if (bt_hipd_conf[device->type] && (*bt_hipd_conf[device->type])) {
-        if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
-            (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
-        }
-        while (!(*bt_hipd_conf[device->type])[device->hid_state].sync) {
-            device->hid_state++;
-            if ((*bt_hipd_conf[device->type])[device->hid_state].cmd) {
-                (*bt_hipd_conf[device->type])[device->hid_state].cmd((void *)device, (*bt_hipd_conf[device->type])[device->hid_state].report);
-            }
-        }
-    }
-}
-
 void bt_host_q_wait_pkt(uint32_t ms) {
     uint8_t packet[2] = {0xFF, ms};
 
@@ -451,8 +387,8 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
 void bt_host_bridge(struct bt_dev *device, uint8_t *data, uint32_t len) {
     memcpy(bt_adapter.data[device->id].input, data, len);
     adapter_bridge(device->id);
-    if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK) && device->type > BT_NONE && bt_hid_feedback_cmd[device->type]) {
-        bt_hid_feedback_cmd[device->type](device, bt_adapter.data[device->id].output);
+    if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK)) {
+        bt_hid_feedback(device, bt_adapter.data[device->id].output);
         atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
     }
 }
