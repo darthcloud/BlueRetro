@@ -125,12 +125,12 @@ void bt_l2cap_cmd_hid_intr_disconn_req(void *bt_dev) {
 }
 
 void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+    device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_L2CAP_CONN_REQ:
         {
             struct bt_l2cap_conn_req *conn_req = (struct bt_l2cap_conn_req *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONN_REQ\n");
-            device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
             switch (conn_req->psm) {
                 case BT_L2CAP_PSM_SDP:
                     device->sdp_rx_chan.dcid = conn_req->scid;
@@ -161,7 +161,6 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             struct bt_l2cap_conn_rsp *conn_rsp = (struct bt_l2cap_conn_rsp *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONN_RSP\n");
             if (conn_rsp->result == BT_L2CAP_BR_SUCCESS && conn_rsp->status == BT_L2CAP_CS_NO_INFO) {
-                device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
                 device->l2cap_ident++;
                 if (conn_rsp->scid == device->sdp_tx_chan.scid) {
                     device->sdp_tx_chan.dcid = conn_rsp->dcid;
@@ -182,20 +181,37 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
         {
             struct bt_l2cap_conf_req *conf_req = (struct bt_l2cap_conf_req *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_REQ\n");
-            device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
             if (conf_req->dcid == device->sdp_tx_chan.scid) {
                 bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid);
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
+                        atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
+                    }
+                    else {
+                        device->l2cap_ident++;
+                        bt_l2cap_cmd_hid_ctrl_conn_req(device);
+                    }
+                }
             }
             else if (conf_req->dcid == device->sdp_rx_chan.scid) {
                 bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_rx_chan.dcid);
             }
             else if (conf_req->dcid == device->ctrl_chan.scid) {
                 bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_PENDING)) {
+                        atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
+                    }
+                    else {
+                        device->l2cap_ident++;
+                        bt_l2cap_cmd_hid_intr_conn_req(device);
+                    }
+                }
             }
             else if (conf_req->dcid == device->intr_chan.scid) {
                 bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->intr_chan.dcid);
-                if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
-                    atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
+                if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_PENDING)) {
+                    atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
                 }
                 else {
                     bt_host_dev_hid_q_cmd(device);
@@ -207,16 +223,33 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
         {
             struct bt_l2cap_conf_rsp *conf_rsp = (struct bt_l2cap_conf_rsp *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_RSP\n");
-            device->l2cap_ident = bt_hci_acl_pkt->sig_hdr.ident;
-            if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && (conf_rsp->scid == device->sdp_tx_chan.scid || conf_rsp->scid == device->ctrl_chan.scid)) {
-                    device->conn_state++;
-                    device->pkt_retry = 0;
-                    device->l2cap_ident++;
-                    bt_host_dev_conn_q_cmd(device);
+            if (conf_rsp->scid == device->sdp_tx_chan.scid) {
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid);
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
+                        atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
+                    }
+                    else {
+                        device->l2cap_ident++;
+                        bt_l2cap_cmd_hid_ctrl_conn_req(device);
+                    }
+                }
+            }
+            else if (conf_rsp->scid == device->ctrl_chan.scid) {
+                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
+                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                    if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_PENDING)) {
+                        atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
+                    }
+                    else {
+                        device->l2cap_ident++;
+                        bt_l2cap_cmd_hid_intr_conn_req(device);
+                    }
+                }
             }
             else if (conf_rsp->scid == device->intr_chan.scid) {
-                if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
-                    atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
+                if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_PENDING)) {
+                    atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
                 }
                 else {
                     bt_host_dev_hid_q_cmd(device);

@@ -25,17 +25,6 @@ enum {
     BT_CTRL_READY,
 };
 
-enum {
-    BT_CMD_PARAM_BDADDR,
-    BT_CMD_PARAM_HANDLE,
-    BT_CMD_PARAM_DEV
-};
-
-struct bt_hci_cmd_param {
-    bt_cmd_func_t cmd;
-    uint32_t param;
-};
-
 struct bt_name_type {
     char name[249];
     int8_t type;
@@ -129,23 +118,6 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
     {bt_hci_cmd_periodic_inquiry, NULL},
-};
-
-static const struct bt_hci_cmd_param bt_dev_tx_conn[] = {
-    {bt_hci_cmd_connect, BT_CMD_PARAM_BDADDR},
-    {bt_hci_cmd_remote_name_request, BT_CMD_PARAM_BDADDR},
-    {bt_hci_cmd_read_remote_features, BT_CMD_PARAM_HANDLE},
-    {bt_hci_cmd_read_remote_ext_features, BT_CMD_PARAM_HANDLE},
-    {bt_hci_cmd_auth_requested, BT_CMD_PARAM_HANDLE},
-    {bt_hci_cmd_set_conn_encrypt, BT_CMD_PARAM_HANDLE},
-    {bt_l2cap_cmd_sdp_conn_req, BT_CMD_PARAM_DEV},
-    //{bt_sdp_cmd_svc_search_attr_req, BT_CMD_PARAM_DEV},
-    {bt_l2cap_cmd_hid_ctrl_conn_req, BT_CMD_PARAM_DEV},
-    {bt_l2cap_cmd_hid_intr_conn_req, BT_CMD_PARAM_DEV},
-};
-
-static struct bt_hci_cmd_param bt_dev_rx_conn[] = {
-    {bt_hci_cmd_accept_conn_req, BT_CMD_PARAM_BDADDR},
 };
 
 static const struct bt_hidp_cmd (*bt_hipd_conf[BT_MAX])[BT_MAX_HID_CONF_CMD] = {
@@ -308,47 +280,6 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     }
 
     return 0;
-}
-
-static void bt_host_dev_tx_conn_q_cmd(struct bt_dev *device) {
-    if (device->conn_state < ARRAY_SIZE(bt_dev_tx_conn)) {
-        switch (bt_dev_tx_conn[device->conn_state].param) {
-            case BT_CMD_PARAM_BDADDR:
-                bt_dev_tx_conn[device->conn_state].cmd((void *)device->remote_bdaddr);
-                break;
-            case BT_CMD_PARAM_HANDLE:
-                bt_dev_tx_conn[device->conn_state].cmd((void *)&device->acl_handle);
-                break;
-            case BT_CMD_PARAM_DEV:
-                bt_dev_tx_conn[device->conn_state].cmd((void *)device);
-                break;
-        }
-    }
-}
-
-static void bt_host_dev_rx_conn_q_cmd(struct bt_dev *device) {
-    if (device->conn_state < ARRAY_SIZE(bt_dev_rx_conn)) {
-        switch (bt_dev_rx_conn[device->conn_state].param) {
-            case BT_CMD_PARAM_BDADDR:
-                bt_dev_rx_conn[device->conn_state].cmd((void *)device->remote_bdaddr);
-                break;
-            case BT_CMD_PARAM_HANDLE:
-                bt_dev_rx_conn[device->conn_state].cmd((void *)&device->acl_handle);
-                break;
-            case BT_CMD_PARAM_DEV:
-                bt_dev_rx_conn[device->conn_state].cmd((void *)device);
-                break;
-        }
-    }
-}
-
-void bt_host_dev_conn_q_cmd(struct bt_dev *device) {
-    if (atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-        bt_host_dev_rx_conn_q_cmd(device);
-    }
-    else {
-        bt_host_dev_tx_conn_q_cmd(device);
-    }
 }
 
 int32_t bt_host_get_new_dev(struct bt_dev **device) {

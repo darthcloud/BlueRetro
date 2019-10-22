@@ -20,7 +20,10 @@ enum {
     /* BT device connection flags */
     BT_DEV_DEVICE_FOUND,
     BT_DEV_PAGE,
-    BT_DEV_HID_INTR_READY,
+    BT_DEV_ENCRYPTION,
+    BT_DEV_SDP_TX_PENDING,
+    BT_DEV_HID_CTRL_PENDING,
+    BT_DEV_HID_INTR_PENDING,
 };
 
 struct l2cap_chan {
@@ -33,7 +36,6 @@ struct bt_dev {
     int32_t id;
     int32_t flags;
     uint32_t pkt_retry;
-    uint32_t conn_state;
     uint32_t hid_state;
     uint32_t report_cnt;
     uint8_t remote_bdaddr[6];
@@ -83,7 +85,6 @@ extern const uint8_t led_dev_id_map[];
 
 int32_t bt_host_get_new_dev(struct bt_dev **device);
 int32_t bt_host_get_active_dev(struct bt_dev **device);
-void bt_host_dev_conn_q_cmd(struct bt_dev *device);
 int32_t bt_host_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device);
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device);
 int32_t bt_host_get_type_from_name(const uint8_t* name);
