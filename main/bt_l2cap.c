@@ -10,6 +10,14 @@
 
 static uint8_t tx_ident = 0;
 
+static void bt_l2cap_cmd(uint16_t handle, uint8_t code, uint8_t ident, uint16_t len);
+static void bt_l2cap_cmd_conn_req(uint16_t handle, uint8_t ident, uint16_t psm, uint16_t scid);
+static void bt_l2cap_cmd_conn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid, uint16_t result);
+static void bt_l2cap_cmd_conf_req(uint16_t handle, uint8_t ident, uint16_t dcid);
+static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid);
+static void bt_l2cap_cmd_disconn_req(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid);
+static void bt_l2cap_cmd_disconn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid, uint16_t scid);
+
 static void bt_l2cap_cmd(uint16_t handle, uint8_t code, uint8_t ident, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_l2cap_sig_hdr) + len);
