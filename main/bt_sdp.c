@@ -34,6 +34,8 @@ static const uint8_t xb1_svc_attr_rsp[] = {
     0x01, 0x09, 0x02, 0x05, 0x09, 0x00, 0x01
 };
 
+static uint16_t tx_ident = 0;
+
 static void bt_sdp_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint16_t tid, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_sdp_hdr) + len);
@@ -88,7 +90,7 @@ void bt_sdp_cmd_svc_search_attr_req(void *bt_dev) {
 
     memcpy(bt_hci_pkt_tmp.sdp_data, attr_req, sizeof(attr_req));
 
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, device->sdp_tx_chan.ident, sizeof(attr_req));
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_ident++, sizeof(attr_req));
 }
 
 static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid, const uint8_t *data, uint32_t len) {

@@ -816,7 +816,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
                             bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
                         }
-                        device->l2cap_ident++;
                         bt_l2cap_cmd_hid_ctrl_conn_req(device);
                     }
                 }
