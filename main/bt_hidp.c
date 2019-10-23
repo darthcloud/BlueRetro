@@ -1,21 +1,23 @@
 #include "bt_host.h"
 #include "bt_hidp_wii.h"
 
+typedef void (*bt_hid_init_t)(struct bt_dev *device);
 typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+typedef void (*bt_hid_cmd_t)(struct bt_dev *device, void *report);
 
 const uint8_t bt_hid_led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-static const struct bt_hidp_cmd (*bt_hid_conf_list[BT_MAX])[BT_MAX_HID_CONF_CMD] = {
+static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
     NULL, /* PS3_DS3 */
-    &bt_hipd_wii_conf, /* WII_CORE */
-    &bt_hipd_wii_conf, /* WII_NUNCHUCK */
-    &bt_hipd_wii_conf, /* WII_CLASSIC */
-    &bt_hipd_wii_conf, /* WIIU_PRO */
+    bt_hid_wii_init, /* WII_CORE */
+    bt_hid_wii_init, /* WII_NUNCHUCK */
+    bt_hid_wii_init, /* WII_CLASSIC */
+    bt_hid_wii_init, /* WIIU_PRO */
     NULL, /* PS4_DS4 */
     NULL, /* XB1_S */
     NULL, /* SWITCH_PRO */
@@ -35,7 +37,7 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     NULL, /* SWITCH_PRO */
 };
 
-static const bt_hid_cmd_func_t bt_hid_feedback_list[BT_MAX] = {
+static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
@@ -49,11 +51,9 @@ static const bt_hid_cmd_func_t bt_hid_feedback_list[BT_MAX] = {
     NULL, /* SWITCH_PRO */
 };
 
-void bt_hid_config(struct bt_dev *device) {
-    if (device->type > BT_NONE && bt_hid_conf_list[device->type] && (*bt_hid_conf_list[device->type])) {
-        for (uint32_t i = 0; i < BT_MAX_HID_CONF_CMD && (*bt_hid_conf_list[device->type])[i].cmd; i++) {
-            (*bt_hid_conf_list[device->type])[i].cmd(device, (*bt_hid_conf_list[device->type])[i].report);
-        }
+void bt_hid_init(struct bt_dev *device) {
+    if (device->type > BT_NONE && bt_hid_init_list[device->type]) {
+        bt_hid_init_list[device->type](device);
     }
 }
 

@@ -221,7 +221,7 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                     atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
                 }
                 else {
-                    bt_hid_config(device);
+                    bt_hid_init(device);
                 }
             }
             break;
@@ -253,7 +253,7 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                     atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
                 }
                 else {
-                    bt_hid_config(device);
+                    bt_hid_init(device);
                 }
             }
             break;

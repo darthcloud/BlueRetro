@@ -42,15 +42,9 @@ static const struct bt_wii_ext_type bt_wii_ext_type[] = {
 static uint32_t wr_state = 0;
 
 static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
-static void bt_hid_cmd_wii_set_user_led(struct bt_dev *device, void *report);
 static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report);
 static void bt_hid_cmd_wii_read(struct bt_dev *device, void *report);
 static void bt_hid_cmd_wii_write(struct bt_dev *device, void *report);
-
-const struct bt_hidp_cmd bt_hipd_wii_conf[BT_MAX_HID_CONF_CMD] = {
-    {bt_hid_cmd_wii_set_user_led, NULL},
-    {bt_hid_cmd_wii_set_rep_mode, (void *)&wii_rep_conf},
-};
 
 static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
     for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
@@ -71,12 +65,6 @@ int32_t bt_dev_is_wii(int8_t type) {
         default:
             return 0;
     }
-}
-
-static void bt_hid_cmd_wii_set_user_led(struct bt_dev *device, void *report) {
-    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->id] << 4)};
-    printf("# %s\n", __FUNCTION__);
-    bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
 }
 
 static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report) {
@@ -113,6 +101,14 @@ void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report) {
     memcpy((void *)wii_conf, report, sizeof(*wii_conf));
 
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_WII_LED_REPORT, sizeof(*wii_conf));
+}
+
+void bt_hid_wii_init(struct bt_dev *device) {
+    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->id] << 4)};
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
+    bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
 }
 
 void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
