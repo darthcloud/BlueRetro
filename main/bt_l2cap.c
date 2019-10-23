@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "bt_host.h"
 #include "bt_l2cap.h"
+#include "bt_sdp.h"
 
 #define BT_HOST_SDP_RX_CHAN   0x0060
 #define BT_HOST_SDP_TX_CHAN   0x0070
@@ -193,12 +194,11 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             printf("# BT_L2CAP_CONF_REQ\n");
             if (conf_req->dcid == device->sdp_tx_chan.scid) {
                 bt_l2cap_cmd_conf_rsp(device->acl_handle, rx_ident, device->sdp_tx_chan.dcid);
-                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                    if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
-                        atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
-                    }
-                    else {
-                    }
+                if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
+                    atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
+                }
+                else {
+                    bt_sdp_cmd_svc_search_attr_req(device);
                 }
             }
             else if (conf_req->dcid == device->sdp_rx_chan.scid) {
@@ -231,12 +231,11 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             struct bt_l2cap_conf_rsp *conf_rsp = (struct bt_l2cap_conf_rsp *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_RSP\n");
             if (conf_rsp->scid == device->sdp_tx_chan.scid) {
-                if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                    if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
-                        atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
-                    }
-                    else {
-                    }
+                if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
+                    atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
+                }
+                else {
+                    bt_sdp_cmd_svc_search_attr_req(device);
                 }
             }
             else if (conf_rsp->scid == device->ctrl_chan.scid) {

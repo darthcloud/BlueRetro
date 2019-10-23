@@ -944,6 +944,24 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             break;
         }
+        case BT_HCI_EVT_ROLE_CHANGE:
+        {
+            struct bt_hci_evt_role_change *role_change = (struct bt_hci_evt_role_change *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_ROLE_CHANGE\n");
+            bt_host_get_dev_from_bdaddr(&role_change->bdaddr, &device);
+            if (device) {
+                if (role_change->status) {
+                    atomic_set_bit(&device->flags, BT_DEV_ROLE_SW_FAIL);
+                }
+                else {
+                    atomic_clear_bit(&device->flags, BT_DEV_ROLE_SW_FAIL);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
         case BT_HCI_EVT_PIN_CODE_REQ:
         {
             struct bt_hci_evt_pin_code_req *pin_code_req = (struct bt_hci_evt_pin_code_req *)bt_hci_evt_pkt->evt_data;
