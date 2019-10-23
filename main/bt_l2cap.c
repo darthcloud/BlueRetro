@@ -200,8 +200,6 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                         atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
                     }
                     else {
-                        device->l2cap_ident++;
-                        bt_l2cap_cmd_hid_ctrl_conn_req(device);
                     }
                 }
             }
@@ -236,7 +234,6 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             struct bt_l2cap_conf_rsp *conf_rsp = (struct bt_l2cap_conf_rsp *)bt_hci_acl_pkt->sig_data;
             printf("# BT_L2CAP_CONF_RSP\n");
             if (conf_rsp->scid == device->sdp_tx_chan.scid) {
-                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->sdp_tx_chan.dcid);
                 if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                     if (!atomic_test_bit(&device->flags, BT_DEV_SDP_TX_PENDING)) {
                         atomic_set_bit(&device->flags, BT_DEV_SDP_TX_PENDING);
@@ -248,7 +245,6 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
                 }
             }
             else if (conf_rsp->scid == device->ctrl_chan.scid) {
-                bt_l2cap_cmd_conf_rsp(device->acl_handle, device->l2cap_ident, device->ctrl_chan.dcid);
                 if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                     if (!atomic_test_bit(&device->flags, BT_DEV_HID_CTRL_PENDING)) {
                         atomic_set_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);

@@ -660,11 +660,11 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
+                        printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                            device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                            device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                     }
                 }
-                printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
-                    device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
-                    device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 break; /* Only support one result for now */
             }
             break;
@@ -719,11 +719,11 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
+                    printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                        device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                        device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 }
             }
-            printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
-                device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
-                device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
             break;
         }
         case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -748,10 +748,13 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     printf("# dev: %d Pairing done\n", device->id);
-                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
-                        bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
+                        if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
+                            bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
+                        }
+                        device->l2cap_ident++;
+                        bt_l2cap_cmd_hid_ctrl_conn_req(device);
                     }
-                    bt_l2cap_cmd_sdp_conn_req(device);
                 }
             }
             else {
@@ -823,6 +826,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         atomic_set_bit(&device->flags, BT_DEV_ENCRYPTION);
                     }
                 }
+                bt_l2cap_cmd_sdp_conn_req(device);
             }
             else {
                 printf("# dev NULL!\n");
