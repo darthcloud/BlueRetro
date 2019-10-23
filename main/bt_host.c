@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <sys/stat.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/ringbuf.h>
@@ -9,12 +11,13 @@
 #include "bt_l2cap.h"
 #include "bt_sdp.h"
 #include "util.h"
-#include "sd.h"
 
 #define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1
+
+#define LINK_KEYS_FILE "/sd/linkkeys.bin"
 
 enum {
     /* BT CTRL flags */
@@ -36,6 +39,8 @@ static atomic_t bt_flags = 0;
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
+static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
+static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
 static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt);
 static void bt_host_tx_pkt_ready(void);
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len);
@@ -69,6 +74,43 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     }
 }
 #endif /* H4_TRACE */
+
+static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data) {
+    struct stat st;
+    int32_t ret = -1;
+
+    if (stat(LINK_KEYS_FILE, &st) != 0) {
+        printf("%s: No link keys on SD. Creating...\n", __FUNCTION__);
+        ret = bt_host_store_keys_on_file(data);
+    }
+    else {
+        FILE *file = fopen(LINK_KEYS_FILE, "rb");
+        if (file == NULL) {
+            printf("%s: failed to open file for reading\n", __FUNCTION__);
+        }
+        else {
+            fread((void *)data, sizeof(*data), 1, file);
+            fclose(file);
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
+    int32_t ret = -1;
+
+    FILE *file = fopen(LINK_KEYS_FILE, "wb");
+    if (file == NULL) {
+        printf("%s: failed to open file for writing\n", __FUNCTION__);
+    }
+    else {
+        fwrite((void *)data, sizeof(*data), 1, file);
+        fclose(file);
+        ret = 0;
+    }
+    return ret;
+}
 
 static void bt_host_tx_ringbuf_task(void *param) {
     size_t packet_len;
@@ -236,7 +278,7 @@ int32_t bt_host_init(void) {
         return ret;
     }
 
-    sd_load_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
+    bt_host_load_keys_from_file(&bt_host_link_keys);
 
     xTaskCreatePinnedToCore(&bt_host_tx_ringbuf_task, "bt_host_tx_task", 2048, NULL, 5, NULL, 0);
 
@@ -277,7 +319,7 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
         bt_host_link_keys.index++;
         bt_host_link_keys.index &= 0xF;
     }
-    ret = sd_store_link_keys((uint8_t *)&bt_host_link_keys, sizeof(bt_host_link_keys));
+    ret = bt_host_store_keys_on_file(&bt_host_link_keys);
     return ret;
 }
 
