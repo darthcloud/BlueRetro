@@ -34,6 +34,7 @@ struct bt_dev {
     uint8_t remote_bdaddr[6];
     int8_t type;
     uint16_t acl_handle;
+    uint32_t sdp_state;
     struct l2cap_chan sdp_rx_chan;
     struct l2cap_chan sdp_tx_chan;
     struct l2cap_chan ctrl_chan;

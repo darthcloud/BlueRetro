@@ -107,6 +107,7 @@ struct bt_data {
     int32_t dev_id;
     int32_t dev_type;
     uint8_t input[64];
+    uint32_t hid_desc_len;
     uint8_t hid_desc[1024];
     struct ctrl_desc ctrl_desc;
 } __packed;
