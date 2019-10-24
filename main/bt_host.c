@@ -284,6 +284,7 @@ int32_t bt_host_init(void) {
 
     bt_hci_init();
 
+    adapter_bridge(NULL);
     return ret;
 }
 
@@ -325,7 +326,7 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
 
 void bt_host_bridge(struct bt_dev *device, uint8_t *data, uint32_t len) {
     memcpy(bt_adapter.data[device->id].input, data, len);
-    adapter_bridge(device->id);
+    adapter_bridge(&bt_adapter.data[device->id]);
     if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK)) {
         bt_hid_feedback(device, bt_adapter.data[device->id].output);
         atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
