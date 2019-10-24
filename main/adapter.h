@@ -51,6 +51,7 @@ enum {
 };
 
 enum {
+    NONE_TYPE = -1,
     U8_TYPE,
     U16_TYPE,
     U32_TYPE,

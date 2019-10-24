@@ -284,7 +284,6 @@ int32_t bt_host_init(void) {
 
     bt_hci_init();
 
-    adapter_bridge(NULL);
     return ret;
 }
 

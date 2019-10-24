@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "adapter.h"
+#include "wii.h"
 
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
@@ -14,4 +15,5 @@ void adapter_bridge(struct bt_data *bt_data) {
     ctrl_test.data[LX_AXIS].type = U32_TYPE;
     ctrl_test.data[LX_AXIS].pval.u32 = (uint32_t *)&data[0];
     printf("btns0: %X btns1: %X lx_axis: %X\n", CTRL_DATA(ctrl_test.data[BTNS0]), CTRL_DATA(ctrl_test.data[BTNS1]), CTRL_DATA(ctrl_test.data[LX_AXIS]));
+    wiiu_init_desc(bt_data);
 }
