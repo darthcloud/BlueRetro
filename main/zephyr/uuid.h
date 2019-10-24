@@ -17,7 +17,9 @@
  * @{
  */
 
+#ifndef BLUERETRO
 #include <sys/util.h>
+#endif /* BLUERETRO */
 
 #ifdef __cplusplus
 extern "C" {
@@ -453,6 +455,7 @@ struct bt_uuid_128 {
 #define BT_UUID_L2CAP                     BT_UUID_DECLARE_16(0x0100)
 
 
+#ifndef BLUERETRO
 /** @brief Compare Bluetooth UUIDs.
  *
  *  Compares 2 Bluetooth UUIDs, if the types are different both UUIDs are
@@ -510,7 +513,7 @@ static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
 #ifdef __cplusplus
 }
 #endif
-
+#endif
 /**
  * @}
  */

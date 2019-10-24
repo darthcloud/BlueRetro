@@ -1,8 +1,32 @@
 #include <stdio.h>
 #include "zephyr/types.h"
+#include "zephyr/sdp.h"
 #include "util.h"
 #include "bt_host.h"
 #include "bt_sdp.h"
+
+const uint8_t test_attr_req[] = {
+    /* Service Search Pattern */
+        /* Data Element */
+            /* Type */ BT_SDP_SEQ8,
+            /* Size */ 0x03,
+            /* Data Value */
+                /* Data Element */
+                    /* Type */ BT_SDP_UUID16,
+                    /* Data Value */
+                        /* UUID */ 0x01, 0x00, /* L2CAP */
+    /* Max Att Byte */ 0x08, 0x00, /* 2048 */
+    /* Att ID List */
+        /* Data Element */
+            /* Type */ BT_SDP_SEQ8,
+            /* Size */ 0x05,
+            /* Data Value */
+                /* Data Element */
+                    /* Type */ BT_SDP_UINT32,
+                    /* Data Value */
+                        /* Att Range */ 0xff, 0xfe, /* to */ 0xff, 0xff,
+    /* Continuation State */ 0x00,
+};
 
 static const uint8_t xb1_svc_search_attr_rsp[] = {
     0x35, 0x0a, 0x35, 0x08, 0x09, 0x00, 0x01, 0x35, 0x03, 0x19, 0x12, 0x00
@@ -86,11 +110,10 @@ static void bt_sdp_cmd_svc_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid,
 
 void bt_sdp_cmd_svc_search_attr_req(void *bt_dev) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;
-    const uint8_t attr_req[] = {0x35, 0x03, 0x19, 0x01, 0x00, 0x08, 0x00, 0x35, 0x05, 0x0a, 0xff, 0xfe, 0xff, 0xff, 0x00};
 
-    memcpy(bt_hci_pkt_tmp.sdp_data, attr_req, sizeof(attr_req));
+    memcpy(bt_hci_pkt_tmp.sdp_data, test_attr_req, sizeof(test_attr_req));
 
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_ident++, sizeof(attr_req));
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_ident++, sizeof(test_attr_req));
 }
 
 static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid, const uint8_t *data, uint32_t len) {

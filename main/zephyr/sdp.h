@@ -21,9 +21,12 @@
 extern "C" {
 #endif
 
+#ifdef BLUERETRO
+#include "uuid.h"
+#else
 #include <bluetooth/uuid.h>
 #include <bluetooth/conn.h>
-
+#endif /* BLUERETRO */
 /*
  * All definitions are based on Bluetooth Assigned Numbers
  * of the Bluetooth Specification
@@ -444,6 +447,7 @@ struct bt_sdp_record {
 	.attr_count = ARRAY_SIZE((_attrs)), \
 }
 
+#ifndef BLUERETRO
 /* Server API */
 
 /** @brief Register a Service Record.
@@ -601,6 +605,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, u16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, u16_t *features);
+#endif /* BLUERETRO */
 #ifdef __cplusplus
 }
 #endif
