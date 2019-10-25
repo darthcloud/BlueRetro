@@ -3,9 +3,11 @@
 #include "zephyr/sdp.h"
 #include "util.h"
 #include "bt_host.h"
+#include "bt_l2cap.h"
 #include "bt_sdp.h"
 
-static uint8_t test_attr_req[] = {
+#if 0
+static const uint8_t test_attr_req[] = {
     /* Service Search Pattern */
         /* Data Element */
             /* Type */ BT_SDP_SEQ8,
@@ -26,6 +28,7 @@ static uint8_t test_attr_req[] = {
                     /* Data Value */
                         /* Att Range */ 0xff, 0xfe, /* to */ 0xff, 0xff,
 };
+#endif
 
 static const uint8_t hid_descriptor_attr_req[] = {
     /* Service Search Pattern */
@@ -154,8 +157,9 @@ static void bt_sdp_cmd_svc_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid,
 
 static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device) {
     memcpy(bt_hci_pkt_tmp.sdp_data, pnp_attr_req, sizeof(pnp_attr_req));
+    *(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req)) = 0;
 
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req));
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + 1);
 }
 
 static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid, const uint8_t *data, uint32_t len) {
@@ -218,6 +222,10 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                         bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device);
                         device->sdp_state++;
                     }
+                    break;
+                case 1:
+                    bt_l2cap_cmd_sdp_disconn_req(device);
+                    break;
             }
             break;
         }
