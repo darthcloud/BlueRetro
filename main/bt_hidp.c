@@ -1,4 +1,5 @@
 #include "bt_host.h"
+#include "bt_hidp_ps3.h"
 #include "bt_hidp_wii.h"
 #include "bt_hidp_sw.h"
 
@@ -14,7 +15,7 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
+    bt_hid_ps3_init, /* PS3_DS3 */
     bt_hid_wii_init, /* WII_CORE */
     bt_hid_wii_init, /* WII_NUNCHUCK */
     bt_hid_wii_init, /* WII_CLASSIC */
@@ -28,7 +29,7 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
+    bt_hid_ps3_hdlr, /* PS3_DS3 */
     bt_hid_wii_hdlr, /* WII_CORE */
     bt_hid_wii_hdlr, /* WII_NUNCHUCK */
     bt_hid_wii_hdlr, /* WII_CLASSIC */
@@ -42,7 +43,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     NULL, /* HID_PAD */
     NULL, /* HID_KB */
     NULL, /* HID_MOUSE */
-    NULL, /* PS3_DS3 */
+    bt_hid_cmd_ps3_set_conf, /* PS3_DS3 */
     bt_hid_cmd_wii_set_feedback, /* WII_CORE */
     bt_hid_cmd_wii_set_feedback, /* WII_NUNCHUCK */
     bt_hid_cmd_wii_set_feedback, /* WII_CLASSIC */
@@ -81,7 +82,7 @@ int8_t bt_hid_minor_class_to_type(uint8_t minor) {
     return type;
 }
 
-void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len) {
+void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t hidp_hdr, uint8_t protocol, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_hidp_hdr) + len);
 
@@ -93,7 +94,7 @@ void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t protocol, uint16_t len) {
     bt_hci_pkt_tmp.l2cap_hdr.len = bt_hci_pkt_tmp.acl_hdr.len - sizeof(bt_hci_pkt_tmp.l2cap_hdr);
     bt_hci_pkt_tmp.l2cap_hdr.cid = cid;
 
-    bt_hci_pkt_tmp.hidp_hdr.hdr = BT_HIDP_DATA_OUT;
+    bt_hci_pkt_tmp.hidp_hdr.hdr = hidp_hdr;
     bt_hci_pkt_tmp.hidp_hdr.protocol = protocol;
 
     bt_host_txq_add((uint8_t *)&bt_hci_pkt_tmp, packet_len);

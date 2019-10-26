@@ -9,7 +9,7 @@ void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
 
     memcpy((void *)sw_conf, report, sizeof(*sw_conf));
 
-    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_SW_SET_CONF, sizeof(*sw_conf));
+    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_CONF, sizeof(*sw_conf));
 }
 
 void bt_hid_sw_init(struct bt_dev *device) {

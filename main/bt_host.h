@@ -35,6 +35,7 @@ struct bt_dev {
     int8_t type;
     uint16_t acl_handle;
     uint32_t sdp_state;
+    uint32_t hid_state;
     struct l2cap_chan sdp_rx_chan;
     struct l2cap_chan sdp_tx_chan;
     struct l2cap_chan ctrl_chan;
