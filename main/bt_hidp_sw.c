@@ -16,7 +16,7 @@ void bt_hid_sw_init(struct bt_dev *device) {
     struct bt_hidp_sw_conf sw_conf = {
         .tid = sw_tid++,
         .subcmd = BT_HIDP_SW_SUBCMD_SET_LED,
-        .subcmd_data[0] = (bt_hid_led_dev_id_map[device->id] << 4),
+        .subcmd_data[0] = bt_hid_led_dev_id_map[device->id],
     };
     printf("# %s\n", __FUNCTION__);
 
