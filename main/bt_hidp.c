@@ -2,6 +2,7 @@
 #include "bt_hidp_ps3.h"
 #include "bt_hidp_wii.h"
 #include "bt_hidp_ps4.h"
+#include "bt_hidp_xb1.h"
 #include "bt_hidp_sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
@@ -22,7 +23,7 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     bt_hid_wii_init, /* WII_CLASSIC */
     bt_hid_wii_init, /* WIIU_PRO */
     bt_hid_ps4_init, /* PS4_DS4 */
-    NULL, /* XB1_S */
+    bt_hid_xb1_init, /* XB1_S */
     bt_hid_sw_init, /* SWITCH_PRO */
 };
 
@@ -36,7 +37,7 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     bt_hid_wii_hdlr, /* WII_CLASSIC */
     bt_hid_wii_hdlr, /* WIIU_PRO */
     bt_hid_ps4_hdlr, /* PS4_DS4 */
-    NULL, /* XB1_S */
+    bt_hid_xb1_hdlr, /* XB1_S */
     bt_hid_sw_hdlr, /* SWITCH_PRO */
 };
 
@@ -50,7 +51,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     bt_hid_cmd_wii_set_feedback, /* WII_CLASSIC */
     bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
     bt_hid_cmd_ps4_set_conf, /* PS4_DS4 */
-    NULL, /* XB1_S */
+    bt_hid_cmd_xb1_rumble, /* XB1_S */
     bt_hid_cmd_sw_set_conf, /* SWITCH_PRO */
 };
 
