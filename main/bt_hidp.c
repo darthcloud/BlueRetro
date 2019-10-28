@@ -1,4 +1,5 @@
 #include "bt_host.h"
+#include "bt_hidp_kbm.h"
 #include "bt_hidp_ps3.h"
 #include "bt_hidp_wii.h"
 #include "bt_hidp_ps4.h"
@@ -29,8 +30,8 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
 
 static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
+    bt_hid_kbm_hdlr, /* HID_KB */
+    bt_hid_kbm_hdlr, /* HID_MOUSE */
     bt_hid_ps3_hdlr, /* PS3_DS3 */
     bt_hid_wii_hdlr, /* WII_CORE */
     bt_hid_wii_hdlr, /* WII_NUNCHUCK */
