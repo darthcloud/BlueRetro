@@ -263,7 +263,7 @@ int32_t bt_host_init(void) {
         return ret;
     }
 
-    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
+    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM)) != ESP_OK) {
         printf("Bluetooth controller enable failed: %s", esp_err_to_name(ret));
         return ret;
     }
