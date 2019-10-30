@@ -10,6 +10,7 @@
 #include "bt_hci.h"
 #include "bt_l2cap.h"
 #include "bt_sdp.h"
+#include "bt_att.h"
 #include "util.h"
 
 #define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
@@ -149,6 +150,9 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
 
     if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
         bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
+    }
+    else if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
+        bt_att_hdlr(device, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
