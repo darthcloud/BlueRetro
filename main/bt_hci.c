@@ -117,6 +117,12 @@ static void bt_hci_cmd_read_bd_addr(void *cp);
 //static void bt_hci_cmd_read_data_block_size(void *cp);
 //static void bt_hci_cmd_read_local_codecs(void *cp);
 //static void bt_hci_cmd_read_local_sp_options(void *cp);
+static void bt_hci_cmd_le_set_adv_param(void *cp);
+static void bt_hci_cmd_le_set_adv_data(void *cp);
+static void bt_hci_cmd_le_set_scan_rsp_data(void *cp);
+static void bt_hci_cmd_le_set_adv_enable(void *cp);
+//static void bt_hci_cmd_le_set_scan_param(void *cp);
+//static void bt_hci_cmd_le_set_scan_enable(void *cp);
 
 static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_reset, NULL},
@@ -154,6 +160,10 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_write_hold_mode_act, NULL},
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
+    {bt_hci_cmd_le_set_adv_param, NULL},
+    {bt_hci_cmd_le_set_adv_data, NULL},
+    {bt_hci_cmd_le_set_scan_rsp_data, NULL},
+    {bt_hci_cmd_le_set_adv_enable, NULL},
     {bt_hci_cmd_periodic_inquiry, NULL},
 };
 
@@ -625,7 +635,7 @@ static void bt_hci_cmd_write_le_host_supp(void *cp) {
     struct bt_hci_cp_write_le_host_supp *write_le_host_supp = (struct bt_hci_cp_write_le_host_supp *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
-    write_le_host_supp->le = 0x00;
+    write_le_host_supp->le = 0x01;
     write_le_host_supp->simul = 0x00;
 
     bt_hci_cmd(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, sizeof(*write_le_host_supp));
@@ -687,6 +697,85 @@ static void bt_hci_cmd_read_local_sp_options(void *cp) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_READ_LOCAL_SP_OPTIONS, 0);
+}
+#endif
+
+static void bt_hci_cmd_le_set_adv_param(void *cp) {
+    struct bt_hci_cp_le_set_adv_param *le_set_adv_param = (struct bt_hci_cp_le_set_adv_param *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_adv_param->min_interval = 0x00A0;
+    le_set_adv_param->max_interval = 0x00A0;
+    le_set_adv_param->type = 0x00;
+    le_set_adv_param->own_addr_type = 0x00;
+    memset((void *)&le_set_adv_param->direct_addr, 0, sizeof(le_set_adv_param->direct_addr));
+    le_set_adv_param->channel_map = 0x07;
+    le_set_adv_param->filter_policy = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(*le_set_adv_param));
+}
+
+static void bt_hci_cmd_le_set_adv_data(void *cp) {
+    uint8_t adv_data[] = {
+        0x02, BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
+        0x03, BT_DATA_UUID16_ALL, 0x0f, 0x18,
+        0x0a, BT_DATA_NAME_COMPLETE, 0x42, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x74, 0x72, 0x6f
+    };
+    struct bt_hci_cp_le_set_adv_data *le_set_adv_data = (struct bt_hci_cp_le_set_adv_data *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memset(le_set_adv_data->data, 0, sizeof(le_set_adv_data->data));
+    le_set_adv_data->len = sizeof(adv_data);
+    memcpy(le_set_adv_data->data, adv_data, sizeof(adv_data));
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*le_set_adv_data));
+}
+
+static void bt_hci_cmd_le_set_scan_rsp_data(void *cp) {
+    uint8_t scan_rsp[] = {
+        0x09, 0xff, 0xe0, 0x00, 0x56, 0x6c, 0xca, 0x7b, 0xdc, 0x23
+    };
+    struct bt_hci_cp_le_set_scan_rsp_data *le_set_scan_rsp_data = (struct bt_hci_cp_le_set_scan_rsp_data *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memset(le_set_scan_rsp_data->data, 0, sizeof(le_set_scan_rsp_data->data));
+    le_set_scan_rsp_data->len = sizeof(scan_rsp);
+    memcpy(le_set_scan_rsp_data->data, scan_rsp, sizeof(scan_rsp));
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sizeof(*le_set_scan_rsp_data));
+}
+
+static void bt_hci_cmd_le_set_adv_enable(void *cp) {
+    struct bt_hci_cp_le_set_adv_enable *le_set_adv_enable = (struct bt_hci_cp_le_set_adv_enable *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_adv_enable->enable = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, sizeof(*le_set_adv_enable));
+}
+
+#if 0
+static void bt_hci_cmd_le_set_scan_param(void *cp) {
+    struct bt_hci_cp_le_set_scan_param *le_set_scan_param = (struct bt_hci_cp_le_set_scan_param *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_scan_param->scan_type = 0x01;
+    le_set_scan_param->interval = 6553;
+    le_set_scan_param->window = 1638;
+    le_set_scan_param->addr_type = 0x00;
+    le_set_scan_param->filter_policy = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(*le_set_scan_param));
+}
+
+static void bt_hci_cmd_le_set_scan_enable(void *cp) {
+    struct bt_hci_cp_le_set_scan_enable *le_set_scan_enable = (struct bt_hci_cp_le_set_scan_enable *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_scan_enable->enable = 0x01;
+    le_set_scan_enable->filter_dup = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*le_set_scan_enable));
 }
 #endif
 
@@ -937,6 +1026,11 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                     case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                    case BT_HCI_OP_LE_SET_SCAN_PARAM:
+                    case BT_HCI_OP_LE_SET_ADV_PARAM:
+                    case BT_HCI_OP_LE_SET_ADV_DATA:
+                    case BT_HCI_OP_LE_SET_SCAN_RSP_DATA:
+                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
                         bt_hci_pkt_retry++;
                         if (bt_hci_pkt_retry > BT_MAX_RETRY) {
                             bt_hci_pkt_retry = 0;
@@ -991,6 +1085,11 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_WRITE_HOLD_MODE_ACT:
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                     case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
+                    case BT_HCI_OP_LE_SET_SCAN_PARAM:
+                    case BT_HCI_OP_LE_SET_ADV_PARAM:
+                    case BT_HCI_OP_LE_SET_ADV_DATA:
+                    case BT_HCI_OP_LE_SET_SCAN_RSP_DATA:
+                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
                         bt_hci_pkt_retry = 0;
                         bt_hci_q_conf(1);
                         break;
