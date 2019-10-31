@@ -34,6 +34,7 @@ struct bt_hci_pkt bt_hci_pkt_tmp;
 
 static struct bt_host_link_keys bt_host_link_keys = {0};
 static RingbufHandle_t txq_hdl;
+static struct bt_dev bt_dev_conf = {0};
 static struct bt_dev bt_dev[7] = {0};
 static atomic_t bt_flags = 0;
 
@@ -152,7 +153,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
         bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
-        bt_att_hdlr(device, bt_hci_acl_pkt);
+        bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
@@ -235,6 +236,11 @@ int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
         }
     }
     return -1;
+}
+
+int32_t bt_host_get_dev_conf(struct bt_dev **device) {
+    *device = &bt_dev_conf;
+    return 0;
 }
 
 void bt_host_reset_dev(struct bt_dev *device) {

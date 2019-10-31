@@ -123,6 +123,7 @@ static void bt_hci_cmd_le_set_scan_rsp_data(void *cp);
 static void bt_hci_cmd_le_set_adv_enable(void *cp);
 //static void bt_hci_cmd_le_set_scan_param(void *cp);
 //static void bt_hci_cmd_le_set_scan_enable(void *cp);
+static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt);
 
 static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_reset, NULL},
@@ -779,6 +780,27 @@ static void bt_hci_cmd_le_set_scan_enable(void *cp) {
 }
 #endif
 
+static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
+    struct bt_hci_evt_le_meta_event *le_meta_event = (struct bt_hci_evt_le_meta_event *)bt_hci_evt_pkt->evt_data;
+    struct bt_dev *device = NULL;
+    bt_host_get_dev_conf(&device);
+
+    switch (le_meta_event->subevent) {
+        case BT_HCI_EVT_LE_CONN_COMPLETE:
+        case BT_HCI_EVT_LE_ENH_CONN_COMPLETE:
+        {
+            struct bt_hci_evt_le_conn_complete *le_conn_complete =
+                (struct bt_hci_evt_le_conn_complete *)(bt_hci_evt_pkt->evt_data + sizeof(struct bt_hci_evt_le_meta_event));
+
+            if (!le_conn_complete->status && !atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
+                atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                device->acl_handle = le_conn_complete->handle;
+            }
+            break;
+        }
+    }
+}
+
 void bt_hci_init(void) {
     bt_config_state = 0;
     bt_hci_q_conf(0);
@@ -884,9 +906,17 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             struct bt_hci_evt_disconn_complete *disconn_complete = (struct bt_hci_evt_disconn_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_DISCONN_COMPLETE\n");
             bt_host_get_dev_from_handle(disconn_complete->handle, &device);
-            bt_host_reset_dev(device);
-            if (bt_host_get_active_dev(&device) == BT_NONE) {
-                bt_hci_cmd_periodic_inquiry(NULL);
+            if (device) {
+                bt_host_reset_dev(device);
+                if (bt_host_get_active_dev(&device) == BT_NONE) {
+                    bt_hci_cmd_periodic_inquiry(NULL);
+                }
+            }
+            else {
+                bt_host_get_dev_conf(&device);
+                if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND) && disconn_complete->handle == device->acl_handle) {
+                    bt_host_reset_dev(device);
+                }
             }
             break;
         }
@@ -1200,5 +1230,8 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             break;
         }
+        case BT_HCI_EVT_LE_META_EVENT:
+            bt_hci_le_meta_evt_hdlr(bt_hci_evt_pkt);
+            break;
     }
 }
