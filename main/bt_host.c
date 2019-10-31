@@ -145,15 +145,17 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
     bt_host_get_dev_from_handle(bt_hci_acl_pkt->acl_hdr.handle, &device);
 
     if (device == NULL) {
-        printf("# dev NULL!\n");
+        if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
+            bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt);
+        }
+        else {
+            printf("# %s dev NULL!\n", __FUNCTION__);
+        }
         return;
     }
 
     if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
         bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
-    }
-    else if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
-        bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt);
     }
     else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
         bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
@@ -220,7 +222,7 @@ int32_t bt_host_get_active_dev(struct bt_dev **device) {
 
 int32_t bt_host_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
-        if (memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
             *device = &bt_dev[i];
             return i;
         }
@@ -230,7 +232,7 @@ int32_t bt_host_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device) {
 
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
     for (uint32_t i = 0; i < 7; i++) {
-        if (bt_acl_handle(handle) == bt_dev[i].acl_handle) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && bt_acl_handle(handle) == bt_dev[i].acl_handle) {
             *device = &bt_dev[i];
             return i;
         }

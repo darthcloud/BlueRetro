@@ -21,8 +21,10 @@ static void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
 
 static void bt_att_cmd_mtu_rsp(uint16_t handle, uint16_t mtu) {
     struct bt_att_exchange_mtu_rsp *mtu_rsp = (struct bt_att_exchange_mtu_rsp *)bt_hci_pkt_tmp.att_data;
+    printf("# %s\n", __FUNCTION__);
 
     mtu_rsp->mtu = mtu;
+
     bt_att_cmd(handle, BT_ATT_OP_MTU_RSP, sizeof(*mtu_rsp));
 }
 
@@ -31,7 +33,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
         case BT_ATT_OP_MTU_REQ:
         {
             struct bt_att_exchange_mtu_req *mtu_req = (struct bt_att_exchange_mtu_req *)bt_hci_acl_pkt->att_data;
-            printf("BT_ATT_OP_MTU_REQ\n");
+            printf("# BT_ATT_OP_MTU_REQ\n");
             bt_att_cmd_mtu_rsp(device->acl_handle, mtu_req->mtu);
             break;
         }
