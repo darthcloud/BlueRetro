@@ -43,7 +43,7 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
-static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt);
+static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 static void bt_host_tx_pkt_ready(void);
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len);
 static void bt_host_tx_ringbuf_task(void *param);
@@ -140,13 +140,13 @@ static void bt_host_tx_ringbuf_task(void *param) {
     }
 }
 
-static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt) {
+static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     struct bt_dev *device = NULL;
     bt_host_get_dev_from_handle(bt_hci_acl_pkt->acl_hdr.handle, &device);
 
     if (device == NULL) {
         if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
-            bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt);
+            bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt, len);
         }
         else {
             printf("# %s dev NULL!\n", __FUNCTION__);
@@ -187,7 +187,7 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
 
     switch(bt_hci_pkt->h4_hdr.type) {
         case BT_HCI_H4_TYPE_ACL:
-            bt_host_acl_hdlr(bt_hci_pkt);
+            bt_host_acl_hdlr(bt_hci_pkt, len);
             break;
         case BT_HCI_H4_TYPE_EVT:
             bt_hci_evt_hdlr(bt_hci_pkt);
