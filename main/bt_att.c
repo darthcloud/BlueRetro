@@ -61,7 +61,23 @@ static void bt_att_cmd_mtu_rsp(uint16_t handle, uint16_t mtu) {
 }
 
 static void bt_att_cmd_find_info_rsp_uuid16(uint16_t handle, uint16_t start) {
+    struct bt_att_find_info_rsp *find_info_rsp = (struct bt_att_find_info_rsp *)bt_hci_pkt_tmp.att_data;
+    struct bt_att_info_16 *info = (struct bt_att_info_16 *)find_info_rsp->info;
     printf("# %s\n", __FUNCTION__);
+
+    find_info_rsp->format = BT_ATT_INFO_16;
+    info->handle = start;
+
+    switch (start) {
+        case BATT_CHAR_CONF_HDL:
+            info->uuid = BT_UUID_GATT_CCC;
+            break;
+        case BATT_CHAR_DESC_HDL:
+            info->uuid = BT_UUID_GATT_CUD;
+            break;
+    }
+
+    bt_att_cmd(handle, BT_ATT_OP_FIND_INFO_RSP, 5);
 }
 
 static void bt_att_cmd_find_info_rsp_uuid128(uint16_t handle, uint16_t start) {
@@ -298,7 +314,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 bt_att_cmd_read_group_rsp(device->acl_handle, rd_grp_req->start_handle, rd_grp_req->end_handle);
             }
             else {
-                bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_GROUP_REQ, rd_grp_req->start_handle, BT_ATT_ERR_INVALID_HANDLE);
+                bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_GROUP_REQ, rd_grp_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
             }
             break;
         }
