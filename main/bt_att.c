@@ -143,23 +143,44 @@ static void bt_att_cmd_batt_read_type_rsp(uint16_t handle, uint16_t start, uint1
 }
 
 static void bt_att_cmd_dev_name_rd_rsp(uint16_t handle) {
+    char *str = "BlueRetro";
     printf("# %s\n", __FUNCTION__);
+
+    memcpy(bt_hci_pkt_tmp.att_data, str, strlen(str));
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, strlen(str));
 }
 
 static void bt_att_cmd_app_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
+
+    *(uint16_t *)bt_hci_pkt_tmp.att_data = 964; /* HID Gamepad */
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
 }
 
 static void bt_att_cmd_car_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
+
+    *bt_hci_pkt_tmp.att_data = 0x00;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint8_t));
 }
 
 static void bt_att_cmd_batt_lvl_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
+
+    *bt_hci_pkt_tmp.att_data = 51;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint8_t));
 }
 
 static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
+
+    *(uint16_t *)bt_hci_pkt_tmp.att_data = 0x0000;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
 }
 
 static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t end) {
