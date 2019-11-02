@@ -102,25 +102,6 @@ static void bt_att_cmd_gatt_char_read_type_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
 }
 
-static void bt_att_cmd_gatt_include_read_type_rsp(uint16_t handle) {
-    struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
-    uint8_t *data = rd_type_rsp->data->value;
-
-    printf("# %s\n", __FUNCTION__);
-
-    rd_type_rsp->len = 8;
-
-    rd_type_rsp->data->handle = GATT_ATT_SRVC_CH_HDL;
-    *(uint16_t *)data = GATT_CHAR_SRVC_CH_HDL;
-    data += 2;
-    *(uint16_t *)data = GATT_CHAR_SRVC_CH_HDL;
-    data += 2;
-    *(uint16_t *)data = BT_UUID_GATT_SC;
-
-
-    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
-}
-
 static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
     struct bt_att_data *name_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 0);
@@ -159,50 +140,6 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len*3);
 }
 
-static void bt_att_cmd_gap_include_read_type_rsp(uint16_t handle, uint16_t start) {
-    struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
-    struct bt_att_data *name_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 0);
-    struct bt_att_data *app_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 8);
-    struct bt_att_data *car_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 0);
-    uint8_t *data;
-    uint32_t len = sizeof(rd_type_rsp->len);
-
-    printf("# %s\n", __FUNCTION__);
-
-    rd_type_rsp->len = 8;
-
-    if (start >= GAP_GRP_HDL && start < GAP_CHAR_APP_HDL) {
-        name_data->handle = GAP_ATT_DEV_NAME_HDL;
-        data = name_data->value;
-        *(uint16_t *)data = GAP_CHAR_DEV_NAME_HDL;
-        data += 2;
-        *(uint16_t *)data = GAP_CHAR_DEV_NAME_HDL;
-        data += 2;
-        *(uint16_t *)data = BT_UUID_GAP_DEVICE_NAME;
-
-        app_data->handle = GAP_ATT_APP_HDL;
-        data = app_data->value;
-        *(uint16_t *)data = GAP_CHAR_APP_HDL;
-        data += 2;
-        *(uint16_t *)data = GAP_CHAR_APP_HDL;
-        data += 2;
-        *(uint16_t *)data = BT_UUID_GAP_APPEARANCE;
-        len += rd_type_rsp->len * 2;
-    }
-    else if (start >= GAP_CHAR_APP_HDL && start < GAP_CHAR_CAR_HDL) {
-        car_data->handle = GAP_ATT_CAR_HDL;
-        data = car_data->value;
-        *(uint16_t *)data = GAP_CHAR_CAR_HDL;
-        data += 2;
-        *(uint16_t *)data = GAP_CHAR_CAR_HDL;
-        data += 2;
-        *(uint16_t *)data = BT_UUID_CENTRAL_ADDR_RES;
-        len += rd_type_rsp->len;
-    }
-
-    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, len);
-}
-
 static void bt_att_cmd_batt_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
     uint8_t *data = rd_type_rsp->data->value;
@@ -215,24 +152,6 @@ static void bt_att_cmd_batt_char_read_type_rsp(uint16_t handle) {
     *data = 0x12;
     data++;
     *(uint16_t *)data = BATT_CHAR_HDL;
-    data += 2;
-    *(uint16_t *)data = BT_UUID_BAS_BATTERY_LEVEL;
-
-    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
-}
-
-static void bt_att_cmd_batt_include_read_type_rsp(uint16_t handle) {
-    struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
-    uint8_t *data = rd_type_rsp->data->value;
-
-    printf("# %s\n", __FUNCTION__);
-
-    rd_type_rsp->len = 8;
-
-    rd_type_rsp->data->handle = BATT_ATT_HDL;
-    *(uint16_t *)data = BATT_CHAR_HDL;
-    data += 2;
-    *(uint16_t *)data = BATT_CHAR_DESC_HDL;
     data += 2;
     *(uint16_t *)data = BT_UUID_BAS_BATTERY_LEVEL;
 
@@ -340,42 +259,28 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_read_type_req *rd_type_req = (struct bt_att_read_type_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_READ_TYPE_REQ\n");
+            uint16_t start = rd_type_req->start_handle;
+            uint16_t end = rd_type_req->end_handle;
 
-            switch (*(uint16_t *)rd_type_req->uuid) {
-                case BT_UUID_GATT_CHRC:
-                    /* GATT */
-                    if (rd_type_req->start_handle >= GATT_GRP_HDL && rd_type_req->start_handle < GATT_CHAR_SRVC_CH_HDL) {
-                        bt_att_cmd_gatt_char_read_type_rsp(device->acl_handle);
-                    }
-                    /* GAP */
-                    else if (rd_type_req->start_handle >= GAP_GRP_HDL && rd_type_req->start_handle < GAP_CHAR_CAR_HDL) {
-                        bt_att_cmd_gap_char_read_type_rsp(device->acl_handle);
-                    }
-                    /* BATT */
-                    else if (rd_type_req->start_handle >= BATT_GRP_HDL && rd_type_req->start_handle < BATT_CHAR_HDL) {
-                        bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
-                    }
-                    else {
-                        bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_TYPE_REQ, rd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-                    }
-                    break;
-                case BT_UUID_GATT_INCLUDE:
-                    /* GATT */
-                    if (rd_type_req->start_handle >= GATT_GRP_HDL && rd_type_req->start_handle < GATT_CHAR_SRVC_CH_HDL) {
-                        bt_att_cmd_gatt_include_read_type_rsp(device->acl_handle);
-                    }
-                    /* GAP */
-                    else if (rd_type_req->start_handle >= GAP_GRP_HDL && rd_type_req->start_handle < GAP_CHAR_CAR_HDL) {
-                        bt_att_cmd_gap_include_read_type_rsp(device->acl_handle, rd_type_req->start_handle);
-                    }
-                    /* BATT */
-                    else if (rd_type_req->start_handle >= BATT_GRP_HDL && rd_type_req->start_handle < BATT_CHAR_HDL) {
-                        bt_att_cmd_batt_include_read_type_rsp(device->acl_handle);
-                    }
-                    else {
-                        bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_TYPE_REQ, rd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-                    }
-                    break;
+            if (*(uint16_t *)rd_type_req->uuid == BT_UUID_GATT_CHRC) {
+                /* GATT */
+                if (start >= GATT_GRP_HDL && start < GATT_CHAR_SRVC_CH_HDL && end >= GATT_CHAR_SRVC_CH_HDL) {
+                    bt_att_cmd_gatt_char_read_type_rsp(device->acl_handle);
+                }
+                /* GAP */
+                else if (start >= GATT_CHAR_SRVC_CH_HDL && start < GAP_CHAR_CAR_HDL && end >= GAP_CHAR_CAR_HDL) {
+                    bt_att_cmd_gap_char_read_type_rsp(device->acl_handle);
+                }
+                /* BATT */
+                else if (start >= GAP_CHAR_CAR_HDL && start < BATT_CHAR_HDL && end >= BATT_CHAR_HDL) {
+                    bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
+                }
+                else {
+                    bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_TYPE_REQ, rd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+                }
+            }
+            else {
+                bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_TYPE_REQ, rd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
             }
             break;
         }
@@ -412,7 +317,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_read_group_req *rd_grp_req = (struct bt_att_read_group_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_READ_GROUP_REQ\n");
-            if (rd_grp_req->start_handle < MAX_HDL) {
+            if (rd_grp_req->start_handle < MAX_HDL && *(uint16_t *)rd_grp_req->uuid == BT_UUID_GATT_PRIMARY) {
                 bt_att_cmd_read_group_rsp(device->acl_handle, rd_grp_req->start_handle, rd_grp_req->end_handle);
             }
             else {
