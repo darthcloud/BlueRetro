@@ -224,9 +224,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
         len += rd_grp_rsp->len;
     }
 
-    if (start <= BATT_GRP_HDL && end >= 0xffff) {
+    if (start <= BATT_GRP_HDL && end >= BATT_CHAR_DESC_HDL) {
         batt_data->start_handle = BATT_GRP_HDL;
-        batt_data->end_handle = 0xffff; //BATT_CHAR_DESC_HDL;
+        batt_data->end_handle = BATT_CHAR_DESC_HDL;
         *(uint16_t *)batt_data->value = BT_UUID_BAS;
         len += rd_grp_rsp->len;
     }

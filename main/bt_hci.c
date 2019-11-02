@@ -916,6 +916,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 bt_host_get_dev_conf(&device);
                 if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND) && disconn_complete->handle == device->acl_handle) {
                     bt_host_reset_dev(device);
+                    bt_hci_cmd_le_set_adv_enable(NULL);
                 }
             }
             break;
