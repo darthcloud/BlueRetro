@@ -23,6 +23,8 @@ enum {
     MAX_HDL,
 };
 
+static uint8_t power = 0;
+
 static void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr) + len);
@@ -186,7 +188,7 @@ static void bt_att_cmd_car_rd_rsp(uint16_t handle) {
 static void bt_att_cmd_batt_lvl_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
 
-    *bt_hci_pkt_tmp.att_data = 51;
+    *bt_hci_pkt_tmp.att_data = power++;
 
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint8_t));
 }
@@ -232,6 +234,12 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     }
 
     bt_att_cmd(handle, BT_ATT_OP_READ_GROUP_RSP, len);
+}
+
+static void bt_att_cmd_wr_rsp(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_att_cmd(handle, BT_ATT_OP_WRITE_RSP, 0);
 }
 
 void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
@@ -329,6 +337,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_write_req *wr_req = (struct bt_att_write_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_WRITE_REQ\n");
+            bt_att_cmd_wr_rsp(device->acl_handle);
             break;
         }
     }
