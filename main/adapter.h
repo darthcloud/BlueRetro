@@ -204,6 +204,7 @@ enum {
     KB_RSHIFT,
     KB_RALT,
     KB_RWIN,
+    KB_MAX,
 };
 
 /* BT flags */

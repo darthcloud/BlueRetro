@@ -2,8 +2,15 @@
 #include "adapter.h"
 #include "wii.h"
 
+struct bt_wired_map {
+    uint8_t bt_dev_id;
+    uint8_t bt_subdev_id;
+} __packed;
+
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
+
+static struct bt_wired_map bt_wired_map[WIRED_MAX_DEV];
 
 void adapter_bridge(struct bt_data *bt_data) {
 #if 0
