@@ -29,6 +29,7 @@ static void config_init_struct(struct config *data) {
             data->map_conf[i][j].perc_threshold = 25;
             data->map_conf[i][j].perc_deadzone = 10;
         }
+        data->map_size[i] = KB_MAX;
     }
 }
 

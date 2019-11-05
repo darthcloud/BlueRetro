@@ -3,7 +3,7 @@
 
 #include "adapter.h"
 
-#define ADAPTER_MAPPING_MAX 256
+#define ADAPTER_MAPPING_MAX 255
 
 struct map_conf {
     uint8_t src_btn;
@@ -20,6 +20,7 @@ struct config {
     uint32_t magic;
     uint8_t multitap_conf;
     uint8_t dev_mode[WIRED_MAX_DEV];
+    uint8_t map_size[WIRED_MAX_DEV];
     struct map_conf map_conf[WIRED_MAX_DEV][ADAPTER_MAPPING_MAX];
 } __packed;
 
