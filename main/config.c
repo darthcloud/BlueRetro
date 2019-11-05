@@ -4,7 +4,7 @@
 #include "adapter.h"
 #include "config.h"
 
-#define CONFIG_MAGIC 0xA5A5A5A5
+#define CONFIG_MAGIC 0xA5A5A55A
 #define CONFIG_FILE "/sd/config.bin"
 
 struct config config;
