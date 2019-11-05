@@ -2,10 +2,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "sd.h"
-#include "nsi.h"
-#include "maple.h"
-#include "bt_host.h"
 #include "config.h"
+#include "bt_host.h"
 
 static void wired_init_task(void *arg) {
     //nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);

@@ -1,6 +1,8 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#include "adapter.h"
+
 #define ADAPTER_MAPPING_MAX 256
 
 struct map_conf {
@@ -21,6 +23,9 @@ struct config {
     struct map_conf map_conf[WIRED_MAX_DEV][ADAPTER_MAPPING_MAX];
 } __packed;
 
+extern struct config config;
+
 void config_init(void);
+void config_update(void);
 
 #endif /* _CONFIG_H_ */
