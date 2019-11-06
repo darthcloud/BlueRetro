@@ -225,12 +225,23 @@ static void bt_att_cmd_batt_lvl_rd_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint8_t));
 }
 
-static void bt_att_cmd_config_rd_rsp(uint16_t handle) {
+static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint16_t offset) {
+    uint32_t len;
     printf("# %s\n", __FUNCTION__);
 
-    memcpy(bt_hci_pkt_tmp.att_data, (void *)&config, mtu - 1);
+    if (offset > sizeof(config)) {
+        len = 0;
+    }
+    else {
+        len = sizeof(config) - offset;
 
-    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, mtu - 1);
+        if (len > (mtu - 1)) {
+            len = mtu - 1;
+        }
+
+        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config + offset, len);
+    }
+    bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
 }
 
 static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
@@ -382,10 +393,26 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_conf_rd_rsp(device->acl_handle);
                     break;
                 case BR_CHAR_CONFIG_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle);
+                    bt_att_cmd_config_rd_rsp(device->acl_handle, 0);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
+                    break;
+            }
+            break;
+        }
+        case BT_ATT_OP_READ_BLOB_REQ:
+        {
+            struct bt_att_read_blob_req *rd_blob_req = (struct bt_att_read_blob_req *)bt_hci_acl_pkt->att_data;
+            printf("# BT_ATT_OP_READ_BLOB_RSP\n");
+
+            switch (rd_blob_req->handle) {
+                case BR_CHAR_CONFIG_HDL:
+                    bt_att_cmd_config_rd_rsp(device->acl_handle, rd_blob_req->offset);
+                    break;
+                default:
+                    bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_BLOB_REQ, rd_blob_req->handle, BT_ATT_ERR_INVALID_HANDLE);
+                    break;
             }
             break;
         }
