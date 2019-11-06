@@ -266,7 +266,7 @@ int32_t bt_host_init(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    esp_base_mac_addr_set(test_mac);
+    //esp_base_mac_addr_set(test_mac);
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 

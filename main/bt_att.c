@@ -4,6 +4,7 @@
 #include "zephyr/uuid.h"
 #include "zephyr/att.h"
 #include "zephyr/gatt.h"
+#include "config.h"
 
 enum {
     GATT_GRP_HDL = 0x0001,
@@ -82,9 +83,11 @@ static void bt_att_cmd_find_info_rsp_uuid16(uint16_t handle, uint16_t start) {
 
     switch (start) {
         case BATT_CHAR_CONF_HDL:
+        case BR_CHAR_CONF_HDL:
             info->uuid = BT_UUID_GATT_CCC;
             break;
         case BATT_CHAR_DESC_HDL:
+        case BR_CHAR_DESC_HDL:
             info->uuid = BT_UUID_GATT_CUD;
             break;
     }
@@ -221,6 +224,14 @@ static void bt_att_cmd_batt_lvl_rd_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint8_t));
 }
 
+static void bt_att_cmd_config_rd_rsp(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy(bt_hci_pkt_tmp.att_data, (void *)&config, mtu - 1);
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, mtu - 1);
+}
+
 static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
 
@@ -344,6 +355,8 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
 
             switch (rd_req->handle) {
                 case GAP_CHAR_DEV_NAME_HDL:
+                case BATT_CHAR_DESC_HDL:
+                case BR_CHAR_DESC_HDL:
                     bt_att_cmd_dev_name_rd_rsp(device->acl_handle);
                     break;
                 case GAP_CHAR_APP_HDL:
@@ -358,8 +371,8 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 case BATT_CHAR_CONF_HDL:
                     bt_att_cmd_conf_rd_rsp(device->acl_handle);
                     break;
-                case BATT_CHAR_DESC_HDL:
-                    bt_att_cmd_dev_name_rd_rsp(device->acl_handle);
+                case BR_CHAR_CONFIG_HDL:
+                    bt_att_cmd_config_rd_rsp(device->acl_handle);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
