@@ -719,7 +719,7 @@ static void bt_hci_cmd_le_set_adv_param(void *cp) {
 static void bt_hci_cmd_le_set_adv_data(void *cp) {
     uint8_t adv_data[] = {
         0x02, BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-        0x03, BT_DATA_UUID16_ALL, 0x0f, 0x18,
+        0x03, BT_DATA_UUID16_SOME, 0x0f, 0x18,
         0x0a, BT_DATA_NAME_COMPLETE, 0x42, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x74, 0x72, 0x6f
     };
     struct bt_hci_cp_le_set_adv_data *le_set_adv_data = (struct bt_hci_cp_le_set_adv_data *)&bt_hci_pkt_tmp.cp;
@@ -734,7 +734,7 @@ static void bt_hci_cmd_le_set_adv_data(void *cp) {
 
 static void bt_hci_cmd_le_set_scan_rsp_data(void *cp) {
     uint8_t scan_rsp[] = {
-        0x09, 0xff, 0xe0, 0x00, 0x56, 0x6c, 0xca, 0x7b, 0xdc, 0x23
+        0x11, BT_DATA_UUID128_ALL, 0x56, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x00
     };
     struct bt_hci_cp_le_set_scan_rsp_data *le_set_scan_rsp_data = (struct bt_hci_cp_le_set_scan_rsp_data *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);

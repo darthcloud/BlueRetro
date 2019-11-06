@@ -3,6 +3,7 @@
 #include "bt_att.h"
 #include "zephyr/uuid.h"
 #include "zephyr/att.h"
+#include "zephyr/gatt.h"
 
 enum {
     GATT_GRP_HDL = 0x0001,
@@ -20,9 +21,18 @@ enum {
     BATT_CHAR_HDL,
     BATT_CHAR_CONF_HDL,
     BATT_CHAR_DESC_HDL,
+    BR_GRP_HDL = 0x0050,
+    BR_ATT_CONFIG_HDL,
+    BR_CHAR_CONFIG_HDL,
+    BR_CHAR_CONF_HDL,
+    BR_CHAR_DESC_HDL,
     MAX_HDL,
 };
 
+static uint8_t br_grp_uuid[] = {0x56, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x00};
+static uint8_t br_char_conf_uuid[] = {0x56, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x01};
+
+static uint16_t mtu = 23;
 static uint8_t power = 0;
 
 static void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
@@ -95,7 +105,7 @@ static void bt_att_cmd_gatt_char_read_type_rsp(uint16_t handle) {
     rd_type_rsp->len = 7;
 
     rd_type_rsp->data->handle = GATT_ATT_SRVC_CH_HDL;
-    *data = 0x20;
+    *data = BT_GATT_CHRC_INDICATE;
     data++;
     *(uint16_t *)data = GATT_CHAR_SRVC_CH_HDL;
     data += 2;
@@ -117,7 +127,7 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
 
     name_data->handle = GAP_ATT_DEV_NAME_HDL;
     data = name_data->value;
-    *data = 0x02;
+    *data = BT_GATT_CHRC_READ;
     data++;
     *(uint16_t *)data = GAP_CHAR_DEV_NAME_HDL;
     data += 2;
@@ -125,7 +135,7 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
 
     app_data->handle = GAP_ATT_APP_HDL;
     data = app_data->value;
-    *data = 0x02;
+    *data = BT_GATT_CHRC_READ;
     data++;
     *(uint16_t *)data = GAP_CHAR_APP_HDL;
     data += 2;
@@ -133,7 +143,7 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
 
     car_data->handle = GAP_ATT_CAR_HDL;
     data = car_data->value;
-    *data = 0x02;
+    *data = BT_GATT_CHRC_READ;
     data++;
     *(uint16_t *)data = GAP_CHAR_CAR_HDL;
     data += 2;
@@ -151,11 +161,29 @@ static void bt_att_cmd_batt_char_read_type_rsp(uint16_t handle) {
     rd_type_rsp->len = 7;
 
     rd_type_rsp->data->handle = BATT_ATT_HDL;
-    *data = 0x12;
+    *data = BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ;
     data++;
     *(uint16_t *)data = BATT_CHAR_HDL;
     data += 2;
     *(uint16_t *)data = BT_UUID_BAS_BATTERY_LEVEL;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
+}
+
+static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle) {
+    struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
+    uint8_t *data = rd_type_rsp->data->value;
+
+    printf("# %s\n", __FUNCTION__);
+
+    rd_type_rsp->len = 21;
+
+    rd_type_rsp->data->handle = BR_ATT_CONFIG_HDL;
+    *data = BT_GATT_CHRC_READ;
+    data++;
+    *(uint16_t *)data = BR_CHAR_CONFIG_HDL;
+    data += 2;
+    memcpy(data, br_char_conf_uuid, sizeof(br_char_conf_uuid));
 
     bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
 }
@@ -210,27 +238,39 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
 
     printf("# %s\n", __FUNCTION__);
 
-    rd_grp_rsp->len = 6;
+    if (start <= BATT_CHAR_DESC_HDL) {
+        rd_grp_rsp->len = 6;
 
-    if (start <= GATT_GRP_HDL && end >= GATT_CHAR_SRVC_CH_HDL) {
-        gatt_data->start_handle = GATT_GRP_HDL;
-        gatt_data->end_handle = GATT_CHAR_SRVC_CH_HDL;
-        *(uint16_t *)gatt_data->value = BT_UUID_GATT;
-        len += rd_grp_rsp->len;
+        if (start <= GATT_GRP_HDL && end >= GATT_CHAR_SRVC_CH_HDL) {
+            gatt_data->start_handle = GATT_GRP_HDL;
+            gatt_data->end_handle = GATT_CHAR_SRVC_CH_HDL;
+            *(uint16_t *)gatt_data->value = BT_UUID_GATT;
+            len += rd_grp_rsp->len;
+        }
+
+        if (start <= GAP_GRP_HDL && end >= GAP_CHAR_CAR_HDL) {
+            gap_data->start_handle = GAP_GRP_HDL;
+            gap_data->end_handle = GAP_CHAR_CAR_HDL;
+            *(uint16_t *)gap_data->value = BT_UUID_GAP;
+            len += rd_grp_rsp->len;
+        }
+
+        if (start <= BATT_GRP_HDL && end >= BATT_CHAR_DESC_HDL) {
+            batt_data->start_handle = BATT_GRP_HDL;
+            batt_data->end_handle = BATT_CHAR_DESC_HDL;
+            *(uint16_t *)batt_data->value = BT_UUID_BAS;
+            len += rd_grp_rsp->len;
+        }
     }
+    else {
+        rd_grp_rsp->len = 20;
 
-    if (start <= GAP_GRP_HDL && end >= GAP_CHAR_CAR_HDL) {
-        gap_data->start_handle = GAP_GRP_HDL;
-        gap_data->end_handle = GAP_CHAR_CAR_HDL;
-        *(uint16_t *)gap_data->value = BT_UUID_GAP;
-        len += rd_grp_rsp->len;
-    }
-
-    if (start <= BATT_GRP_HDL && end >= BATT_CHAR_DESC_HDL) {
-        batt_data->start_handle = BATT_GRP_HDL;
-        batt_data->end_handle = BATT_CHAR_DESC_HDL;
-        *(uint16_t *)batt_data->value = BT_UUID_BAS;
-        len += rd_grp_rsp->len;
+        if (start <= BR_GRP_HDL && end >= BR_CHAR_DESC_HDL) {
+            gatt_data->start_handle = BR_GRP_HDL;
+            gatt_data->end_handle = BR_CHAR_DESC_HDL;
+            memcpy(gatt_data->value, br_grp_uuid, sizeof(br_grp_uuid));
+            len += rd_grp_rsp->len;
+        }
     }
 
     bt_att_cmd(handle, BT_ATT_OP_READ_GROUP_RSP, len);
@@ -248,6 +288,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_exchange_mtu_req *mtu_req = (struct bt_att_exchange_mtu_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_MTU_REQ\n");
+            mtu = mtu_req->mtu;
             bt_att_cmd_mtu_rsp(device->acl_handle, mtu_req->mtu);
             break;
         }
@@ -282,6 +323,10 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 /* BATT */
                 else if (start >= GAP_CHAR_CAR_HDL && start < BATT_CHAR_HDL && end >= BATT_CHAR_HDL) {
                     bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
+                }
+                /* BLUERETRO */
+                else if (start >= BATT_CHAR_HDL && start < BR_CHAR_CONFIG_HDL && end >= BR_CHAR_CONFIG_HDL) {
+                    bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle);
                 }
                 else {
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_TYPE_REQ, rd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
