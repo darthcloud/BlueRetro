@@ -33,6 +33,7 @@ enum {
 static uint8_t br_grp_uuid[] = {0x56, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x00};
 static uint8_t br_char_conf_uuid[] = {0x56, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x01};
 
+static uint16_t max_mtu = 23;
 static uint16_t mtu = 23;
 static uint8_t power = 0;
 
@@ -293,14 +294,23 @@ static void bt_att_cmd_wr_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_WRITE_RSP, 0);
 }
 
+void bt_att_set_le_max_mtu(uint16_t le_max_mtu) {
+    max_mtu = le_max_mtu;
+}
+
 void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     switch (bt_hci_acl_pkt->att_hdr.code) {
         case BT_ATT_OP_MTU_REQ:
         {
             struct bt_att_exchange_mtu_req *mtu_req = (struct bt_att_exchange_mtu_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_MTU_REQ\n");
-            mtu = mtu_req->mtu;
-            bt_att_cmd_mtu_rsp(device->acl_handle, mtu_req->mtu);
+            if (mtu_req->mtu < max_mtu) {
+                mtu = mtu_req->mtu;
+            }
+            else {
+                mtu = max_mtu;
+            }
+            bt_att_cmd_mtu_rsp(device->acl_handle, mtu);
             break;
         }
         case BT_ATT_OP_FIND_INFO_REQ:

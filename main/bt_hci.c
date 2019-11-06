@@ -3,6 +3,7 @@
 #include "bt_l2cap.h"
 #include "bt_hidp_wii.h"
 #include "bt_hci.h"
+#include "bt_att.h"
 #include "util.h"
 
 #define BT_INQUIRY_MAX 10
@@ -117,6 +118,7 @@ static void bt_hci_cmd_read_bd_addr(void *cp);
 //static void bt_hci_cmd_read_data_block_size(void *cp);
 //static void bt_hci_cmd_read_local_codecs(void *cp);
 //static void bt_hci_cmd_read_local_sp_options(void *cp);
+static void bt_hci_cmd_le_read_buffer_size(void *cp);
 static void bt_hci_cmd_le_set_adv_param(void *cp);
 static void bt_hci_cmd_le_set_adv_data(void *cp);
 static void bt_hci_cmd_le_set_scan_rsp_data(void *cp);
@@ -161,6 +163,7 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_write_hold_mode_act, NULL},
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
+    {bt_hci_cmd_le_read_buffer_size, NULL},
     {bt_hci_cmd_le_set_adv_param, NULL},
     {bt_hci_cmd_le_set_adv_data, NULL},
     {bt_hci_cmd_le_set_scan_rsp_data, NULL},
@@ -701,6 +704,12 @@ static void bt_hci_cmd_read_local_sp_options(void *cp) {
 }
 #endif
 
+static void bt_hci_cmd_le_read_buffer_size(void *cp) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_LE_READ_BUFFER_SIZE, 0);
+}
+
 static void bt_hci_cmd_le_set_adv_param(void *cp) {
     struct bt_hci_cp_le_set_adv_param *le_set_adv_param = (struct bt_hci_cp_le_set_adv_param *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
@@ -1044,6 +1053,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_READ_STORED_LINK_KEY:
                     case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
                     case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
+                    case BT_HCI_OP_LE_READ_BUFFER_SIZE:
                     case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
                     case BT_HCI_OP_DELETE_STORED_LINK_KEY:
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
@@ -1075,6 +1085,14 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             else {
                 switch (cmd_complete->opcode) {
+                    case BT_HCI_OP_LE_READ_BUFFER_SIZE:
+                    {
+                        struct bt_hci_rp_le_read_buffer_size *le_read_buffer_size = (struct bt_hci_rp_le_read_buffer_size *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        bt_att_set_le_max_mtu(le_read_buffer_size->le_max_len - sizeof(struct bt_l2cap_hdr));
+                        bt_hci_pkt_retry = 0;
+                        bt_hci_q_conf(1);
+                        break;
+                    }
                     case BT_HCI_OP_READ_BD_ADDR:
                     {
                         struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
