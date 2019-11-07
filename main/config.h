@@ -5,7 +5,7 @@
 
 #define ADAPTER_MAPPING_MAX 255
 
-struct map_conf {
+struct map_cfg {
     uint8_t src_btn;
     uint8_t dst_btn;
     uint8_t dst_id;
@@ -16,16 +16,16 @@ struct map_conf {
     uint8_t perc_deadzone;
 } __packed;
 
-struct output_conf {
+struct out_cfg {
     uint8_t dev_mode;
     uint8_t map_size;
-    struct map_conf map_conf[ADAPTER_MAPPING_MAX];
+    struct map_cfg map_cfg[ADAPTER_MAPPING_MAX];
 } __packed;
 
 struct config {
     uint32_t magic;
-    uint32_t multitap_conf;
-    struct output_conf output_conf[WIRED_MAX_DEV];
+    uint32_t multitap_cfg;
+    struct out_cfg out_cfg[WIRED_MAX_DEV];
 } __packed;
 
 extern struct config config;
