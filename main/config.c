@@ -4,7 +4,7 @@
 #include "adapter.h"
 #include "config.h"
 
-#define CONFIG_MAGIC 0xA5A5A55A
+#define CONFIG_MAGIC 0xA5A5A5A5
 #define CONFIG_FILE "/sd/config.bin"
 
 struct config config;
@@ -16,20 +16,20 @@ static int32_t config_store_on_file(struct config *data);
 static void config_init_struct(struct config *data) {
     data->magic = CONFIG_MAGIC;
     data->multitap_conf = 0x00;
-    memset(data->dev_mode, 0, sizeof(data->dev_mode));
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+        data->output_conf[i].dev_mode = 0x00;
+        data->output_conf[i].map_size = KB_MAX;
         for (uint32_t j = 0; j < KB_MAX; j++) {
-            data->map_conf[i][j].src_btn = j;
-            data->map_conf[i][j].dst_btn = j;
-            data->map_conf[i][j].dst_id = i;
-            data->map_conf[i][j].turbo = 0;
-            data->map_conf[i][j].algo = 0;
-            data->map_conf[i][j].perc_max = 100;
-            data->map_conf[i][j].perc_threshold = 25;
-            data->map_conf[i][j].perc_deadzone = 10;
+            data->output_conf[i].map_conf[j].src_btn = j;
+            data->output_conf[i].map_conf[j].dst_btn = j;
+            data->output_conf[i].map_conf[j].dst_id = i;
+            data->output_conf[i].map_conf[j].turbo = 0;
+            data->output_conf[i].map_conf[j].algo = 0;
+            data->output_conf[i].map_conf[j].perc_max = 100;
+            data->output_conf[i].map_conf[j].perc_threshold = 25;
+            data->output_conf[i].map_conf[j].perc_deadzone = 10;
         }
-        data->map_size[i] = KB_MAX;
     }
 }
 

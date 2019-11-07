@@ -16,12 +16,16 @@ struct map_conf {
     uint8_t perc_deadzone;
 } __packed;
 
+struct output_conf {
+    uint8_t dev_mode;
+    uint8_t map_size;
+    struct map_conf map_conf[ADAPTER_MAPPING_MAX];
+} __packed;
+
 struct config {
     uint32_t magic;
     uint32_t multitap_conf;
-    uint8_t dev_mode[WIRED_MAX_DEV];
-    uint8_t map_size[WIRED_MAX_DEV];
-    struct map_conf map_conf[WIRED_MAX_DEV][ADAPTER_MAPPING_MAX];
+    struct output_conf output_conf[WIRED_MAX_DEV];
 } __packed;
 
 extern struct config config;
