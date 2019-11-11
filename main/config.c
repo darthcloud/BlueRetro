@@ -15,6 +15,7 @@ static int32_t config_store_on_file(struct config *data);
 
 static void config_init_struct(struct config *data) {
     data->magic = CONFIG_MAGIC;
+    data->system_cfg = 0x00;
     data->multitap_cfg = 0x00;
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
