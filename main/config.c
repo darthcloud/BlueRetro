@@ -4,7 +4,7 @@
 #include "adapter.h"
 #include "config.h"
 
-#define CONFIG_MAGIC 0xA5A5A5A5
+#define CONFIG_MAGIC 0xA5A5A5A6
 #define CONFIG_FILE "/sd/config.bin"
 
 struct config config;
@@ -19,16 +19,16 @@ static void config_init_struct(struct config *data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         data->out_cfg[i].dev_mode = 0x00;
-        data->out_cfg[i].map_size = KB_MAX;
+        data->in_cfg[i].map_size = KB_MAX;
         for (uint32_t j = 0; j < KB_MAX; j++) {
-            data->out_cfg[i].map_cfg[j].src_btn = j;
-            data->out_cfg[i].map_cfg[j].dst_btn = j;
-            data->out_cfg[i].map_cfg[j].dst_id = i;
-            data->out_cfg[i].map_cfg[j].turbo = 0;
-            data->out_cfg[i].map_cfg[j].algo = 0;
-            data->out_cfg[i].map_cfg[j].perc_max = 100;
-            data->out_cfg[i].map_cfg[j].perc_threshold = 25;
-            data->out_cfg[i].map_cfg[j].perc_deadzone = 10;
+            data->in_cfg[i].map_cfg[j].src_btn = j;
+            data->in_cfg[i].map_cfg[j].dst_btn = j;
+            data->in_cfg[i].map_cfg[j].dst_id = i;
+            data->in_cfg[i].map_cfg[j].perc_max = 100;
+            data->in_cfg[i].map_cfg[j].perc_threshold = 50;
+            data->in_cfg[i].map_cfg[j].perc_deadzone = 135;
+            data->in_cfg[i].map_cfg[j].turbo = 0;
+            data->in_cfg[i].map_cfg[j].algo = 0;
         }
     }
 }

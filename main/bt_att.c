@@ -25,30 +25,54 @@ enum {
     BR_GRP_HDL = 0x0040,
     BR_CFG_0_ATT_HDL,
     BR_CFG_0_CHRC_HDL,
-    BR_CFG_1_ATT_HDL,
-    BR_CFG_1_CHRC_HDL,
-    BR_CFG_2_ATT_HDL,
-    BR_CFG_2_CHRC_HDL,
-    BR_CFG_3_ATT_HDL,
-    BR_CFG_3_CHRC_HDL,
-    BR_CFG_4_ATT_HDL,
-    BR_CFG_4_CHRC_HDL,
-    BR_CFG_5_ATT_HDL,
-    BR_CFG_5_CHRC_HDL,
-    BR_CFG_6_ATT_HDL,
-    BR_CFG_6_CHRC_HDL,
-    BR_CFG_7_ATT_HDL,
-    BR_CFG_7_CHRC_HDL,
-    BR_CFG_8_ATT_HDL,
-    BR_CFG_8_CHRC_HDL,
-    BR_CFG_9_ATT_HDL,
-    BR_CFG_9_CHRC_HDL,
-    BR_CFG_A_ATT_HDL,
-    BR_CFG_A_CHRC_HDL,
-    BR_CFG_B_ATT_HDL,
-    BR_CFG_B_CHRC_HDL,
-    BR_CFG_C_ATT_HDL,
-    BR_CFG_C_CHRC_HDL,
+    BR_IN_CFG_1_ATT_HDL,
+    BR_IN_CFG_1_CHRC_HDL,
+    BR_IN_CFG_2_ATT_HDL,
+    BR_IN_CFG_2_CHRC_HDL,
+    BR_IN_CFG_3_ATT_HDL,
+    BR_IN_CFG_3_CHRC_HDL,
+    BR_IN_CFG_4_ATT_HDL,
+    BR_IN_CFG_4_CHRC_HDL,
+    BR_IN_CFG_5_ATT_HDL,
+    BR_IN_CFG_5_CHRC_HDL,
+    BR_IN_CFG_6_ATT_HDL,
+    BR_IN_CFG_6_CHRC_HDL,
+    BR_IN_CFG_7_ATT_HDL,
+    BR_IN_CFG_7_CHRC_HDL,
+    BR_IN_CFG_8_ATT_HDL,
+    BR_IN_CFG_8_CHRC_HDL,
+    BR_IN_CFG_9_ATT_HDL,
+    BR_IN_CFG_9_CHRC_HDL,
+    BR_IN_CFG_A_ATT_HDL,
+    BR_IN_CFG_A_CHRC_HDL,
+    BR_IN_CFG_B_ATT_HDL,
+    BR_IN_CFG_B_CHRC_HDL,
+    BR_IN_CFG_C_ATT_HDL,
+    BR_IN_CFG_C_CHRC_HDL,
+    BR_OUT_CFG_1_ATT_HDL,
+    BR_OUT_CFG_1_CHRC_HDL,
+    BR_OUT_CFG_2_ATT_HDL,
+    BR_OUT_CFG_2_CHRC_HDL,
+    BR_OUT_CFG_3_ATT_HDL,
+    BR_OUT_CFG_3_CHRC_HDL,
+    BR_OUT_CFG_4_ATT_HDL,
+    BR_OUT_CFG_4_CHRC_HDL,
+    BR_OUT_CFG_5_ATT_HDL,
+    BR_OUT_CFG_5_CHRC_HDL,
+    BR_OUT_CFG_6_ATT_HDL,
+    BR_OUT_CFG_6_CHRC_HDL,
+    BR_OUT_CFG_7_ATT_HDL,
+    BR_OUT_CFG_7_CHRC_HDL,
+    BR_OUT_CFG_8_ATT_HDL,
+    BR_OUT_CFG_8_CHRC_HDL,
+    BR_OUT_CFG_9_ATT_HDL,
+    BR_OUT_CFG_9_CHRC_HDL,
+    BR_OUT_CFG_A_ATT_HDL,
+    BR_OUT_CFG_A_CHRC_HDL,
+    BR_OUT_CFG_B_ATT_HDL,
+    BR_OUT_CFG_B_CHRC_HDL,
+    BR_OUT_CFG_C_ATT_HDL,
+    BR_OUT_CFG_C_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -254,24 +278,37 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
     uint32_t len;
     printf("# %s\n", __FUNCTION__);
 
-    switch (config_id) {
-        case 0:
-            len = sizeof(config.magic) + sizeof(config.multitap_cfg);
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config, len);
-            break;
-        default:
-            if (offset > (config.out_cfg[config_id - 1].map_size * sizeof(config.out_cfg[0].map_cfg[0]))) {
-                len = 0;
-            }
-            else {
-                len = (config.out_cfg[config_id - 1].map_size * sizeof(config.out_cfg[0].map_cfg[0])) - offset;
+    if (config_id == 0) {
+        len = sizeof(config.magic) + sizeof(config.multitap_cfg);
+        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config, len);
+    }
+    else if (config_id <= WIRED_MAX_DEV) {
+        if (offset > (sizeof(config.in_cfg[0].map_size) + (config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])))) {
+            len = 0;
+        }
+        else {
+            len = sizeof(config.in_cfg[0].map_size) + (config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])) - offset;
 
-                if (len > (mtu - 1)) {
-                    len = mtu - 1;
-                }
-
-                memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[config_id - 1] + offset, len);
+            if (len > (mtu - 1)) {
+                len = mtu - 1;
             }
+
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[config_id - 1] + offset, len);
+        }
+    }
+    else {
+        if (offset > sizeof(config.out_cfg[0])) {
+            len = 0;
+        }
+        else {
+            len = sizeof(config.out_cfg[0]) - offset;
+
+            if (len > (mtu - 1)) {
+                len = mtu - 1;
+            }
+
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[config_id - WIRED_MAX_DEV - 1] + offset, len);
+        }
     }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
@@ -321,9 +358,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     else {
         rd_grp_rsp->len = 20;
 
-        if (start <= BR_GRP_HDL && end >= BR_CFG_C_CHRC_HDL) {
+        if (start <= BR_GRP_HDL && end >= BR_OUT_CFG_C_CHRC_HDL) {
             gatt_data->start_handle = BR_GRP_HDL;
-            gatt_data->end_handle = BR_CFG_C_CHRC_HDL;
+            gatt_data->end_handle = BR_OUT_CFG_C_CHRC_HDL;
             memcpy(gatt_data->value, br_grp_base_uuid, sizeof(br_grp_base_uuid));
             len += rd_grp_rsp->len;
         }
@@ -390,7 +427,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
                 }
                 /* BLUERETRO */
-                else if (start >= BATT_CHRC_HDL && start < BR_CFG_C_CHRC_HDL && end >= BR_CFG_C_CHRC_HDL) {
+                else if (start >= BATT_CHRC_HDL && start < BR_OUT_CFG_C_CHRC_HDL && end >= BR_OUT_CFG_C_CHRC_HDL) {
                     bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle, start);
                 }
                 else {
@@ -425,18 +462,30 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_conf_rd_rsp(device->acl_handle);
                     break;
                 case BR_CFG_0_CHRC_HDL:
-                case BR_CFG_1_CHRC_HDL:
-                case BR_CFG_2_CHRC_HDL:
-                case BR_CFG_3_CHRC_HDL:
-                case BR_CFG_4_CHRC_HDL:
-                case BR_CFG_5_CHRC_HDL:
-                case BR_CFG_6_CHRC_HDL:
-                case BR_CFG_7_CHRC_HDL:
-                case BR_CFG_8_CHRC_HDL:
-                case BR_CFG_9_CHRC_HDL:
-                case BR_CFG_A_CHRC_HDL:
-                case BR_CFG_B_CHRC_HDL:
-                case BR_CFG_C_CHRC_HDL:
+                case BR_IN_CFG_1_CHRC_HDL:
+                case BR_IN_CFG_2_CHRC_HDL:
+                case BR_IN_CFG_3_CHRC_HDL:
+                case BR_IN_CFG_4_CHRC_HDL:
+                case BR_IN_CFG_5_CHRC_HDL:
+                case BR_IN_CFG_6_CHRC_HDL:
+                case BR_IN_CFG_7_CHRC_HDL:
+                case BR_IN_CFG_8_CHRC_HDL:
+                case BR_IN_CFG_9_CHRC_HDL:
+                case BR_IN_CFG_A_CHRC_HDL:
+                case BR_IN_CFG_B_CHRC_HDL:
+                case BR_IN_CFG_C_CHRC_HDL:
+                case BR_OUT_CFG_1_CHRC_HDL:
+                case BR_OUT_CFG_2_CHRC_HDL:
+                case BR_OUT_CFG_3_CHRC_HDL:
+                case BR_OUT_CFG_4_CHRC_HDL:
+                case BR_OUT_CFG_5_CHRC_HDL:
+                case BR_OUT_CFG_6_CHRC_HDL:
+                case BR_OUT_CFG_7_CHRC_HDL:
+                case BR_OUT_CFG_8_CHRC_HDL:
+                case BR_OUT_CFG_9_CHRC_HDL:
+                case BR_OUT_CFG_A_CHRC_HDL:
+                case BR_OUT_CFG_B_CHRC_HDL:
+                case BR_OUT_CFG_C_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_CFG_0_CHRC_HDL) / 2, 0);
                     break;
                 default:
@@ -452,18 +501,30 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
 
             switch (rd_blob_req->handle) {
                 case BR_CFG_0_CHRC_HDL:
-                case BR_CFG_1_CHRC_HDL:
-                case BR_CFG_2_CHRC_HDL:
-                case BR_CFG_3_CHRC_HDL:
-                case BR_CFG_4_CHRC_HDL:
-                case BR_CFG_5_CHRC_HDL:
-                case BR_CFG_6_CHRC_HDL:
-                case BR_CFG_7_CHRC_HDL:
-                case BR_CFG_8_CHRC_HDL:
-                case BR_CFG_9_CHRC_HDL:
-                case BR_CFG_A_CHRC_HDL:
-                case BR_CFG_B_CHRC_HDL:
-                case BR_CFG_C_CHRC_HDL:
+                case BR_IN_CFG_1_CHRC_HDL:
+                case BR_IN_CFG_2_CHRC_HDL:
+                case BR_IN_CFG_3_CHRC_HDL:
+                case BR_IN_CFG_4_CHRC_HDL:
+                case BR_IN_CFG_5_CHRC_HDL:
+                case BR_IN_CFG_6_CHRC_HDL:
+                case BR_IN_CFG_7_CHRC_HDL:
+                case BR_IN_CFG_8_CHRC_HDL:
+                case BR_IN_CFG_9_CHRC_HDL:
+                case BR_IN_CFG_A_CHRC_HDL:
+                case BR_IN_CFG_B_CHRC_HDL:
+                case BR_IN_CFG_C_CHRC_HDL:
+                case BR_OUT_CFG_1_CHRC_HDL:
+                case BR_OUT_CFG_2_CHRC_HDL:
+                case BR_OUT_CFG_3_CHRC_HDL:
+                case BR_OUT_CFG_4_CHRC_HDL:
+                case BR_OUT_CFG_5_CHRC_HDL:
+                case BR_OUT_CFG_6_CHRC_HDL:
+                case BR_OUT_CFG_7_CHRC_HDL:
+                case BR_OUT_CFG_8_CHRC_HDL:
+                case BR_OUT_CFG_9_CHRC_HDL:
+                case BR_OUT_CFG_A_CHRC_HDL:
+                case BR_OUT_CFG_B_CHRC_HDL:
+                case BR_OUT_CFG_C_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_CFG_0_CHRC_HDL)/2, rd_blob_req->offset);
                     break;
                 default:
