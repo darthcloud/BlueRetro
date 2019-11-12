@@ -4,7 +4,7 @@
 #include "adapter.h"
 #include "config.h"
 
-#define CONFIG_MAGIC 0xA5A5A5A6
+#define CONFIG_MAGIC 0xA5A5A5A7
 #define CONFIG_FILE "/sd/config.bin"
 
 struct config config;
@@ -20,6 +20,8 @@ static void config_init_struct(struct config *data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         data->out_cfg[i].dev_mode = 0x00;
+        data->in_cfg[i].bt_dev_id: = 0x00;
+        data->in_cfg[i].bt_subdev_id = 0x00;
         data->in_cfg[i].map_size = KB_MAX;
         for (uint32_t j = 0; j < KB_MAX; j++) {
             data->in_cfg[i].map_cfg[j].src_btn = j;
