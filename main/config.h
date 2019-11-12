@@ -16,6 +16,11 @@ struct map_cfg {
     uint8_t algo;
 } __packed;
 
+struct global_cfg {
+    uint8_t system_cfg;
+    uint8_t multitap_cfg;
+} __packed;
+
 struct out_cfg {
     uint8_t dev_mode;
 } __packed;
@@ -27,8 +32,7 @@ struct in_cfg {
 
 struct config {
     uint32_t magic;
-    uint16_t system_cfg;
-    uint16_t multitap_cfg;
+    struct global_cfg global_cfg;
     struct out_cfg out_cfg[WIRED_MAX_DEV];
     struct in_cfg in_cfg[WIRED_MAX_DEV];
 } __packed;

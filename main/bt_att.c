@@ -279,8 +279,8 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
     printf("# %s\n", __FUNCTION__);
 
     if (config_id == 0) {
-        len = sizeof(config.magic) + sizeof(config.system_cfg) + sizeof(config.multitap_cfg);
-        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config, len);
+        len = sizeof(config.global_cfg);
+        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
     }
     else if (config_id <= WIRED_MAX_DEV) {
         if (offset > (sizeof(config.in_cfg[0].map_size) + (config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])))) {
