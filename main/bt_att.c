@@ -284,8 +284,8 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
         memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
     }
     else if (config_id <= WIRED_MAX_DEV) {
-        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[config_id - 1].map_size));
-        printf("# Input config\n");
+        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
+        printf("# Input config %d\n", cfg_len);
         if (offset > cfg_len) {
             len = 0;
         }
