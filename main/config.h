@@ -26,6 +26,8 @@ struct out_cfg {
 } __packed;
 
 struct in_cfg {
+    uint8_t bt_dev_id;
+    uint8_t bt_subdev_id;
     uint8_t map_size;
     struct map_cfg map_cfg[ADAPTER_MAPPING_MAX];
 } __packed;

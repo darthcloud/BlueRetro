@@ -283,11 +283,12 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
         memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
     }
     else if (config_id <= WIRED_MAX_DEV) {
-        if (offset > (sizeof(config.in_cfg[0].map_size) + (config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])))) {
+        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX - config.in_cfg[config_id - 1].map_size));
+        if (offset > cfg_len) {
             len = 0;
         }
         else {
-            len = sizeof(config.in_cfg[0].map_size) + (config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])) - offset;
+            len = cfg_len - offset;
 
             if (len > (mtu - 1)) {
                 len = mtu - 1;
