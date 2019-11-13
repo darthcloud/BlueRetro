@@ -27,8 +27,10 @@ enum {
     BR_GRP_HDL = 0x0040,
     BR_GLBL_CFG_ATT_HDL,
     BR_GLBL_CFG_CHRC_HDL,
-    BR_OUT_CFG_ATT_HDL,
-    BR_OUT_CFG_CHRC_HDL,
+    BR_OUT_CFG_CTRL_ATT_HDL,
+    BR_OUT_CFG_CTRL_CHRC_HDL,
+    BR_OUT_CFG_DATA_ATT_HDL,
+    BR_OUT_CFG_DATA_CHRC_HDL,
     BR_IN_CFG_CTRL_ATT_HDL,
     BR_IN_CFG_CTRL_CHRC_HDL,
     BR_IN_CFG_DATA_ATT_HDL,
@@ -41,6 +43,7 @@ static uint8_t br_grp_base_uuid[] = {0x00, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0
 static uint16_t max_mtu = 23;
 static uint16_t mtu = 23;
 static uint8_t power = 0;
+static uint16_t out_ctrl_cfg_id = 0;
 static uint16_t ctrl_offset = 0;
 static uint16_t ctrl_cfg_id = 0;
 
@@ -245,7 +248,22 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
         len = sizeof(config.global_cfg);
         memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
     }
-    else if (config_id == 3) {
+    else if (config_id == 2) {
+        printf("# Output config\n");
+        if (offset > sizeof(config.out_cfg[0])) {
+            len = 0;
+        }
+        else {
+            len = sizeof(config.out_cfg[0]) - offset;
+
+            if (len > (mtu - 1)) {
+                len = mtu - 1;
+            }
+
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[out_ctrl_cfg_id] + offset, len);
+        }
+    }
+    else if (config_id == 4) {
         uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[ctrl_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
         uint32_t sum_offset = ctrl_offset + offset;
         printf("# Input config %d\n", cfg_len);
@@ -264,21 +282,6 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
             }
 
             memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[ctrl_cfg_id] + sum_offset, len);
-        }
-    }
-    else if (config_id == 1) {
-        printf("# Output config\n");
-        if (offset > sizeof(config.out_cfg)) {
-            len = 0;
-        }
-        else {
-            len = sizeof(config.out_cfg) - offset;
-
-            if (len > (mtu - 1)) {
-                len = mtu - 1;
-            }
-
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg + offset, len);
         }
     }
 
@@ -433,7 +436,8 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_conf_rd_rsp(device->acl_handle);
                     break;
                 case BR_GLBL_CFG_CHRC_HDL:
-                case BR_OUT_CFG_CHRC_HDL:
+                case BR_OUT_CFG_CTRL_CHRC_HDL:
+                case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
@@ -451,7 +455,8 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
 
             switch (rd_blob_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
-                case BR_OUT_CFG_CHRC_HDL:
+                case BR_OUT_CFG_CTRL_CHRC_HDL:
+                case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL)/2, rd_blob_req->offset);
@@ -481,8 +486,11 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             printf("# BT_ATT_OP_WRITE_REQ\n");
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
-                case BR_OUT_CFG_CHRC_HDL:
+                case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
+                    break;
+                case BR_OUT_CFG_CTRL_CHRC_HDL:
+                    out_ctrl_cfg_id = *data;
                     break;
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                     ctrl_cfg_id = *data;
