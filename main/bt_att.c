@@ -486,11 +486,12 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             printf("# BT_ATT_OP_WRITE_REQ\n");
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
+                    printf("# BR_GLBL_CFG_CHRC_HDL %04X\n", wr_req->handle);
                     memcpy((void *)&config.global_cfg, wr_req->value, sizeof(config.global_cfg));
                     config_update();
                     break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.output_cfg[out_ctrl_cfg_id], wr_req->value, sizeof(config.output_cfg[0]));
+                    memcpy((void *)&config.out_cfg[out_ctrl_cfg_id], wr_req->value, sizeof(config.out_cfg[0]));
                     config_update();
                     break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
