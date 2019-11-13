@@ -6,6 +6,8 @@
 #include "zephyr/gatt.h"
 #include "config.h"
 
+#define ATT_MAX_LEN 512
+
 enum {
     GATT_GRP_HDL = 0x0001,
     GATT_SRVC_CH_ATT_HDL,
@@ -23,56 +25,14 @@ enum {
     BATT_CHRC_CONF_HDL,
     BATT_CHRC_DESC_HDL,
     BR_GRP_HDL = 0x0040,
-    BR_CFG_0_ATT_HDL,
-    BR_CFG_0_CHRC_HDL,
-    BR_IN_CFG_1_ATT_HDL,
-    BR_IN_CFG_1_CHRC_HDL,
-    BR_IN_CFG_2_ATT_HDL,
-    BR_IN_CFG_2_CHRC_HDL,
-    BR_IN_CFG_3_ATT_HDL,
-    BR_IN_CFG_3_CHRC_HDL,
-    BR_IN_CFG_4_ATT_HDL,
-    BR_IN_CFG_4_CHRC_HDL,
-    BR_IN_CFG_5_ATT_HDL,
-    BR_IN_CFG_5_CHRC_HDL,
-    BR_IN_CFG_6_ATT_HDL,
-    BR_IN_CFG_6_CHRC_HDL,
-    BR_IN_CFG_7_ATT_HDL,
-    BR_IN_CFG_7_CHRC_HDL,
-    BR_IN_CFG_8_ATT_HDL,
-    BR_IN_CFG_8_CHRC_HDL,
-    BR_IN_CFG_9_ATT_HDL,
-    BR_IN_CFG_9_CHRC_HDL,
-    BR_IN_CFG_A_ATT_HDL,
-    BR_IN_CFG_A_CHRC_HDL,
-    BR_IN_CFG_B_ATT_HDL,
-    BR_IN_CFG_B_CHRC_HDL,
-    BR_IN_CFG_C_ATT_HDL,
-    BR_IN_CFG_C_CHRC_HDL,
-    BR_OUT_CFG_1_ATT_HDL,
-    BR_OUT_CFG_1_CHRC_HDL,
-    BR_OUT_CFG_2_ATT_HDL,
-    BR_OUT_CFG_2_CHRC_HDL,
-    BR_OUT_CFG_3_ATT_HDL,
-    BR_OUT_CFG_3_CHRC_HDL,
-    BR_OUT_CFG_4_ATT_HDL,
-    BR_OUT_CFG_4_CHRC_HDL,
-    BR_OUT_CFG_5_ATT_HDL,
-    BR_OUT_CFG_5_CHRC_HDL,
-    BR_OUT_CFG_6_ATT_HDL,
-    BR_OUT_CFG_6_CHRC_HDL,
-    BR_OUT_CFG_7_ATT_HDL,
-    BR_OUT_CFG_7_CHRC_HDL,
-    BR_OUT_CFG_8_ATT_HDL,
-    BR_OUT_CFG_8_CHRC_HDL,
-    BR_OUT_CFG_9_ATT_HDL,
-    BR_OUT_CFG_9_CHRC_HDL,
-    BR_OUT_CFG_A_ATT_HDL,
-    BR_OUT_CFG_A_CHRC_HDL,
-    BR_OUT_CFG_B_ATT_HDL,
-    BR_OUT_CFG_B_CHRC_HDL,
-    BR_OUT_CFG_C_ATT_HDL,
-    BR_OUT_CFG_C_CHRC_HDL,
+    BR_GLBL_CFG_ATT_HDL,
+    BR_GLBL_CFG_CHRC_HDL,
+    BR_OUT_CFG_ATT_HDL,
+    BR_OUT_CFG_CHRC_HDL,
+    BR_IN_CFG_CTRL_ATT_HDL,
+    BR_IN_CFG_CTRL_CHRC_HDL,
+    BR_IN_CFG_DATA_ATT_HDL,
+    BR_IN_CFG_DATA_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -81,6 +41,8 @@ static uint8_t br_grp_base_uuid[] = {0x00, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0
 static uint16_t max_mtu = 23;
 static uint16_t mtu = 23;
 static uint8_t power = 0;
+static uint16_t ctrl_offset = 0;
+static uint16_t ctrl_cfg_id = 0;
 
 static void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
@@ -231,12 +193,12 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
     else {
         rd_type_rsp->data->handle = start;
     }
-    *data = BT_GATT_CHRC_READ;
+    *data = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE;
     data++;
     *(uint16_t *)data = rd_type_rsp->data->handle + 1;
     data += 2;
     memcpy(data, br_grp_base_uuid, sizeof(br_grp_base_uuid));
-    *data = (rd_type_rsp->data->handle - BR_CFG_0_ATT_HDL)/2 + 1;
+    *data = (rd_type_rsp->data->handle - BR_GLBL_CFG_ATT_HDL)/2 + 1;
 
     bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len);
 }
@@ -275,7 +237,7 @@ static void bt_att_cmd_batt_lvl_rd_rsp(uint16_t handle) {
 }
 
 static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_t offset) {
-    uint32_t len;
+    uint32_t len = 0;
     printf("# %s\n", __FUNCTION__);
 
     if (config_id == 0) {
@@ -283,35 +245,40 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
         len = sizeof(config.global_cfg);
         memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
     }
-    else if (config_id <= WIRED_MAX_DEV) {
-        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[config_id - 1].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
+    else if (config_id == 3) {
+        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[ctrl_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
+        uint32_t sum_offset = ctrl_offset + offset;
         printf("# Input config %d\n", cfg_len);
-        if (offset > cfg_len) {
+        if (sum_offset > cfg_len || offset > ATT_MAX_LEN) {
             len = 0;
         }
         else {
-            len = cfg_len - offset;
+            len = cfg_len - sum_offset;
 
             if (len > (mtu - 1)) {
                 len = mtu - 1;
             }
 
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[config_id - 1] + offset, len);
+            if ((offset + len) > ATT_MAX_LEN) {
+                len = ATT_MAX_LEN - offset;
+            }
+
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[ctrl_cfg_id] + sum_offset, len);
         }
     }
-    else {
+    else if (config_id == 1) {
         printf("# Output config\n");
-        if (offset > sizeof(config.out_cfg[0])) {
+        if (offset > sizeof(config.out_cfg)) {
             len = 0;
         }
         else {
-            len = sizeof(config.out_cfg[0]) - offset;
+            len = sizeof(config.out_cfg) - offset;
 
             if (len > (mtu - 1)) {
                 len = mtu - 1;
             }
 
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[config_id - WIRED_MAX_DEV - 1] + offset, len);
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg + offset, len);
         }
     }
 
@@ -362,9 +329,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     else {
         rd_grp_rsp->len = 20;
 
-        if (start <= BR_GRP_HDL && end >= BR_OUT_CFG_C_CHRC_HDL) {
+        if (start <= BR_GRP_HDL && end >= BR_IN_CFG_DATA_CHRC_HDL) {
             gatt_data->start_handle = BR_GRP_HDL;
-            gatt_data->end_handle = BR_OUT_CFG_C_CHRC_HDL;
+            gatt_data->end_handle = BR_IN_CFG_DATA_CHRC_HDL;
             memcpy(gatt_data->value, br_grp_base_uuid, sizeof(br_grp_base_uuid));
             len += rd_grp_rsp->len;
         }
@@ -431,7 +398,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
                 }
                 /* BLUERETRO */
-                else if (start >= BATT_CHRC_HDL && start < BR_OUT_CFG_C_CHRC_HDL && end >= BR_OUT_CFG_C_CHRC_HDL) {
+                else if (start >= BATT_CHRC_HDL && start < BR_IN_CFG_DATA_CHRC_HDL && end >= BR_IN_CFG_DATA_CHRC_HDL) {
                     bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle, start);
                 }
                 else {
@@ -465,32 +432,11 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 case BATT_CHRC_CONF_HDL:
                     bt_att_cmd_conf_rd_rsp(device->acl_handle);
                     break;
-                case BR_CFG_0_CHRC_HDL:
-                case BR_IN_CFG_1_CHRC_HDL:
-                case BR_IN_CFG_2_CHRC_HDL:
-                case BR_IN_CFG_3_CHRC_HDL:
-                case BR_IN_CFG_4_CHRC_HDL:
-                case BR_IN_CFG_5_CHRC_HDL:
-                case BR_IN_CFG_6_CHRC_HDL:
-                case BR_IN_CFG_7_CHRC_HDL:
-                case BR_IN_CFG_8_CHRC_HDL:
-                case BR_IN_CFG_9_CHRC_HDL:
-                case BR_IN_CFG_A_CHRC_HDL:
-                case BR_IN_CFG_B_CHRC_HDL:
-                case BR_IN_CFG_C_CHRC_HDL:
-                case BR_OUT_CFG_1_CHRC_HDL:
-                case BR_OUT_CFG_2_CHRC_HDL:
-                case BR_OUT_CFG_3_CHRC_HDL:
-                case BR_OUT_CFG_4_CHRC_HDL:
-                case BR_OUT_CFG_5_CHRC_HDL:
-                case BR_OUT_CFG_6_CHRC_HDL:
-                case BR_OUT_CFG_7_CHRC_HDL:
-                case BR_OUT_CFG_8_CHRC_HDL:
-                case BR_OUT_CFG_9_CHRC_HDL:
-                case BR_OUT_CFG_A_CHRC_HDL:
-                case BR_OUT_CFG_B_CHRC_HDL:
-                case BR_OUT_CFG_C_CHRC_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_CFG_0_CHRC_HDL) / 2, 0);
+                case BR_GLBL_CFG_CHRC_HDL:
+                case BR_OUT_CFG_CHRC_HDL:
+                case BR_IN_CFG_CTRL_CHRC_HDL:
+                case BR_IN_CFG_DATA_CHRC_HDL:
+                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
@@ -504,32 +450,11 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             printf("# BT_ATT_OP_READ_BLOB_RSP\n");
 
             switch (rd_blob_req->handle) {
-                case BR_CFG_0_CHRC_HDL:
-                case BR_IN_CFG_1_CHRC_HDL:
-                case BR_IN_CFG_2_CHRC_HDL:
-                case BR_IN_CFG_3_CHRC_HDL:
-                case BR_IN_CFG_4_CHRC_HDL:
-                case BR_IN_CFG_5_CHRC_HDL:
-                case BR_IN_CFG_6_CHRC_HDL:
-                case BR_IN_CFG_7_CHRC_HDL:
-                case BR_IN_CFG_8_CHRC_HDL:
-                case BR_IN_CFG_9_CHRC_HDL:
-                case BR_IN_CFG_A_CHRC_HDL:
-                case BR_IN_CFG_B_CHRC_HDL:
-                case BR_IN_CFG_C_CHRC_HDL:
-                case BR_OUT_CFG_1_CHRC_HDL:
-                case BR_OUT_CFG_2_CHRC_HDL:
-                case BR_OUT_CFG_3_CHRC_HDL:
-                case BR_OUT_CFG_4_CHRC_HDL:
-                case BR_OUT_CFG_5_CHRC_HDL:
-                case BR_OUT_CFG_6_CHRC_HDL:
-                case BR_OUT_CFG_7_CHRC_HDL:
-                case BR_OUT_CFG_8_CHRC_HDL:
-                case BR_OUT_CFG_9_CHRC_HDL:
-                case BR_OUT_CFG_A_CHRC_HDL:
-                case BR_OUT_CFG_B_CHRC_HDL:
-                case BR_OUT_CFG_C_CHRC_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_CFG_0_CHRC_HDL)/2, rd_blob_req->offset);
+                case BR_GLBL_CFG_CHRC_HDL:
+                case BR_OUT_CFG_CHRC_HDL:
+                case BR_IN_CFG_CTRL_CHRC_HDL:
+                case BR_IN_CFG_DATA_CHRC_HDL:
+                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL)/2, rd_blob_req->offset);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_BLOB_REQ, rd_blob_req->handle, BT_ATT_ERR_INVALID_HANDLE);
@@ -552,7 +477,22 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         case BT_ATT_OP_WRITE_REQ:
         {
             struct bt_att_write_req *wr_req = (struct bt_att_write_req *)bt_hci_acl_pkt->att_data;
+            uint16_t *data = (uint16_t *)wr_req->value;
             printf("# BT_ATT_OP_WRITE_REQ\n");
+            switch (wr_req->handle) {
+                case BR_GLBL_CFG_CHRC_HDL:
+                case BR_OUT_CFG_CHRC_HDL:
+                case BR_IN_CFG_DATA_CHRC_HDL:
+                    break;
+                case BR_IN_CFG_CTRL_CHRC_HDL:
+                    ctrl_cfg_id = *data;
+                    data++;
+                    ctrl_offset = *data;
+                    break;
+                default:
+                    bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_WRITE_REQ, wr_req->handle, BT_ATT_ERR_INVALID_HANDLE);
+                    break;
+            }
             bt_att_cmd_wr_rsp(device->acl_handle);
             break;
         }
