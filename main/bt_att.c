@@ -511,5 +511,10 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             bt_att_cmd_wr_rsp(device->acl_handle);
             break;
         }
+        case BT_ATT_OP_PREPARE_WRITE_REQ:
+        {
+            printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d\n", len);
+            break;
+        }
     }
 }

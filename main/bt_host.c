@@ -37,6 +37,9 @@ static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev_conf = {0};
 static struct bt_dev bt_dev[7] = {0};
 static atomic_t bt_flags = 0;
+static uint32_t frag_size = 0;
+static uint32_t frag_offset = 0;
+static uint8_t frag_buf[1024];
 
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
@@ -142,11 +145,34 @@ static void bt_host_tx_ringbuf_task(void *param) {
 
 static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     struct bt_dev *device = NULL;
-    bt_host_get_dev_from_handle(bt_hci_acl_pkt->acl_hdr.handle, &device);
+    struct bt_hci_pkt *pkt = bt_hci_acl_pkt;
+    uint32_t pkt_len = len;
+    bt_host_get_dev_from_handle(pkt->acl_hdr.handle, &device);
+
+    if (bt_acl_flags(pkt->acl_hdr.handle) == BT_ACL_CONT) {
+        memcpy(frag_buf + frag_offset, (void *)pkt + BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE,
+            pkt->acl_hdr.len);
+        frag_offset += pkt->acl_hdr.len;
+        if (frag_offset < frag_size) {
+            printf("# %s Waiting for next fragment. offset: %d size %d\n", __FUNCTION__, frag_offset, frag_size);
+            return;
+        }
+        pkt = (struct bt_hci_pkt *)frag_buf;
+        pkt_len = frag_size;
+        printf("# %s process reassembled frame. offset: %d size %d\n", __FUNCTION__, frag_offset, frag_size);
+    }
+    if (bt_acl_flags(pkt->acl_hdr.handle) == BT_ACL_START
+        && (pkt_len - BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr)) < pkt->l2cap_hdr.len) {
+        memcpy(frag_buf, (void *)pkt, pkt_len);
+        frag_offset = pkt_len;
+        frag_size = pkt->l2cap_hdr.len + BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr);
+        printf("# %s Detected fragmented frame start\n", __FUNCTION__);
+        return;
+    }
 
     if (device == NULL) {
-        if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
-            bt_att_hdlr(&bt_dev_conf, bt_hci_acl_pkt, len);
+        if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
+            bt_att_hdlr(&bt_dev_conf, pkt, pkt_len);
         }
         else {
             printf("# %s dev NULL!\n", __FUNCTION__);
@@ -154,16 +180,16 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
         return;
     }
 
-    if (bt_hci_acl_pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
-        bt_l2cap_sig_hdlr(device, bt_hci_acl_pkt);
+    if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
+        bt_l2cap_sig_hdlr(device, pkt);
     }
-    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
-        bt_hci_acl_pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
-        bt_sdp_hdlr(device, bt_hci_acl_pkt);
+    else if (pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
+        pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {
+        bt_sdp_hdlr(device, pkt);
     }
-    else if (bt_hci_acl_pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
-        bt_hci_acl_pkt->l2cap_hdr.cid == device->intr_chan.scid) {
-        bt_hid_hdlr(device, bt_hci_acl_pkt);
+    else if (pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
+        pkt->l2cap_hdr.cid == device->intr_chan.scid) {
+        bt_hid_hdlr(device, pkt);
     }
 }
 
