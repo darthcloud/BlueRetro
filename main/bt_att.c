@@ -349,6 +349,14 @@ static void bt_att_cmd_wr_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_WRITE_RSP, 0);
 }
 
+static void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, data_len);
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy(bt_hci_pkt_tmp.att_data, data, data_len);
+
+    bt_att_cmd(handle, BT_ATT_OP_PREPARE_WRITE_RSP, data_len);
+}
+
 void bt_att_set_le_max_mtu(uint16_t le_max_mtu) {
     max_mtu = le_max_mtu;
 }
@@ -489,31 +497,48 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     printf("# BR_GLBL_CFG_CHRC_HDL %04X\n", wr_req->handle);
                     memcpy((void *)&config.global_cfg, wr_req->value, sizeof(config.global_cfg));
                     config_update();
+                    bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                     memcpy((void *)&config.out_cfg[out_ctrl_cfg_id], wr_req->value, sizeof(config.out_cfg[0]));
                     config_update();
+                    bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
+                    memcpy((void *)&config.in_cfg[ctrl_cfg_id], wr_req->value, sizeof(config.in_cfg[0]));
+                    config_update();
+                    bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_CTRL_CHRC_HDL:
                     out_ctrl_cfg_id = *data;
+                    bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                     ctrl_cfg_id = *data;
                     data++;
                     ctrl_offset = *data;
+                    bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_WRITE_REQ, wr_req->handle, BT_ATT_ERR_INVALID_HANDLE);
                     break;
             }
-            bt_att_cmd_wr_rsp(device->acl_handle);
             break;
         }
         case BT_ATT_OP_PREPARE_WRITE_REQ:
         {
-            printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d\n", len);
+            struct bt_att_prepare_write_req *prep_wr_req = (struct bt_att_prepare_write_req *)bt_hci_acl_pkt->att_data;
+            data_len = len - BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr) + sizeof(prep_wr_req->handle) + sizeof(prep_wr_req->offset);
+            printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d %d\n", len, data_len);
+            switch (prep_wr_req->handle) {
+                case BR_IN_CFG_DATA_CHRC_HDL:
+                    memcpy((void *)&config.in_cfg[ctrl_cfg_id] + prep_wr_req->offset, prep_wr_req->value, data_len);
+                    bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, data_len);
+                    break;
+                default:
+                    bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_PREPARE_WRITE_REQ, prep_wr_req->handle, BT_ATT_ERR_INVALID_HANDLE);
+                    break;
+            }
             break;
         }
     }
