@@ -349,7 +349,7 @@ static void bt_att_cmd_wr_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_WRITE_RSP, 0);
 }
 
-static void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, data_len);
+static void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, uint32_t data_len) {
     printf("# %s\n", __FUNCTION__);
 
     memcpy(bt_hci_pkt_tmp.att_data, data, data_len);
@@ -528,7 +528,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         case BT_ATT_OP_PREPARE_WRITE_REQ:
         {
             struct bt_att_prepare_write_req *prep_wr_req = (struct bt_att_prepare_write_req *)bt_hci_acl_pkt->att_data;
-            data_len = len - BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr) + sizeof(prep_wr_req->handle) + sizeof(prep_wr_req->offset);
+            uint32_t data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr) + sizeof(prep_wr_req->handle) + sizeof(prep_wr_req->offset));
             printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d %d\n", len, data_len);
             switch (prep_wr_req->handle) {
                 case BR_IN_CFG_DATA_CHRC_HDL:

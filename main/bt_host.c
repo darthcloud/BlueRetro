@@ -162,7 +162,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
         printf("# %s process reassembled frame. offset: %d size %d\n", __FUNCTION__, frag_offset, frag_size);
     }
     if (bt_acl_flags(pkt->acl_hdr.handle) == BT_ACL_START
-        && (pkt_len - BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr)) < pkt->l2cap_hdr.len) {
+        && (pkt_len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr))) < pkt->l2cap_hdr.len) {
         memcpy(frag_buf, (void *)pkt, pkt_len);
         frag_offset = pkt_len;
         frag_size = pkt->l2cap_hdr.len + BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr);
