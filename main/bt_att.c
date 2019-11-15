@@ -550,7 +550,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         case BT_ATT_OP_EXEC_WRITE_REQ:
         {
             struct bt_att_exec_write_req *exec_wr_req = (struct bt_att_exec_write_req *)bt_hci_acl_pkt->att_data;
-            printf("BT_ATT_OP_EXEC_WRITE_REQ\n");
+            printf("# BT_ATT_OP_EXEC_WRITE_REQ\n");
             if (exec_wr_req->flags == BT_ATT_FLAG_EXEC) {
                 config_update();
             }
