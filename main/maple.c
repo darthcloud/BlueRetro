@@ -6,6 +6,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/gpio.h"
 #include "esp32/dport_access.h"
+#include "adapter.h"
 #include "maple.h"
 
 #define DEBUG  (1ULL << 25)
@@ -17,7 +18,6 @@
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 #define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
 
-static struct io *output;
 const char dev_name_ctrl[] = "BlueRetro Adapter - Controller";
 const char dev_name_mem[] = "BlueRetro Adapter - Memory";
 const char dev_name_rumble[] = "BlueRetro Adapter - Rumble";
@@ -237,15 +237,16 @@ maple_end:
         switch (cmd) {
             case 0x01:
                 maple_tx(dev_info, sizeof(dev_info));
-                if (!output->format) {
-                    output->format = IO_FORMAT_DC;
-                    memcpy((uint8_t *)&output->io.dc, status + 8, sizeof(output->io.dc));
+                if (wired_adapter.system_id == WIRED_NONE) {
+                    wired_adapter.system_id = DC;
+                    /* Init neutral status buffer */
+                    memcpy(wired_adapter.data[0].output, status + 8, sizeof(status) - 8);
                 }
                 break;
             case 0x09:
-                memcpy(status + 8, (uint8_t *)&output->io.dc, sizeof(output->io.dc));
+                memcpy(status + 8, wired_adapter.data[0].output, sizeof(status) - 8);
                 maple_tx(status, sizeof(status));
-                ++output->poll_cnt;
+                ++wired_adapter.data[0].frame_cnt;
                 break;
             default:
                 ets_printf("Unsupported cmd: 0x%02X\n", cmd);
@@ -257,10 +258,8 @@ maple_end:
     }
 }
 
-void init_maple(struct io *output_data)
+void maple_init(void)
 {
-    output = output_data;
-
     gpio_config_t io_conf0 = {
         .intr_type = GPIO_PIN_INTR_NEGEDGE,
         .pin_bit_mask = MAPLE0,
@@ -292,4 +291,3 @@ void init_maple(struct io *output_data)
 
     esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
 }
-

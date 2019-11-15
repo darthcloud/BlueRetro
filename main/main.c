@@ -4,10 +4,11 @@
 #include "sd.h"
 #include "config.h"
 #include "bt_host.h"
+#include "maple.h"
 
 static void wired_init_task(void *arg) {
     //nsi_init(NSI_CH, 26, NSI_SLAVE, &output[0]);
-    //init_maple(&output[0]);
+    maple_init();
     vTaskDelete(NULL);
 }
 
