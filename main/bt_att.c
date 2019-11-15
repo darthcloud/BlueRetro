@@ -357,6 +357,12 @@ static void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, uint32_t data
     bt_att_cmd(handle, BT_ATT_OP_PREPARE_WRITE_RSP, data_len);
 }
 
+static void bt_att_cmd_exec_wr_rsp(uint16_t handle) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_att_cmd(handle, BT_ATT_OP_EXEC_WRITE_RSP, 0);
+}
+
 void bt_att_set_le_max_mtu(uint16_t le_max_mtu) {
     max_mtu = le_max_mtu;
 }
@@ -532,7 +538,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d %d\n", len, data_len);
             switch (prep_wr_req->handle) {
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.in_cfg[ctrl_cfg_id] + prep_wr_req->offset, prep_wr_req->value, data_len);
+                    memcpy((void *)&config.in_cfg[ctrl_cfg_id] + ctrl_offset + prep_wr_req->offset, prep_wr_req->value, data_len);
                     bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, data_len);
                     break;
                 default:
@@ -540,6 +546,15 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     break;
             }
             break;
+        }
+        case BT_ATT_OP_EXEC_WRITE_REQ:
+        {
+            struct bt_att_exec_write_req *exec_wr_req = (struct bt_att_exec_write_req *)bt_hci_acl_pkt->att_data;
+            printf("BT_ATT_OP_EXEC_WRITE_REQ\n");
+            if (exec_wr_req->flags == BT_ATT_FLAG_EXEC) {
+                config_update();
+            }
+            bt_att_cmd_exec_wr_rsp(device->acl_handle);
         }
     }
 }
