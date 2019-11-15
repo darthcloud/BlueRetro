@@ -212,6 +212,12 @@ enum {
     BT_FEEDBACK,
 };
 
+/* Wired flags */
+enum {
+    WIRED_RUMBLE_ON,
+    WIRED_SAVE_MEM,
+};
+
 enum {
     NONE_TYPE = -1,
     U8_TYPE,

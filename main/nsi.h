@@ -7,8 +7,6 @@
 #ifndef _NSI_H_
 #define _NSI_H_
 
-#include "io.h"
-
 typedef enum {
     NSI_CH_0 = 0,
     NSI_CH_1,
@@ -28,7 +26,7 @@ typedef enum {
 
 extern uint8_t mempak[32 * 1024];
 
-void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data);
+void nsi_init(void);
 
 #endif  /* _NSI_H_ */
 

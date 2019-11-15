@@ -9,8 +9,9 @@
 #include <driver/gpio.h>
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
-#include "nsi.h"
 #include "zephyr/atomic.h"
+#include "adapter.h"
+#include "nsi.h"
 
 #define BIT_ZERO 0x80020006
 #define BIT_ONE  0x80060002
@@ -52,7 +53,6 @@ static const uint8_t nsi_crc_table[256] = {
 };
 
 typedef struct {
-    nsi_mode_t nsi_mode;
     TaskHandle_t *nsi_task_handle;
     rmt_isr_handle_t nsi_isr_handle;
 } nsi_channel_handle_t;
@@ -64,7 +64,6 @@ uint8_t mempak[32 * 1024] = {0};
 
 atomic_t rmt_flags = 0;
 
-static struct io *output;
 static uint8_t buf[32 * 1024] = {0};
 static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
 static uint32_t poll_after_mem_wr = 0;
@@ -164,7 +163,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        if (output->mode) {
+                        if (wired_adapter.data[0].dev_mode) {
                             ctrl_ident[2] = 0x01;
                         }
                         else {
@@ -173,17 +172,17 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
-                        output->format = IO_FORMAT_N64;
+                        wired_adapter.system_id = N64;
                         break;
                     case 0x01:
-                        nsi_bytes_to_items_crc(channel, 0, (uint8_t *)&output->io.n64, 4, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[0].output, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
-                        ++output->poll_cnt;
+                        ++wired_adapter.data[0].frame_cnt;
                         ++poll_after_mem_wr;
                         if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
-                            if (!atomic_test_bit(&output->flags, WRIO_SAVE_MEM)) {
-                                atomic_set_bit(&output->flags, WRIO_SAVE_MEM);
+                            if (!atomic_test_bit(&wired_adapter.data[0].flags, WIRED_SAVE_MEM)) {
+                                atomic_set_bit(&wired_adapter.data[0].flags, WIRED_SAVE_MEM);
                                 atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
                             }
                         }
@@ -191,7 +190,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
-                            if (output->mode == 0x01) {
+                            if (wired_adapter.data[0].dev_mode) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -199,7 +198,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             }
                         }
                         else {
-                            if (output->mode == 0x01) {
+                            if (wired_adapter.data[0].dev_mode) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -218,13 +217,13 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
-                        if (output->mode == 0x01) {
+                        if (wired_adapter.data[0].dev_mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
-                                    atomic_set_bit(&output->flags, WRIO_RUMBLE_ON);
+                                    atomic_set_bit(&wired_adapter.data[0].flags, WIRED_RUMBLE_ON);
                                 }
                                 else {
-                                    atomic_clear_bit(&output->flags, WRIO_RUMBLE_ON);
+                                    atomic_clear_bit(&wired_adapter.data[0].flags, WIRED_RUMBLE_ON);
                                 }
                             }
                         }
@@ -255,10 +254,9 @@ static void IRAM_ATTR nsi_isr(void *arg) {
     RMT.int_clr.val = intr_st;
 }
 
-void nsi_init(nsi_channel_t channel, uint8_t gpio, nsi_mode_t mode, struct io *output_data) {
-    nsi[channel].nsi_mode = mode;
-    output = output_data;
-
+void nsi_init(void) {
+    nsi_channel_t channel = NSI_CH_0;
+    uint8_t gpio = 26;
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
