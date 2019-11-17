@@ -1,6 +1,6 @@
 #include "zephyr/types.h"
 #include "util.h"
-#include "adapter.h"
+#include "wii.h"
 
 enum {
     WIIU_R = 1,
@@ -22,12 +22,28 @@ enum {
     WIIU_LJ,
 };
 
+const uint8_t wiiu_axes_idx[4] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
+    0,       2,       1,       3
+};
+
+const struct ctrl_meta wiiu_btn_meta =
+{
+    .polarity = 1,
+};
+
+const struct ctrl_meta wiiu_axes_meta =
+{
+    .neutral = 0x800,
+    .deadzone = 0x00F,
+    .abs_btn_thrs = 0x250,
+    .abs_max = 0x44C,
+};
+
 struct wiiu_map {
     uint8_t reserved[5];
-    uint16_t lx_axis;
-    uint16_t rx_axis;
-    uint16_t ly_axis;
-    uint16_t ry_axis;
+    uint16_t axes[4];
     uint32_t buttons;
 } __packed;
 
@@ -56,6 +72,7 @@ const uint32_t wiiu_btns_mask[32] =
     BIT(WIIU_HOME),  /* MT */
 };
 
+#if 0
 void wiiu_init_desc(struct bt_data *bt_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
 
@@ -73,4 +90,20 @@ void wiiu_init_desc(struct bt_data *bt_data) {
 
     bt_data->ctrl_desc.data[RY_AXIS].type = U16_TYPE;
     bt_data->ctrl_desc.data[RY_AXIS].pval.u16 = &map->ry_axis;
+}
+#endif
+
+void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (~map->buttons & wiiu_btns_mask[i]) {
+            ctrl_data->btns[0].meta = NULL;
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+    for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+        ctrl_data->axes[i].meta = &wiiu_axes_meta;
+        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral;
+    }
 }

@@ -240,6 +240,25 @@ enum {
     MAX_INPUT,
 };
 
+struct ctrl_meta {
+    int32_t neutral;
+    int32_t deadzone;
+    int32_t abs_btn_thrs;
+    int32_t abs_max;
+    int32_t sign;
+    int32_t polarity;
+};
+
+struct ctrl {
+    int32_t value;
+    const struct axis_meta *meta;
+};
+
+struct generic_ctrl {
+    struct ctrl btns[4];
+    struct ctrl axes[6];
+};
+
 struct ctrl_data {
     uint8_t type;
     union {
@@ -304,6 +323,9 @@ struct bt_adapter {
     struct bt_data data[BT_MAX_DEV];
 };
 
+typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
+
+extern const uint32_t generic_btns_mask[32];
 extern struct bt_adapter bt_adapter;
 extern struct wired_adapter wired_adapter;
 
