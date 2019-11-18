@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "config.h"
 #include "adapter.h"
 #include "wii.h"
+#include "dc.h"
 
 const uint32_t generic_btns_mask[32] = {
     BIT(PAD_LX_LEFT), BIT(PAD_LX_RIGHT), BIT(PAD_LY_DOWN), BIT(PAD_LY_UP),
@@ -30,6 +32,21 @@ static to_generic_t to_generic_func[BT_MAX] = {
     NULL,
 };
 
+static from_generic_t from_generic_func[WIRED_MAX] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    dc_from_generic,
+    NULL,
+    NULL,
+    NULL,
+};
+
 struct generic_ctrl ctrl_input[WIRED_MAX_DEV];
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
@@ -49,4 +66,10 @@ void adapter_bridge(struct bt_data *bt_data) {
     wiiu_init_desc(bt_data);
 #endif
     to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[bt_data->dev_id]);
+
+    memcpy((void *)&ctrl_output[bt_data->dev_id], (void *)&ctrl_input[bt_data->dev_id], sizeof(ctrl_output[0]));
+
+    if (wired_adapter.system_id != WIRED_NONE) {
+        from_generic_func[wired_adapter.system_id](&ctrl_output[bt_data->dev_id], &wired_adapter.data[bt_data->dev_id]);
+    }
 }

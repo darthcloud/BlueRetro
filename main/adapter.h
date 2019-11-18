@@ -207,6 +207,15 @@ enum {
     KB_MAX,
 };
 
+enum {
+    AXIS_LX = 0,
+    AXIS_LY,
+    AXIS_RX,
+    AXIS_RY,
+    TRIG_L,
+    TRIG_R,
+};
+
 /* BT flags */
 enum {
     BT_FEEDBACK,
@@ -218,6 +227,7 @@ enum {
     WIRED_SAVE_MEM,
 };
 
+#if 0
 enum {
     NONE_TYPE = -1,
     U8_TYPE,
@@ -239,6 +249,7 @@ enum {
     RT_AXIS,
     MAX_INPUT,
 };
+#endif
 
 struct ctrl_meta {
     int32_t neutral;
@@ -251,7 +262,7 @@ struct ctrl_meta {
 
 struct ctrl {
     int32_t value;
-    const struct axis_meta *meta;
+    const struct ctrl_meta *meta;
 };
 
 struct generic_ctrl {
@@ -259,6 +270,7 @@ struct generic_ctrl {
     struct ctrl axes[6];
 };
 
+#if 0
 struct ctrl_data {
     uint8_t type;
     union {
@@ -284,6 +296,7 @@ struct ctrl_desc {
         _input.type == S16_TYPE ? *_input.pval.s16 :\
         *_input.pval.s32; \
     })
+#endif
 
 struct bt_data {
     /* Bi-directional */
@@ -296,7 +309,7 @@ struct bt_data {
     uint8_t input[64];
     uint32_t hid_desc_len;
     uint8_t hid_desc[1024];
-    struct ctrl_desc ctrl_desc;
+    //struct ctrl_desc ctrl_desc;
 } __packed;
 
 struct wired_data {
@@ -324,6 +337,7 @@ struct bt_adapter {
 };
 
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
+typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
 
 extern const uint32_t generic_btns_mask[32];
 extern struct bt_adapter bt_adapter;

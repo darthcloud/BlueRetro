@@ -8,10 +8,10 @@ enum {
     WIIU_HOME,
     WIIU_MINUS,
     WIIU_L,
-    WIIU_DOWN,
-    WIIU_RIGHT,
-    WIIU_UP,
-    WIIU_LEFT,
+    WIIU_D_DOWN,
+    WIIU_D_RIGHT,
+    WIIU_D_UP,
+    WIIU_D_LEFT,
     WIIU_ZR,
     WIIU_X,
     WIIU_A,
@@ -47,29 +47,15 @@ struct wiiu_map {
     uint32_t buttons;
 } __packed;
 
-const uint32_t wiiu_btns_mask[32] =
-{
-    BIT(WIIU_UP),    /* DU */
-    BIT(WIIU_LEFT),  /* DL */
-    BIT(WIIU_RIGHT), /* DR */
-    BIT(WIIU_DOWN),  /* DD */
-    0, 0, 0, 0,      /* LU, LL, LR, LD */
-    BIT(WIIU_X),     /* BU */
-    BIT(WIIU_Y),     /* BL */
-    BIT(WIIU_A),     /* BR */
-    BIT(WIIU_B),     /* BD */
-    0, 0, 0, 0,      /* RU, RL, RR, RD */
-    0,               /* LA */
-    BIT(WIIU_ZL),    /* LM */
-    BIT(WIIU_L),     /* LS */
-    BIT(WIIU_LJ),    /* LJ */
-    0,               /* RA */
-    BIT(WIIU_ZR),    /* RM */
-    BIT(WIIU_R),     /* RS */
-    BIT(WIIU_RJ),    /* RJ */
-    BIT(WIIU_PLUS),  /* MM */
-    BIT(WIIU_MINUS), /* MS */
-    BIT(WIIU_HOME),  /* MT */
+const uint32_t wiiu_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WIIU_D_LEFT), BIT(WIIU_D_RIGHT), BIT(WIIU_D_DOWN), BIT(WIIU_D_UP),
+    0, 0, 0, 0,
+    BIT(WIIU_A), BIT(WIIU_Y), BIT(WIIU_B), BIT(WIIU_X),
+    BIT(WIIU_PLUS), BIT(WIIU_MINUS), BIT(WIIU_HOME), 0,
+    BIT(WIIU_ZL), BIT(WIIU_L), 0, BIT(WIIU_LJ),
+    BIT(WIIU_ZR), BIT(WIIU_R), 0, BIT(WIIU_RJ),
 };
 
 #if 0
