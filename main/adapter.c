@@ -65,11 +65,12 @@ void adapter_bridge(struct bt_data *bt_data) {
     printf("btns0: %X btns1: %X lx_axis: %X\n", CTRL_DATA(ctrl_test.data[BTNS0]), CTRL_DATA(ctrl_test.data[BTNS1]), CTRL_DATA(ctrl_test.data[LX_AXIS]));
     wiiu_init_desc(bt_data);
 #endif
-    to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[bt_data->dev_id]);
+    if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type])
+        to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[bt_data->dev_id]);
 
     memcpy((void *)&ctrl_output[bt_data->dev_id], (void *)&ctrl_input[bt_data->dev_id], sizeof(ctrl_output[0]));
 
-    if (wired_adapter.system_id != WIRED_NONE) {
+    if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
         from_generic_func[wired_adapter.system_id](&ctrl_output[bt_data->dev_id], &wired_adapter.data[bt_data->dev_id]);
     }
 }
