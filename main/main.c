@@ -1,6 +1,7 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "adapter.h"
 #include "sd.h"
 #include "config.h"
 #include "bt_host.h"
@@ -8,6 +9,7 @@
 #include "maple.h"
 
 static void wired_init_task(void *arg) {
+    adapter_init();
     //nsi_init();
     maple_init();
     vTaskDelete(NULL);

@@ -351,5 +351,6 @@ extern struct wired_adapter wired_adapter;
 uint8_t btn_id_to_axis(uint8_t btn_id);
 uint32_t axis_to_btn_mask(uint8_t axis);
 void adapter_bridge(struct bt_data *bt_data);
+void adapter_init(void);
 
 #endif /* _ADAPTER_H_ */

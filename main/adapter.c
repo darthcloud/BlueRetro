@@ -64,8 +64,8 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 
 struct generic_ctrl ctrl_input;
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
-struct bt_adapter bt_adapter;
-struct wired_adapter wired_adapter;
+struct bt_adapter bt_adapter = {0};
+struct wired_adapter wired_adapter = {0};
 
 static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t out_mask = 0;
@@ -209,4 +209,8 @@ void adapter_bridge(struct bt_data *bt_data) {
             }
         }
     }
+}
+
+void adapter_init(void) {
+    wired_adapter.system_id = WIRED_NONE;
 }
