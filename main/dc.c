@@ -36,9 +36,9 @@ const struct ctrl_meta dc_btns_meta =
 const struct ctrl_meta dc_axes_meta[6] =
 {
     {.neutral = 0x80, .abs_max = 0x80},
+    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
     {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80},
+    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
     {.neutral = 0x00, .abs_max = 0xFF},
     {.neutral = 0x00, .abs_max = 0xFF},
 };
@@ -104,7 +104,7 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
 
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
         if (ctrl_data->map_mask[0] & axis_to_btn_mask(i)) {
-            map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value;
+            map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral;
         }
     }
 
