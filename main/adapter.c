@@ -72,8 +72,28 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     return out_mask;
 }
 
-static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t btn_idx) {
+static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_idx) {
     uint32_t out_mask = 0;
+    struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
+    uint8_t dst = map_cfg->dst_btn;
+
+    /* For pad, mouse & keyboard */
+    if (out->mask[0] && dst < 32 && BIT(dst & 0x1F) & out->mask[0]) {
+        if (BIT(dst & 0x1F) & out->desc[0]) {
+            /* Dest is Axis */
+        }
+        else {
+            /* Dest is Button */
+        }
+    }
+    /* For keyboard */
+    else if (out->mask[1] && dst >= 32 && dst < 64 && BIT(dst & 0x1F) & out->mask[1]) {
+    }
+    else if (out->mask[2] && dst >= 64 && dst < 96 && BIT(dst & 0x1F) & out->mask[2]) {
+    }
+    else if (out->mask[3] && dst >= 96 && BIT(dst & 0x1F) & out->mask[3]) {
+    }
+
     return out_mask;
 }
 

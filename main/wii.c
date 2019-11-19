@@ -1,3 +1,4 @@
+#include <string.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "wii.h"
@@ -85,12 +86,13 @@ void wiiu_init_desc(struct bt_data *bt_data) {
 void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
 
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
     ctrl_data->mask = (uint32_t *)wiiu_mask;
     ctrl_data->desc = (uint32_t *)wiiu_desc;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (~map->buttons & wiiu_btns_mask[i]) {
-            ctrl_data->btns[0].meta = NULL;
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }

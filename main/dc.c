@@ -53,6 +53,9 @@ struct dc_map {
     };
 } __packed;
 
+const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+
 const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -72,8 +75,12 @@ static void dc_init_map(struct dc_map *map) {
 }
 
 void dc_meta_init(struct generic_ctrl *ctrl_data) {
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
+
     for (uint32_t i = 0; i < 4; i++) {
         for (uint32_t j = 0; i < ARRAY_SIZE(dc_axes_meta); j++) {
+            ctrl_data[i].mask = (uint32_t *)dc_mask;
+            ctrl_data[i].desc = (uint32_t *)dc_desc;
             ctrl_data[i].axes[j].meta = &dc_axes_meta[j];
         }
     }
@@ -85,7 +92,7 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (ctrl_data->mask[0] & BIT(i)) {
+        if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~dc_btns_mask[i];
             }
@@ -96,7 +103,7 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
-        if (ctrl_data->mask[0] & axis_to_btn_mask(i)) {
+        if (ctrl_data->map_mask[0] & axis_to_btn_mask(i)) {
             map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value;
         }
     }
