@@ -73,7 +73,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
 }
 
 static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_idx) {
-    uint32_t out_mask = 0;
+    uint32_t out_mask = BIT(map_cfg->dst_id);
     struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t dst = map_cfg->dst_btn;
 
@@ -84,14 +84,26 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
         }
         else {
             /* Dest is Button */
+            if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
+                out->btns[0].value |= BIT(dst & 0x1F);
+            }
         }
     }
     /* For keyboard */
     else if (out->mask[1] && dst >= 32 && dst < 64 && BIT(dst & 0x1F) & out->mask[1]) {
+        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
+            out->btns[1].value |= BIT(dst & 0x1F);
+        }
     }
     else if (out->mask[2] && dst >= 64 && dst < 96 && BIT(dst & 0x1F) & out->mask[2]) {
+        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
+            out->btns[2].value |= BIT(dst & 0x1F);
+        }
     }
     else if (out->mask[3] && dst >= 96 && BIT(dst & 0x1F) & out->mask[3]) {
+        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
+            out->btns[3].value |= BIT(dst & 0x1F);
+        }
     }
 
     return out_mask;
