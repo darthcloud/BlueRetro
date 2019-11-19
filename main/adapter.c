@@ -52,17 +52,36 @@ struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
 
+static void adapter_map_from_axis(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output) {
+}
+
+static void adapter_map_from_btn(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output, uint32_t btn_idx) {
+}
+
 static void adapter_mapping(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output) {
     //memcpy((void *)ctrl_output, (void *)ctrl_input, sizeof(*ctrl_output));
 
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
-        if (BIT(in_cfg->map_cfg[i].src_btn & 0xFF) & ctrl_input->mask[0]) {
+        uint8_t source = in_cfg->map_cfg[i].src_btn;
+
+        if (ctrl_input->mask[0] && source < 32 && BIT(source & 0x1F) & ctrl_input->mask[0]) {
+            if (BIT(source & 0x1F) & ctrl_input->desc[0]) {
+                /* Source is Axis */
+                adapter_map_from_axis(in_cfg, ctrl_input, ctrl_output);
+            }
+            else {
+                /* Source is Button */
+                adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 0);
+            }
         }
-        else if (BIT((in_cfg->map_cfg[i].src_btn >> 8) & 0xFF) & ctrl_input->mask[1]) {
+        else if (ctrl_input->mask[1] && source >= 32 && source < 64 && BIT(source & 0x1F) & ctrl_input->mask[1]) {
+            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 1);
         }
-        else if (BIT((in_cfg->map_cfg[i].src_btn >> 16) & 0xFF) & ctrl_input->mask[2]) {
+        else if (ctrl_input->mask[2] && source >= 64 && source < 96 && BIT(source & 0x1F) & ctrl_input->mask[2]) {
+            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 2);
         }
-        else if (BIT((in_cfg->map_cfg[i].src_btn >> 24) & 0xFF) & ctrl_input->mask[3]) {
+        else if (ctrl_input->mask[3] && source >= 96 && BIT(source & 0x1F) & ctrl_input->mask[3]) {
+            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 3);
         }
     }
 }
