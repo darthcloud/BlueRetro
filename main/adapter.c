@@ -47,43 +47,48 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
 };
 
-struct generic_ctrl ctrl_input[WIRED_MAX_DEV];
+struct generic_ctrl ctrl_input;
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
 
-static void adapter_map_from_axis(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output) {
+static uint32_t adapter_map_from_axis(struct in_cfg * in_cfg) {
+    uint32_t out_mask = 0;
+    return out_mask;
 }
 
-static void adapter_map_from_btn(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output, uint32_t btn_idx) {
+static uint32_t adapter_map_from_btn(struct in_cfg * in_cfg, uint32_t btn_idx) {
+    uint32_t out_mask = 0;
+    return out_mask;
 }
 
-static void adapter_mapping(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output) {
-    //memcpy((void *)ctrl_output, (void *)ctrl_input, sizeof(*ctrl_output));
+static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
+    uint32_t out_mask = 0;
 
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
         uint8_t source = in_cfg->map_cfg[i].src_btn;
 
-        if (ctrl_input->mask[0] && source < 32 && BIT(source & 0x1F) & ctrl_input->mask[0]) {
-            if (BIT(source & 0x1F) & ctrl_input->desc[0]) {
+        if (ctrl_input.mask[0] && source < 32 && BIT(source & 0x1F) & ctrl_input.mask[0]) {
+            if (BIT(source & 0x1F) & ctrl_input.desc[0]) {
                 /* Source is Axis */
-                adapter_map_from_axis(in_cfg, ctrl_input, ctrl_output);
+                out_mask |= adapter_map_from_axis(in_cfg);
             }
             else {
                 /* Source is Button */
-                adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 0);
+                out_mask |= adapter_map_from_btn(in_cfg, 0);
             }
         }
-        else if (ctrl_input->mask[1] && source >= 32 && source < 64 && BIT(source & 0x1F) & ctrl_input->mask[1]) {
-            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 1);
+        else if (ctrl_input.mask[1] && source >= 32 && source < 64 && BIT(source & 0x1F) & ctrl_input.mask[1]) {
+            out_mask |= adapter_map_from_btn(in_cfg, 1);
         }
-        else if (ctrl_input->mask[2] && source >= 64 && source < 96 && BIT(source & 0x1F) & ctrl_input->mask[2]) {
-            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 2);
+        else if (ctrl_input.mask[2] && source >= 64 && source < 96 && BIT(source & 0x1F) & ctrl_input.mask[2]) {
+            out_mask |= adapter_map_from_btn(in_cfg, 2);
         }
-        else if (ctrl_input->mask[3] && source >= 96 && BIT(source & 0x1F) & ctrl_input->mask[3]) {
-            adapter_map_from_btn(in_cfg, ctrl_input, ctrl_output, 3);
+        else if (ctrl_input.mask[3] && source >= 96 && BIT(source & 0x1F) & ctrl_input.mask[3]) {
+            out_mask |= adapter_map_from_btn(in_cfg, 3);
         }
     }
+    return out_mask;
 }
 
 void adapter_bridge(struct bt_data *bt_data) {
@@ -99,15 +104,20 @@ void adapter_bridge(struct bt_data *bt_data) {
     printf("btns0: %X btns1: %X lx_axis: %X\n", CTRL_DATA(ctrl_test.data[BTNS0]), CTRL_DATA(ctrl_test.data[BTNS1]), CTRL_DATA(ctrl_test.data[LX_AXIS]));
     wiiu_init_desc(bt_data);
 #endif
+    uint32_t out_mask = 0;
+
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
-        uint32_t adapter_id = bt_data->dev_id;
+        to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
-        to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[adapter_id]);
+        /* Need to init output meta here */
 
-        adapter_mapping(&config.in_cfg[adapter_id], &ctrl_input[adapter_id], &ctrl_output[adapter_id]);
+        out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_type]);
 
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
-            from_generic_func[wired_adapter.system_id](&ctrl_output[adapter_id], &wired_adapter.data[adapter_id]);
+            for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
+                /* this need to reset only what was mapped so adapter_mapping need to provide a btn mask */
+                from_generic_func[wired_adapter.system_id](&ctrl_output[i], &wired_adapter.data[i]);
+            }
         }
     }
 }
