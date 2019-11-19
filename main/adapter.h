@@ -208,7 +208,7 @@ enum {
 };
 
 enum {
-    INDEX_NONE = -1,
+    AXIS_NONE = -1,
     AXIS_LX,
     AXIS_LY,
     AXIS_RX,
@@ -346,6 +346,8 @@ extern const uint32_t generic_btns_mask[32];
 extern struct bt_adapter bt_adapter;
 extern struct wired_adapter wired_adapter;
 
+uint8_t btn_id_to_axis(uint8_t btn_id);
+uint32_t axis_to_btn_mask(uint8_t axis);
 void adapter_bridge(struct bt_data *bt_data);
 
 #endif /* _ADAPTER_H_ */

@@ -91,6 +91,46 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
     return out_mask;
 }
 
+uint8_t btn_id_to_axis(uint8_t btn_id) {
+    switch (btn_id) {
+        case PAD_LX_LEFT:
+        case PAD_LX_RIGHT:
+            return AXIS_LX;
+        case PAD_LY_DOWN:
+        case PAD_LY_UP:
+            return AXIS_LY;
+        case PAD_RX_LEFT:
+        case PAD_RX_RIGHT:
+            return AXIS_RX;
+        case PAD_RY_DOWN:
+        case PAD_RY_UP:
+            return AXIS_RY;
+        case PAD_LM:
+            return TRIG_L;
+        case PAD_RM:
+            return TRIG_R;
+    }
+    return AXIS_NONE;
+}
+
+uint32_t axis_to_btn_mask(uint8_t axis) {
+    switch (axis) {
+        case AXIS_LX:
+            return BIT(PAD_LX_LEFT) | BIT(PAD_LX_RIGHT);
+        case AXIS_LY:
+            return BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP);
+        case AXIS_RX:
+            return BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
+        case AXIS_RY:
+            return BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
+        case TRIG_L:
+            return BIT(PAD_LM);
+        case TRIG_R:
+            return BIT(PAD_RM);
+    }
+    return 0x00000000;
+}
+
 void adapter_bridge(struct bt_data *bt_data) {
 #if 0
     uint8_t data[] = {0x00, 0xFF, 0x00, 0xFF};

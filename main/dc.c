@@ -74,16 +74,23 @@ static void dc_init_map(struct dc_map *map) {
 void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
-    dc_init_map(&map_tmp);
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-            map_tmp.buttons &= ~dc_btns_mask[i];
+        if (ctrl_data->mask[0] & BIT(i)) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.buttons &= ~dc_btns_mask[i];
+            }
+            else {
+                map_tmp.buttons |= dc_btns_mask[i];
+            }
         }
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
-        map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value;
+        if (ctrl_data->mask[0] & axis_to_btn_mask(i)) {
+            map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value;
+        }
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
