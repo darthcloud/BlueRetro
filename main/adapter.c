@@ -52,12 +52,12 @@ struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
 
-static uint32_t adapter_map_from_axis(struct in_cfg * in_cfg) {
+static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t out_mask = 0;
     return out_mask;
 }
 
-static uint32_t adapter_map_from_btn(struct in_cfg * in_cfg, uint32_t btn_idx) {
+static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t btn_idx) {
     uint32_t out_mask = 0;
     return out_mask;
 }
@@ -68,24 +68,26 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
         uint8_t source = in_cfg->map_cfg[i].src_btn;
 
+        /* For pad, mouse & keyboard */
         if (ctrl_input.mask[0] && source < 32 && BIT(source & 0x1F) & ctrl_input.mask[0]) {
             if (BIT(source & 0x1F) & ctrl_input.desc[0]) {
                 /* Source is Axis */
-                out_mask |= adapter_map_from_axis(in_cfg);
+                out_mask |= adapter_map_from_axis(&in_cfg->map_cfg[i]);
             }
             else {
                 /* Source is Button */
-                out_mask |= adapter_map_from_btn(in_cfg, 0);
+                out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 0);
             }
         }
+        /* For keyboard */
         else if (ctrl_input.mask[1] && source >= 32 && source < 64 && BIT(source & 0x1F) & ctrl_input.mask[1]) {
-            out_mask |= adapter_map_from_btn(in_cfg, 1);
+            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 1);
         }
         else if (ctrl_input.mask[2] && source >= 64 && source < 96 && BIT(source & 0x1F) & ctrl_input.mask[2]) {
-            out_mask |= adapter_map_from_btn(in_cfg, 2);
+            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 2);
         }
         else if (ctrl_input.mask[3] && source >= 96 && BIT(source & 0x1F) & ctrl_input.mask[3]) {
-            out_mask |= adapter_map_from_btn(in_cfg, 3);
+            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 3);
         }
     }
     return out_mask;
