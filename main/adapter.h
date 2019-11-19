@@ -341,6 +341,7 @@ struct bt_adapter {
 
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
+typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
 
 extern const uint32_t generic_btns_mask[32];
 extern struct bt_adapter bt_adapter;

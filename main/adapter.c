@@ -47,6 +47,21 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
 };
 
+static meta_init_t meta_init_func[WIRED_MAX] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    dc_meta_init,
+    NULL,
+    NULL,
+    NULL,
+};
+
 struct generic_ctrl ctrl_input;
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
@@ -151,7 +166,7 @@ void adapter_bridge(struct bt_data *bt_data) {
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
-        /* Need to init output meta here */
+        meta_init_func[wired_adapter.system_id](ctrl_output);
 
         out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_type]);
 

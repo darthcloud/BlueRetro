@@ -71,6 +71,14 @@ static void dc_init_map(struct dc_map *map) {
     }
 }
 
+void dc_meta_init(struct generic_ctrl *ctrl_data) {
+    for (uint32_t i = 0; i < 4; i++) {
+        for (uint32_t j = 0; i < ARRAY_SIZE(dc_axes_meta); j++) {
+            ctrl_data[i].axes[j].meta = &dc_axes_meta[j];
+        }
+    }
+}
+
 void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
