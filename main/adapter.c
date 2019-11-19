@@ -52,6 +52,21 @@ struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter;
 struct wired_adapter wired_adapter;
 
+static void adapter_mapping(struct in_cfg * in_cfg, struct generic_ctrl *ctrl_input, struct generic_ctrl *ctrl_output) {
+    //memcpy((void *)ctrl_output, (void *)ctrl_input, sizeof(*ctrl_output));
+
+    for (uint32_t i = 0; i < in_cfg->map_size; i++) {
+        if (BIT(in_cfg->map_cfg[i].src_btn & 0xFF) & ctrl_input->mask[0]) {
+        }
+        else if (BIT((in_cfg->map_cfg[i].src_btn >> 8) & 0xFF) & ctrl_input->mask[1]) {
+        }
+        else if (BIT((in_cfg->map_cfg[i].src_btn >> 16) & 0xFF) & ctrl_input->mask[2]) {
+        }
+        else if (BIT((in_cfg->map_cfg[i].src_btn >> 24) & 0xFF) & ctrl_input->mask[3]) {
+        }
+    }
+}
+
 void adapter_bridge(struct bt_data *bt_data) {
 #if 0
     uint8_t data[] = {0x00, 0xFF, 0x00, 0xFF};
@@ -65,12 +80,15 @@ void adapter_bridge(struct bt_data *bt_data) {
     printf("btns0: %X btns1: %X lx_axis: %X\n", CTRL_DATA(ctrl_test.data[BTNS0]), CTRL_DATA(ctrl_test.data[BTNS1]), CTRL_DATA(ctrl_test.data[LX_AXIS]));
     wiiu_init_desc(bt_data);
 #endif
-    if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type])
-        to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[bt_data->dev_id]);
+    if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
+        uint32_t adapter_id = bt_data->dev_id;
 
-    memcpy((void *)&ctrl_output[bt_data->dev_id], (void *)&ctrl_input[bt_data->dev_id], sizeof(ctrl_output[0]));
+        to_generic_func[bt_data->dev_type](bt_data, &ctrl_input[adapter_id]);
 
-    if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
-        from_generic_func[wired_adapter.system_id](&ctrl_output[bt_data->dev_id], &wired_adapter.data[bt_data->dev_id]);
+        adapter_mapping(&config.in_cfg[adapter_id], &ctrl_input[adapter_id], &ctrl_output[adapter_id]);
+
+        if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
+            from_generic_func[wired_adapter.system_id](&ctrl_output[adapter_id], &wired_adapter.data[adapter_id]);
+        }
     }
 }

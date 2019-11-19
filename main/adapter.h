@@ -208,7 +208,8 @@ enum {
 };
 
 enum {
-    AXIS_LX = 0,
+    INDEX_NONE = -1,
+    AXIS_LX,
     AXIS_LY,
     AXIS_RX,
     AXIS_RY,
@@ -266,6 +267,8 @@ struct ctrl {
 };
 
 struct generic_ctrl {
+    uint32_t *mask;
+    uint32_t *desc;
     struct ctrl btns[4];
     struct ctrl axes[6];
 };

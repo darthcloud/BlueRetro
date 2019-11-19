@@ -47,6 +47,9 @@ struct wiiu_map {
     uint32_t buttons;
 } __packed;
 
+const uint32_t wiiu_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t wiiu_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
+
 const uint32_t wiiu_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -81,6 +84,9 @@ void wiiu_init_desc(struct bt_data *bt_data) {
 
 void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
+
+    ctrl_data->mask = (uint32_t *)wiiu_mask;
+    ctrl_data->desc = (uint32_t *)wiiu_desc;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (~map->buttons & wiiu_btns_mask[i]) {
