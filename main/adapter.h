@@ -228,30 +228,6 @@ enum {
     WIRED_SAVE_MEM,
 };
 
-#if 0
-enum {
-    NONE_TYPE = -1,
-    U8_TYPE,
-    U16_TYPE,
-    U32_TYPE,
-    S8_TYPE,
-    S16_TYPE,
-    S32_TYPE,
-};
-
-enum {
-    BTNS0,
-    BTNS1,
-    LX_AXIS,
-    LY_AXIS,
-    RX_AXIS,
-    RY_AXIS,
-    LT_AXIS,
-    RT_AXIS,
-    MAX_INPUT,
-};
-#endif
-
 struct ctrl_meta {
     int32_t neutral;
     int32_t deadzone;
@@ -276,34 +252,6 @@ struct generic_ctrl {
     struct ctrl axes[6];
 };
 
-#if 0
-struct ctrl_data {
-    uint8_t type;
-    union {
-        uint8_t *u8;
-        uint16_t *u16;
-        uint32_t *u32;
-        int8_t *s8;
-        int16_t *s16;
-        int32_t *s32;
-    } pval;
-};
-
-struct ctrl_desc {
-    struct ctrl_data data[MAX_INPUT];
-};
-
-#define CTRL_DATA(input) \
-    ({ __typeof__ (input) _input = (input); \
-        _input.type == U8_TYPE ? *_input.pval.u8 : \
-        _input.type == U16_TYPE ? *_input.pval.u16 : \
-        _input.type == U32_TYPE ? *_input.pval.u32 : \
-        _input.type == S8_TYPE ? *_input.pval.s8 : \
-        _input.type == S16_TYPE ? *_input.pval.s16 :\
-        *_input.pval.s32; \
-    })
-#endif
-
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
@@ -315,7 +263,6 @@ struct bt_data {
     uint8_t input[64];
     uint32_t hid_desc_len;
     uint8_t hid_desc[1024];
-    //struct ctrl_desc ctrl_desc;
 } __packed;
 
 struct wired_data {

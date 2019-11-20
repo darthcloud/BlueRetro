@@ -62,27 +62,6 @@ const uint32_t wiiu_btns_mask[32] = {
     BIT(WIIU_ZR), BIT(WIIU_R), 0, BIT(WIIU_RJ),
 };
 
-#if 0
-void wiiu_init_desc(struct bt_data *bt_data) {
-    struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
-
-    bt_data->ctrl_desc.data[BTNS0].type = U32_TYPE;
-    bt_data->ctrl_desc.data[BTNS0].pval.u32 = &map->buttons;
-
-    bt_data->ctrl_desc.data[LX_AXIS].type = U16_TYPE;
-    bt_data->ctrl_desc.data[LX_AXIS].pval.u16 = &map->lx_axis;
-
-    bt_data->ctrl_desc.data[LY_AXIS].type = U16_TYPE;
-    bt_data->ctrl_desc.data[LY_AXIS].pval.u16 = &map->ly_axis;
-
-    bt_data->ctrl_desc.data[RX_AXIS].type = U16_TYPE;
-    bt_data->ctrl_desc.data[RX_AXIS].pval.u16 = &map->rx_axis;
-
-    bt_data->ctrl_desc.data[RY_AXIS].type = U16_TYPE;
-    bt_data->ctrl_desc.data[RY_AXIS].pval.u16 = &map->ry_axis;
-}
-#endif
-
 void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
 
