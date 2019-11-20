@@ -70,57 +70,58 @@ struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
 
-static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
+static uint32_t btn_id_to_btn_idx(uint8_t btn_id) {
+    if (btn_id < 32) {
+        return 0;
+    }
+    else if (btn_id >= 32 && btn_id < 64) {
+        return 1;
+    }
+    else if (btn_id >= 64 && btn_id < 96) {
+        return 2;
+    }
+    else {
+        return 3;
+    }
+}
+
+static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg, uint8_t src_mask) {
     uint32_t out_mask = 0;
     //printf("%s\n", __FUNCTION__);
     return out_mask;
 }
 
-static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_idx) {
+static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint8_t src_mask, uint32_t src_btn_idx) {
     uint32_t out_mask = BIT(map_cfg->dst_id);
     struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t dst = map_cfg->dst_btn;
-    //printf("%s\n", __FUNCTION__);
+    uint8_t dst_mask = BIT(dst & 0x1F);
+    uint32_t dst_btn_idx = btn_id_to_btn_idx(dst);
 
-    /* For pad, mouse & keyboard */
-    if (out->mask[0] && dst < 32 && BIT(dst & 0x1F) & out->mask[0]) {
-        /* Dest is Button */
-        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
-            if (BIT(dst & 0x1F) & out->desc[0]) {
-                /* Dest is Axis */
+    /* Check if mapping dst exist in output */
+    if (dst_mask & out->mask[dst_btn_idx]) {
+        /* Check if button pressed */
+        if (ctrl_input.btns[src_btn_idx].value & src_mask) {
+            /* Check if dst is an axis */
+            if (dst_mask & out->desc[dst_btn_idx]) {
+                /* Dst is Axis */
                 uint32_t axis_id = btn_id_to_axis(dst);
                 float fvalue = out->axes[axis_id].meta->abs_max
                             * btn_sign(out->axes[axis_id].meta->polarity, dst)
                             * (((float)map_cfg->perc_max)/100);
                 int32_t value = (int32_t)fvalue;
+
                 if (abs(value) > abs(out->axes[axis_id].value)) {
-                    out->axes[axis_id].value = (int32_t)value;
+                    out->axes[axis_id].value = value;
                 }
             }
             else {
-                    out->btns[0].value |= BIT(dst & 0x1F);
+                /* Dst is Button */
+                out->btns[dst_btn_idx].value |= dst_mask;
             }
         }
-        out->map_mask[0] |= BIT(dst & 0x1F);
-    }
-    /* For keyboard */
-    else if (out->mask[1] && dst >= 32 && dst < 64 && BIT(dst & 0x1F) & out->mask[1]) {
-        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
-            out->btns[1].value |= BIT(dst & 0x1F);
-        }
-        out->map_mask[1] |= BIT(dst & 0x1F);
-    }
-    else if (out->mask[2] && dst >= 64 && dst < 96 && BIT(dst & 0x1F) & out->mask[2]) {
-        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
-            out->btns[2].value |= BIT(dst & 0x1F);
-        }
-        out->map_mask[2] |= BIT(dst & 0x1F);
-    }
-    else if (out->mask[3] && dst >= 96 && BIT(dst & 0x1F) & out->mask[3]) {
-        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
-            out->btns[3].value |= BIT(dst & 0x1F);
-        }
-        out->map_mask[3] |= BIT(dst & 0x1F);
+        /* Flag this dst for update */
+        out->map_mask[dst_btn_idx] |= dst_mask;
     }
 
     return out_mask;
@@ -128,31 +129,22 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
 
 static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
     uint32_t out_mask = 0;
-    //printf("%s\n", __FUNCTION__);
 
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
-        uint8_t source = in_cfg->map_cfg[i].src_btn;
+        uint8_t src = in_cfg->map_cfg[i].src_btn;
+        uint8_t src_mask = BIT(src & 0x1F);
+        uint32_t src_btn_idx = btn_id_to_btn_idx(src);
 
-        /* For pad, mouse & keyboard */
-        if (ctrl_input.mask[0] && source < 32 && BIT(source & 0x1F) & ctrl_input.mask[0]) {
-            if (BIT(source & 0x1F) & ctrl_input.desc[0]) {
-                /* Source is Axis */
-                out_mask |= adapter_map_from_axis(&in_cfg->map_cfg[i]);
+        /* Check if mapping src exist in input */
+        if (src_mask & ctrl_input.mask[src_btn_idx]) {
+            if (src_mask & ctrl_input.desc[src_btn_idx]) {
+                /* Src is Axis */
+                out_mask |= adapter_map_from_axis(&in_cfg->map_cfg[i], src_mask);
             }
             else {
-                /* Source is Button */
-                out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 0);
+                /* Src is Button */
+                out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], src_mask, src_btn_idx);
             }
-        }
-        /* For keyboard */
-        else if (ctrl_input.mask[1] && source >= 32 && source < 64 && BIT(source & 0x1F) & ctrl_input.mask[1]) {
-            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 1);
-        }
-        else if (ctrl_input.mask[2] && source >= 64 && source < 96 && BIT(source & 0x1F) & ctrl_input.mask[2]) {
-            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 2);
-        }
-        else if (ctrl_input.mask[3] && source >= 96 && BIT(source & 0x1F) & ctrl_input.mask[3]) {
-            out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], 3);
         }
     }
     return out_mask;
