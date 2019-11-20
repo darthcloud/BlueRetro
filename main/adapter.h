@@ -259,6 +259,8 @@ struct ctrl_meta {
     int32_t abs_max;
     int32_t sign;
     int32_t polarity;
+    int32_t size_min;
+    int32_t size_max;
 };
 
 struct ctrl {

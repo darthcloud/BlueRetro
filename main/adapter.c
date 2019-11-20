@@ -83,18 +83,18 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
 
     /* For pad, mouse & keyboard */
     if (out->mask[0] && dst < 32 && BIT(dst & 0x1F) & out->mask[0]) {
-        if (BIT(dst & 0x1F) & out->desc[0]) {
-            /* Dest is Axis */
-            uint32_t axis_id = btn_id_to_axis(dst);
-            float value = (float)out->axes[axis_id].meta->abs_max
-                        * (float)btn_sign(out->axes[axis_id].meta->polarity, dst)
-                        * (((float)map_cfg->perc_max)/100);
-            out->axes[axis_id].value = (int32_t)value;
-        }
-        else {
-            /* Dest is Button */
-            if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
-                out->btns[0].value |= BIT(dst & 0x1F);
+        /* Dest is Button */
+        if (ctrl_input.btns[src_btn_idx].value & BIT(map_cfg->src_btn & 0x1F)) {
+            if (BIT(dst & 0x1F) & out->desc[0]) {
+                /* Dest is Axis */
+                uint32_t axis_id = btn_id_to_axis(dst);
+                float value = (float)out->axes[axis_id].meta->abs_max
+                            * (float)btn_sign(out->axes[axis_id].meta->polarity, dst)
+                            * (((float)map_cfg->perc_max)/100);
+                out->axes[axis_id].value = (int32_t)value;
+            }
+            else {
+                    out->btns[0].value |= BIT(dst & 0x1F);
             }
         }
         out->map_mask[0] |= BIT(dst & 0x1F);

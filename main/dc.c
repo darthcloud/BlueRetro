@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include "zephyr/types.h"
 #include "util.h"
@@ -35,12 +36,12 @@ const struct ctrl_meta dc_btns_meta =
 
 const struct ctrl_meta dc_axes_meta[6] =
 {
-    {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.neutral = 0x00, .abs_max = 0xFF},
-    {.neutral = 0x00, .abs_max = 0xFF},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
 struct dc_map {
@@ -61,7 +62,7 @@ const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(DC_LD_LEFT), BIT(DC_LD_RIGHT), BIT(DC_LD_DOWN), BIT(DC_LD_UP),
     BIT(DC_RD_LEFT), BIT(DC_RD_RIGHT), BIT(DC_RD_DOWN), BIT(DC_RD_UP),
-    BIT(DC_B), BIT(DC_X), BIT(DC_A), BIT(DC_Y),
+    BIT(DC_X), BIT(DC_B), BIT(DC_A), BIT(DC_Y),
     BIT(DC_START), BIT(DC_D), 0, 0,
     0, BIT(DC_Z), 0, 0,
     0, BIT(DC_C), 0, 0,
@@ -104,10 +105,10 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
 
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
         if (ctrl_data->map_mask[0] & axis_to_btn_mask(i)) {
-            if (ctrl_data->axes[i].value >= ctrl_data->axes[i].meta->abs_max) {
+            if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[dc_axes_idx[i]] = 255;
             }
-            else if (ctrl_data->axes[i].value <= -ctrl_data->axes[i].meta->abs_max) {
+            else if (ctrl_data->axes[i].value < ctrl_data->axes[i].meta->size_min) {
                 map_tmp.axes[dc_axes_idx[i]] = 0;
             }
             else {
