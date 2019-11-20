@@ -78,9 +78,9 @@ void dc_meta_init(struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < 4; i++) {
-        for (uint32_t j = 0; i < ARRAY_SIZE(dc_axes_meta); j++) {
-            ctrl_data[i].mask = (uint32_t *)dc_mask;
-            ctrl_data[i].desc = (uint32_t *)dc_desc;
+        for (uint32_t j = 0; j < ARRAY_SIZE(dc_axes_meta); j++) {
+            ctrl_data[i].mask = dc_mask;
+            ctrl_data[i].desc = dc_desc;
             ctrl_data[i].axes[j].meta = &dc_axes_meta[j];
         }
     }

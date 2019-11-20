@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <xtensa/hal.h>
+#include "sdkconfig.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "config.h"
@@ -70,6 +71,7 @@ struct wired_adapter wired_adapter = {0};
 
 static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t out_mask = 0;
+    //printf("%s\n", __FUNCTION__);
     return out_mask;
 }
 
@@ -77,6 +79,7 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
     uint32_t out_mask = BIT(map_cfg->dst_id);
     struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t dst = map_cfg->dst_btn;
+    //printf("%s\n", __FUNCTION__);
 
     /* For pad, mouse & keyboard */
     if (out->mask[0] && dst < 32 && BIT(dst & 0x1F) & out->mask[0]) {
@@ -121,6 +124,7 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
 
 static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
     uint32_t out_mask = 0;
+    //printf("%s\n", __FUNCTION__);
 
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
         uint8_t source = in_cfg->map_cfg[i].src_btn;
@@ -222,15 +226,16 @@ void adapter_bridge(struct bt_data *bt_data) {
     wiiu_init_desc(bt_data);
 #endif
     uint32_t out_mask = 0;
-    float cycle_us, duration;
     uint32_t end, start = xthal_get_ccount();
 
+    //printf("dev_id %d dev_type: %d\n", bt_data->dev_id, bt_data->dev_type);
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
+        //printf("dev_id %d dev_type: %d\n", bt_data->dev_id, bt_data->dev_type);
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
         meta_init_func[wired_adapter.system_id](ctrl_output);
 
-        out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_type]);
+        out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
 
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
@@ -240,9 +245,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         }
     }
     end = xthal_get_ccount();
-    cycle_us = (float)1/(float)240;
-    duration = (float)(end - start)/cycle_us;
-    printf("%s process time: %fus\n", __FUNCTION__, duration);
+    printf("%s process time: %dus\n", __FUNCTION__, (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
 }
 
 void adapter_init(void) {

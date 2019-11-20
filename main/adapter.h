@@ -267,8 +267,8 @@ struct ctrl {
 };
 
 struct generic_ctrl {
-    uint32_t *mask;
-    uint32_t *desc;
+    const uint32_t *mask;
+    const uint32_t *desc;
     uint32_t map_mask[4];
     struct ctrl btns[4];
     struct ctrl axes[6];
