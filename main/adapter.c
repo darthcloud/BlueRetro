@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <xtensa/hal.h>
 #include "sdkconfig.h"
 #include "zephyr/types.h"
@@ -88,10 +89,13 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_btn_
             if (BIT(dst & 0x1F) & out->desc[0]) {
                 /* Dest is Axis */
                 uint32_t axis_id = btn_id_to_axis(dst);
-                float value = (float)out->axes[axis_id].meta->abs_max
-                            * (float)btn_sign(out->axes[axis_id].meta->polarity, dst)
+                float fvalue = out->axes[axis_id].meta->abs_max
+                            * btn_sign(out->axes[axis_id].meta->polarity, dst)
                             * (((float)map_cfg->perc_max)/100);
-                out->axes[axis_id].value = (int32_t)value;
+                int32_t value = (int32_t)fvalue;
+                if (abs(value) > abs(out->axes[axis_id].value)) {
+                    out->axes[axis_id].value = (int32_t)value;
+                }
             }
             else {
                     out->btns[0].value |= BIT(dst & 0x1F);
