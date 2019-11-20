@@ -104,7 +104,15 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
 
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
         if (ctrl_data->map_mask[0] & axis_to_btn_mask(i)) {
-            map_tmp.axes[dc_axes_idx[i]] = ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral;
+            if (ctrl_data->axes[i].value >= ctrl_data->axes[i].meta->abs_max) {
+                map_tmp.axes[dc_axes_idx[i]] = 255;
+            }
+            else if (ctrl_data->axes[i].value <= -ctrl_data->axes[i].meta->abs_max) {
+                map_tmp.axes[dc_axes_idx[i]] = 0;
+            }
+            else {
+                map_tmp.axes[dc_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
+            }
         }
     }
 
