@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <xtensa/hal.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "config.h"
@@ -221,6 +222,8 @@ void adapter_bridge(struct bt_data *bt_data) {
     wiiu_init_desc(bt_data);
 #endif
     uint32_t out_mask = 0;
+    float cycle_us, duration;
+    uint32_t end, start = xthal_get_ccount();
 
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
@@ -236,6 +239,10 @@ void adapter_bridge(struct bt_data *bt_data) {
             }
         }
     }
+    end = xthal_get_ccount();
+    cycle_us = (float)1/(float)240;
+    duration = (float)(end - start)/cycle_us;
+    printf("%s process time: %fus\n", __FUNCTION__, duration);
 }
 
 void adapter_init(void) {
