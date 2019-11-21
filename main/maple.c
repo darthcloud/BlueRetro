@@ -205,6 +205,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint8_t *data = buffer;
     //uint32_t byte;
     uint8_t cmd;
+    uint8_t port_bus;
     uint32_t port;
     uint32_t maple0;
     uint32_t maple1;
@@ -251,9 +252,10 @@ maple_end:
         //byte = ((bit_cnt - 1) / 8);
 
         cmd = maple_fix_byte((bit_cnt - 1) % 8, buffer[2], buffer[3]);
+        port_bus = maple_fix_byte((bit_cnt - 1) % 8, buffer[1], buffer[2]);
         switch (cmd) {
             case 0x01:
-                dev_info[1] = (port << 6) | 0x20;
+                dev_info[1] = port_bus | 0x20;
                 maple_tx(port, dev_info, sizeof(dev_info));
                 if (wired_adapter.system_id == WIRED_NONE) {
                     wired_adapter.system_id = DC;
@@ -262,7 +264,7 @@ maple_end:
                 }
                 break;
             case 0x09:
-                status[1] = (port << 6) | 0x20;
+                status[1] = port_bus | 0x20;
                 memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
                 maple_tx(port, status, sizeof(status));
                 ++wired_adapter.data[port].frame_cnt;
