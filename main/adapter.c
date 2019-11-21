@@ -90,7 +90,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t src = map_cfg->src_btn;
     uint8_t dst = map_cfg->dst_btn;
-    uint8_t dst_mask = BIT(dst & 0x1F);
+    uint32_t dst_mask = BIT(dst & 0x1F);
     uint32_t dst_btn_idx = btn_id_to_btn_idx(dst);
     uint32_t src_axis_idx = btn_id_to_axis(src);
     uint32_t dst_axis_idx = btn_id_to_axis(dst);
@@ -98,30 +98,33 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input.axes[src_axis_idx].value);
+        int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
+        int32_t sign_check = dst_sign * ctrl_input.axes[src_axis_idx].value;
 
-        /* Check if dst is an axis */
-        if (dst_mask & out->desc[dst_btn_idx]) {
-            /* Dst is an axis */
-            int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input.axes[src_axis_idx].meta->abs_max);
-            /* Check if axis over deadzone */
-            if (abs_src_value > deadzone) {
-                int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
-                int32_t value = abs_src_value - deadzone;
-                float scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
-                float fvalue = dst_sign * value * scale;
-                value = (int32_t)fvalue;
+        if (sign_check >= 0) {
+            /* Check if dst is an axis */
+            if (dst_mask & out->desc[dst_btn_idx]) {
+                /* Dst is an axis */
+                int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input.axes[src_axis_idx].meta->abs_max);
+                /* Check if axis over deadzone */
+                if (abs_src_value > deadzone) {
+                    int32_t value = abs_src_value - deadzone;
+                    float scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
+                    float fvalue = dst_sign * value * scale;
+                    value = (int32_t)fvalue;
 
-                if (abs(value) > abs(out->axes[dst_axis_idx].value)) {
-                    out->axes[dst_axis_idx].value = value;
+                    if (abs(value) > abs(out->axes[dst_axis_idx].value)) {
+                        out->axes[dst_axis_idx].value = value;
+                    }
                 }
             }
-        }
-        else {
-            /* Dst is a button */
-            int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input.axes[src_axis_idx].meta->abs_max);
-            /* Check if axis over threshold */
-            if (abs_src_value > threshold) {
-                out->btns[dst_btn_idx].value |= dst_mask;
+            else {
+                /* Dst is a button */
+                int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input.axes[src_axis_idx].meta->abs_max);
+                /* Check if axis over threshold */
+                if (abs_src_value > threshold) {
+                    out->btns[dst_btn_idx].value |= dst_mask;
+                }
             }
         }
         /* Flag this dst for update */
@@ -131,11 +134,11 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     return out_mask;
 }
 
-static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint8_t src_mask, uint32_t src_btn_idx) {
+static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask, uint32_t src_btn_idx) {
     uint32_t out_mask = BIT(map_cfg->dst_id);
     struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t dst = map_cfg->dst_btn;
-    uint8_t dst_mask = BIT(dst & 0x1F);
+    uint32_t dst_mask = BIT(dst & 0x1F);
     uint32_t dst_btn_idx = btn_id_to_btn_idx(dst);
 
     /* Check if mapping dst exist in output */
@@ -172,7 +175,7 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
 
     for (uint32_t i = 0; i < in_cfg->map_size; i++) {
         uint8_t src = in_cfg->map_cfg[i].src_btn;
-        uint8_t src_mask = BIT(src & 0x1F);
+        uint32_t src_mask = BIT(src & 0x1F);
         uint32_t src_btn_idx = btn_id_to_btn_idx(src);
 
         /* Check if mapping src exist in input */
@@ -270,7 +273,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         }
     }
     end = xthal_get_ccount();
-    printf("%s process time: %dus\n", __FUNCTION__, (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+    //printf("%s process time: %dus\n", __FUNCTION__, (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
 }
 
 void adapter_init(void) {
