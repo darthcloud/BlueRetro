@@ -7,8 +7,9 @@
 #include "util.h"
 #include "config.h"
 #include "adapter.h"
-#include "wii.h"
 #include "dc.h"
+#include "wii.h"
+#include "xb1.h"
 
 const uint32_t generic_btns_mask[32] = {
     BIT(PAD_LX_LEFT), BIT(PAD_LX_RIGHT), BIT(PAD_LY_DOWN), BIT(PAD_LY_UP),
@@ -31,7 +32,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     NULL,
     wiiu_to_generic,
     NULL,
-    NULL,
+    xb1_to_generic,
     NULL,
 };
 
