@@ -4,30 +4,30 @@
 #include "ps4.h"
 
 enum {
-    PS4_R2,
-    PS4_OPTIONS,
-    PS4_PS,
-    PS4_SHARE,
-    PS4_L2,
+    PS4_PS = 8,
+    PS4_TP,
+    PS4_L1 = 16,
     PS4_R1,
-    PS4_S,
-    PS4_X,
-    PS4_T,
-    PS4_C,
-    PS4_L1,
-    PS4_R3,
+    PS4_L2,
+    PS4_R2,
+    PS4_SHARE,
+    PS4_OPTIONS,
     PS4_L3,
+    PS4_R3,
     PS4_D_UP,
     PS4_D_RIGHT,
     PS4_D_DOWN,
     PS4_D_LEFT,
-    PS4_TP
+    PS4_S,
+    PS4_X,
+    PS4_C,
+    PS4_T,
 };
 
 const uint8_t ps4_axes_idx[6] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-    0,       1,       2,       3,       4,      5
+    0,       1,       2,       3,       7,      8
 };
 
 const struct ctrl_meta ps4_btn_meta =
@@ -35,15 +35,25 @@ const struct ctrl_meta ps4_btn_meta =
     .polarity = 0,
 };
 
-const struct ctrl_meta ps4_axes_meta =
+const struct ctrl_meta ps4_axes_meta[6] =
 {
-    .neutral = 0x8000,
-    .abs_max = 0x8000,
+    {.neutral = 0x80, .abs_max = 0x80},
+    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
+    {.neutral = 0x80, .abs_max = 0x80},
+    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
+    {.neutral = 0x00, .abs_max = 0xFF},
+    {.neutral = 0x00, .abs_max = 0xFF},
 };
 
 struct ps4_map {
-    uint16_t axes[6];
-    uint32_t buttons;
+    uint8_t reserved[2];
+    union {
+        struct {
+            uint8_t reserved2[4];
+            uint32_t buttons;
+        };
+        uint8_t axes[9];
+    };
 } __packed;
 
 const uint32_t ps4_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -76,14 +86,14 @@ void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
         for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
-            bt_data->axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta.neutral);
+            bt_data->axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
-        ctrl_data->axes[i].meta = &ps4_axes_meta;
-        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta.neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].meta = &ps4_axes_meta[i];
+        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
 
 }
