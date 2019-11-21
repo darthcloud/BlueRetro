@@ -9,6 +9,7 @@
 #include "adapter.h"
 #include "dc.h"
 #include "wii.h"
+#include "ps4.h"
 #include "xb1.h"
 
 const uint32_t generic_btns_mask[32] = {
@@ -31,7 +32,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     NULL,
     NULL,
     wiiu_to_generic,
-    NULL,
+    ps4_to_generic,
     xb1_to_generic,
     NULL,
 };
