@@ -25,6 +25,13 @@ const uint8_t gpio_pin[4][2] = {
     {22, 23},
 };
 
+uint8_t pin_to_port[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x01, 0x02, 0x00, 0x02, 0x03, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 uint8_t dev_info[] =
 {
     0x1C, 0x20, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -196,7 +203,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = buffer;
-    uint32_t byte;
+    //uint32_t byte;
     uint8_t cmd;
     uint32_t port;
     uint32_t maple0;
@@ -204,10 +211,10 @@ static void IRAM_ATTR maple_rx(void* arg)
 
     if (gpio_intr_status) {
         DPORT_STALL_OTHER_CPU_START();
-        port = (__builtin_ffs(gpio_intr_status) - 1) >> 1;
+        port = pin_to_port[(__builtin_ffs(gpio_intr_status) - 1)];
         maple0 = BIT(gpio_pin[port][0]);
         maple1 = BIT(gpio_pin[port][1]);
-        GPIO.out_w1tc = DEBUG;
+        //GPIO.out_w1tc = DEBUG;
         while (1) {
             do {
                 while (!(GPIO.in & maple0));
@@ -240,8 +247,8 @@ static void IRAM_ATTR maple_rx(void* arg)
         }
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
-        GPIO.out_w1ts = DEBUG;
-        byte = ((bit_cnt - 1) / 8);
+        //GPIO.out_w1ts = DEBUG;
+        //byte = ((bit_cnt - 1) / 8);
 
         cmd = maple_fix_byte((bit_cnt - 1) % 8, buffer[2], buffer[3]);
         switch (cmd) {
