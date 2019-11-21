@@ -4,16 +4,6 @@
 #include "ps4.h"
 
 enum {
-    PS4_PS = 8,
-    PS4_TP,
-    PS4_L1 = 16,
-    PS4_R1,
-    PS4_L2,
-    PS4_R2,
-    PS4_SHARE,
-    PS4_OPTIONS,
-    PS4_L3,
-    PS4_R3,
     PS4_D_UP,
     PS4_D_RIGHT,
     PS4_D_DOWN,
@@ -22,6 +12,16 @@ enum {
     PS4_X,
     PS4_C,
     PS4_T,
+    PS4_L1,
+    PS4_R1,
+    PS4_L2,
+    PS4_R2,
+    PS4_SHARE,
+    PS4_OPTIONS,
+    PS4_L3,
+    PS4_R3,
+    PS4_PS,
+    PS4_TP,
 };
 
 const uint8_t ps4_axes_idx[6] =

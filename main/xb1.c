@@ -4,7 +4,11 @@
 #include "xb1.h"
 
 enum {
-    XB1_RT = 9,
+    XB1_D_UP,
+    XB1_D_RIGHT,
+    XB1_D_DOWN,
+    XB1_D_LEFT,
+    XB1_RT = 8,
     XB1_MENU,
     XB1_XBOX,
     XB1_VIEW,
@@ -17,10 +21,6 @@ enum {
     XB1_LB,
     XB1_RJ,
     XB1_LJ,
-    XB1_D_UP = 28,
-    XB1_D_RIGHT,
-    XB1_D_DOWN,
-    XB1_D_LEFT,
 };
 
 const uint8_t xb1_axes_idx[6] =
