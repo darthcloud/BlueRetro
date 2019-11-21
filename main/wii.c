@@ -75,8 +75,17 @@ void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
+
+    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+        for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+            bt_data->axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral);
+        }
+        atomic_set_bit(&bt_data->flags, BT_INIT);
+    }
+
     for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
         ctrl_data->axes[i].meta = &wiiu_axes_meta;
-        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral;
+        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->axes_cal[i];
     }
+
 }

@@ -104,7 +104,7 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint8_t src_mask,
         if (ctrl_input.btns[src_btn_idx].value & src_mask) {
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
-                /* Dst is Axis */
+                /* Dst is an axis */
                 uint32_t axis_id = btn_id_to_axis(dst);
                 float fvalue = out->axes[axis_id].meta->abs_max
                             * btn_sign(out->axes[axis_id].meta->polarity, dst)
@@ -116,7 +116,7 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint8_t src_mask,
                 }
             }
             else {
-                /* Dst is Button */
+                /* Dst is a button */
                 out->btns[dst_btn_idx].value |= dst_mask;
             }
         }
@@ -137,12 +137,13 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
 
         /* Check if mapping src exist in input */
         if (src_mask & ctrl_input.mask[src_btn_idx]) {
+            /* Check if src is an axis */
             if (src_mask & ctrl_input.desc[src_btn_idx]) {
-                /* Src is Axis */
+                /* Src is an axis */
                 out_mask |= adapter_map_from_axis(&in_cfg->map_cfg[i], src_mask);
             }
             else {
-                /* Src is Button */
+                /* Src is a button */
                 out_mask |= adapter_map_from_btn(&in_cfg->map_cfg[i], src_mask, src_btn_idx);
             }
         }

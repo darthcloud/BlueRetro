@@ -219,6 +219,7 @@ enum {
 
 /* BT flags */
 enum {
+    BT_INIT,
     BT_FEEDBACK,
 };
 
@@ -261,6 +262,7 @@ struct bt_data {
     int32_t dev_id;
     int32_t dev_type;
     uint8_t input[64];
+    int32_t axes_cal[6];
     uint32_t hid_desc_len;
     uint8_t hid_desc[1024];
 } __packed;
