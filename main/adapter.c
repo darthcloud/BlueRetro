@@ -11,6 +11,7 @@
 #include "wii.h"
 #include "ps4.h"
 #include "xb1.h"
+#include "sw.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -39,7 +40,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     wiiu_to_generic,
     ps4_to_generic,
     xb1_to_generic,
-    NULL,
+    sw_to_generic,
 };
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
