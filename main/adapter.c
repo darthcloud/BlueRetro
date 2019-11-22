@@ -107,8 +107,8 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input.axes[src_axis_idx].value);
-        int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
-        int32_t sign_check = dst_sign * ctrl_input.axes[src_axis_idx].value;
+        int32_t sign = btn_sign(0, dst);
+        int32_t sign_check = sign * ctrl_input.axes[src_axis_idx].value;
 
         if (sign_check >= 0) {
             /* Check if dst is an axis */
@@ -118,6 +118,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                 /* Check if axis over deadzone */
                 if (abs_src_value > deadzone) {
                     int32_t value = abs_src_value - deadzone;
+                    int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
                     float scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
                     float fvalue = dst_sign * value * scale;
                     value = (int32_t)fvalue;

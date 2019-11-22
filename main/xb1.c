@@ -4,19 +4,17 @@
 #include "xb1.h"
 
 enum {
-    XB1_RT = 8,
-    XB1_MENU,
-    XB1_XBOX,
-    XB1_VIEW,
-    XB1_LT,
-    XB1_RB,
-    XB1_X,
     XB1_A,
-    XB1_Y,
     XB1_B,
+    XB1_X,
+    XB1_Y,
     XB1_LB,
-    XB1_RJ,
+    XB1_RB,
+    XB1_VIEW,
+    XB1_MENU,
     XB1_LJ,
+    XB1_RJ,
+    XB1_XBOX,
 };
 
 const uint8_t xb1_axes_idx[6] =
@@ -32,20 +30,18 @@ const struct ctrl_meta xb1_btn_meta =
 
 const struct ctrl_meta xb1_axes_meta[6] =
 {
-    {.neutral = 0x8000, .abs_max = 0x80},
-    {.neutral = 0x8000, .abs_max = 0x80},
-    {.neutral = 0x8000, .abs_max = 0x80},
-    {.neutral = 0x8000, .abs_max = 0x80},
+    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000},
     {.neutral = 0x0000, .abs_max = 0x3FF},
     {.neutral = 0x0000, .abs_max = 0x3FF},
 };
 
 struct xb1_map {
     uint16_t axes[6];
-    union {
-        uint32_t buttons;
-        uint8_t hat;
-    };
+    uint8_t hat;
+    uint16_t buttons;
 } __packed;
 
 const uint32_t xb1_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};

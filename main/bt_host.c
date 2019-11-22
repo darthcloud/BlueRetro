@@ -13,7 +13,7 @@
 #include "bt_att.h"
 #include "util.h"
 
-//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1
@@ -272,6 +272,7 @@ int32_t bt_host_get_dev_conf(struct bt_dev **device) {
 }
 
 void bt_host_reset_dev(struct bt_dev *device) {
+    atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_INIT);
     memset((void *)device, 0, sizeof(*device));
 }
 
