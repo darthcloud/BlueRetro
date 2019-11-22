@@ -25,7 +25,7 @@ enum {
 const uint8_t sw_axes_idx[4] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
-    0,       2,       1,       3
+    0,       1,       2,       3
 };
 
 const struct ctrl_meta sw_btn_meta =
@@ -35,8 +35,8 @@ const struct ctrl_meta sw_btn_meta =
 
 const struct ctrl_meta sw_axes_meta =
 {
-    .neutral = 0x800,
-    .abs_max = 0x44C,
+    .neutral = 0x8000,
+    .abs_max = 0x8000,
 };
 
 struct sw_map {
