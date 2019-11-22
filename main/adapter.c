@@ -8,6 +8,7 @@
 #include "config.h"
 #include "adapter.h"
 #include "dc.h"
+#include "ps3.h"
 #include "wii.h"
 #include "ps4.h"
 #include "xb1.h"
@@ -33,7 +34,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     NULL,
     NULL,
     NULL,
-    NULL,
+    ps3_to_generic,
     NULL,
     NULL,
     NULL,
