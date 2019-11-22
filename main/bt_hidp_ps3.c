@@ -47,7 +47,6 @@ void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_PS3_STATUS:
                 {
-                    device->report_cnt++;
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps3_status));
                     break;
                 }

@@ -272,7 +272,7 @@ int32_t bt_host_get_dev_conf(struct bt_dev **device) {
 }
 
 void bt_host_reset_dev(struct bt_dev *device) {
-    atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_INIT);
+    memset((void *)&bt_adapter.data[device->id], 0, sizeof(bt_adapter.data[0]));
     memset((void *)device, 0, sizeof(*device));
 }
 
@@ -363,12 +363,15 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
 }
 
 void bt_host_bridge(struct bt_dev *device, uint8_t *data, uint32_t len) {
-    bt_adapter.data[device->id].dev_id = device->id;
-    bt_adapter.data[device->id].dev_type = device->type;
-    memcpy(bt_adapter.data[device->id].input, data, len);
-    adapter_bridge(&bt_adapter.data[device->id]);
-    if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK)) {
-        bt_hid_feedback(device, bt_adapter.data[device->id].output);
-        atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
+    if (bt_adapter.data[device->id].report_cnt > 0) {
+        bt_adapter.data[device->id].dev_id = device->id;
+        bt_adapter.data[device->id].dev_type = device->type;
+        memcpy(bt_adapter.data[device->id].input, data, len);
+        adapter_bridge(&bt_adapter.data[device->id]);
+        if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK)) {
+            bt_hid_feedback(device, bt_adapter.data[device->id].output);
+            atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
+        }
     }
+    bt_adapter.data[device->id].report_cnt++;
 }
