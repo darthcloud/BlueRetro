@@ -44,7 +44,7 @@ struct xb1_map {
     uint16_t buttons;
 } __packed;
 
-const uint32_t xb1_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t xb1_mask[4] = {0xAA7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
 const uint32_t xb1_btns_mask[32] = {
