@@ -4,10 +4,6 @@
 #include "xb1.h"
 
 enum {
-    XB1_D_UP,
-    XB1_D_RIGHT,
-    XB1_D_DOWN,
-    XB1_D_LEFT,
     XB1_RT = 8,
     XB1_MENU,
     XB1_XBOX,
@@ -46,7 +42,10 @@ const struct ctrl_meta xb1_axes_meta[6] =
 
 struct xb1_map {
     uint16_t axes[6];
-    uint32_t buttons;
+    union {
+        uint32_t buttons;
+        uint8_t hat;
+    };
 } __packed;
 
 const uint32_t xb1_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -55,7 +54,7 @@ const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
-    BIT(XB1_D_LEFT), BIT(XB1_D_RIGHT), BIT(XB1_D_DOWN), BIT(XB1_D_UP),
+    0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(XB1_X), BIT(XB1_B), BIT(XB1_A), BIT(XB1_Y),
     BIT(XB1_MENU), BIT(XB1_VIEW), BIT(XB1_XBOX), 0,
@@ -76,6 +75,9 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
+
+    /* Convert hat to regular btns */
+    ctrl_data->btns[0].value |= hat_to_ld_btns[(map->hat & 0xF) - 1];
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
         for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
