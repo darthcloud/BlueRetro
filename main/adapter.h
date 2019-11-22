@@ -295,6 +295,7 @@ typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_
 typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
 typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
 
+extern const uint32_t hat_to_ld_btns[16];
 extern const uint32_t generic_btns_mask[32];
 extern struct bt_adapter bt_adapter;
 extern struct wired_adapter wired_adapter;

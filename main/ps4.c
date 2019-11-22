@@ -4,11 +4,7 @@
 #include "ps4.h"
 
 enum {
-    PS4_D_UP,
-    PS4_D_RIGHT,
-    PS4_D_DOWN,
-    PS4_D_LEFT,
-    PS4_S,
+    PS4_S = 4,
     PS4_X,
     PS4_C,
     PS4_T,
@@ -50,7 +46,10 @@ struct ps4_map {
     union {
         struct {
             uint8_t reserved2[4];
-            uint32_t buttons;
+            union {
+                uint8_t hat;
+                uint32_t buttons;
+            };
         };
         uint8_t axes[9];
     };
@@ -62,7 +61,7 @@ const uint32_t ps4_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t ps4_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
-    BIT(PS4_D_LEFT), BIT(PS4_D_RIGHT), BIT(PS4_D_DOWN), BIT(PS4_D_UP),
+    0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PS4_S), BIT(PS4_C), BIT(PS4_X), BIT(PS4_T),
     BIT(PS4_OPTIONS), BIT(PS4_SHARE), BIT(PS4_PS), BIT(PS4_TP),
@@ -83,6 +82,9 @@ void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
+
+    /* Convert hat to regular btns */
+    ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
         for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
