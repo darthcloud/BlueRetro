@@ -31,9 +31,9 @@ const struct ctrl_meta xb1_btn_meta =
 const struct ctrl_meta xb1_axes_meta[6] =
 {
     {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
     {.neutral = 0x8000, .abs_max = 0x8000},
-    {.neutral = 0x8000, .abs_max = 0x8000},
-    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
     {.neutral = 0x0000, .abs_max = 0x3FF},
     {.neutral = 0x0000, .abs_max = 0x3FF},
 };
