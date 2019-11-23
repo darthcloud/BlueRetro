@@ -61,7 +61,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 }
                 case BT_HIDP_SW_STATUS:
                 {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status));
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status));
                     break;
                 }
             }

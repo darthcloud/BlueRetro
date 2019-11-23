@@ -20,7 +20,12 @@ void bt_hid_xb1_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_XB1_STATUS:
                 {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_xb1_status));
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_xb1_status));
+                    break;
+                }
+                case BT_HIDP_XB1_STATUS2:
+                {
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, 1);
                     break;
                 }
             }

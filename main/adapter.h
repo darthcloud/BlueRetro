@@ -261,6 +261,7 @@ struct bt_data {
     /* from wireless */
     int32_t dev_id;
     int32_t dev_type;
+    uint32_t report_id;
     uint32_t report_cnt;
     uint8_t input[64];
     int32_t axes_cal[6];

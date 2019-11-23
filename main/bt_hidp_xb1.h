@@ -4,6 +4,7 @@
 #include "bt_hidp.h"
 
 #define BT_HIDP_XB1_STATUS 0x01
+#define BT_HIDP_XB1_STATUS2 0x02
 struct bt_hidp_xb1_status {
     uint8_t data[15];
 } __packed;

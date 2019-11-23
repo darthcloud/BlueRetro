@@ -362,8 +362,9 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
     return ret;
 }
 
-void bt_host_bridge(struct bt_dev *device, uint8_t *data, uint32_t len) {
+void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
     if (bt_adapter.data[device->id].report_cnt > 0) {
+        bt_adapter.data[device->id].report_id = report_id;
         bt_adapter.data[device->id].dev_id = device->id;
         bt_adapter.data[device->id].dev_type = device->type;
         memcpy(bt_adapter.data[device->id].input, data, len);
