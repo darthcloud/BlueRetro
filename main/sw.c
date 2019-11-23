@@ -33,11 +33,12 @@ const struct ctrl_meta sw_btn_meta =
     .polarity = 0,
 };
 
-const struct ctrl_meta sw_axes_meta =
+const struct ctrl_meta sw_axes_meta[] =
 {
-    .neutral = 0x8000,
-    .abs_max = 0x8000,
-    .deadzone = 0xB00,
+    {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00},
+    {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00, .polarity = 1},
+    {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00},
+    {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00, .polarity = 1},
 };
 
 struct sw_map {
@@ -79,13 +80,13 @@ void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
         for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
-            bt_data->axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta.neutral);
+            bt_data->axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
-        ctrl_data->axes[i].meta = &sw_axes_meta;
-        ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta.neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].meta = &sw_axes_meta[i];
+        ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
 }
