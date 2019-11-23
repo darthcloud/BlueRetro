@@ -4,7 +4,7 @@
 #include "ps3.h"
 
 enum {
-    PS3_SELECT,
+    PS3_SELECT = 8,
     PS3_L3,
     PS3_R3,
     PS3_START,
@@ -61,7 +61,7 @@ const uint32_t ps3_btns_mask[32] = {
     BIT(PS3_S), BIT(PS3_C), BIT(PS3_X), BIT(PS3_T),
     BIT(PS3_START), BIT(PS3_SELECT), BIT(PS3_PS), 0,
     0, BIT(PS3_L1), 0, BIT(PS3_L3),
-    0, BIT(PS3_R2), 0, BIT(PS3_R3),
+    0, BIT(PS3_R1), 0, BIT(PS3_R3),
 };
 
 void ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
