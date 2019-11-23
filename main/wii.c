@@ -37,8 +37,6 @@ const struct ctrl_meta wiiu_btn_meta =
 const struct ctrl_meta wiiu_axes_meta =
 {
     .neutral = 0x800,
-    .deadzone = 0x00F,
-    .abs_btn_thrs = 0x250,
     .abs_max = 0x44C,
 };
 

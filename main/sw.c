@@ -37,6 +37,7 @@ const struct ctrl_meta sw_axes_meta =
 {
     .neutral = 0x8000,
     .abs_max = 0x8000,
+    .deadzone = 0xB00,
 };
 
 struct sw_map {
@@ -87,5 +88,4 @@ void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].meta = &sw_axes_meta;
         ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta.neutral + bt_data->axes_cal[i];
     }
-
 }
