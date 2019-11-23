@@ -4,22 +4,22 @@
 #include "sw.h"
 
 enum {
-    SW_A,
     SW_B,
+    SW_A,
     SW_Y,
     SW_X,
-    SW_SL,
-    SW_SR,
     SW_L,
+    SW_R,
     SW_ZL,
+    SW_ZR,
     SW_MINUS,
     SW_PLUS,
     SW_LJ,
     SW_RJ,
     SW_HOME,
     SW_CAPTURE,
-    SW_R,
-    SW_ZR,
+    SW_SL,
+    SW_SR,
 };
 
 const uint8_t sw_axes_idx[4] =
