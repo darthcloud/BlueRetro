@@ -50,7 +50,7 @@ struct ps3_map {
     uint8_t axes[20];
 } __packed;
 
-const uint32_t ps3_mask[4] = {0xAA7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t ps3_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
 const uint32_t ps3_btns_mask[32] = {

@@ -55,7 +55,7 @@ struct ps4_map {
     };
 } __packed;
 
-const uint32_t ps4_mask[4] = {0xAAFF0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t ps4_mask[4] = {0xBBFF0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t ps4_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
 const uint32_t ps4_btns_mask[32] = {
