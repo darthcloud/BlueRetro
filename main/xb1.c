@@ -44,7 +44,8 @@ struct xb1_map {
     uint16_t buttons;
 } __packed;
 
-const uint32_t xb1_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
 const uint32_t xb1_btns_mask[32] = {
@@ -63,10 +64,11 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
-    ctrl_data->mask = (uint32_t *)xb1_mask;
     ctrl_data->desc = (uint32_t *)xb1_desc;
 
     if (bt_data->report_id == 0x01) {
+        ctrl_data->mask = (uint32_t *)xb1_mask;
+
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (map->buttons & xb1_btns_mask[i]) {
                 ctrl_data->btns[0].value |= generic_btns_mask[i];
@@ -89,6 +91,8 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         }
     }
     else if (bt_data->report_id == 0x02) {
+        ctrl_data->mask = (uint32_t *)xb1_mask2;
+
         if (bt_data->input[0] & BIT(XB1_XBOX)) {
             ctrl_data->btns[0].value |= BIT(PAD_MT);
         }
