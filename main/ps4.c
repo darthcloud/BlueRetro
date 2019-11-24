@@ -66,7 +66,7 @@ const uint32_t ps4_btns_mask[32] = {
     BIT(PS4_S), BIT(PS4_C), BIT(PS4_X), BIT(PS4_T),
     BIT(PS4_OPTIONS), BIT(PS4_SHARE), BIT(PS4_PS), BIT(PS4_TP),
     0, BIT(PS4_L1), 0, BIT(PS4_L3),
-    0, BIT(PS4_R2), 0, BIT(PS4_R3),
+    0, BIT(PS4_R1), 0, BIT(PS4_R3),
 };
 
 void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
