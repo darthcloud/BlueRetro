@@ -21,7 +21,7 @@
 const uint8_t gpio_pin[4][2] = {
     {26, 27},
     { 5, 18},
-    {19, 21},
+    {21, 25},
     {22, 23},
 };
 
@@ -294,6 +294,7 @@ void maple_init(void)
         }
     }
 
+#if 0
     gpio_config_t io_conf2 = {
         .intr_type = 0,
         .pin_bit_mask = DEBUG,
@@ -301,9 +302,9 @@ void maple_init(void)
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .pull_up_en = GPIO_PULLUP_ENABLE
     };
-
     gpio_config(&io_conf2);
     GPIO.out_w1ts = DEBUG;
+#endif
 
     esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
 }
