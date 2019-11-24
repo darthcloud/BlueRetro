@@ -13,7 +13,7 @@
 #include "bt_att.h"
 #include "util.h"
 
-#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 
 #define BT_TX 0
 #define BT_RX 1

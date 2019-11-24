@@ -97,5 +97,4 @@ void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
-
 }
