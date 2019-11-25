@@ -272,6 +272,7 @@ int32_t bt_host_get_dev_conf(struct bt_dev **device) {
 }
 
 void bt_host_reset_dev(struct bt_dev *device) {
+    adapter_init_buffer(device->id);
     memset((void *)&bt_adapter.data[device->id], 0, sizeof(bt_adapter.data[0]));
     memset((void *)device, 0, sizeof(*device));
 }

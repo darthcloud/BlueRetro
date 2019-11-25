@@ -296,6 +296,7 @@ struct bt_adapter {
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
 typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
+typedef void (*buffer_init_t)(struct wired_data *wired_data);
 
 extern const uint32_t hat_to_ld_btns[16];
 extern const uint32_t generic_btns_mask[32];
@@ -305,6 +306,7 @@ extern struct wired_adapter wired_adapter;
 uint8_t btn_id_to_axis(uint8_t btn_id);
 uint32_t axis_to_btn_mask(uint8_t axis);
 int8_t btn_sign(uint32_t polarity, uint8_t btn_id);
+void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);
 void adapter_init(void);
 

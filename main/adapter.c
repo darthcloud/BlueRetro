@@ -74,6 +74,21 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL,
 };
 
+static buffer_init_t buffer_init_func[WIRED_MAX] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    dc_init_buffer,
+    NULL,
+    NULL,
+    NULL,
+};
+
 struct generic_ctrl ctrl_input;
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
 struct bt_adapter bt_adapter = {0};
@@ -262,13 +277,17 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
     return 1;
 }
 
+void adapter_init_buffer(uint8_t wired_id) {
+    if (wired_adapter.system_id != WIRED_NONE && buffer_init_func[wired_adapter.system_id]) {
+        buffer_init_func[wired_adapter.system_id](&wired_adapter.data[wired_id]);
+    }
+}
+
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
     uint32_t end, start = xthal_get_ccount();
 
-    //printf("dev_id %d dev_type: %d\n", bt_data->dev_id, bt_data->dev_type);
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
-        //printf("dev_id %d dev_type: %d\n", bt_data->dev_id, bt_data->dev_type);
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
         meta_init_func[wired_adapter.system_id](ctrl_output);
@@ -277,7 +296,6 @@ void adapter_bridge(struct bt_data *bt_data) {
 
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
-                /* this need to reset only what was mapped so adapter_mapping need to provide a btn mask */
                 from_generic_func[wired_adapter.system_id](&ctrl_output[i], &wired_adapter.data[i]);
             }
         }

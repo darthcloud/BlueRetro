@@ -21,7 +21,7 @@
 const uint8_t gpio_pin[4][2] = {
     {26, 27},
     { 5, 18},
-    {21, 25},
+    {19, 25},
     {22, 23},
 };
 
@@ -257,11 +257,6 @@ maple_end:
             case 0x01:
                 dev_info[1] = port_bus | 0x20;
                 maple_tx(port, dev_info, sizeof(dev_info));
-                if (wired_adapter.system_id == WIRED_NONE) {
-                    wired_adapter.system_id = DC;
-                    /* Init neutral status buffer */
-                    memcpy(wired_adapter.data[port].output, status + 8, sizeof(status) - 8);
-                }
                 break;
             case 0x09:
                 status[1] = port_bus | 0x20;
@@ -294,6 +289,11 @@ void maple_init(void)
         }
     }
 
+    wired_adapter.system_id = DC;
+
+    for (uint32_t i = 0; i < 4; i++) {
+        adapter_init_buffer(i);
+    }
 #if 0
     gpio_config_t io_conf2 = {
         .intr_type = 0,

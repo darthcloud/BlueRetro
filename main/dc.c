@@ -68,7 +68,9 @@ const uint32_t dc_btns_mask[32] = {
     0, BIT(DC_C), 0, 0,
 };
 
-static void dc_init_map(struct dc_map *map) {
+void dc_init_buffer(struct wired_data *wired_data) {
+    struct dc_map *map = (struct dc_map *)wired_data->output;
+
     map->buttons = 0xFFFF;
     for (uint32_t i = 0; i < ARRAY_SIZE(dc_axes_meta); i++) {
         map->axes[dc_axes_idx[i]] = dc_axes_meta[i].neutral;
