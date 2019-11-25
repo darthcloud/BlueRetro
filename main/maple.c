@@ -203,7 +203,8 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = buffer;
-    //uint32_t byte;
+    uint32_t byte;
+    uint32_t bad_frame;
     uint8_t cmd;
     uint8_t port_bus;
     uint32_t port;
@@ -249,10 +250,25 @@ static void IRAM_ATTR maple_rx(void* arg)
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
         //GPIO.out_w1ts = DEBUG;
-        //byte = ((bit_cnt - 1) / 8);
+        bad_frame = ((bit_cnt - 1) % 8);
 
-        cmd = maple_fix_byte((bit_cnt - 1) % 8, buffer[2], buffer[3]);
-        port_bus = maple_fix_byte((bit_cnt - 1) % 8, buffer[1], buffer[2]);
+#ifdef WIRED_TRACE
+        byte = ((bit_cnt - 1) / 8);
+        if (bad_frame) {
+            ++byte;
+            for (uint32_t i = 0; i < byte; ++i) {
+                ets_printf("%02X", maple_fix_byte(bad_frame, buffer[i ? i - 1 : 0], buffer[i]));
+            }
+        }
+        else {
+            for (uint32_t i = 0; i < byte; ++i) {
+                ets_printf("%02X", buffer[i]);
+            }
+        }
+        ets_printf("\n");
+#else
+        cmd = maple_fix_byte(bad_frame, buffer[2], buffer[3]);
+        port_bus = maple_fix_byte(bad_frame, buffer[1], buffer[2]);
         switch (cmd) {
             case 0x01:
                 dev_info[1] = port_bus | 0x20;
@@ -267,8 +283,8 @@ maple_end:
             default:
                 ets_printf("Unsupported cmd: 0x%02X\n", cmd);
                 break;
-
         }
+#endif
 
         GPIO.status_w1tc = gpio_intr_status;
     }
