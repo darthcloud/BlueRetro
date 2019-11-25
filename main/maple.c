@@ -203,7 +203,9 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = buffer;
+#ifdef WIRED_TRACE
     uint32_t byte;
+#endif
     uint32_t bad_frame;
     uint8_t cmd;
     uint8_t port_bus;
@@ -271,11 +273,11 @@ maple_end:
         port_bus = maple_fix_byte(bad_frame, buffer[1], buffer[2]);
         switch (cmd) {
             case 0x01:
-                dev_info[1] = port_bus | 0x20;
+                dev_info[1] = port_bus;
                 maple_tx(port, dev_info, sizeof(dev_info));
                 break;
             case 0x09:
-                status[1] = port_bus | 0x20;
+                status[1] = port_bus;
                 memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
                 maple_tx(port, status, sizeof(status));
                 ++wired_adapter.data[port].frame_cnt;
