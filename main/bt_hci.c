@@ -764,6 +764,15 @@ static void bt_hci_cmd_le_set_adv_enable(void *cp) {
     bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, sizeof(*le_set_adv_enable));
 }
 
+static void bt_hci_cmd_le_set_adv_disable(void *cp) {
+    struct bt_hci_cp_le_set_adv_enable *le_set_adv_enable = (struct bt_hci_cp_le_set_adv_enable *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_adv_enable->enable = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, sizeof(*le_set_adv_enable));
+}
+
 #if 0
 static void bt_hci_cmd_le_set_scan_param(void *cp) {
     struct bt_hci_cp_le_set_scan_param *le_set_scan_param = (struct bt_hci_cp_le_set_scan_param *)&bt_hci_pkt_tmp.cp;
@@ -876,6 +885,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                     bt_hci_cmd_read_remote_features(&device->acl_handle);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
@@ -919,13 +929,16 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 bt_host_reset_dev(device);
                 if (bt_host_get_active_dev(&device) == BT_NONE) {
                     bt_hci_cmd_periodic_inquiry(NULL);
+                    bt_hci_cmd_le_set_adv_enable(NULL);
                 }
             }
             else {
                 bt_host_get_dev_conf(&device);
                 if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND) && disconn_complete->handle == device->acl_handle) {
                     bt_host_reset_dev(device);
-                    bt_hci_cmd_le_set_adv_enable(NULL);
+                    if (bt_host_get_active_dev(&device) == BT_NONE) {
+                        bt_hci_cmd_le_set_adv_enable(NULL);
+                    }
                 }
             }
             break;
