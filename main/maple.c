@@ -1,16 +1,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <xtensa/hal.h>
+#include <esp32/dport_access.h>
+#include <esp_intr_alloc.h>
+#include "driver/gpio.h"
 #include "zephyr/types.h"
 #include "util.h"
-#include "esp_intr_alloc.h"
-#include "driver/gpio.h"
-#include "esp32/dport_access.h"
 #include "adapter.h"
 #include "maple.h"
 
+//#define WIRED_TRACE
 #define DEBUG  (1ULL << 25)
 #define TIMEOUT 8
 
@@ -254,6 +256,7 @@ maple_end:
         bad_frame = ((bit_cnt - 1) % 8);
 
 #ifdef WIRED_TRACE
+        ets_printf("%08X ", xthal_get_ccount());
         byte = ((bit_cnt - 1) / 8);
         if (bad_frame) {
             ++byte;
