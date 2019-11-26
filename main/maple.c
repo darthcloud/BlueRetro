@@ -207,8 +207,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t byte;
 #endif
     uint32_t bad_frame;
-    uint8_t cmd;
-    uint8_t port_bus;
+    uint8_t len, cmd, src, dst;
     uint32_t port;
     uint32_t maple0;
     uint32_t maple1;
@@ -269,15 +268,33 @@ maple_end:
         }
         ets_printf("\n");
 #else
-        cmd = maple_fix_byte(bad_frame, buffer[2], buffer[3]);
-        port_bus = maple_fix_byte(bad_frame, buffer[1], buffer[2]);
+        len = ((bit_cnt - 1) / 32) - 1;
+        /* Fix up to 7 bits loss */
+        if (bad_frame) {
+            cmd = maple_fix_byte(bad_frame, buffer[2], buffer[3]);
+            src = maple_fix_byte(bad_frame, buffer[1], buffer[2]);
+            dst = maple_fix_byte(bad_frame, buffer[0], buffer[1]);
+        }
+        /* Fix 8 bits loss */
+        else if (buffer[0] != len) {
+            cmd = buffer[2];
+            src = buffer[1];
+            dst = buffer[0];
+        }
+        else {
+            cmd = buffer[3];
+            src = buffer[2];
+            dst = buffer[1];
+        }
         switch (cmd) {
             case 0x01:
-                dev_info[1] = port_bus;
+                dev_info[1] = src;
+                dev_info[2] = dst;
                 maple_tx(port, dev_info, sizeof(dev_info));
                 break;
             case 0x09:
-                status[1] = port_bus;
+                status[1] = src;
+                status[2] = dst;
                 memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
                 maple_tx(port, status, sizeof(status));
                 ++wired_adapter.data[port].frame_cnt;
