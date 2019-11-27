@@ -34,6 +34,13 @@ uint8_t pin_to_port[] = {
     0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+uint32_t maple0_to_maple1[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, BIT(18), 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, BIT(25), 0x00, 0x00, BIT(23), 0x00,
+    0x00, 0x00, BIT(27), 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 uint8_t dev_info[] =
 {
     0x1C, 0x20, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -55,10 +62,9 @@ uint32_t intr_cnt = 0;
 
 uint8_t buffer[544] = {0};
 
-static void IRAM_ATTR maple_tx(uint32_t port, uint8_t *data, uint8_t len) {
+static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
     uint8_t *crc = data + (len - 1);
-    uint32_t maple0 = BIT(gpio_pin[port][0]);
-    uint32_t maple1 = BIT(gpio_pin[port][1]);
+    *crc = 0x00;
 
     ets_delay_us(55);
 
@@ -200,38 +206,34 @@ static void IRAM_ATTR maple_tx(uint32_t port, uint8_t *data, uint8_t len) {
 
 static void IRAM_ATTR maple_rx(void* arg)
 {
-    const uint32_t gpio_intr_status = GPIO.acpu_int;
-    uint32_t timeout = 0;
+    const uint32_t maple0 = GPIO.acpu_int;
+    uint32_t timeout;
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = buffer;
 #ifdef WIRED_TRACE
     uint32_t byte;
 #endif
-    uint32_t bad_frame;
-    uint8_t len, cmd, src, dst;
     uint32_t port;
-    uint32_t maple0;
+    uint32_t bad_frame;
+    uint8_t len, cmd, src, dst, crc = 0;
     uint32_t maple1;
 
-    if (gpio_intr_status) {
+    if (maple0) {
         DPORT_STALL_OTHER_CPU_START();
-        port = pin_to_port[(__builtin_ffs(gpio_intr_status) - 1)];
-        maple0 = BIT(gpio_pin[port][0]);
-        maple1 = BIT(gpio_pin[port][1]);
-        //GPIO.out_w1tc = DEBUG;
+        maple1 = maple0_to_maple1[__builtin_ffs(maple0) - 1];
         while (1) {
-            do {
+            for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit_cnt) {
                 while (!(GPIO.in & maple0));
                 while (((gpio = GPIO.in) & maple0));
                 if (gpio & maple1) {
-                    *data = (*data << 1) + 1;
+                    *data |= mask;
                 }
                 else {
-                    *data <<= 1;
+                    *data &= ~mask;
                 }
+                mask >>= 1;
                 ++bit_cnt;
-                //GPIO.out_w1ts = DEBUG;
                 while (!(GPIO.in & maple1));
                 timeout = 0;
                 while (((gpio = GPIO.in) & maple1)) {
@@ -240,19 +242,19 @@ static void IRAM_ATTR maple_rx(void* arg)
                     }
                 }
                 if (gpio & maple0) {
-                    *data = (*data << 1) + 1;
+                    *data |= mask;
                 }
                 else {
-                    *data <<= 1;
+                    *data &= ~mask;
                 }
-                ++bit_cnt;
-                //GPIO.out_w1tc = DEBUG;
-            } while ((bit_cnt % 8));
+            }
+            crc ^= *data;
             ++data;
         }
 maple_end:
         DPORT_STALL_OTHER_CPU_END();
-        //GPIO.out_w1ts = DEBUG;
+
+        port = pin_to_port[(__builtin_ffs(maple0) - 1)];
         bad_frame = ((bit_cnt - 1) % 8);
 
 #ifdef WIRED_TRACE
@@ -293,13 +295,13 @@ maple_end:
             case 0x01:
                 dev_info[1] = src;
                 dev_info[2] = dst;
-                maple_tx(port, dev_info, sizeof(dev_info));
+                maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
                 break;
             case 0x09:
                 status[1] = src;
                 status[2] = dst;
                 memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
-                maple_tx(port, status, sizeof(status));
+                maple_tx(port, maple0, maple1, status, sizeof(status));
                 ++wired_adapter.data[port].frame_cnt;
                 break;
             default:
@@ -308,7 +310,7 @@ maple_end:
         }
 #endif
 
-        GPIO.status_w1tc = gpio_intr_status;
+        GPIO.status_w1tc = maple0;
     }
 }
 
