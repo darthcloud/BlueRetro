@@ -1,4 +1,3 @@
-ASFLAGS += -DBLUERETRO
 CFLAGS += -DBLUERETRO
-COMPONENT_SRCDIRS := . zephyr
+COMPONENT_SRCDIRS := . bluetooth adapter wired drivers zephyr
 

@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_l2cap.h"
-#include "bt_hidp_wii.h"
-#include "bt_hci.h"
-#include "bt_att.h"
-#include "util.h"
+#include "host.h"
+#include "l2cap.h"
+#include "hci.h"
+#include "att.h"
+#include "hidp_wii.h"
+#include "../util.h"
 
 #define BT_INQUIRY_MAX 10
 

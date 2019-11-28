@@ -1,13 +1,13 @@
 #ifndef _BT_HOST_H_
 #define _BT_HOST_H_
 
-#include "zephyr/atomic.h"
-#include "zephyr/hci.h"
-#include "zephyr/l2cap_internal.h"
-#include "zephyr/sdp_internal.h"
-#include "zephyr/att_internal.h"
-#include "adapter.h"
-#include "bt_hidp.h"
+#include "../zephyr/atomic.h"
+#include "../zephyr/hci.h"
+#include "../zephyr/l2cap_internal.h"
+#include "../zephyr/sdp_internal.h"
+#include "../zephyr/att_internal.h"
+#include "../adapter/adapter.h"
+#include "hidp.h"
 
 #define BT_MAX_RETRY 3
 

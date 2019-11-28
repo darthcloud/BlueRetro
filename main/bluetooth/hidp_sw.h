@@ -1,7 +1,7 @@
 #ifndef _BT_HIDP_SW_H_
 #define _BT_HIDP_SW_H_
 
-#include "bt_hidp.h"
+#include "hidp.h"
 
 #define BT_HIDP_SW_SET_CONF 0x01
 #define BT_HIDP_SW_SUBCMD_SET_REP_MODE 0x03

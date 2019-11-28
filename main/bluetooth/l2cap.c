@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_l2cap.h"
-#include "bt_sdp.h"
+#include "host.h"
+#include "l2cap.h"
+#include "sdp.h"
 
 #define BT_HOST_SDP_RX_CHAN   0x0060
 #define BT_HOST_SDP_TX_CHAN   0x0070

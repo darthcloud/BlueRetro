@@ -1,7 +1,7 @@
 #ifndef _BT_HIDP_WII_H_
 #define _BT_HIDP_WII_H_
 
-#include "bt_hidp.h"
+#include "hidp.h"
 
 #define BT_HIDP_WII_LED_REPORT 0x11
 #define BT_HIPD_WII_IR_CAM_EN1 0x13

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_hidp_wii.h"
+#include "host.h"
+#include "hidp_wii.h"
 
 struct bt_wii_ext_type {
     uint8_t ext_type[6];

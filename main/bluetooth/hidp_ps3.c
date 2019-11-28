@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_hidp_ps3.h"
+#include "host.h"
+#include "hidp_ps3.h"
 
 static const uint8_t bt_init_magic[] = {
     0x42, 0x03, 0x00, 0x00

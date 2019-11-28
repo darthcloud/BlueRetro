@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <esp32/rom/crc.h>
-#include "bt_host.h"
-#include "bt_hidp_ps4.h"
+#include "host.h"
+#include "hidp_ps4.h"
 
 static const uint8_t bt_ps4_led_dev_id_map[][3] = {
     {0x00, 0x00, 0x40},

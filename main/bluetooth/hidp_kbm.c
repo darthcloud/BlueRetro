@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include "bt_host.h"
-#include "bt_hidp_kbm.h"
+#include "host.h"
+#include "hidp_kbm.h"
 
 void bt_hid_kbm_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {

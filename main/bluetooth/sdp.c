@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include "zephyr/types.h"
-#include "zephyr/sdp.h"
-#include "util.h"
-#include "bt_host.h"
-#include "bt_l2cap.h"
-#include "bt_sdp.h"
+#include "../zephyr/types.h"
+#include "../zephyr/sdp.h"
+#include "../util.h"
+#include "host.h"
+#include "l2cap.h"
+#include "sdp.h"
 
 #if 0
 static const uint8_t test_attr_req[] = {

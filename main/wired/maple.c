@@ -7,9 +7,9 @@
 #include <esp32/dport_access.h>
 #include <esp_intr_alloc.h>
 #include "driver/gpio.h"
-#include "zephyr/types.h"
-#include "util.h"
-#include "adapter.h"
+#include "../zephyr/types.h"
+#include "../util.h"
+#include "../adapter/adapter.h"
 #include "maple.h"
 
 //#define WIRED_TRACE

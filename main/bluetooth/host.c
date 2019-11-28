@@ -6,12 +6,12 @@
 #include <esp_system.h>
 #include <esp_bt.h>
 #include <nvs_flash.h>
-#include "bt_host.h"
-#include "bt_hci.h"
-#include "bt_l2cap.h"
-#include "bt_sdp.h"
-#include "bt_att.h"
-#include "util.h"
+#include "host.h"
+#include "hci.h"
+#include "l2cap.h"
+#include "sdp.h"
+#include "att.h"
+#include "../util.h"
 
 //#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 

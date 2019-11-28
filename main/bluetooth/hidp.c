@@ -1,10 +1,10 @@
-#include "bt_host.h"
-#include "bt_hidp_kbm.h"
-#include "bt_hidp_ps3.h"
-#include "bt_hidp_wii.h"
-#include "bt_hidp_ps4.h"
-#include "bt_hidp_xb1.h"
-#include "bt_hidp_sw.h"
+#include "host.h"
+#include "hidp_kbm.h"
+#include "hidp_ps3.h"
+#include "hidp_wii.h"
+#include "hidp_ps4.h"
+#include "hidp_xb1.h"
+#include "hidp_sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
 typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);

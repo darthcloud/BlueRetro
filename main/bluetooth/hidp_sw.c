@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_hidp_sw.h"
+#include "host.h"
+#include "hidp_sw.h"
 
 static uint8_t sw_tid = 0;
 

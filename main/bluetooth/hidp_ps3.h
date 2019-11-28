@@ -1,7 +1,7 @@
 #ifndef _BT_HIDP_PS3_H_
 #define _BT_HIDP_PS3_H_
 
-#include "bt_hidp.h"
+#include "hidp.h"
 
 #define BT_HIDP_PS3_BT_INIT 0xf4
 struct bt_hidp_ps3_bt_init {

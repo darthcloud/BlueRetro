@@ -9,8 +9,8 @@
 #include <driver/gpio.h>
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
-#include "zephyr/atomic.h"
-#include "adapter.h"
+#include "../zephyr/atomic.h"
+#include "../adapter/adapter.h"
 #include "nsi.h"
 
 #define BIT_ZERO 0x80020006

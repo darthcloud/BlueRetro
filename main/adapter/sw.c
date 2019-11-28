@@ -1,6 +1,6 @@
 #include <string.h>
-#include "zephyr/types.h"
-#include "util.h"
+#include "../zephyr/types.h"
+#include "../util.h"
 #include "sw.h"
 
 enum {

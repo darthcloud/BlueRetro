@@ -1,7 +1,7 @@
 #ifndef _BT_HIDP_PS4_H_
 #define _BT_HIDP_PS4_H_
 
-#include "bt_hidp.h"
+#include "hidp.h"
 
 #define BT_HIDP_PS4_STATUS 0x01
 #define BT_HIDP_PS4_STATUS2 0x11

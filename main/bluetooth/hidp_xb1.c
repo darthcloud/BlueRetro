@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "bt_host.h"
-#include "bt_hidp_xb1.h"
+#include "host.h"
+#include "hidp_xb1.h"
 
 void bt_hid_cmd_xb1_rumble(struct bt_dev *device, void *report) {
     struct bt_hidp_xb1_rumble *rumble = (struct bt_hidp_xb1_rumble *)bt_hci_pkt_tmp.hidp_data;

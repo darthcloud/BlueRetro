@@ -1,12 +1,12 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "adapter.h"
-#include "sd.h"
-#include "config.h"
-#include "bt_host.h"
-#include "nsi.h"
-#include "maple.h"
+#include "drivers/sd.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
+#include "bluetooth/host.h"
+#include "wired/nsi.h"
+#include "wired/maple.h"
 
 static void wired_init_task(void *arg) {
     adapter_init();

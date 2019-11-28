@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <xtensa/hal.h>
 #include "sdkconfig.h"
-#include "zephyr/types.h"
-#include "util.h"
+#include "../zephyr/types.h"
+#include "../util.h"
 #include "config.h"
 #include "adapter.h"
 #include "dc.h"
