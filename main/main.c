@@ -31,8 +31,11 @@ static void wired_init_task(void *arg) {
     detect_init();
 
     while (wired_adapter.system_id == WIRED_NONE) {
-        vTaskDelay(2 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+
+    printf("# Detected system : %d\n", wired_adapter.system_id);
+
     detect_deinit();
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
