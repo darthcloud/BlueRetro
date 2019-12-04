@@ -60,7 +60,7 @@ typedef struct {
 static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
-uint8_t mempak[32 * 1024] = {0};
+//uint8_t mempak[32 * 1024] = {0};
 
 atomic_t rmt_flags = 0;
 
@@ -202,7 +202,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
-                                item = nsi_bytes_to_items_crc(channel, 0, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
+                                //item = nsi_bytes_to_items_crc(channel, 0, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
                             }
                         }
                         buf[0] = crc ^ 0xFF;
@@ -230,7 +230,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         else {
                             poll_after_mem_wr = 0;
                             atomic_set_bit(&rmt_flags, RMT_MEM_CHANGE);
-                            memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
+                            //memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
                         break;
                     default:

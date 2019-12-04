@@ -5,13 +5,38 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
+#include "wired/detect.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
 
+typedef void (*wired_init_t)(void);
+
+static const wired_init_t wired_init[] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    nsi_init,
+    maple_init,
+    NULL,
+    nsi_init,
+    NULL,
+};
+
 static void wired_init_task(void *arg) {
     adapter_init();
-    //nsi_init();
-    maple_init();
+    detect_init();
+
+    while (wired_adapter.system_id == WIRED_NONE) {
+        vTaskDelay(2 / portTICK_PERIOD_MS);
+    }
+    detect_deinit();
+    if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
+        wired_init[wired_adapter.system_id]();
+    }
     vTaskDelete(NULL);
 }
 
