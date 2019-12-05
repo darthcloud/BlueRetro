@@ -14,19 +14,19 @@
 static intr_handle_t intr_hdl;
 
 static const uint8_t detect_pin_low[] = {
-    19, 21, 22, 25, 26
+    19, 21, 22, 25,
 };
 
 static const uint8_t detect_pin_high[] = {
-    32, 33, 34
+    32, 33, 34, 35
 };
 
 static const uint8_t system_id_low[] = {
-    N64, DC, GC, WII_EXT, NES
+    N64, DC, GC, WII_EXT
 };
 
 static const uint8_t system_id_high[] = {
-    PCE, PSX, GENESIS
+    NES, PCE, PSX, GENESIS
 };
 
 static void IRAM_ATTR detect_intr(void* arg) {
