@@ -10,6 +10,8 @@
 #include <driver/rmt.h>
 #include <esp_task_wdt.h>
 #include "../zephyr/atomic.h"
+#include "../zephyr/types.h"
+#include "../util.h"
 #include "../adapter/adapter.h"
 #include "nsi.h"
 
@@ -24,6 +26,14 @@
 enum {
     RMT_MEM_CHANGE
 };
+
+static const uint8_t gpio_pin[4][2] = {
+    {19, 22},
+    { 3,  3},
+    {26, 26},
+    {27, 27},
+};
+
 static const uint8_t rumble_ident[32] = {
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
@@ -52,12 +62,6 @@ static const uint8_t nsi_crc_table[256] = {
     0xBF, 0x9D, 0x8C, 0x46, 0x23, 0xD3, 0xAB, 0x97, 0x89, 0x86, 0x43, 0xE3, 0xB3, 0x9B, 0x8F, 0x85
 };
 
-typedef struct {
-    TaskHandle_t *nsi_task_handle;
-    rmt_isr_handle_t nsi_isr_handle;
-} nsi_channel_handle_t;
-
-static nsi_channel_handle_t nsi[NSI_CH_MAX] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 //uint8_t mempak[32 * 1024] = {0};
@@ -68,7 +72,7 @@ static uint8_t buf[32 * 1024] = {0};
 static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
 static uint32_t poll_after_mem_wr = 0;
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
+static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
@@ -93,7 +97,7 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(nsi_channel_t channel, uint32_t
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_items_to_bytes(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len) {
+static uint16_t IRAM_ATTR nsi_items_to_bytes(uint32_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     uint32_t bit_len = item + len * 8;
     volatile uint32_t *item_ptr = &rmt_items[item].val;
@@ -113,7 +117,7 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes(nsi_channel_t channel, uint32_t ch_
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(nsi_channel_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc) {
+static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(uint32_t channel, uint32_t ch_offset, uint8_t *data, uint32_t len, uint8_t *crc) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
@@ -175,7 +179,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         wired_adapter.system_id = N64;
                         break;
                     case 0x01:
-                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[0].output, 4, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         ++wired_adapter.data[0].frame_cnt;
@@ -255,40 +259,42 @@ static void IRAM_ATTR nsi_isr(void *arg) {
 }
 
 void nsi_init(void) {
-    nsi_channel_t channel = NSI_CH_0;
-    uint8_t gpio = 19;
+    uint32_t subpin = wired_adapter.system_id == N64 ? 0 : 1;
+
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
 
-    RMT.conf_ch[channel].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
-    RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-    RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-    RMT.conf_ch[channel].conf1.tx_conti_mode = 0;
-    RMT.conf_ch[channel].conf0.mem_size = 8;
-    RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-    RMT.conf_ch[channel].conf1.ref_always_on = RMT_BASECLK_APB;
-    RMT.conf_ch[channel].conf1.idle_out_en = 1;
-    RMT.conf_ch[channel].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
-    RMT.conf_ch[channel].conf0.carrier_en = 0;
-    RMT.conf_ch[channel].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
-    RMT.carrier_duty_ch[channel].high = 0;
-    RMT.carrier_duty_ch[channel].low = 0;
-    RMT.conf_ch[channel].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
-    RMT.conf_ch[channel].conf1.rx_filter_thres = 0; /* No minimum length */
-    RMT.conf_ch[channel].conf1.rx_filter_en = 0;
+    for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
+        RMT.conf_ch[i].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
+        RMT.conf_ch[i].conf1.mem_rd_rst = 1;
+        RMT.conf_ch[i].conf1.mem_wr_rst = 1;
+        RMT.conf_ch[i].conf1.tx_conti_mode = 0;
+        RMT.conf_ch[i].conf0.mem_size = 8;
+        RMT.conf_ch[i].conf1.mem_owner = RMT_MEM_OWNER_TX;
+        RMT.conf_ch[i].conf1.ref_always_on = RMT_BASECLK_APB;
+        RMT.conf_ch[i].conf1.idle_out_en = 1;
+        RMT.conf_ch[i].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
+        RMT.conf_ch[i].conf0.carrier_en = 0;
+        RMT.conf_ch[i].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
+        RMT.carrier_duty_ch[i].high = 0;
+        RMT.carrier_duty_ch[i].low = 0;
+        RMT.conf_ch[i].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
+        RMT.conf_ch[i].conf1.rx_filter_thres = 0; /* No minimum length */
+        RMT.conf_ch[i].conf1.rx_filter_en = 0;
 
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
-    gpio_set_direction(gpio, GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
-    gpio_matrix_out(gpio, RMT_SIG_OUT0_IDX + channel, 0, 0);
-    gpio_matrix_in(gpio, RMT_SIG_IN0_IDX + channel, 0);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i][subpin]], PIN_FUNC_GPIO);
+        gpio_set_direction(gpio_pin[i][subpin], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
+        gpio_matrix_out(gpio_pin[i][subpin], RMT_SIG_OUT0_IDX + i, 0, 0);
+        gpio_matrix_in(gpio_pin[i][subpin], RMT_SIG_IN0_IDX + i, 0);
 
-    rmt_set_tx_intr_en(channel, 1);
-    rmt_set_rx_intr_en(channel, 1);
-    rmt_set_err_intr_en(channel, 1);
-    rmt_isr_register(nsi_isr, NULL,
-                     0, &nsi[channel].nsi_isr_handle);
+        rmt_set_tx_intr_en(i, 1);
+        rmt_set_rx_intr_en(i, 1);
+        rmt_set_err_intr_en(i, 1);
 
-    rmt_rx_start(channel, 1);
+        rmt_rx_start(i, 1);
+    }
+
+    rmt_isr_register(nsi_isr, NULL, ESP_INTR_FLAG_LEVEL3, NULL);
 }
 

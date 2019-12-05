@@ -20,7 +20,7 @@
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 #define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
 
-const uint8_t gpio_pin[4][2] = {
+static const uint8_t gpio_pin[4][2] = {
     {21, 22},
     { 3,  5},
     {18, 23},
