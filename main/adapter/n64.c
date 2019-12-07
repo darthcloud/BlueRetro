@@ -50,7 +50,7 @@ const uint32_t n64_btns_mask[32] = {
     BIT(N64_C_LEFT), BIT(N64_C_RIGHT), BIT(N64_C_DOWN), BIT(N64_C_UP),
     BIT(N64_LD_LEFT), BIT(N64_LD_RIGHT), BIT(N64_LD_DOWN), BIT(N64_LD_UP),
     0, 0, 0, 0,
-    BIT(N64_B), BIT(N64_C_DOWN), BIT(N64_A), BIT(N64_C_RIGHT),
+    BIT(N64_B), BIT(N64_C_DOWN), BIT(N64_A), BIT(N64_C_LEFT),
     BIT(N64_START), 0, 0, 0,
     BIT(N64_Z), BIT(N64_L), 0, 0,
     BIT(N64_Z), BIT(N64_R), 0, 0,
@@ -79,15 +79,17 @@ void n64_meta_init(struct generic_ctrl *ctrl_data) {
 
 void n64_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (ctrl_data->map_mask[0] & BIT(i)) {
+        if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= n64_btns_mask[i];
+                map_mask &= ~n64_btns_mask[i];
             }
-            else {
+            else if (map_mask & n64_btns_mask[i]) {
                 map_tmp.buttons &= ~n64_btns_mask[i];
             }
         }

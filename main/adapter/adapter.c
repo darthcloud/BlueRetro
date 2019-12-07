@@ -123,9 +123,10 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input.axes[src_axis_idx].value);
-        int32_t sign = btn_sign(ctrl_input.axes[src_axis_idx].meta->polarity, dst);
-        int32_t sign_check = sign * ctrl_input.axes[src_axis_idx].value;
+        int32_t src_sign = btn_sign(ctrl_input.axes[src_axis_idx].meta->polarity, src);
+        int32_t sign_check = src_sign * ctrl_input.axes[src_axis_idx].value;
 
+        /* Check if the srv value sign match the src mapping sign */
         if (sign_check >= 0) {
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
@@ -293,11 +294,11 @@ void adapter_bridge(struct bt_data *bt_data) {
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
-        meta_init_func[wired_adapter.system_id](ctrl_output);
-
-        out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
-
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
+            meta_init_func[wired_adapter.system_id](ctrl_output);
+
+            out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
+
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 from_generic_func[wired_adapter.system_id](&ctrl_output[i], &wired_adapter.data[i]);
             }
