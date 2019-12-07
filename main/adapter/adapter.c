@@ -285,8 +285,10 @@ void adapter_init_buffer(uint8_t wired_id) {
 
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
-    uint32_t end, start = xthal_get_ccount();
-
+    //uint32_t end, start = xthal_get_ccount();
+    //static uint32_t last = 0;
+    //uint32_t cur = xthal_get_ccount();
+#if 1
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
@@ -300,8 +302,11 @@ void adapter_bridge(struct bt_data *bt_data) {
             }
         }
     }
-    end = xthal_get_ccount();
-    //printf("%s process time: %dus\n", __FUNCTION__, (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+#endif
+    //end = xthal_get_ccount();
+    //printf("%dus\n", (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+    //printf("%dus\n", (cur - last)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+    //last = cur;
 }
 
 void adapter_init(void) {
