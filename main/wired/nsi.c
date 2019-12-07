@@ -256,7 +256,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
 
 void nsi_init(void) {
     nsi_channel_t channel = NSI_CH_0;
-    uint8_t gpio = 26;
+    uint8_t gpio = 19;
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;

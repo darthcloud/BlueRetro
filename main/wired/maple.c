@@ -329,11 +329,6 @@ void maple_init(void)
         }
     }
 
-    wired_adapter.system_id = DC;
-
-    for (uint32_t i = 0; i < 4; i++) {
-        adapter_init_buffer(i);
-    }
 #if 0
     gpio_config_t io_conf2 = {
         .intr_type = 0,

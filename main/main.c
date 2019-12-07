@@ -37,6 +37,11 @@ static void wired_init_task(void *arg) {
     printf("# Detected system : %d\n", wired_adapter.system_id);
 
     detect_deinit();
+
+    for (uint32_t i = 0; i < WIRED_MAX; i++) {
+        adapter_init_buffer(i);
+    }
+
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
     }
