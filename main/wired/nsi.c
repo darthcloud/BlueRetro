@@ -36,11 +36,11 @@ static const uint8_t gpio_pin[4][2] = {
 
 static const uint8_t rumble_ident[32] = {
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
 };
 //static const uint8_t transfer_ident[32] = {
 //    0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84,
-//    0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84
+//    0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84,
 //};
 static const uint8_t empty[32] = {0};
 static const uint8_t nsi_crc_table[256] = {
@@ -59,9 +59,13 @@ static const uint8_t nsi_crc_table[256] = {
     0xB5, 0x98, 0x4C, 0x26, 0x13, 0xCB, 0xA7, 0x91, 0x8A, 0x45, 0xE0, 0x70, 0x38, 0x1C, 0x0E, 0x07,
     0xC1, 0xA2, 0x51, 0xEA, 0x75, 0xF8, 0x7C, 0x3E, 0x1F, 0xCD, 0xA4, 0x52, 0x29, 0xD6, 0x6B, 0xF7,
     0xB9, 0x9E, 0x4F, 0xE5, 0xB0, 0x58, 0x2C, 0x16, 0x0B, 0xC7, 0xA1, 0x92, 0x49, 0xE6, 0x73, 0xFB,
-    0xBF, 0x9D, 0x8C, 0x46, 0x23, 0xD3, 0xAB, 0x97, 0x89, 0x86, 0x43, 0xE3, 0xB3, 0x9B, 0x8F, 0x85
+    0xBF, 0x9D, 0x8C, 0x46, 0x23, 0xD3, 0xAB, 0x97, 0x89, 0x86, 0x43, 0xE3, 0xB3, 0x9B, 0x8F, 0x85,
 };
 
+static const uint8_t gc_ident[3] = {0x09, 0x00, 0x20};
+static const uint8_t gc_neutral[] = {
+    0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00
+};
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 //uint8_t mempak[32 * 1024] = {0};
@@ -137,7 +141,7 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(uint32_t channel, uint32_t ch_o
     return item;
 }
 
-static void IRAM_ATTR nsi_isr(void *arg) {
+static void IRAM_ATTR n64_isr(void *arg) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -167,7 +171,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        if (wired_adapter.data[0].dev_mode) {
+                        if (wired_adapter.data[channel].dev_mode) {
                             ctrl_ident[2] = 0x01;
                         }
                         else {
@@ -175,18 +179,16 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         }
                         nsi_bytes_to_items_crc(channel, 0, ctrl_ident, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
-
-                        wired_adapter.system_id = N64;
                         break;
                     case 0x01:
                         nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
-                        ++wired_adapter.data[0].frame_cnt;
+                        ++wired_adapter.data[channel].frame_cnt;
                         ++poll_after_mem_wr;
                         if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
-                            if (!atomic_test_bit(&wired_adapter.data[0].flags, WIRED_SAVE_MEM)) {
-                                atomic_set_bit(&wired_adapter.data[0].flags, WIRED_SAVE_MEM);
+                            if (!atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM)) {
+                                atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM);
                                 atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
                             }
                         }
@@ -194,7 +196,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
-                            if (wired_adapter.data[0].dev_mode) {
+                            if (wired_adapter.data[channel].dev_mode) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -202,7 +204,7 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             }
                         }
                         else {
-                            if (wired_adapter.data[0].dev_mode) {
+                            if (wired_adapter.data[channel].dev_mode) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -221,13 +223,13 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
-                        if (wired_adapter.data[0].dev_mode == 0x01) {
+                        if (wired_adapter.data[channel].dev_mode == 0x01) {
                             if (buf[0] == 0xC0) {
                                 if (buf[2] & 0x01) {
-                                    atomic_set_bit(&wired_adapter.data[0].flags, WIRED_RUMBLE_ON);
+                                    atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_RUMBLE_ON);
                                 }
                                 else {
-                                    atomic_clear_bit(&wired_adapter.data[0].flags, WIRED_RUMBLE_ON);
+                                    atomic_clear_bit(&wired_adapter.data[channel].flags, WIRED_RUMBLE_ON);
                                 }
                             }
                         }
@@ -236,6 +238,69 @@ static void IRAM_ATTR nsi_isr(void *arg) {
                             atomic_set_bit(&rmt_flags, RMT_MEM_CHANGE);
                             //memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
+                        break;
+                    default:
+                        /* Bad frame go back RX */
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                        RMT.conf_ch[channel].conf1.rx_en = 1;
+                        break;
+                }
+                break;
+            /* Error */
+            case 2:
+                ets_printf("ERR\n");
+                RMT.int_ena.val &= (~(BIT(i)));
+                break;
+            default:
+                break;
+        }
+    }
+    RMT.int_clr.val = intr_st;
+}
+
+static void IRAM_ATTR gc_isr(void *arg) {
+    const uint32_t intr_st = RMT.int_st.val;
+    uint32_t status = intr_st;
+    uint16_t item;
+    uint8_t i, channel, crc;
+
+    while (status) {
+        i = __builtin_ffs(status) - 1;
+        status &= ~(1 << i);
+        channel = i / 3;
+        switch (i % 3) {
+            /* TX End */
+            case 0:
+                //ets_printf("TX_END\n");
+                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                /* Go RX right away */
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                RMT.conf_ch[channel].conf1.rx_en = 1;
+                break;
+            /* RX End */
+            case 1:
+                //ets_printf("RX_END\n");
+                RMT.conf_ch[channel].conf1.rx_en = 0;
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
+                RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
+                item = nsi_items_to_bytes(channel, 0, buf, 1);
+                switch (buf[0]) {
+                    case 0x00:
+                        nsi_bytes_to_items_crc(channel, 0, gc_ident, sizeof(gc_ident), &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
+                        break;
+                    case 0x40:
+                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 8, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
+
+                        ++wired_adapter.data[channel].frame_cnt;
+                        break;
+                    case 0x41:
+                        nsi_bytes_to_items_crc(channel, 0, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     default:
                         /* Bad frame go back RX */
@@ -295,6 +360,6 @@ void nsi_init(void) {
         rmt_rx_start(i, 1);
     }
 
-    rmt_isr_register(nsi_isr, NULL, ESP_INTR_FLAG_LEVEL3, NULL);
+    rmt_isr_register(wired_adapter.system_id == N64 ? n64_isr : gc_isr, NULL, ESP_INTR_FLAG_LEVEL3, NULL);
 }
 
