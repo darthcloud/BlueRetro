@@ -9,6 +9,7 @@
 #include "adapter.h"
 #include "n64.h"
 #include "dc.h"
+#include "gc.h"
 #include "ps3.h"
 #include "wii.h"
 #include "ps4.h"
@@ -56,7 +57,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     n64_from_generic,
     dc_from_generic,
     NULL,
-    NULL,
+    gc_from_generic,
     NULL,
 };
 
@@ -71,7 +72,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     n64_meta_init,
     dc_meta_init,
     NULL,
-    NULL,
+    gc_meta_init,
     NULL,
 };
 
@@ -86,7 +87,7 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
     n64_init_buffer,
     dc_init_buffer,
     NULL,
-    NULL,
+    gc_init_buffer,
     NULL,
 };
 
