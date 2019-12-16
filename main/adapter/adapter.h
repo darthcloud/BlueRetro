@@ -253,6 +253,11 @@ struct generic_ctrl {
     struct ctrl axes[6];
 };
 
+struct generic_fb {
+    uint32_t cycles;
+    uint32_t start;
+};
+
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
@@ -295,6 +300,8 @@ struct bt_adapter {
 
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
+typedef void (*fb_to_generic_t)(struct wired_data *wired_data, struct generic_fb *fb_data);
+typedef void (*fb_from_generic_t)(struct generic_fb *fb_data, struct bt_data *bt_data);
 typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
 typedef void (*buffer_init_t)(struct wired_data *wired_data);
 
