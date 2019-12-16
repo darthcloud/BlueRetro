@@ -24,6 +24,7 @@
 #define NSI_BIT_PERIOD_TICKS 8
 
 enum {
+    NSI_RUMBLE_CHANGE,
     RMT_MEM_CHANGE
 };
 
@@ -70,11 +71,11 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 //uint8_t mempak[32 * 1024] = {0};
 
-atomic_t rmt_flags = 0;
-
+static atomic_t rmt_flags = 0;
 static uint8_t buf[32 * 1024] = {0};
 static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
 static uint32_t poll_after_mem_wr = 0;
+static uint8_t last_rumble = 0x00;
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
@@ -171,7 +172,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        if (wired_adapter.data[channel].dev_mode) {
+                        if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
                             ctrl_ident[2] = 0x01;
                         }
                         else {
@@ -196,7 +197,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
-                            if (wired_adapter.data[channel].dev_mode) {
+                            if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -204,7 +205,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                             }
                         }
                         else {
-                            if (wired_adapter.data[channel].dev_mode) {
+                            if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -223,14 +224,10 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
-                        if (wired_adapter.data[channel].dev_mode == 0x01) {
-                            if (buf[0] == 0xC0) {
-                                if (buf[2] & 0x01) {
-                                    atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_RUMBLE_ON);
-                                }
-                                else {
-                                    atomic_clear_bit(&wired_adapter.data[channel].flags, WIRED_RUMBLE_ON);
-                                }
+                        if (wired_adapter.data[channel].acc_mode == ACC_RUMBLE) {
+                            if (buf[0] == 0xC0 && last_rumble != buf[2]) {
+                                last_rumble = wired_adapter.data[channel].input[0] = buf[2];
+                                atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_FEEDBACK);
                             }
                         }
                         else {
@@ -293,7 +290,12 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x40:
+                        item = nsi_items_to_bytes(channel, item, buf, 2);
                         nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 8, &crc, STOP_BIT_2US);
+                        if (last_rumble != buf[1]) {
+                            last_rumble = wired_adapter.data[channel].input[0] = buf[1];
+                            atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_FEEDBACK);
+                        }
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         ++wired_adapter.data[channel].frame_cnt;

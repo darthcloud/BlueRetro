@@ -225,8 +225,25 @@ enum {
 
 /* Wired flags */
 enum {
-    WIRED_RUMBLE_ON,
+    WIRED_FEEDBACK,
     WIRED_SAVE_MEM,
+};
+
+/* Dev mode */
+enum {
+    DEV_AUTO = 0,
+    DEV_PAD,
+    DEV_PAD_ALT,
+    DEV_KB,
+    DEV_MOUSE,
+};
+
+/* Acc mode */
+enum {
+    ACC_NONE = 0,
+    ACC_MEM,
+    ACC_RUMBLE,
+    ACC_BOTH,
 };
 
 struct ctrl_meta {
@@ -282,6 +299,7 @@ struct wired_data {
     uint8_t input[64];
     /* from adapter */
     int32_t dev_mode;
+    int32_t acc_mode;
     uint8_t output[64];
 } __packed;
 
