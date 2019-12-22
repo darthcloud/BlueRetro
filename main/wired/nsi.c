@@ -21,7 +21,7 @@
 #define STOP_BIT_1US 0x80000002
 #define STOP_BIT_2US 0x80000004
 
-#define NSI_BIT_PERIOD_TICKS 8
+#define NSI_BIT_PERIOD_TICKS 10
 
 enum {
     NSI_RUMBLE_CHANGE,
@@ -301,6 +301,7 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         ++wired_adapter.data[channel].frame_cnt;
                         break;
                     case 0x41:
+                    case 0x42:
                         nsi_bytes_to_items_crc(channel, 0, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
