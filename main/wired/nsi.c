@@ -24,7 +24,6 @@
 #define NSI_BIT_PERIOD_TICKS 10
 
 enum {
-    NSI_RUMBLE_CHANGE,
     RMT_MEM_CHANGE
 };
 
@@ -227,7 +226,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         if (wired_adapter.data[channel].acc_mode == ACC_RUMBLE) {
                             if (buf[0] == 0xC0 && last_rumble != buf[2]) {
                                 last_rumble = wired_adapter.data[channel].input[0] = buf[2];
-                                atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_FEEDBACK);
+                                adapter_bridge_fb(&wired_adapter.data[channel]);
                             }
                         }
                         else {
@@ -293,11 +292,11 @@ static void IRAM_ATTR gc_isr(void *arg) {
                     case 0x40:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 8, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
                         if (last_rumble != buf[1]) {
                             last_rumble = wired_adapter.data[channel].input[0] = buf[1];
-                            atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_FEEDBACK);
+                            adapter_bridge_fb(&wired_adapter.data[channel]);
                         }
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         ++wired_adapter.data[channel].frame_cnt;
                         break;

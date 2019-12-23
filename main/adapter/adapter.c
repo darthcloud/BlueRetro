@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/ringbuf.h>
 #include <xtensa/hal.h>
 #include "sdkconfig.h"
 #include "../zephyr/types.h"
@@ -61,6 +63,35 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
 };
 
+static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
 static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL,
     NULL,
@@ -93,6 +124,7 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
 
 struct generic_ctrl ctrl_input;
 struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
+struct generic_fb fb_input;
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
 
@@ -312,9 +344,22 @@ void adapter_bridge(struct bt_data *bt_data) {
     //last = cur;
 }
 
-void adapter_bridge_fb(struct wired_data *wired_data) {
+void IRAM_ATTR adapter_bridge_fb(struct wired_data *wired_data) {
+    if (wired_adapter.system_id != WIRED_NONE && fb_to_generic_func[wired_adapter.system_id]) {
+        UBaseType_t ret;
+        fb_to_generic_func[wired_adapter.system_id](wired_data, &fb_input);
+        ret = xRingbufferSendFromISR(wired_adapter.fbq_hdl, (void *)&fb_input, sizeof(fb_input), NULL);
+        if (ret != pdTRUE) {
+            ets_printf("# %s fbq full!\n", __FUNCTION__);
+        }
+    }
 }
 
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_NONE;
+
+    wired_adapter.fbq_hdl = xRingbufferCreate(64, RINGBUF_TYPE_NOSPLIT);
+    if (wired_adapter.fbq_hdl == NULL) {
+        printf("# %s: Failed to create ring buffer\n", __FUNCTION__);
+    }
 }
