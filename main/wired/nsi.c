@@ -286,6 +286,7 @@ static void IRAM_ATTR gc_isr(void *arg) {
                 item = nsi_items_to_bytes(channel, 0, buf, 1);
                 switch (buf[0]) {
                     case 0x00:
+                    case 0xFF:
                         nsi_bytes_to_items_crc(channel, 0, gc_ident, sizeof(gc_ident), &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
