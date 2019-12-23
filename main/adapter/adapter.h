@@ -271,6 +271,7 @@ struct generic_ctrl {
 };
 
 struct generic_fb {
+    uint32_t state;
     uint32_t cycles;
     uint32_t start;
 };

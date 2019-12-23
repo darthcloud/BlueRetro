@@ -312,6 +312,9 @@ void adapter_bridge(struct bt_data *bt_data) {
     //last = cur;
 }
 
+void adapter_bridge_fb(struct wired_data *wired_data) {
+}
+
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_NONE;
 }
