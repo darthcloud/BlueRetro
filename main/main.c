@@ -28,15 +28,18 @@ static const wired_init_t wired_init[] = {
 
 static void wired_init_task(void *arg) {
     adapter_init();
-    detect_init();
 
+#if 1
+    detect_init();
     while (wired_adapter.system_id == WIRED_NONE) {
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+    detect_deinit();
+#else
+    wired_adapter.system_id = DC;
+#endif
 
     printf("# Detected system : %d\n", wired_adapter.system_id);
-
-    detect_deinit();
 
     for (uint32_t i = 0; i < WIRED_MAX; i++) {
         adapter_init_buffer(i);
