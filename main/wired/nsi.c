@@ -21,7 +21,8 @@
 #define STOP_BIT_1US 0x80000002
 #define STOP_BIT_2US 0x80000004
 
-#define NSI_BIT_PERIOD_TICKS 10
+#define N64_BIT_PERIOD_TICKS 8
+#define GC_BIT_PERIOD_TICKS 10
 
 enum {
     RMT_MEM_CHANGE
@@ -355,7 +356,7 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
         RMT.carrier_duty_ch[rmt_ch[i][system]].high = 0;
         RMT.carrier_duty_ch[rmt_ch[i][system]].low = 0;
-        RMT.conf_ch[rmt_ch[i][system]].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.idle_thres = (wired_adapter.system_id == N64) ? N64_BIT_PERIOD_TICKS : GC_BIT_PERIOD_TICKS;
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_thres = 0; /* No minimum length */
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
