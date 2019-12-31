@@ -34,6 +34,13 @@ static const uint8_t gpio_pin[4][2] = {
     {27, 27},
 };
 
+static const uint8_t rmt_ch[4][2] = {
+    {0, 0},
+    {1, 2},
+    {2, 4},
+    {3, 6},
+};
+
 static const uint8_t rumble_ident[32] = {
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
@@ -260,12 +267,13 @@ static void IRAM_ATTR gc_isr(void *arg) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
-    uint8_t i, channel, crc;
+    uint8_t i, channel, port, crc;
 
     while (status) {
         i = __builtin_ffs(status) - 1;
         status &= ~(1 << i);
         channel = i / 3;
+        port = channel / 2;
         switch (i % 3) {
             /* TX End */
             case 0:
@@ -291,14 +299,14 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         break;
                     case 0x40:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
-                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[channel].output, 8, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         if (last_rumble != buf[1]) {
-                            last_rumble = wired_adapter.data[channel].input[0] = buf[1];
-                            adapter_bridge_fb(&wired_adapter.data[channel]);
+                            last_rumble = wired_adapter.data[port].input[0] = buf[1];
+                            adapter_bridge_fb(&wired_adapter.data[port]);
                         }
 
-                        ++wired_adapter.data[channel].frame_cnt;
+                        ++wired_adapter.data[port].frame_cnt;
                         break;
                     case 0x41:
                     case 0x42:
@@ -327,40 +335,40 @@ static void IRAM_ATTR gc_isr(void *arg) {
 }
 
 void nsi_init(void) {
-    uint32_t subpin = wired_adapter.system_id == N64 ? 0 : 1;
+    uint32_t system = wired_adapter.system_id == N64 ? 0 : 1;
 
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        RMT.conf_ch[i].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
-        RMT.conf_ch[i].conf1.mem_rd_rst = 1;
-        RMT.conf_ch[i].conf1.mem_wr_rst = 1;
-        RMT.conf_ch[i].conf1.tx_conti_mode = 0;
-        RMT.conf_ch[i].conf0.mem_size = 8;
-        RMT.conf_ch[i].conf1.mem_owner = RMT_MEM_OWNER_TX;
-        RMT.conf_ch[i].conf1.ref_always_on = RMT_BASECLK_APB;
-        RMT.conf_ch[i].conf1.idle_out_en = 1;
-        RMT.conf_ch[i].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
-        RMT.conf_ch[i].conf0.carrier_en = 0;
-        RMT.conf_ch[i].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
-        RMT.carrier_duty_ch[i].high = 0;
-        RMT.carrier_duty_ch[i].low = 0;
-        RMT.conf_ch[i].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
-        RMT.conf_ch[i].conf1.rx_filter_thres = 0; /* No minimum length */
-        RMT.conf_ch[i].conf1.rx_filter_en = 0;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.mem_rd_rst = 1;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.mem_wr_rst = 1;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.tx_conti_mode = 0;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.mem_size = 8;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.mem_owner = RMT_MEM_OWNER_TX;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.ref_always_on = RMT_BASECLK_APB;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.idle_out_en = 1;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_en = 0;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
+        RMT.carrier_duty_ch[rmt_ch[i][system]].high = 0;
+        RMT.carrier_duty_ch[rmt_ch[i][system]].low = 0;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.idle_thres = NSI_BIT_PERIOD_TICKS;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_thres = 0; /* No minimum length */
+        RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i][subpin]], PIN_FUNC_GPIO);
-        gpio_set_direction(gpio_pin[i][subpin], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
-        gpio_matrix_out(gpio_pin[i][subpin], RMT_SIG_OUT0_IDX + i, 0, 0);
-        gpio_matrix_in(gpio_pin[i][subpin], RMT_SIG_IN0_IDX + i, 0);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i][system]], PIN_FUNC_GPIO);
+        gpio_set_direction(gpio_pin[i][system], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
+        gpio_matrix_out(gpio_pin[i][system], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
+        gpio_matrix_in(gpio_pin[i][system], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
 
-        rmt_set_tx_intr_en(i, 1);
-        rmt_set_rx_intr_en(i, 1);
-        rmt_set_err_intr_en(i, 1);
+        rmt_set_tx_intr_en(rmt_ch[i][system], 1);
+        rmt_set_rx_intr_en(rmt_ch[i][system], 1);
+        rmt_set_err_intr_en(rmt_ch[i][system], 1);
 
-        rmt_rx_start(i, 1);
+        rmt_rx_start(rmt_ch[i][system], 1);
     }
 
     rmt_isr_register(wired_adapter.system_id == N64 ? n64_isr : gc_isr, NULL, ESP_INTR_FLAG_LEVEL3, NULL);
