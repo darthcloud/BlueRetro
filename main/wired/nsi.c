@@ -313,6 +313,7 @@ static void IRAM_ATTR gc_isr(void *arg) {
                     case 0x42:
                         nsi_bytes_to_items_crc(channel, 0, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
+                        wired_adapter.data[port].output[0] &= ~0x20;
                         break;
                     default:
                         /* Bad frame go back RX */
@@ -336,7 +337,7 @@ static void IRAM_ATTR gc_isr(void *arg) {
 }
 
 void nsi_init(void) {
-    uint32_t system = wired_adapter.system_id == N64 ? 0 : 1;
+    uint32_t system = (wired_adapter.system_id == N64) ? 0 : 1;
 
     periph_module_enable(PERIPH_RMT_MODULE);
 

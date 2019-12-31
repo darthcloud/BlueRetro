@@ -61,7 +61,7 @@ const uint32_t gc_btns_mask[32] = {
 void gc_init_buffer(struct wired_data *wired_data) {
     struct gc_map *map = (struct gc_map *)wired_data->output;
 
-    map->buttons = 0x8000;
+    map->buttons = 0x8020;
     for (uint32_t i = 0; i < ARRAY_SIZE(gc_axes_meta); i++) {
         map->axes[gc_axes_idx[i]] = gc_axes_meta[i].neutral;
     }
