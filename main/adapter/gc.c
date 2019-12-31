@@ -35,8 +35,8 @@ const struct ctrl_meta gc_axes_meta[6] =
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
+    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0},
+    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0},
 };
 
 struct gc_map {
