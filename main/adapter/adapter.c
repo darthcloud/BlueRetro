@@ -344,9 +344,13 @@ void adapter_bridge(struct bt_data *bt_data) {
     //last = cur;
 }
 
-void IRAM_ATTR adapter_bridge_fb(struct wired_data *wired_data) {
+void adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
     if (wired_adapter.system_id != WIRED_NONE && fb_to_generic_func[wired_adapter.system_id]) {
-        fb_to_generic_func[wired_adapter.system_id](wired_data, &fb_input);
+        fb_to_generic_func[wired_adapter.system_id](fb_data, fb_len, &fb_input);
+
+        if (bt_data->dev_id != BT_NONE && fb_from_generic_func[bt_data->dev_type]) {
+            fb_from_generic_func[bt_data->dev_type](&fb_input, bt_data);
+        }
     }
 }
 

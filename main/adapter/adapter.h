@@ -221,12 +221,10 @@ enum {
 /* BT flags */
 enum {
     BT_INIT,
-    BT_FEEDBACK,
 };
 
 /* Wired flags */
 enum {
-    WIRED_FEEDBACK,
     WIRED_SAVE_MEM,
 };
 
@@ -326,7 +324,7 @@ struct bt_adapter {
 
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
-typedef void (*fb_to_generic_t)(struct wired_data *wired_data, struct generic_fb *fb_data);
+typedef void (*fb_to_generic_t)(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data);
 typedef void (*fb_from_generic_t)(struct generic_fb *fb_data, struct bt_data *bt_data);
 typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
 typedef void (*buffer_init_t)(struct wired_data *wired_data);
@@ -341,7 +339,7 @@ uint32_t axis_to_btn_mask(uint8_t axis);
 int8_t btn_sign(uint32_t polarity, uint8_t btn_id);
 void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);
-void IRAM_ATTR adapter_bridge_fb(struct wired_data *wired_data);
+void adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data);
 void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len);
 void adapter_init(void);
 

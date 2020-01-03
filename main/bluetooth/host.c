@@ -118,10 +118,18 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
 }
 
 static void bt_host_task(void *param) {
-    size_t packet_len;
-    uint8_t *packet;
+    size_t packet_len, fb_len;
+    uint8_t *packet, *fb_data;
 
     while(1) {
+        /* Look for rumble/led feedback data */
+        fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, 0);
+        if (fb_data) {
+            struct bt_dev *device = &bt_dev[fb_data[0]];
+            adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id]);
+            bt_hid_feedback(device, bt_adapter.data[device->id].output);
+        }
+
         /* TX packet from Q */
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             packet = (uint8_t *)xRingbufferReceive(txq_hdl, &packet_len, 0);
@@ -371,10 +379,6 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         bt_adapter.data[device->id].dev_type = device->type;
         memcpy(bt_adapter.data[device->id].input, data, len);
         adapter_bridge(&bt_adapter.data[device->id]);
-        if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK)) {
-            bt_hid_feedback(device, bt_adapter.data[device->id].output);
-            atomic_clear_bit(&bt_adapter.data[device->id].flags, BT_FEEDBACK);
-        }
     }
     bt_adapter.data[device->id].report_cnt++;
 }
