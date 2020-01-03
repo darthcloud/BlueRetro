@@ -82,7 +82,7 @@ static atomic_t rmt_flags = 0;
 static uint8_t buf[32 * 1024] = {0};
 static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
 static uint32_t poll_after_mem_wr = 0;
-static uint8_t last_rumble = 0x00;
+static uint8_t last_rumble[4] = {0};
 
 static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t channel, uint32_t ch_offset, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     uint32_t item = (channel * RMT_MEM_ITEM_NUM + ch_offset);
@@ -232,8 +232,8 @@ static void IRAM_ATTR n64_isr(void *arg) {
 
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
                         if (wired_adapter.data[channel].acc_mode == ACC_RUMBLE) {
-                            if (buf[0] == 0xC0 && last_rumble != buf[2]) {
-                                last_rumble = buf[2];
+                            if (buf[0] == 0xC0 && last_rumble[channel] != buf[2]) {
+                                last_rumble[channel] = buf[2];
                                 buf[1] = channel;
                                 adapter_q_fb(buf + 1, 2);
                             }
@@ -304,8 +304,8 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
-                        if (last_rumble != buf[1]) {
-                            last_rumble = buf[1];
+                        if (last_rumble[port] != buf[1]) {
+                            last_rumble[port] = buf[1];
                             buf[0] = port;
                             adapter_q_fb(buf, 2);
                         }
