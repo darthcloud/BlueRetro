@@ -272,10 +272,15 @@ struct generic_ctrl {
 };
 
 struct generic_fb {
-    uint32_t out_id;
+    uint32_t wired_id;
     uint32_t state;
     uint32_t cycles;
     uint32_t start;
+};
+
+struct raw_fb {
+    uint8_t wired_id;
+    uint8_t data[0];
 };
 
 struct bt_data {
@@ -299,7 +304,6 @@ struct wired_data {
     atomic_t flags;
     /* from wired driver */
     uint32_t frame_cnt;
-    uint8_t input[64];
     /* from adapter */
     int32_t dev_mode;
     int32_t acc_mode;
@@ -309,8 +313,8 @@ struct wired_data {
 struct wired_adapter {
     /* from wired driver */
     int32_t system_id;
+    void *input_q_hdl;
     /* from adapter */
-    void *fbq_hdl;
     int32_t driver_mode;
     /* Bi-directional */
     struct wired_data data[WIRED_MAX_DEV];
@@ -338,6 +342,7 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id);
 void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);
 void IRAM_ATTR adapter_bridge_fb(struct wired_data *wired_data);
+void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len);
 void adapter_init(void);
 
 #endif /* _ADAPTER_H_ */

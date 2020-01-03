@@ -233,8 +233,9 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
                         if (wired_adapter.data[channel].acc_mode == ACC_RUMBLE) {
                             if (buf[0] == 0xC0 && last_rumble != buf[2]) {
-                                last_rumble = wired_adapter.data[channel].input[0] = buf[2];
-                                adapter_bridge_fb(&wired_adapter.data[channel]);
+                                last_rumble = buf[2];
+                                buf[1] = channel;
+                                adapter_q_fb(buf + 1, 2);
                             }
                         }
                         else {
@@ -302,9 +303,11 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         nsi_bytes_to_items_crc(channel, 0, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
+
                         if (last_rumble != buf[1]) {
-                            last_rumble = wired_adapter.data[port].input[0] = buf[1];
-                            adapter_bridge_fb(&wired_adapter.data[port]);
+                            last_rumble = buf[1];
+                            buf[0] = port;
+                            adapter_q_fb(buf, 2);
                         }
 
                         ++wired_adapter.data[port].frame_cnt;

@@ -346,20 +346,23 @@ void adapter_bridge(struct bt_data *bt_data) {
 
 void IRAM_ATTR adapter_bridge_fb(struct wired_data *wired_data) {
     if (wired_adapter.system_id != WIRED_NONE && fb_to_generic_func[wired_adapter.system_id]) {
-        UBaseType_t ret;
         fb_to_generic_func[wired_adapter.system_id](wired_data, &fb_input);
-        ret = xRingbufferSendFromISR(wired_adapter.fbq_hdl, (void *)&fb_input, sizeof(fb_input), NULL);
-        if (ret != pdTRUE) {
-            ets_printf("# %s fbq full!\n", __FUNCTION__);
-        }
+    }
+}
+
+void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len) {
+    UBaseType_t ret;
+    ret = xRingbufferSendFromISR(wired_adapter.input_q_hdl, data, len, NULL);
+    if (ret != pdTRUE) {
+        ets_printf("# %s input_q full!\n", __FUNCTION__);
     }
 }
 
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_NONE;
 
-    wired_adapter.fbq_hdl = xRingbufferCreate(64, RINGBUF_TYPE_NOSPLIT);
-    if (wired_adapter.fbq_hdl == NULL) {
+    wired_adapter.input_q_hdl = xRingbufferCreate(64, RINGBUF_TYPE_NOSPLIT);
+    if (wired_adapter.input_q_hdl == NULL) {
         printf("# %s: Failed to create ring buffer\n", __FUNCTION__);
     }
 }
