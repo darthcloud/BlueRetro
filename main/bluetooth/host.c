@@ -49,7 +49,7 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
 static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 static void bt_host_tx_pkt_ready(void);
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len);
-static void bt_host_tx_ringbuf_task(void *param);
+static void bt_host_task(void *param);
 
 static esp_vhci_host_callback_t vhci_host_cb = {
     bt_host_tx_pkt_ready,
@@ -117,11 +117,12 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
     return ret;
 }
 
-static void bt_host_tx_ringbuf_task(void *param) {
+static void bt_host_task(void *param) {
     size_t packet_len;
     uint8_t *packet;
 
     while(1) {
+        /* TX packet from Q */
         if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
             packet = (uint8_t *)xRingbufferReceive(txq_hdl, &packet_len, 0);
             if (packet) {
@@ -320,7 +321,7 @@ int32_t bt_host_init(void) {
 
     bt_host_load_keys_from_file(&bt_host_link_keys);
 
-    xTaskCreatePinnedToCore(&bt_host_tx_ringbuf_task, "bt_host_tx_task", 2048, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 2048, NULL, 5, NULL, 0);
 
     bt_hci_init();
 
