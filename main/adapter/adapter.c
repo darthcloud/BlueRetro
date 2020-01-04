@@ -71,7 +71,7 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
-    NULL,
+    n64_fb_to_generic,
     NULL,
     NULL,
     gc_fb_to_generic,

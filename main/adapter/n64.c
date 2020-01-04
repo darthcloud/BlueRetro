@@ -111,3 +111,10 @@ void n64_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_d
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
+
+void n64_fb_to_generic(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
+    fb_data->wired_id = raw_fb_data[0];
+    fb_data->state = raw_fb_data[1];
+    fb_data->cycles = 0;
+    fb_data->start = 0;
+}
