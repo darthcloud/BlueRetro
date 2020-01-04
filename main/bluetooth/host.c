@@ -126,8 +126,9 @@ static void bt_host_task(void *param) {
         fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, 0);
         if (fb_data) {
             struct bt_dev *device = &bt_dev[fb_data[0]];
-            adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id]);
-            bt_hid_feedback(device, bt_adapter.data[device->id].output);
+            if (adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id])) {
+                bt_hid_feedback(device, bt_adapter.data[device->id].output);
+            }
         }
 
         /* TX packet from Q */

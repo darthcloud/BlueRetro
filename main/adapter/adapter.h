@@ -339,7 +339,7 @@ uint32_t axis_to_btn_mask(uint8_t axis);
 int8_t btn_sign(uint32_t polarity, uint8_t btn_id);
 void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);
-void adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data);
+uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data);
 void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len);
 void adapter_init(void);
 
