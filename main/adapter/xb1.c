@@ -44,6 +44,31 @@ struct xb1_map {
     uint16_t buttons;
 } __packed;
 
+struct xb1_rumble {
+    uint8_t enable;
+    uint8_t mag_lt;
+    uint8_t mag_rt;
+    uint8_t mag_l;
+    uint8_t mag_r;
+    uint8_t duration;
+    uint8_t delay;
+    uint8_t cnt;
+} __packed;
+
+const struct xb1_rumble xb1_rumble_on = {
+    .enable = 0x03,
+    .mag_l = 0x1e,
+    .mag_r = 0x1e,
+    .duration = 0xFF,
+};
+
+const struct xb1_rumble xb1_rumble_off = {
+    .enable = 0x03,
+    .mag_l = 0x00,
+    .mag_r = 0x00,
+    .duration = 0xFF,
+};
+
 const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
@@ -96,5 +121,16 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         if (bt_data->input[0] & BIT(XB1_XBOX)) {
             ctrl_data->btns[0].value |= BIT(PAD_MT);
         }
+    }
+}
+
+void xb1_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    struct xb1_rumble *rumble = (struct xb1_rumble *)bt_data->output;
+
+    if (fb_data->state) {
+        memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_on));
+    }
+    else {
+        memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_off));
     }
 }
