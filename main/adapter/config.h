@@ -23,6 +23,7 @@ struct global_cfg {
 
 struct out_cfg {
     uint8_t dev_mode;
+    uint8_t acc_mode;
 } __packed;
 
 struct in_cfg {

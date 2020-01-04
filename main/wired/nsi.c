@@ -13,6 +13,7 @@
 #include "../zephyr/types.h"
 #include "../util.h"
 #include "../adapter/adapter.h"
+#include "../adapter/config.h"
 #include "nsi.h"
 
 #define BIT_ZERO 0x80020006
@@ -179,7 +180,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
+                        if (config.out_cfg[channel].acc_mode > ACC_NONE) {
                             ctrl_ident[2] = 0x01;
                         }
                         else {
@@ -204,7 +205,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                     case 0x02:
                         item = nsi_items_to_bytes(channel, item, buf, 2);
                         if (buf[0] == 0x80 && buf[1] == 0x01) {
-                            if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
+                            if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                                 item = nsi_bytes_to_items_crc(channel, 0, rumble_ident, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -212,7 +213,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                             }
                         }
                         else {
-                            if (wired_adapter.data[channel].acc_mode > ACC_NONE) {
+                            if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                                 item = nsi_bytes_to_items_crc(channel, 0, empty, 32, &crc, STOP_BIT_2US);
                             }
                             else {
@@ -231,7 +232,7 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         nsi_items_to_bytes(channel, item, buf + 2, 32);
-                        if (wired_adapter.data[channel].acc_mode == ACC_RUMBLE) {
+                        if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                             if (buf[0] == 0xC0 && last_rumble[channel] != buf[2]) {
                                 last_rumble[channel] = buf[2];
                                 buf[1] = channel;

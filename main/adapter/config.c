@@ -20,6 +20,7 @@ static void config_init_struct(struct config *data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         data->out_cfg[i].dev_mode = 0x00;
+        data->out_cfg[i].acc_mode = 0x00;
         data->in_cfg[i].bt_dev_id = 0x00;
         data->in_cfg[i].bt_subdev_id = 0x00;
         data->in_cfg[i].map_size = KB_MAX;
@@ -81,6 +82,7 @@ static int32_t config_store_on_file(struct config *data) {
 
 void config_init(void) {
     config_load_from_file(&config);
+    config.out_cfg[0].acc_mode = 0x02;
 }
 
 void config_update(void) {
