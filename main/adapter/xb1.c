@@ -131,6 +131,6 @@ void xb1_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
         memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_on));
     }
     else {
-        memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_off));
+        memcpy((void *)rumble, (void *)&xb1_rumble_off, sizeof(xb1_rumble_off));
     }
 }

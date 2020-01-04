@@ -88,7 +88,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
     NULL,
     NULL,
     NULL,
-    NULL,
+    xb1_fb_from_generic,
     NULL,
 };
 

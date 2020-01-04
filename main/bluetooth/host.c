@@ -129,6 +129,7 @@ static void bt_host_task(void *param) {
             if (adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id])) {
                 bt_hid_feedback(device, bt_adapter.data[device->id].output);
             }
+            vRingbufferReturnItem(wired_adapter.input_q_hdl, (void *)fb_data);
         }
 
         /* TX packet from Q */
