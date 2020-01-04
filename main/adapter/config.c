@@ -82,7 +82,6 @@ static int32_t config_store_on_file(struct config *data) {
 
 void config_init(void) {
     config_load_from_file(&config);
-    config.out_cfg[0].acc_mode = 0x02;
 }
 
 void config_update(void) {
