@@ -23,6 +23,10 @@ enum {
     WIIU_LJ,
 };
 
+const uint8_t led_dev_id_map[] = {
+    0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
+};
+
 const uint8_t wiiu_axes_idx[4] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
@@ -86,4 +90,13 @@ void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->axes_cal[i];
     }
 
+}
+
+void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    if (fb_data->state) {
+        bt_data->output[0] = (led_dev_id_map[bt_data->dev_id] << 4) | 0x01;
+    }
+    else {
+        bt_data->output[0] = (led_dev_id_map[bt_data->dev_id] << 4);
+    }
 }
