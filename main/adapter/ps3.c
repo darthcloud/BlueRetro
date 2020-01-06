@@ -121,8 +121,6 @@ void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     set_conf->leds = (led_dev_id_map[bt_data->dev_id] << 1);
 
     if (fb_data->state) {
-        set_conf->r_rumble_len = 0xFE;
-        set_conf->r_rumble_pow = 0xFE;
-        set_conf->l_rumble_len = 0xFE;
+        set_conf->r_rumble_pow = 0x01;
     }
 }
