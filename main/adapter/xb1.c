@@ -60,6 +60,7 @@ const struct xb1_rumble xb1_rumble_on = {
     .mag_l = 0x1e,
     .mag_r = 0x1e,
     .duration = 0xFF,
+    .cnt = 0x00,
 };
 
 const struct xb1_rumble xb1_rumble_off = {
@@ -67,6 +68,7 @@ const struct xb1_rumble xb1_rumble_off = {
     .mag_l = 0x00,
     .mag_r = 0x00,
     .duration = 0xFF,
+    .cnt = 0xFF,
 };
 
 const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
