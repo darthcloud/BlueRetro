@@ -20,6 +20,16 @@ enum {
     PS4_TP,
 };
 
+static const uint8_t ps4_led_dev_id_map[][3] = {
+    {0x00, 0x00, 0x40},
+    {0x40, 0x00, 0x00},
+    {0x00, 0x40, 0x00},
+    {0x20, 0x00, 0x20},
+    {0x02, 0x01, 0x00},
+    {0x00, 0x01, 0x01},
+    {0x01, 0x01, 0x01},
+};
+
 const uint8_t ps4_axes_idx[6] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
@@ -53,6 +63,20 @@ struct ps4_map {
         };
         uint8_t axes[9];
     };
+} __packed;
+
+struct ps4_set_conf {
+    uint8_t conf0;
+    uint8_t tbd0;
+    uint8_t conf1;
+    uint8_t tbd1[2];
+    uint8_t r_rumble;
+    uint8_t l_rumble;
+    uint8_t leds[3];
+    uint8_t led_on_delay;
+    uint8_t led_off_delay;
+    uint8_t tbd2[61];
+    uint32_t crc;
 } __packed;
 
 const uint32_t ps4_mask[4] = {0xBBFF0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -96,5 +120,18 @@ void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+    }
+}
+
+void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    struct ps4_set_conf *set_conf = (struct ps4_set_conf *)bt_data->output;
+    memset((void *)set_conf, 0, sizeof(*set_conf));
+    set_conf->conf0 = 0xc4;
+    set_conf->conf1 = 0x07;
+
+    memcpy(set_conf->leds, ps4_led_dev_id_map[bt_data->dev_id], sizeof(set_conf->leds));
+
+    if (fb_data->state) {
+        set_conf->r_rumble = 0xFF;
     }
 }
