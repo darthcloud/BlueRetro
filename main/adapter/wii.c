@@ -23,7 +23,7 @@ enum {
     WIIU_LJ,
 };
 
-const uint8_t led_dev_id_map[] = {
+static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 

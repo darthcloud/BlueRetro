@@ -82,7 +82,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
     NULL,
     NULL,
     NULL,
-    NULL,
+    ps3_fb_from_generic,
     wii_fb_from_generic,
     wii_fb_from_generic,
     wii_fb_from_generic,

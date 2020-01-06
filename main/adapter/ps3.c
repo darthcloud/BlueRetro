@@ -23,6 +23,18 @@ enum {
     PS3_PS,
 };
 
+static const uint8_t led_dev_id_map[] = {
+    0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
+};
+
+static const uint8_t config[] = {
+    0x01, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
+    0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
+    0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
+    0x00, 0x00, 0x00
+};
+
 const uint8_t ps3_axes_idx[6] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
@@ -48,6 +60,17 @@ struct ps3_map {
     uint32_t buttons;
     uint8_t reserved;
     uint8_t axes[20];
+} __packed;
+
+struct ps3_set_conf {
+    uint8_t tbd0;
+    uint8_t r_rumble_len;
+    uint8_t r_rumble_pow;
+    uint8_t l_rumble_len;
+    uint8_t l_rumble_pow;
+    uint8_t tbd1[4];
+    uint8_t leds;
+    uint8_t tbd2[25];
 } __packed;
 
 const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -90,4 +113,16 @@ void ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].value = map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
 
+}
+
+void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->output;
+    memcpy((void *)set_conf, config, sizeof(*set_conf));
+    set_conf->leds = (led_dev_id_map[bt_data->dev_id] << 1);
+
+    if (fb_data->state) {
+        set_conf->r_rumble_len = 0xFE;
+        set_conf->r_rumble_pow = 0xFE;
+        set_conf->l_rumble_len = 0xFE;
+    }
 }
