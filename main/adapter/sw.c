@@ -3,6 +3,8 @@
 #include "../util.h"
 #include "sw.h"
 
+#define BT_HIDP_SW_SUBCMD_SET_LED 0x30
+
 enum {
     SW_B,
     SW_A,
@@ -20,6 +22,10 @@ enum {
     SW_CAPTURE,
     SW_SL,
     SW_SR,
+};
+
+static const uint8_t led_dev_id_map[] = {
+    0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
 const uint8_t sw_axes_idx[4] =
@@ -46,6 +52,16 @@ struct sw_map {
     uint8_t hat;
     uint16_t axes[4];
 } __packed;
+
+struct sw_conf {
+    uint8_t tid;
+    uint8_t rumble[8];
+    uint8_t subcmd;
+    uint8_t subcmd_data[38];
+} __packed;
+
+static const uint8_t sw_rumble_on[] = {0x28, 0xC8, 0x60, 0x71, 0x28, 0xC8, 0x60, 0x71};
+static const uint8_t sw_rumble_off[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 const uint32_t sw_mask[4] = {0xFFFF0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t sw_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
@@ -88,5 +104,20 @@ void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
         ctrl_data->axes[i].meta = &sw_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral + bt_data->axes_cal[i];
+    }
+}
+
+void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    struct sw_conf *conf = (struct sw_conf *)bt_data->output;
+    memset((void *)conf, 0, sizeof(*conf));
+
+    conf->subcmd = BT_HIDP_SW_SUBCMD_SET_LED;
+    conf->subcmd_data[0] = led_dev_id_map[bt_data->dev_id];
+
+    if (fb_data->state) {
+        memcpy((void *)conf->rumble, (void *)sw_rumble_on, sizeof(sw_rumble_on));
+    }
+    else {
+        memcpy((void *)conf->rumble, (void *)sw_rumble_off, sizeof(sw_rumble_off));
     }
 }
