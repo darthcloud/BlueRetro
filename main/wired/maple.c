@@ -12,6 +12,16 @@
 #include "../adapter/adapter.h"
 #include "maple.h"
 
+#define ID_CTRL    0x00000001
+#define ID_VMU_MEM 0x00000002
+#define ID_VMU_LCD 0x00000004
+#define ID_VMU_CLK 0x00000008
+#define ID_MIC     0x00000010
+#define ID_KB      0x00000040
+#define ID_GUN     0x00000080
+#define ID_RUMBLE  0x00000100
+#define ID_MOUSE   0x00000200
+
 //#define WIRED_TRACE
 #define DEBUG  (1ULL << 25)
 #define TIMEOUT 8
