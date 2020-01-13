@@ -22,6 +22,24 @@
 #define ID_RUMBLE  0x00000100
 #define ID_MOUSE   0x00000200
 
+#define CMD_INFO_REQ      0x01
+#define CMD_EXT_INFO_REQ  0x02
+#define CMD_RESET         0x03
+#define CMD_SHUTDOWN      0x04
+#define CMD_INFO_RSP      0x05
+#define CMD_EXT_INFO_RSP  0x06
+#define CMD_ACK           0x07
+#define CMD_DATA_TX       0x08
+#define CMD_GET_CONDITION 0x09
+#define CMD_MEM_INFO_REQ  0x0A
+#define CMD_BLOCK_READ    0x0B
+#define CMD_BLOCK_WRITE   0x0C
+#define CMD_SET_CONDITION 0x0E
+
+#define ADDR_CTRL   0x20
+#define ADDR_MEM    0x01
+#define ADDR_RUMBLE 0x02
+
 //#define WIRED_TRACE
 #define DEBUG  (1ULL << 25)
 #define TIMEOUT 8
