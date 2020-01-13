@@ -320,14 +320,14 @@ maple_end:
             dst = buffer[1];
         }
         switch(dst & 0x3F) {
-            case 0x20:
+            case ADDR_CTRL:
                 switch (cmd) {
-                    case 0x01:
+                    case CMD_INFO_REQ:
                         dev_info[1] = src;
                         dev_info[2] = dst;
                         maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
                         break;
-                    case 0x09:
+                    case CMD_GET_CONDITION:
                         status[1] = src;
                         status[2] = dst;
                         memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
@@ -339,14 +339,14 @@ maple_end:
                         break;
                 }
                 break;
-            case 0x02:
+            case ADDR_RUMBLE:
                 switch (cmd) {
-                    case 0x01:
+                    case CMD_INFO_REQ:
                         dev_info[1] = src;
                         dev_info[2] = dst;
                         maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
                         break;
-                    case 0x09:
+                    case CMD_GET_CONDITION:
                         status[1] = src;
                         status[2] = dst;
                         memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
