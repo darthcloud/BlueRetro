@@ -10,6 +10,7 @@
 #include "../zephyr/types.h"
 #include "../util.h"
 #include "../adapter/adapter.h"
+#include "../adapter/config.h"
 #include "maple.h"
 
 #define ID_CTRL    0x00000001
@@ -36,6 +37,7 @@
 #define CMD_BLOCK_WRITE   0x0C
 #define CMD_SET_CONDITION 0x0E
 
+#define ADDR_MASK   0x3F
 #define ADDR_CTRL   0x20
 #define ADDR_MEM    0x01
 #define ADDR_RUMBLE 0x02
@@ -55,21 +57,21 @@ static const uint8_t gpio_pin[4][2] = {
     {26, 27},
 };
 
-uint8_t pin_to_port[] = {
+static uint8_t pin_to_port[] = {
     0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x02,
     0x00, 0x00, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00,
 };
 
-uint32_t maple0_to_maple1[] = {
+static uint32_t maple0_to_maple1[] = {
     0x00, 0x00, 0x00, BIT(5), 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, BIT(23), 0x00, 0x00, BIT(22), 0x00, 0x00,
     0x00, 0x00, BIT(27), 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-uint8_t dev_info[] =
+static uint8_t dev_info[] =
 {
     0x1C, 0x20, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61,
@@ -81,14 +83,31 @@ uint8_t dev_info[] =
     0x01, 0xF4, 0x01, 0xAE, 0x00
 };
 
-uint8_t status[] =
+static uint8_t rumble_info[] =
+{
+    0x1C, 0x20, 0x00, 0x05, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61,
+    0x74, 0x6E, 0x6F, 0x43, 0x6C, 0x6C, 0x6F, 0x72, 0x20, 0x20, 0x72, 0x65, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x64, 0x6F, 0x72, 0x50, 0x64, 0x65, 0x63, 0x75, 0x20, 0x79, 0x42, 0x20,
+    0x55, 0x20, 0x72, 0x6F, 0x72, 0x65, 0x64, 0x6E, 0x63, 0x69, 0x4C, 0x20, 0x65, 0x73, 0x6E, 0x65,
+    0x6F, 0x72, 0x46, 0x20, 0x45, 0x53, 0x20, 0x6D, 0x45, 0x20, 0x41, 0x47, 0x52, 0x45, 0x54, 0x4E,
+    0x53, 0x49, 0x52, 0x50, 0x4C, 0x2C, 0x53, 0x45, 0x20, 0x2E, 0x44, 0x54, 0x20, 0x20, 0x20, 0x20,
+    0x00, 0xC8, 0x06, 0x40, 0x00
+};
+
+static uint8_t status[] =
 {
     0x03, 0x20, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x80, 0x80, 0x80, 0x00
 };
 
-uint32_t intr_cnt = 0;
+static uint8_t rumble[] =
+{
+    0x02, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x3B, 0x07, 0xE0, 0x10, 0x00
+};
 
-uint8_t buffer[544] = {0};
+static uint8_t buffer[544] = {0};
+static uint32_t *buffer32 = (uint32_t *)buffer;
+static uint16_t rumble_max = 19;
 
 static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
     uint8_t *crc = data + (len - 1);
@@ -319,7 +338,7 @@ maple_end:
             src = buffer[2];
             dst = buffer[1];
         }
-        switch(dst & 0x3F) {
+        switch(dst & ADDR_MASK) {
             case ADDR_CTRL:
                 switch (cmd) {
                     case CMD_INFO_REQ:
@@ -335,7 +354,7 @@ maple_end:
                         ++wired_adapter.data[port].frame_cnt;
                         break;
                     default:
-                        ets_printf("Unk cmd: 0x%02X\n", cmd);
+                        ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
                         break;
                 }
                 break;
@@ -344,17 +363,33 @@ maple_end:
                     case CMD_INFO_REQ:
                         dev_info[1] = src;
                         dev_info[2] = dst;
-                        maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
+                        maple_tx(port, maple0, maple1, rumble_info, sizeof(rumble_info));
                         break;
                     case CMD_GET_CONDITION:
+                    case CMD_MEM_INFO_REQ:
                         status[1] = src;
                         status[2] = dst;
-                        memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
-                        maple_tx(port, maple0, maple1, status, sizeof(status));
-                        ++wired_adapter.data[port].frame_cnt;
+                        maple_tx(port, maple0, maple1, rumble, sizeof(rumble));
+                        break;
+                    case CMD_BLOCK_READ:
+                        buffer[0] = 0x03;
+                        buffer[1] = src;
+                        buffer[2] = dst;
+                        buffer[3] = CMD_DATA_TX;
+                        buffer32[1] = ID_RUMBLE;
+                        buffer32[2] = 0;
+                        buffer[12] = 0x00;
+                        buffer[13] = 0x02;
+                        buffer[14] = rumble_max >> 8;
+                        buffer[15] = rumble_max & 0xFF;
+                        maple_tx(port, maple0, maple1, buffer, 16);
+                        break;
+                    case CMD_BLOCK_WRITE:
+                        break;
+                    case CMD_SET_CONDITION:
                         break;
                     default:
-                        ets_printf("Unk cmd: 0x%02X\n", cmd);
+                        ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
                         break;
                 }
                 break;
