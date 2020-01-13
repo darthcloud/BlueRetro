@@ -342,7 +342,7 @@ maple_end:
             case ADDR_CTRL:
                 switch (cmd) {
                     case CMD_INFO_REQ:
-                        dev_info[1] = src;
+                        dev_info[1] = src | ADDR_RUMBLE;
                         dev_info[2] = dst;
                         maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
                         break;
@@ -382,11 +382,21 @@ maple_end:
                         buffer[13] = 0x02;
                         buffer[14] = rumble_max >> 8;
                         buffer[15] = rumble_max & 0xFF;
-                        maple_tx(port, maple0, maple1, buffer, 16);
+                        maple_tx(port, maple0, maple1, buffer, 17);
                         break;
                     case CMD_BLOCK_WRITE:
+                        buffer[0] = 0x00;
+                        buffer[1] = src;
+                        buffer[2] = dst;
+                        buffer[3] = CMD_ACK;
+                        maple_tx(port, maple0, maple1, buffer, 5);
                         break;
                     case CMD_SET_CONDITION:
+                        buffer[0] = 0x00;
+                        buffer[1] = src;
+                        buffer[2] = dst;
+                        buffer[3] = CMD_ACK;
+                        maple_tx(port, maple0, maple1, buffer, 5);
                         break;
                     default:
                         ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
