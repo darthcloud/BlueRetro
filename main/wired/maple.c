@@ -301,21 +301,44 @@ maple_end:
             src = buffer[2];
             dst = buffer[1];
         }
-        switch (cmd) {
-            case 0x01:
-                dev_info[1] = src;
-                dev_info[2] = dst;
-                maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
+        switch(dst & 0x3F) {
+            case 0x20:
+                switch (cmd) {
+                    case 0x01:
+                        dev_info[1] = src;
+                        dev_info[2] = dst;
+                        maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
+                        break;
+                    case 0x09:
+                        status[1] = src;
+                        status[2] = dst;
+                        memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
+                        maple_tx(port, maple0, maple1, status, sizeof(status));
+                        ++wired_adapter.data[port].frame_cnt;
+                        break;
+                    default:
+                        ets_printf("Unk cmd: 0x%02X\n", cmd);
+                        break;
+                }
                 break;
-            case 0x09:
-                status[1] = src;
-                status[2] = dst;
-                memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
-                maple_tx(port, maple0, maple1, status, sizeof(status));
-                ++wired_adapter.data[port].frame_cnt;
-                break;
-            default:
-                ets_printf("Unsupported cmd: 0x%02X\n", cmd);
+            case 0x02:
+                switch (cmd) {
+                    case 0x01:
+                        dev_info[1] = src;
+                        dev_info[2] = dst;
+                        maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
+                        break;
+                    case 0x09:
+                        status[1] = src;
+                        status[2] = dst;
+                        memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
+                        maple_tx(port, maple0, maple1, status, sizeof(status));
+                        ++wired_adapter.data[port].frame_cnt;
+                        break;
+                    default:
+                        ets_printf("Unk cmd: 0x%02X\n", cmd);
+                        break;
+                }
                 break;
         }
 #endif
