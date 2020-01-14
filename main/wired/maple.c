@@ -71,7 +71,7 @@ static uint32_t maple0_to_maple1[] = {
     0x00, 0x00, BIT(27), 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-static uint8_t dev_info[] =
+static uint8_t ctrl_info[] =
 {
     0x1C, 0x20, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61,
@@ -100,14 +100,10 @@ static uint8_t status[] =
     0x03, 0x20, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x80, 0x80, 0x80, 0x00
 };
 
-static uint8_t rumble[] =
-{
-    0x02, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x3B, 0x07, 0xE0, 0x10, 0x00
-};
-
 static uint8_t buffer[544] = {0};
 static uint32_t *buffer32 = (uint32_t *)buffer;
 static uint16_t rumble_max = 19;
+static uint32_t rumble_val = 0x10E0073B;
 
 static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
     uint8_t *crc = data + (len - 1);
@@ -342,9 +338,9 @@ maple_end:
             case ADDR_CTRL:
                 switch (cmd) {
                     case CMD_INFO_REQ:
-                        dev_info[1] = src | ADDR_RUMBLE;
-                        dev_info[2] = dst;
-                        maple_tx(port, maple0, maple1, dev_info, sizeof(dev_info));
+                        ctrl_info[1] = src | ADDR_RUMBLE;
+                        ctrl_info[2] = dst;
+                        maple_tx(port, maple0, maple1, ctrl_info, sizeof(ctrl_info));
                         break;
                     case CMD_GET_CONDITION:
                         status[1] = src;
@@ -361,15 +357,19 @@ maple_end:
             case ADDR_RUMBLE:
                 switch (cmd) {
                     case CMD_INFO_REQ:
-                        dev_info[1] = src;
-                        dev_info[2] = dst;
+                        rumble_info[1] = src;
+                        rumble_info[2] = dst;
                         maple_tx(port, maple0, maple1, rumble_info, sizeof(rumble_info));
                         break;
                     case CMD_GET_CONDITION:
                     case CMD_MEM_INFO_REQ:
-                        status[1] = src;
-                        status[2] = dst;
-                        maple_tx(port, maple0, maple1, rumble, sizeof(rumble));
+                        buffer[0] = 0x01;
+                        buffer[1] = src;
+                        buffer[2] = dst;
+                        buffer[3] = CMD_DATA_TX;
+                        buffer32[1] = ID_RUMBLE;
+                        buffer32[2] = rumble_val;
+                        maple_tx(port, maple0, maple1, buffer, 13);
                         break;
                     case CMD_BLOCK_READ:
                         buffer[0] = 0x03;
@@ -397,6 +397,11 @@ maple_end:
                         buffer[2] = dst;
                         buffer[3] = CMD_ACK;
                         maple_tx(port, maple0, maple1, buffer, 5);
+                        if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                            buffer[5] = port;
+                            *(uint16_t *)&buffer[6] = rumble_max;
+                            adapter_q_fb(buffer + 5, 7);
+                        }
                         break;
                     default:
                         ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
