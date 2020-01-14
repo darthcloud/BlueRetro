@@ -50,6 +50,19 @@
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 #define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
 
+struct maple_pkt {
+    union {
+        struct {
+            uint8_t len;
+            uint8_t src;
+            uint8_t dst;
+            uint8_t cmd;
+            uint32_t data32[135];
+        };
+        uint8_t data[545];
+    };
+} __packed;
+
 static const uint8_t gpio_pin[4][2] = {
     {21, 22},
     { 3,  5},
@@ -95,13 +108,7 @@ static uint8_t rumble_info[] =
     0x00, 0xC8, 0x06, 0x40, 0x00
 };
 
-static uint8_t status[] =
-{
-    0x03, 0x20, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x80, 0x80, 0x80, 0x00
-};
-
-static uint8_t buffer[544] = {0};
-static uint32_t *buffer32 = (uint32_t *)buffer;
+static struct maple_pkt pkt;
 static uint16_t rumble_max = 19;
 static uint32_t rumble_val = 0x10E0073B;
 
@@ -253,7 +260,7 @@ static void IRAM_ATTR maple_rx(void* arg)
     uint32_t timeout;
     uint32_t bit_cnt = 0;
     uint32_t gpio;
-    uint8_t *data = buffer;
+    uint8_t *data = pkt.data;
 #ifdef WIRED_TRACE
     uint32_t byte;
 #endif
@@ -306,12 +313,12 @@ maple_end:
         if (bad_frame) {
             ++byte;
             for (uint32_t i = 0; i < byte; ++i) {
-                ets_printf("%02X", maple_fix_byte(bad_frame, buffer[i ? i - 1 : 0], buffer[i]));
+                ets_printf("%02X", maple_fix_byte(bad_frame, pkt.data[i ? i - 1 : 0], pkt.data[i]));
             }
         }
         else {
             for (uint32_t i = 0; i < byte; ++i) {
-                ets_printf("%02X", buffer[i]);
+                ets_printf("%02X", pkt.data[i]);
             }
         }
         ets_printf("\n");
@@ -319,34 +326,40 @@ maple_end:
         len = ((bit_cnt - 1) / 32) - 1;
         /* Fix up to 7 bits loss */
         if (bad_frame) {
-            cmd = maple_fix_byte(bad_frame, buffer[2], buffer[3]);
-            src = maple_fix_byte(bad_frame, buffer[1], buffer[2]);
-            dst = maple_fix_byte(bad_frame, buffer[0], buffer[1]);
+            cmd = maple_fix_byte(bad_frame, pkt.data[2], pkt.data[3]);
+            src = maple_fix_byte(bad_frame, pkt.data[1], pkt.data[2]);
+            dst = maple_fix_byte(bad_frame, pkt.data[0], pkt.data[1]);
         }
         /* Fix 8 bits loss */
-        else if (buffer[0] != len) {
-            cmd = buffer[2];
-            src = buffer[1];
-            dst = buffer[0];
+        else if (pkt.len != len) {
+            cmd = pkt.data[2];
+            src = pkt.data[1];
+            dst = pkt.data[0];
         }
         else {
-            cmd = buffer[3];
-            src = buffer[2];
-            dst = buffer[1];
+            cmd = pkt.cmd;
+            src = pkt.dst;
+            dst = pkt.src;
         }
-        switch(dst & ADDR_MASK) {
+        switch(src & ADDR_MASK) {
             case ADDR_CTRL:
                 switch (cmd) {
                     case CMD_INFO_REQ:
-                        ctrl_info[1] = src | ADDR_RUMBLE;
+                        ctrl_info[1] = src;
+                        if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                            ctrl_info[1] |= ADDR_RUMBLE;
+                        }
                         ctrl_info[2] = dst;
                         maple_tx(port, maple0, maple1, ctrl_info, sizeof(ctrl_info));
                         break;
                     case CMD_GET_CONDITION:
-                        status[1] = src;
-                        status[2] = dst;
-                        memcpy(status + 8, wired_adapter.data[port].output, sizeof(status) - 8);
-                        maple_tx(port, maple0, maple1, status, sizeof(status));
+                        pkt.len = 0x03;
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        pkt.cmd = CMD_DATA_TX;
+                        pkt.data32[0] = ID_CTRL;
+                        memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         ++wired_adapter.data[port].frame_cnt;
                         break;
                     default:
@@ -363,44 +376,42 @@ maple_end:
                         break;
                     case CMD_GET_CONDITION:
                     case CMD_MEM_INFO_REQ:
-                        buffer[0] = 0x01;
-                        buffer[1] = src;
-                        buffer[2] = dst;
-                        buffer[3] = CMD_DATA_TX;
-                        buffer32[1] = ID_RUMBLE;
-                        buffer32[2] = rumble_val;
-                        maple_tx(port, maple0, maple1, buffer, 13);
+                        pkt.len = 0x02;
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        pkt.cmd = CMD_DATA_TX;
+                        pkt.data32[0] = ID_RUMBLE;
+                        pkt.data32[1] = rumble_val;
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_BLOCK_READ:
-                        buffer[0] = 0x03;
-                        buffer[1] = src;
-                        buffer[2] = dst;
-                        buffer[3] = CMD_DATA_TX;
-                        buffer32[1] = ID_RUMBLE;
-                        buffer32[2] = 0;
-                        buffer[12] = 0x00;
-                        buffer[13] = 0x02;
-                        buffer[14] = rumble_max >> 8;
-                        buffer[15] = rumble_max & 0xFF;
-                        maple_tx(port, maple0, maple1, buffer, 17);
+                        pkt.len = 0x03;
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        pkt.cmd = CMD_DATA_TX;
+                        pkt.data32[0] = ID_RUMBLE;
+                        pkt.data32[1] = 0;
+                        pkt.data32[2] = 0x0002 << 16;
+                        pkt.data32[2] |= rumble_max;
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_BLOCK_WRITE:
-                        buffer[0] = 0x00;
-                        buffer[1] = src;
-                        buffer[2] = dst;
-                        buffer[3] = CMD_ACK;
-                        maple_tx(port, maple0, maple1, buffer, 5);
+                        pkt.len = 0x00;
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        pkt.cmd = CMD_ACK;
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_SET_CONDITION:
-                        buffer[0] = 0x00;
-                        buffer[1] = src;
-                        buffer[2] = dst;
-                        buffer[3] = CMD_ACK;
-                        maple_tx(port, maple0, maple1, buffer, 5);
+                        pkt.len = 0x00;
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        pkt.cmd = CMD_ACK;
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                            buffer[5] = port;
-                            *(uint16_t *)&buffer[6] = rumble_max;
-                            adapter_q_fb(buffer + 5, 7);
+                            pkt.data[5] = port;
+                            *(uint16_t *)&pkt.data[6] = rumble_max;
+                            adapter_q_fb(pkt.data + 5, 7);
                         }
                         break;
                     default:
