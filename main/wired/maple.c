@@ -105,7 +105,7 @@ static const uint8_t brand[] = {
 };
 
 static struct maple_pkt pkt;
-static uint32_t rumble_max = 0x02001300;
+static uint32_t rumble_max = 0x00020013;
 static uint32_t rumble_val = 0x10E0073B;
 
 static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
@@ -340,14 +340,14 @@ maple_end:
         }
         switch(src & ADDR_MASK) {
             case ADDR_CTRL:
+                pkt.src = src;
+                if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                    pkt.src |= ADDR_RUMBLE;
+                }
+                pkt.dst = dst;
                 switch (cmd) {
                     case CMD_INFO_REQ:
                         pkt.len = 28;
-                        pkt.src = src;
-                        if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                            pkt.src |= ADDR_RUMBLE;
-                        }
-                        pkt.dst = dst;
                         pkt.cmd = CMD_INFO_RSP;
                         pkt.data32[0] = ID_CTRL;
                         pkt.data32[1] = DESC_CTRL_ALT;
@@ -360,9 +360,7 @@ maple_end:
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_GET_CONDITION:
-                        pkt.len = 0x03;
-                        pkt.src = src;
-                        pkt.dst = dst;
+                        pkt.len = 3;
                         pkt.cmd = CMD_DATA_TX;
                         pkt.data32[0] = ID_CTRL;
                         memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
@@ -375,11 +373,11 @@ maple_end:
                 }
                 break;
             case ADDR_RUMBLE:
+                pkt.src = src;
+                pkt.dst = dst;
                 switch (cmd) {
                     case CMD_INFO_REQ:
                         pkt.len = 28;
-                        pkt.src = src;
-                        pkt.dst = dst;
                         pkt.cmd = CMD_INFO_RSP;
                         pkt.data32[0] = ID_RUMBLE;
                         pkt.data32[1] = DESC_RUMBLE;
@@ -394,8 +392,6 @@ maple_end:
                     case CMD_GET_CONDITION:
                     case CMD_MEM_INFO_REQ:
                         pkt.len = 0x02;
-                        pkt.src = src;
-                        pkt.dst = dst;
                         pkt.cmd = CMD_DATA_TX;
                         pkt.data32[0] = ID_RUMBLE;
                         pkt.data32[1] = rumble_val;
@@ -403,8 +399,6 @@ maple_end:
                         break;
                     case CMD_BLOCK_READ:
                         pkt.len = 0x03;
-                        pkt.src = src;
-                        pkt.dst = dst;
                         pkt.cmd = CMD_DATA_TX;
                         pkt.data32[0] = ID_RUMBLE;
                         pkt.data32[1] = 0;
@@ -413,8 +407,6 @@ maple_end:
                         break;
                     case CMD_BLOCK_WRITE:
                         pkt.len = 0x00;
-                        pkt.src = src;
-                        pkt.dst = dst;
                         pkt.cmd = CMD_ACK;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         if (!bad_frame) {
@@ -423,8 +415,6 @@ maple_end:
                         break;
                     case CMD_SET_CONDITION:
                         pkt.len = 0x00;
-                        pkt.src = src;
-                        pkt.dst = dst;
                         pkt.cmd = CMD_ACK;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         if (!bad_frame) {
