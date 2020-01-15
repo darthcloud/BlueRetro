@@ -344,6 +344,14 @@ void adapter_bridge(struct bt_data *bt_data) {
     //last = cur;
 }
 
+void adapter_fb_stop_cb(void* arg) {
+    struct bt_data *bt_data = (struct bt_data *)arg;
+    uint8_t dev_id = bt_data->dev_id;
+
+    /* Send 1 byte, system that require callback stop shall look for that */
+    xRingbufferSend(wired_adapter.input_q_hdl, &dev_id, 1, 0);
+}
+
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
     uint32_t ret = 0;
     if (wired_adapter.system_id != WIRED_NONE && fb_to_generic_func[wired_adapter.system_id]) {
