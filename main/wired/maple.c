@@ -430,9 +430,9 @@ maple_end:
                         if (!bad_frame) {
                             rumble_val = pkt.data32[1];
                             if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                                pkt.data[5] = port;
-                                *(uint16_t *)&pkt.data[6] = rumble_max;
-                                adapter_q_fb(pkt.data + 5, 7);
+                                pkt.data[3] = port;
+                                *(uint32_t *)&pkt.data[4] = rumble_max;
+                                adapter_q_fb(pkt.data + 3, 9);
                             }
                         }
                         break;
