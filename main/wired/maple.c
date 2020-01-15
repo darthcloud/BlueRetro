@@ -105,7 +105,7 @@ static const uint8_t brand[] = {
 };
 
 static struct maple_pkt pkt;
-static uint16_t rumble_max = 19;
+static uint32_t rumble_max = 0x02001300;
 static uint32_t rumble_val = 0x10E0073B;
 
 static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
@@ -331,6 +331,7 @@ maple_end:
             cmd = pkt.data[2];
             src = pkt.data[1];
             dst = pkt.data[0];
+            bad_frame = 1;
         }
         else {
             cmd = pkt.cmd;
@@ -407,8 +408,7 @@ maple_end:
                         pkt.cmd = CMD_DATA_TX;
                         pkt.data32[0] = ID_RUMBLE;
                         pkt.data32[1] = 0;
-                        pkt.data32[2] = 0x0002 << 16;
-                        pkt.data32[2] |= rumble_max;
+                        pkt.data32[2] = rumble_max;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_BLOCK_WRITE:
@@ -417,6 +417,9 @@ maple_end:
                         pkt.dst = dst;
                         pkt.cmd = CMD_ACK;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                        if (!bad_frame) {
+                            rumble_max = pkt.data32[2];
+                        }
                         break;
                     case CMD_SET_CONDITION:
                         pkt.len = 0x00;
@@ -424,10 +427,13 @@ maple_end:
                         pkt.dst = dst;
                         pkt.cmd = CMD_ACK;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                            pkt.data[5] = port;
-                            *(uint16_t *)&pkt.data[6] = rumble_max;
-                            adapter_q_fb(pkt.data + 5, 7);
+                        if (!bad_frame) {
+                            rumble_val = pkt.data32[1];
+                            if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                                pkt.data[5] = port;
+                                *(uint16_t *)&pkt.data[6] = rumble_max;
+                                adapter_q_fb(pkt.data + 5, 7);
+                            }
                         }
                         break;
                     default:
