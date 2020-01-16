@@ -131,7 +131,21 @@ void dc_fb_to_generic(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_
         adapter_fb_stop_timer_stop(raw_fb_data[0]);
     }
     else {
+        uint32_t dur_us = 1000 * ((*(uint16_t *)&raw_fb_data[3]) * 250 + 250);
+        uint8_t freq = raw_fb_data[6];
+
+        if (freq && ((raw_fb_data[7] & 0x88) || !(raw_fb_data[8] & 0x01))) {
+            uint8_t mag0 = raw_fb_data[7] & 0x07;
+            uint8_t mag1 = (raw_fb_data[7] >> 4) & 0x07;
+
+            if (raw_fb_data[5]) {
+                dur_us = 1000000 * raw_fb_data[5] * MAX(mag0, mag1);
+            }
+            else {
+                dur_us = 1000000 / freq;
+            }
+        }
         fb_data->state = 1;
-        adapter_fb_stop_timer_start(raw_fb_data[0], 500000);
+        adapter_fb_stop_timer_start(raw_fb_data[0], dur_us);
     }
 }
