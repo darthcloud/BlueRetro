@@ -366,6 +366,7 @@ void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us) {
 
 void adapter_fb_stop_timer_stop(uint8_t dev_id) {
     esp_timer_delete(wired_adapter.data[dev_id].fb_timer_hdl);
+    wired_adapter.data[dev_id].fb_timer_hdl = NULL;
 }
 
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
