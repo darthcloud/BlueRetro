@@ -122,14 +122,16 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
 }
 
 void dc_fb_to_generic(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
+    fb_data->wired_id = raw_fb_data[0];
+    fb_data->cycles = 0;
+    fb_data->start = 0;
+
     if (raw_fb_len == 1) {
-        fb_data->wired_id = raw_fb_data[0];
         fb_data->state = 0;
-        fb_data->cycles = 0;
-        fb_data->start = 0;
         adapter_fb_stop_timer_stop(raw_fb_data[0]);
     }
     else {
-        adapter_fb_stop_timer_start(raw_fb_data[0], 1000000);
+        fb_data->state = 1;
+        adapter_fb_stop_timer_start(raw_fb_data[0], 500000);
     }
 }
