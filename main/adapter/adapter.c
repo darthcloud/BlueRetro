@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/ringbuf.h>
 #include <xtensa/hal.h>
+#include <esp_timer.h>
 #include "sdkconfig.h"
 #include "../zephyr/types.h"
 #include "../util.h"
@@ -72,7 +73,7 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     NULL,
     NULL,
     n64_fb_to_generic,
-    NULL,
+    dc_fb_to_generic,
     NULL,
     gc_fb_to_generic,
     NULL,
@@ -254,6 +255,13 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
     return out_mask;
 }
 
+static void adapter_fb_stop_cb(void* arg) {
+    uint8_t dev_id = (uint8_t)(uintptr_t)arg;
+
+    /* Send 1 byte, system that require callback stop shall look for that */
+    xRingbufferSend(wired_adapter.input_q_hdl, &dev_id, 1, 0);
+}
+
 uint8_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
@@ -344,12 +352,20 @@ void adapter_bridge(struct bt_data *bt_data) {
     //last = cur;
 }
 
-void adapter_fb_stop_cb(void* arg) {
-    struct bt_data *bt_data = (struct bt_data *)arg;
-    uint8_t dev_id = bt_data->dev_id;
+void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us) {
+    if (wired_adapter.data[dev_id].fb_timer_hdl == NULL) {
+        const esp_timer_create_args_t fb_timer_args = {
+            .callback = &adapter_fb_stop_cb,
+            .arg = (void*)(uintptr_t)dev_id,
+            .name = "fb_timer"
+        };
+        esp_timer_create(&fb_timer_args, (esp_timer_handle_t *)&wired_adapter.data[dev_id].fb_timer_hdl);
+        esp_timer_start_once(wired_adapter.data[dev_id].fb_timer_hdl, dur_us);
+    }
+}
 
-    /* Send 1 byte, system that require callback stop shall look for that */
-    xRingbufferSend(wired_adapter.input_q_hdl, &dev_id, 1, 0);
+void adapter_fb_stop_timer_stop(uint8_t dev_id) {
+    esp_timer_delete(wired_adapter.data[dev_id].fb_timer_hdl);
 }
 
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
