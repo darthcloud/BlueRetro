@@ -82,7 +82,7 @@ extern struct bt_hci_pkt bt_hci_pkt_tmp;
 
 int32_t bt_host_get_new_dev(struct bt_dev **device);
 int32_t bt_host_get_active_dev(struct bt_dev **device);
-int32_t bt_host_get_dev_from_bdaddr(bt_addr_t *bdaddr, struct bt_dev **device);
+int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device);
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device);
 int32_t bt_host_get_dev_conf(struct bt_dev **device);
 void bt_host_reset_dev(struct bt_dev *device);

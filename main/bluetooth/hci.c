@@ -843,7 +843,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
             printf("# Number of responce: %d\n", inquiry_result->num_reports);
             for (uint8_t i = 1; i <= inquiry_result->num_reports; i++) {
-                bt_host_get_dev_from_bdaddr((bt_addr_t *)((uint8_t *)&inquiry_result + 1 + 6*(i - 1)), &device);
+                bt_host_get_dev_from_bdaddr((uint8_t *)inquiry_result + 1 + 6*(i - 1), &device);
                 if (device == NULL) {
                     int32_t bt_dev_id = bt_host_get_new_dev(&device);
                     if (device) {
@@ -866,7 +866,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_conn_complete *conn_complete = (struct bt_hci_evt_conn_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_CONN_COMPLETE\n");
-            bt_host_get_dev_from_bdaddr(&conn_complete->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(conn_complete->bdaddr.val, &device);
             if (device) {
                 if (conn_complete->status) {
                     device->pkt_retry++;
@@ -902,7 +902,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_conn_request *conn_request = (struct bt_hci_evt_conn_request *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_CONN_REQUEST\n");
-            bt_host_get_dev_from_bdaddr(&conn_request->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(conn_request->bdaddr.val, &device);
             if (device == NULL) {
                 int32_t bt_dev_id = bt_host_get_new_dev(&device);
                 if (device) {
@@ -971,7 +971,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_remote_name_req_complete *remote_name_req_complete = (struct bt_hci_evt_remote_name_req_complete *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:\n");
-            bt_host_get_dev_from_bdaddr(&remote_name_req_complete->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(remote_name_req_complete->bdaddr.val, &device);
             if (device) {
                 if (remote_name_req_complete->status) {
                     device->pkt_retry++;
@@ -1172,7 +1172,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_role_change *role_change = (struct bt_hci_evt_role_change *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_ROLE_CHANGE\n");
-            bt_host_get_dev_from_bdaddr(&role_change->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(role_change->bdaddr.val, &device);
             if (device) {
                 if (role_change->status) {
                     atomic_set_bit(&device->flags, BT_DEV_ROLE_SW_FAIL);
@@ -1191,7 +1191,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             struct bt_hci_evt_pin_code_req *pin_code_req = (struct bt_hci_evt_pin_code_req *)bt_hci_evt_pkt->evt_data;
             struct bt_hci_cp_pin_code_reply pin_code_reply = {0};
             printf("# BT_HCI_EVT_PIN_CODE_REQ\n");
-            bt_host_get_dev_from_bdaddr(&pin_code_req->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(pin_code_req->bdaddr.val, &device);
             memcpy((void *)&pin_code_reply.bdaddr, device->remote_bdaddr, sizeof(pin_code_reply.bdaddr));
             if (bt_dev_is_wii(device->type)) {
                 memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
@@ -1209,7 +1209,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             struct bt_hci_evt_link_key_req *link_key_req = (struct bt_hci_evt_link_key_req *)bt_hci_evt_pkt->evt_data;
             struct bt_hci_cp_link_key_reply link_key_reply;
             printf("# BT_HCI_EVT_LINK_KEY_REQ\n");
-            bt_host_get_dev_from_bdaddr(&link_key_req->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(link_key_req->bdaddr.val, &device);
             memcpy((void *)&link_key_reply.bdaddr, (void *)&link_key_req->bdaddr, sizeof(link_key_reply.bdaddr));
             if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_link_key(&link_key_reply) == 0) {
                 bt_hci_cmd_link_key_reply((void *)&link_key_reply);
@@ -1223,7 +1223,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_link_key_notify *link_key_notify = (struct bt_hci_evt_link_key_notify *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_LINK_KEY_NOTIFY\n");
-            bt_host_get_dev_from_bdaddr(&link_key_notify->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(link_key_notify->bdaddr.val, &device);
             bt_host_store_link_key(link_key_notify);
             break;
         }
@@ -1246,7 +1246,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_io_capa_req *io_capa_req = (struct bt_hci_evt_io_capa_req *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_IO_CAPA_REQ\n");
-            bt_host_get_dev_from_bdaddr(&io_capa_req->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(io_capa_req->bdaddr.val, &device);
             if (device) {
                 bt_hci_cmd_io_capability_reply((void *)device->remote_bdaddr);
             }
@@ -1256,7 +1256,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_user_confirm_req *user_confirm_req = (struct bt_hci_evt_user_confirm_req *)bt_hci_evt_pkt->evt_data;
             printf("# BT_HCI_EVT_USER_CONFIRM_REQ\n");
-            bt_host_get_dev_from_bdaddr(&user_confirm_req->bdaddr, &device);
+            bt_host_get_dev_from_bdaddr(user_confirm_req->bdaddr.val, &device);
             if (device) {
                 bt_hci_cmd_user_confirm_reply((void *)device->remote_bdaddr);
             }
