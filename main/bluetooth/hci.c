@@ -843,13 +843,13 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_INQUIRY_RESULT\n");
             printf("# Number of responce: %d\n", inquiry_result->num_reports);
             for (uint8_t i = 1; i <= inquiry_result->num_reports; i++) {
-                bt_host_get_dev_from_bdaddr((uint8_t *)inquiry_result + 1 + 6*(i - 1), &device);
+                bt_host_get_dev_from_bdaddr((uint8_t *)inquiry_result + 1, &device);
                 if (device == NULL) {
                     int32_t bt_dev_id = bt_host_get_new_dev(&device);
                     if (device) {
-                        memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1 + 6*(i - 1), sizeof(device->remote_bdaddr));
+                        memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1, sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
-                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 1 + 9*(i - 1))[0]);
+                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 12)[0]);
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
