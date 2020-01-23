@@ -6,8 +6,13 @@
 #include "l2cap.h"
 #include "sdp.h"
 
-#if 0
-static const uint8_t test_attr_req[] = {
+/* We only care about HID Descriptor and maybe PNP vendor/product ID */
+/* But some device poorly implement SDP (as we do here...) and freak out when you are so specific (MX5000 KB) */
+/* Safe bet is to request all L2CAP attribute like BlueZ do */
+#define SDP_GET_ALL_L2CAP_ATTR 1
+
+#ifdef SDP_GET_ALL_L2CAP_ATTR
+static const uint8_t l2cap_attr_req[] = {
     /* Service Search Pattern */
         /* Data Element */
             /* Type */ BT_SDP_SEQ8,
@@ -17,7 +22,7 @@ static const uint8_t test_attr_req[] = {
                     /* Type */ BT_SDP_UUID16,
                     /* Data Value */
                         /* UUID */ 0x01, 0x00, /* L2CAP */
-    /* Max Att Byte */ 0x08, 0x00, /* 2048 */
+    /* Max Att Byte */ 0x04, 0x00, /* 1024 */
     /* Att ID List */
         /* Data Element */
             /* Type */ BT_SDP_SEQ8,
@@ -26,10 +31,9 @@ static const uint8_t test_attr_req[] = {
                 /* Data Element */
                     /* Type */ BT_SDP_UINT32,
                     /* Data Value */
-                        /* Att Range */ 0xff, 0xfe, /* to */ 0xff, 0xff,
+                        /* Att Range */ 0x00, 0x00, /* to */ 0xff, 0xff,
 };
-#endif
-
+#else
 static const uint8_t hid_descriptor_attr_req[] = {
     /* Service Search Pattern */
         /* Data Element */
@@ -40,7 +44,7 @@ static const uint8_t hid_descriptor_attr_req[] = {
                     /* Type */ BT_SDP_UUID16,
                     /* Data Value */
                         /* UUID */ (BT_SDP_HID_SVCLASS >> 8), (BT_SDP_HID_SVCLASS & 0xff),
-    /* Max Att Byte */ 0x08, 0x00, /* 2048 */
+    /* Max Att Byte */ 0x04, 0x00, /* 1024 */
     /* Att ID List */
         /* Data Element */
             /* Type */ BT_SDP_SEQ8,
@@ -62,7 +66,7 @@ static const uint8_t pnp_attr_req[] = {
                     /* Type */ BT_SDP_UUID16,
                     /* Data Value */
                         /* UUID */ (BT_SDP_PNP_INFO_SVCLASS >> 8), (BT_SDP_PNP_INFO_SVCLASS & 0xff),
-    /* Max Att Byte */ 0x08, 0x00, /* 2048 */
+    /* Max Att Byte */ 0x04, 0x00, /* 1024 */
     /* Att ID List */
         /* Data Element */
             /* Type */ BT_SDP_SEQ8,
@@ -74,6 +78,7 @@ static const uint8_t pnp_attr_req[] = {
                         /* Att Range */ (BT_SDP_ATTR_VENDOR_ID >> 8), (BT_SDP_ATTR_VENDOR_ID & 0xff),
                             /* to */    (BT_SDP_ATTR_PRODUCT_ID >> 8), (BT_SDP_ATTR_PRODUCT_ID & 0xff),
 };
+#endif
 
 static const uint8_t xb1_svc_search_attr_rsp[] = {
     0x35, 0x0a, 0x35, 0x08, 0x09, 0x00, 0x01, 0x35, 0x03, 0x19, 0x12, 0x00
@@ -155,13 +160,6 @@ static void bt_sdp_cmd_svc_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid,
     bt_sdp_cmd(handle, cid, BT_SDP_SVC_ATTR_RSP, tid, sizeof(struct bt_sdp_att_rsp) + len + 1);
 }
 
-static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device) {
-    memcpy(bt_hci_pkt_tmp.sdp_data, pnp_attr_req, sizeof(pnp_attr_req));
-    *(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req)) = 0;
-
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + 1);
-}
-
 static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16_t tid, const uint8_t *data, uint32_t len) {
     struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_pkt_tmp.sdp_data;
     uint8_t *sdp_data = bt_hci_pkt_tmp.sdp_data + sizeof(struct bt_sdp_att_rsp);
@@ -176,12 +174,28 @@ static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16
     bt_sdp_cmd(handle, cid, BT_SDP_SVC_SEARCH_ATTR_RSP, tid, sizeof(struct bt_sdp_att_rsp) + len + 1);
 }
 
-void bt_sdp_cmd_hid_desc_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
+#ifdef SDP_GET_ALL_L2CAP_ATTR
+void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
+    memcpy(bt_hci_pkt_tmp.sdp_data, l2cap_attr_req, sizeof(l2cap_attr_req));
+    memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(l2cap_attr_req), cont_data, cont_len);
+
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(l2cap_attr_req) + cont_len);
+}
+#else
+void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
     memcpy(bt_hci_pkt_tmp.sdp_data, hid_descriptor_attr_req, sizeof(hid_descriptor_attr_req));
     memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(hid_descriptor_attr_req), cont_data, cont_len);
 
     bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(hid_descriptor_attr_req) + cont_len);
 }
+
+static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device) {
+    memcpy(bt_hci_pkt_tmp.sdp_data, pnp_attr_req, sizeof(pnp_attr_req));
+    *(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req)) = 0;
+
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + 1);
+}
+#endif
 
 void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sdp_hdr.op_code) {
@@ -209,18 +223,29 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
+            uint32_t cp_len, target_len = bt_adapter.data[device->id].hid_desc_len + sys_be16_to_cpu(att_rsp->att_list_len);
+
+            if (target_len > sizeof(bt_adapter.data[device->id].hid_desc)) {
+                cp_len = sizeof(bt_adapter.data[device->id].hid_desc) - bt_adapter.data[device->id].hid_desc_len;
+            }
+            else {
+                cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
+            }
 
             switch (device->sdp_state) {
                 case 0:
-                    memcpy(bt_adapter.data[device->id].hid_desc + bt_adapter.data[device->id].hid_desc_len,
-                        sdp_data, sys_be16_to_cpu(att_rsp->att_list_len));
-                    bt_adapter.data[device->id].hid_desc_len += sys_be16_to_cpu(att_rsp->att_list_len);
+                    memcpy(bt_adapter.data[device->id].hid_desc + bt_adapter.data[device->id].hid_desc_len, sdp_data, cp_len);
+                    bt_adapter.data[device->id].hid_desc_len += cp_len;
                     if (*sdp_con_state) {
-                        bt_sdp_cmd_hid_desc_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
+                        bt_sdp_cmd_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
                     }
                     else {
+#ifdef SDP_GET_ALL_L2CAP_ATTR
+                        bt_l2cap_cmd_sdp_disconn_req(device);
+#else
                         bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device);
                         device->sdp_state++;
+#endif
                     }
                     break;
                 case 1:
