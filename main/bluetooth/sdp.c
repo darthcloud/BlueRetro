@@ -114,14 +114,43 @@ static const uint8_t xb1_svc_attr_rsp[] = {
 static uint16_t tx_tid = 0;
 
 static void bt_sdp_parser(uint8_t *data, uint32_t len) {
-    const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06, 0x36};
+    const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
     uint8_t *hid_desc = NULL;
     uint32_t hid_desc_len = 0;
 
     hid_desc = memmem(data, len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
 
+    printf("# %s %p %u\n", __FUNCTION__, hid_desc, len);
+
     if (hid_desc) {
-        hid_desc += 11;
+        printf("# %02X\n", *hid_desc);
+        hid_desc += 3;
+        printf("# %02X\n", *hid_desc);
+
+        switch (*hid_desc) {
+            case BT_SDP_SEQ8:
+                hid_desc += 2;
+                break;
+            case BT_SDP_SEQ16:
+                hid_desc += 3;
+                break;
+            case BT_SDP_SEQ32:
+                hid_desc += 5;
+                break;
+        }
+
+        switch (*hid_desc) {
+            case BT_SDP_SEQ8:
+                hid_desc += 4;
+                break;
+            case BT_SDP_SEQ16:
+                hid_desc += 5;
+                break;
+            case BT_SDP_SEQ32:
+                hid_desc += 7;
+                break;
+        }
+
         switch (*hid_desc) {
             case BT_SDP_TEXT_STR8:
                 hid_desc++;
