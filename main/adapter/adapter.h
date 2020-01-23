@@ -293,8 +293,8 @@ struct bt_data {
     uint32_t report_cnt;
     uint8_t input[128];
     int32_t axes_cal[6];
-    uint32_t hid_desc_len;
-    uint8_t hid_desc[1024];
+    uint32_t sdp_len;
+    uint8_t sdp_data[1024];
 } __packed;
 
 struct wired_data {

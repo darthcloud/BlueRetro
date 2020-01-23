@@ -223,10 +223,10 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
-            uint32_t cp_len, target_len = bt_adapter.data[device->id].hid_desc_len + sys_be16_to_cpu(att_rsp->att_list_len);
+            uint32_t cp_len, target_len = bt_adapter.data[device->id].sdp_len + sys_be16_to_cpu(att_rsp->att_list_len);
 
-            if (target_len > sizeof(bt_adapter.data[device->id].hid_desc)) {
-                cp_len = sizeof(bt_adapter.data[device->id].hid_desc) - bt_adapter.data[device->id].hid_desc_len;
+            if (target_len > sizeof(bt_adapter.data[device->id].sdp_data)) {
+                cp_len = sizeof(bt_adapter.data[device->id].sdp_data) - bt_adapter.data[device->id].sdp_len;
             }
             else {
                 cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
@@ -234,8 +234,8 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 
             switch (device->sdp_state) {
                 case 0:
-                    memcpy(bt_adapter.data[device->id].hid_desc + bt_adapter.data[device->id].hid_desc_len, sdp_data, cp_len);
-                    bt_adapter.data[device->id].hid_desc_len += cp_len;
+                    memcpy(bt_adapter.data[device->id].sdp_data + bt_adapter.data[device->id].sdp_len, sdp_data, cp_len);
+                    bt_adapter.data[device->id].sdp_len += cp_len;
                     if (*sdp_con_state) {
                         bt_sdp_cmd_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
                     }
