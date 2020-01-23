@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "../zephyr/types.h"
 #include "../zephyr/sdp.h"
 #include "../util.h"
@@ -111,6 +112,36 @@ static const uint8_t xb1_svc_attr_rsp[] = {
 };
 
 static uint16_t tx_tid = 0;
+
+static void bt_sdp_parser(uint8_t *data, uint32_t len) {
+    const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06, 0x36};
+    uint8_t *hid_desc = NULL;
+    uint32_t hid_desc_len = 0;
+
+    hid_desc = memmem(data, len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
+
+    if (hid_desc) {
+        hid_desc += 11;
+        switch (*hid_desc) {
+            case BT_SDP_TEXT_STR8:
+                hid_desc++;
+                hid_desc_len = *hid_desc;
+                hid_desc++;
+                break;
+            case BT_SDP_TEXT_STR16:
+                hid_desc++;
+                hid_desc_len = sys_be16_to_cpu(*(uint16_t *)hid_desc);
+                hid_desc += 2;
+                break;
+            case BT_SDP_TEXT_STR32:
+                hid_desc++;
+                hid_desc_len = sys_be32_to_cpu(*(uint32_t *)hid_desc);
+                hid_desc += 4;
+                break;
+        }
+        printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
+    }
+}
 
 static void bt_sdp_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint16_t tid, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
@@ -242,6 +273,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     else {
 #ifdef SDP_GET_ALL_L2CAP_ATTR
                         bt_l2cap_cmd_sdp_disconn_req(device);
+                        bt_sdp_parser(bt_adapter.data[device->id].sdp_data, bt_adapter.data[device->id].sdp_len);
 #else
                         bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device);
                         device->sdp_state++;
