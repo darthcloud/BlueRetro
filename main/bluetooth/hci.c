@@ -849,7 +849,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     if (device) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1, sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
-                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 12)[0]);
+                        device->type = bt_hid_minor_class_to_type(((uint8_t *)inquiry_result + 9)[0]);
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
