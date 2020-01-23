@@ -37,6 +37,14 @@ static void bt_l2cap_cmd(uint16_t handle, uint8_t code, uint8_t ident, uint16_t 
     bt_host_txq_add((uint8_t *)&bt_hci_pkt_tmp, packet_len);
 }
 
+static void bt_l2cap_cmd_info_req(uint16_t handle, uint8_t ident, uint16_t type) {
+    struct bt_l2cap_info_req *info_req = (struct bt_l2cap_info_req *)bt_hci_pkt_tmp.sig_data;
+
+    info_req->type = type;
+
+    bt_l2cap_cmd(handle, BT_L2CAP_INFO_REQ, ident, sizeof(*info_req));
+}
+
 static void bt_l2cap_cmd_conn_req(uint16_t handle, uint8_t ident, uint16_t psm, uint16_t scid) {
     struct bt_l2cap_conn_req *conn_req = (struct bt_l2cap_conn_req *)bt_hci_pkt_tmp.sig_data;
 
@@ -109,6 +117,12 @@ void bt_l2cap_init_dev_scid(struct bt_dev *device) {
     device->sdp_tx_chan.scid = device->id | BT_HOST_SDP_TX_CHAN;
     device->ctrl_chan.scid = device->id | BT_HOST_HID_CTRL_CHAN;
     device->intr_chan.scid = device->id | BT_HOST_HID_INTR_CHAN;
+}
+
+void bt_l2cap_cmd_ext_feat_mask_req(void *bt_dev) {
+    struct bt_dev *device = (struct bt_dev *)bt_dev;
+    printf("# %s\n", __FUNCTION__);
+    bt_l2cap_cmd_info_req(device->acl_handle, tx_ident++, BT_L2CAP_INFO_FEAT_MASK);
 }
 
 void bt_l2cap_cmd_sdp_conn_req(void *bt_dev) {
