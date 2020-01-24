@@ -954,7 +954,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     printf("# dev: %d Pairing done\n", device->id);
-                    bt_l2cap_cmd_ext_feat_mask_req(device);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                         if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
                             bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
@@ -1032,7 +1031,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         atomic_set_bit(&device->flags, BT_DEV_ENCRYPTION);
                     }
                 }
-                //bt_l2cap_cmd_sdp_conn_req(device);
+                bt_l2cap_cmd_ext_feat_mask_req(device);
             }
             else {
                 printf("# dev NULL!\n");

@@ -25,6 +25,7 @@ enum {
 struct l2cap_chan {
     uint16_t scid;
     uint16_t dcid;
+    uint16_t mtu;
 };
 
 struct bt_dev {
