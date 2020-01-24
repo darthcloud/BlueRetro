@@ -297,7 +297,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     else {
 #ifdef SDP_GET_ALL_L2CAP_ATTR
                         bt_l2cap_cmd_sdp_disconn_req(device);
-                        bt_sdp_parser(bt_adapter.data[device->id].sdp_data, bt_adapter.data[device->id].sdp_len);
+                        atomic_set_bit(&device->flags, BT_DEV_SDP_DATA);
 #else
                         bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device);
                         device->sdp_state++;

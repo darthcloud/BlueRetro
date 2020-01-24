@@ -17,6 +17,7 @@
 
 #define BT_TX 0
 #define BT_RX 1
+#define BT_DEV_MAX 7
 
 #define LINK_KEYS_FILE "/sd/linkkeys.bin"
 
@@ -35,7 +36,7 @@ struct bt_hci_pkt bt_hci_pkt_tmp;
 static struct bt_host_link_keys bt_host_link_keys = {0};
 static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev_conf = {0};
-static struct bt_dev bt_dev[7] = {0};
+static struct bt_dev bt_dev[BT_DEV_MAX] = {0};
 static atomic_t bt_flags = 0;
 static uint32_t frag_size = 0;
 static uint32_t frag_offset = 0;
@@ -122,6 +123,16 @@ static void bt_host_task(void *param) {
     uint8_t *packet, *fb_data;
 
     while(1) {
+        /* Per device housekeeping */
+        for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+            if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
+                if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA)) {
+                    bt_sdp_parser(bt_adapter.data[i].sdp_data, bt_adapter.data[i].sdp_len);
+                    atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
+                }
+            }
+        }
+
         /* Look for rumble/led feedback data */
         fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, 0);
         if (fb_data) {
@@ -238,7 +249,7 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
 }
 
 int32_t bt_host_get_new_dev(struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
+    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
         if (!atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             *device = &bt_dev[i];
             return i;
@@ -248,7 +259,7 @@ int32_t bt_host_get_new_dev(struct bt_dev **device) {
 }
 
 int32_t bt_host_get_active_dev(struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
+    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             *device = &bt_dev[i];
             return i;
@@ -258,7 +269,7 @@ int32_t bt_host_get_active_dev(struct bt_dev **device) {
 }
 
 int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
+    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
             *device = &bt_dev[i];
             return i;
@@ -268,7 +279,7 @@ int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device) {
 }
 
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
-    for (uint32_t i = 0; i < 7; i++) {
+    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && bt_acl_handle(handle) == bt_dev[i].acl_handle) {
             *device = &bt_dev[i];
             return i;
