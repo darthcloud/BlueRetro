@@ -291,6 +291,9 @@ struct bt_data {
     int32_t dev_type;
     uint32_t report_id;
     uint32_t report_cnt;
+    uint32_t report_pad;
+    uint32_t report_kb;
+    uint32_t report_m;
     uint8_t input[128];
     int32_t axes_cal[6];
     uint32_t sdp_len;
