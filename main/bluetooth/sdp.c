@@ -8,8 +8,7 @@
 #include "sdp.h"
 
 /* We only care about HID Descriptor and maybe PNP vendor/product ID */
-/* But some device poorly implement SDP (as we do here...) and freak out when you are so specific (MX5000 KB) */
-/* Safe bet is to request all L2CAP attribute like BlueZ do */
+/* But safer to request all L2CAP attribute like BlueZ do */
 #define SDP_GET_ALL_L2CAP_ATTR 1
 
 #ifdef SDP_GET_ALL_L2CAP_ATTR
@@ -113,65 +112,6 @@ static const uint8_t xb1_svc_attr_rsp[] = {
 
 static uint16_t tx_tid = 0;
 
-static void bt_sdp_parser(uint8_t *data, uint32_t len) {
-    const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
-    uint8_t *hid_desc = NULL;
-    uint32_t hid_desc_len = 0;
-
-    hid_desc = memmem(data, len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
-
-    printf("# %s %p %u\n", __FUNCTION__, hid_desc, len);
-
-    if (hid_desc) {
-        printf("# %02X\n", *hid_desc);
-        hid_desc += 3;
-        printf("# %02X\n", *hid_desc);
-
-        switch (*hid_desc) {
-            case BT_SDP_SEQ8:
-                hid_desc += 2;
-                break;
-            case BT_SDP_SEQ16:
-                hid_desc += 3;
-                break;
-            case BT_SDP_SEQ32:
-                hid_desc += 5;
-                break;
-        }
-
-        switch (*hid_desc) {
-            case BT_SDP_SEQ8:
-                hid_desc += 4;
-                break;
-            case BT_SDP_SEQ16:
-                hid_desc += 5;
-                break;
-            case BT_SDP_SEQ32:
-                hid_desc += 7;
-                break;
-        }
-
-        switch (*hid_desc) {
-            case BT_SDP_TEXT_STR8:
-                hid_desc++;
-                hid_desc_len = *hid_desc;
-                hid_desc++;
-                break;
-            case BT_SDP_TEXT_STR16:
-                hid_desc++;
-                hid_desc_len = sys_be16_to_cpu(*(uint16_t *)hid_desc);
-                hid_desc += 2;
-                break;
-            case BT_SDP_TEXT_STR32:
-                hid_desc++;
-                hid_desc_len = sys_be32_to_cpu(*(uint32_t *)hid_desc);
-                hid_desc += 4;
-                break;
-        }
-        printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
-    }
-}
-
 static void bt_sdp_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint16_t tid, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
         + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_sdp_hdr) + len);
@@ -242,20 +182,75 @@ void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, u
     bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(l2cap_attr_req) + cont_len);
 }
 #else
-void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
-    memcpy(bt_hci_pkt_tmp.sdp_data, hid_descriptor_attr_req, sizeof(hid_descriptor_attr_req));
-    memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(hid_descriptor_attr_req), cont_data, cont_len);
-
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(hid_descriptor_attr_req) + cont_len);
-}
-
 static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device) {
     memcpy(bt_hci_pkt_tmp.sdp_data, pnp_attr_req, sizeof(pnp_attr_req));
     *(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req)) = 0;
 
     bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + 1);
 }
+
+void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
+    memcpy(bt_hci_pkt_tmp.sdp_data, hid_descriptor_attr_req, sizeof(hid_descriptor_attr_req));
+    memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(hid_descriptor_attr_req), cont_data, cont_len);
+
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(hid_descriptor_attr_req) + cont_len);
+}
 #endif
+
+void bt_sdp_parser(uint8_t *data, uint32_t len) {
+    const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
+    uint8_t *hid_desc = NULL;
+    uint32_t hid_desc_len = 0;
+
+    hid_desc = memmem(data, len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
+
+    if (hid_desc) {
+        hid_desc += 3;
+
+        switch (*hid_desc) {
+            case BT_SDP_SEQ8:
+                hid_desc += 2;
+                break;
+            case BT_SDP_SEQ16:
+                hid_desc += 3;
+                break;
+            case BT_SDP_SEQ32:
+                hid_desc += 5;
+                break;
+        }
+
+        switch (*hid_desc) {
+            case BT_SDP_SEQ8:
+                hid_desc += 4;
+                break;
+            case BT_SDP_SEQ16:
+                hid_desc += 5;
+                break;
+            case BT_SDP_SEQ32:
+                hid_desc += 7;
+                break;
+        }
+
+        switch (*hid_desc) {
+            case BT_SDP_TEXT_STR8:
+                hid_desc++;
+                hid_desc_len = *hid_desc;
+                hid_desc++;
+                break;
+            case BT_SDP_TEXT_STR16:
+                hid_desc++;
+                hid_desc_len = sys_be16_to_cpu(*(uint16_t *)hid_desc);
+                hid_desc += 2;
+                break;
+            case BT_SDP_TEXT_STR32:
+                hid_desc++;
+                hid_desc_len = sys_be32_to_cpu(*(uint32_t *)hid_desc);
+                hid_desc += 4;
+                break;
+        }
+        printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
+    }
+}
 
 void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sdp_hdr.op_code) {
