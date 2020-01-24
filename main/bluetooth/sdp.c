@@ -3,6 +3,7 @@
 #include "../zephyr/types.h"
 #include "../zephyr/sdp.h"
 #include "../util.h"
+#include "../adapter/hid_parser.h"
 #include "host.h"
 #include "l2cap.h"
 #include "sdp.h"
@@ -249,6 +250,7 @@ void bt_sdp_parser(uint8_t *data, uint32_t len) {
                 break;
         }
         printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
+        hid_parser(hid_desc, hid_desc_len);
     }
 }
 
