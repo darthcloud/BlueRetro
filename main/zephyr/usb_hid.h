@@ -22,6 +22,7 @@
 extern "C" {
 #endif
 
+#ifndef BLUERETRO
 struct usb_hid_class_subdescriptor {
 	u8_t bDescriptorType;
 	u16_t wDescriptorLength;
@@ -40,6 +41,7 @@ struct usb_hid_descriptor {
 	 */
 	struct usb_hid_class_subdescriptor subdesc[1];
 } __packed;
+#endif /* BLUERETRO */
 
 /* HID Class Descriptor Types */
 
@@ -57,6 +59,7 @@ struct usb_hid_descriptor {
 
 /* Public headers */
 
+#ifndef BLUERETRO
 typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
 			u8_t **data);
 typedef void (*hid_int_ready_callback)(void);
@@ -84,6 +87,7 @@ struct hid_ops {
 #endif
 	usb_dc_status_callback status_cb;
 };
+#endif /* BLUERETRO */
 
 /* HID Report Definitions */
 
@@ -431,6 +435,7 @@ enum hid_kbd_led {
 	HID_KBD_LED_KANA	= 0x10,
 };
 
+#ifndef BLUERETRO
 /* Register HID device */
 void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
@@ -445,6 +450,7 @@ int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
 
 /* Initialize USB HID */
 int usb_hid_init(const struct device *dev);
+#endif /* BLUERETRO */
 
 #ifdef __cplusplus
 }
