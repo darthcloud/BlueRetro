@@ -36,11 +36,17 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case HID_GI_LOGICAL_MIN(2): /* 0x16 */
                 ptr += 2;
                 break;
+            case HID_GI_LOGICAL_MIN(3): /* 0x17 */
+                ptr += 4;
+                break;
             case HID_GI_LOGICAL_MAX(1): /* 0x25 */
                 ptr++;
                 break;
             case HID_GI_LOGICAL_MAX(2): /* 0x26 */
-                ptr++;
+                ptr += 2;
+                break;
+            case HID_GI_LOGICAL_MAX(3): /* 0x27 */
+                ptr += 4;
                 break;
             case HID_LI_USAGE_MAX(1): /* 0x29 */
                 ptr++;
@@ -57,6 +63,15 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case 0x46: /* PHYSICAL_MAX16 */
                 ptr += 2;
                 break;
+            case 0x55: /* UNIT_EXP */
+                ptr++;
+                break;
+            case 0x65: /* UNIT */
+                ptr++;
+                break;
+            case 0x66: /* UNIT16 */
+                ptr += 2;
+                break;
             case HID_GI_REPORT_SIZE: /* 0x75 */
                 ptr++;
                 break;
@@ -66,7 +81,11 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case HID_GI_REPORT_ID: /* 0x85 */
                 /* process previous report fingerprint */
                 if (report_id) {
-                    printf("# %d %s\n", report_id, hid_fingerprint);
+                    printf("# %d ", report_id);
+                    for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
+                        printf("%02X", *p);
+                    }
+                    printf("\n");
                 }
                 memset(hid_fingerprint, 0 , sizeof(hid_fingerprint));
                 ptr_fp = hid_fingerprint;
@@ -83,11 +102,20 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 break;
             case HID_MI_COLLECTION: /* 0xA1 */
                 ptr++;
+                ptr_fp = hid_fingerprint;
                 break;
             case 0xB1: /* FEATURE */
                 ptr++;
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
+                if (report_id) {
+                    printf("# %d ", report_id);
+                    for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
+                        printf("%02X", *p);
+                    }
+                    printf("\n");
+                    report_id = 0;
+                }
                 break;
             default:
                 printf("# Unknown HID marker: %02X\n", *--ptr);
