@@ -83,7 +83,7 @@ static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid,
     conf_rsp->result = BT_L2CAP_CONF_SUCCESS;
     conf_opt->type = BT_L2CAP_CONF_OPT_MTU;
     conf_opt->len = sizeof(uint16_t);
-    *(uint16_t *)conf_opt->data = mtu;
+    *(uint16_t *)conf_opt->data = mtu ? mtu : 0x02A0;
 
     bt_l2cap_cmd(handle, BT_L2CAP_CONF_RSP, ident,
         ((sizeof(*conf_rsp) - sizeof(conf_rsp->data)) + (sizeof(*conf_opt) - sizeof(conf_opt->data)) + sizeof(uint16_t)));
