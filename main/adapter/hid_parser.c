@@ -108,14 +108,39 @@ static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
     }
 }
 
+struct hid_usage {
+    uint8_t usage_page;
+    uint8_t usage;
+    uint8_t bit_offset;
+    uint8_t bit_size;
+};
+
+struct hid_report {
+    uint8_t id;
+    uint8_t type;
+    struct hid_usage usage[8];
+};
+
+struct hid_reports {
+    struct hid_report kb;
+    struct hid_report ptr;
+    struct hid_report pad;
+    struct hid_report extra;
+};
+
 void hid_parser(uint8_t *data, uint32_t len) {
+    struct hid_reports reports = {0};
+    struct hid_report wip_report;
+    uint8_t usage_list[16] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t usage_page = 0;
-    uint8_t usage = 0;
+    uint8_t *usage = usage_list;
     uint8_t report_id = 0;
-    uint8_t hid_fingerprint[64];
-    uint8_t *ptr_fp = hid_fingerprint;
+    uint32_t report_size = 0;
+    uint32_t report_cnt = 0;
+    uint32_t report_bit_offset = 0;
+    uint32_t report_usage_idx = 0;
 
     while (desc < end) {
         switch (*desc++) {
@@ -127,13 +152,13 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 break;
             case HID_LI_USAGE: /* 0x09 */
             case HID_LI_USAGE_MIN(1): /* 0x19 */
-                usage = *desc++;
-                if (!hid_usage_is_collection(usage_page, usage)) {
-                    *ptr_fp++ = usage_page;
-                    *ptr_fp++ = usage;
+                if (!hid_usage_is_collection(usage_page, *desc)) {
+                    *usage++ = *desc;
                 }
+                desc++;
                 break;
             case 0x0A: /* USAGE16 */
+                *usage++ = 0xFF;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
@@ -179,37 +204,73 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 desc += 2;
                 break;
             case HID_GI_REPORT_SIZE: /* 0x75 */
-                desc++;
+                report_size = *desc++;
                 break;
             case HID_MI_INPUT: /* 0x81 */
+                if (!(*desc & 0x01)) {
+                    if (report_size == 1) {
+                        wip_report.usage[report_usage_idx].usage_page = usage_page;
+                        wip_report.usage[report_usage_idx].usage = usage_list[0];
+                        wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
+                        wip_report.usage[report_usage_idx].bit_size = report_cnt * report_size;
+                        printf("%02X%02X %u %u ", usage_page, usage_list[0], report_bit_offset, report_cnt * report_size);
+                        report_bit_offset += report_cnt * report_size;
+                        ++report_usage_idx;
+                    }
+                    else {
+                        const uint32_t idx_end = report_usage_idx + report_cnt;
+                        for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
+                            wip_report.usage[report_usage_idx].usage_page = usage_page;
+                            printf("%02X", usage_page);
+                            if (usage == usage_list) {
+                                wip_report.usage[report_usage_idx].usage = usage_list[0];
+                                printf("%02X ", usage_list[0]);
+                            }
+                            else {
+                                wip_report.usage[report_usage_idx].usage = usage_list[i];
+                                printf("%02X ", usage_list[i]);
+                            }
+                            wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
+                            wip_report.usage[report_usage_idx].bit_size = report_size;
+                            printf("%u %u, ", report_bit_offset, report_size);
+                            report_bit_offset += report_size;
+                        }
+                    }
+                }
+                else {
+                    report_bit_offset += report_size * report_cnt;
+                }
+                usage = usage_list;
                 desc++;
                 break;
             case HID_GI_REPORT_ID: /* 0x85 */
                 /* process previous report fingerprint */
                 if (report_id) {
-                    printf("# %d ", report_id);
-                    for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
-                        printf("%02X", *p);
-                    }
                     printf("\n");
                 }
-                memset(hid_fingerprint, 0 , sizeof(hid_fingerprint));
-                ptr_fp = hid_fingerprint;
+                memset((void *)&wip_report, 0, sizeof(wip_report));
                 report_id = *desc++;
+                wip_report.id = report_id;
+                report_usage_idx = 0;
+                report_bit_offset = 0;
+                printf("# %d ", report_id);
                 break;
             case HID_MI_OUTPUT: /* 0x91 */
+                usage = usage_list;
                 desc++;
                 break;
             case HID_GI_REPORT_COUNT: /* 0x95 */
-                desc++;
+                report_cnt = *desc++;
                 break;
             case 0x96: /* REPORT_COUNT16 */
+                report_cnt = *(uint16_t *)desc;
                 desc += 2;
                 break;
             case HID_MI_COLLECTION: /* 0xA1 */
                 desc++;
                 break;
             case 0xB1: /* FEATURE */
+                usage = usage_list;
                 desc++;
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
@@ -220,11 +281,6 @@ void hid_parser(uint8_t *data, uint32_t len) {
         }
     }
     if (report_id) {
-        printf("# %d ", report_id);
-        for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
-            printf("%02X", *p);
-        }
         printf("\n");
-        report_id = 0;
     }
 }
