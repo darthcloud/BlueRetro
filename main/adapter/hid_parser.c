@@ -223,7 +223,7 @@ void hid_parser(uint8_t *data, uint32_t len) {
                         for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
                             wip_report.usage[report_usage_idx].usage_page = usage_page;
                             printf("%02X", usage_page);
-                            if (usage == usage_list) {
+                            if (usage == usage_list || usage == usage_list+1) {
                                 wip_report.usage[report_usage_idx].usage = usage_list[0];
                                 printf("%02X ", usage_list[0]);
                             }
