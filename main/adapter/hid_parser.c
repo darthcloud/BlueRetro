@@ -4,6 +4,110 @@
 #include "hid_parser.h"
 #include "../zephyr/usb_hid.h"
 
+static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
+    switch (page) {
+        case 0x01: /* Generic Desktop Ctrls */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x04:
+                case 0x05:
+                case 0x06:
+                case 0x07:
+                case 0x08:
+                case 0x09:
+                case 0x3A:
+                case 0x80:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 0x02: /* Sim Ctrls */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                case 0x04:
+                case 0x05:
+                case 0x06:
+                case 0x07:
+                case 0x08:
+                case 0x09:
+                case 0x0A:
+                case 0x0B:
+                case 0x0C:
+                case 0x20:
+                case 0x21:
+                case 0x22:
+                case 0x23:
+                case 0x24:
+                case 0x25:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 0x03: /* VR Ctrls */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                case 0x04:
+                case 0x05:
+                case 0x06:
+                case 0x07:
+                case 0x08:
+                case 0x09:
+                case 0x0A:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 0x04: /* Sport Ctrls */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                case 0x04:
+                case 0x38:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 0x05: /* Game Ctrls */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                case 0x20:
+                case 0x32:
+                case 0x37:
+                case 0x39:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 0x0C: /* Consumer */
+            switch (usage) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                case 0x04:
+                case 0x05:
+                case 0x06:
+                case 0x36:
+                case 0x80:
+                case 0x87:
+                case 0xBA:
+                case 0xF1:
+                    return 1;
+                default:
+                    return 0;
+            }
+        default:
+            return 0;
+    }
+}
+
 void hid_parser(uint8_t *data, uint32_t len) {
     uint8_t *end = data + len;
     uint8_t *ptr = data;
@@ -24,8 +128,10 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case HID_LI_USAGE: /* 0x09 */
             case HID_LI_USAGE_MIN(1): /* 0x19 */
                 usage = *ptr++;
-                *ptr_fp++ = usage_page;
-                *ptr_fp++ = usage;
+                if (!hid_usage_is_collection(usage_page, usage)) {
+                    *ptr_fp++ = usage_page;
+                    *ptr_fp++ = usage;
+                }
                 break;
             case 0x0A: /* USAGE16 */
                 ptr += 2;
@@ -102,24 +208,23 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 break;
             case HID_MI_COLLECTION: /* 0xA1 */
                 ptr++;
-                ptr_fp = hid_fingerprint;
                 break;
             case 0xB1: /* FEATURE */
                 ptr++;
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
-                if (report_id) {
-                    printf("# %d ", report_id);
-                    for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
-                        printf("%02X", *p);
-                    }
-                    printf("\n");
-                    report_id = 0;
-                }
                 break;
             default:
                 printf("# Unknown HID marker: %02X\n", *--ptr);
                 return;
         }
+    }
+    if (report_id) {
+        printf("# %d ", report_id);
+        for (uint8_t *p = hid_fingerprint; *p != 0; p++) {
+            printf("%02X", *p);
+        }
+        printf("\n");
+        report_id = 0;
     }
 }
