@@ -285,8 +285,10 @@ struct raw_fb {
 struct hid_usage {
     uint8_t usage_page;
     uint8_t usage;
-    uint8_t bit_offset;
-    uint8_t bit_size;
+    uint32_t bit_offset;
+    uint32_t bit_size;
+    int32_t logical_min;
+    int32_t logical_max;
 };
 
 struct hid_report {

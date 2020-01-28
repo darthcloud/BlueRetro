@@ -120,6 +120,8 @@ void hid_parser(uint8_t *data, uint32_t len) {
     uint8_t report_id = 0;
     uint32_t report_size = 0;
     uint32_t report_cnt = 0;
+    int32_t logical_min = 0;
+    int32_t logical_max = 0;
     uint32_t report_bit_offset = 0;
     uint32_t report_usage_idx = 0;
 
@@ -144,21 +146,25 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
-                desc++;
+                logical_min = *desc++;
                 break;
             case HID_GI_LOGICAL_MIN(2): /* 0x16 */
+                logical_min = *(int16_t *)desc;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(3): /* 0x17 */
+                logical_min = *(int32_t *)desc;
                 desc += 4;
                 break;
             case HID_GI_LOGICAL_MAX(1): /* 0x25 */
-                desc++;
+                logical_max = *desc++;
                 break;
             case HID_GI_LOGICAL_MAX(2): /* 0x26 */
+                logical_max = *(int16_t *)desc;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MAX(3): /* 0x27 */
+                logical_max = *(int32_t *)desc;
                 desc += 4;
                 break;
             case HID_LI_USAGE_MAX(1): /* 0x29 */
@@ -195,6 +201,8 @@ void hid_parser(uint8_t *data, uint32_t len) {
                         wip_report.usage[report_usage_idx].usage = usage_list[0];
                         wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
                         wip_report.usage[report_usage_idx].bit_size = report_cnt * report_size;
+                        wip_report.usage[report_usage_idx].logical_min = logical_min;
+                        wip_report.usage[report_usage_idx].logical_max = logical_max;
                         printf("%02X%02X %u %u ", usage_page, usage_list[0], report_bit_offset, report_cnt * report_size);
                         report_bit_offset += report_cnt * report_size;
                         ++report_usage_idx;
@@ -217,6 +225,8 @@ void hid_parser(uint8_t *data, uint32_t len) {
                             }
                             wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
                             wip_report.usage[report_usage_idx].bit_size = report_size;
+                            wip_report.usage[report_usage_idx].logical_min = logical_min;
+                            wip_report.usage[report_usage_idx].logical_max = logical_max;
                             printf("%u %u, ", report_bit_offset, report_size);
                             report_bit_offset += report_size;
                         }
