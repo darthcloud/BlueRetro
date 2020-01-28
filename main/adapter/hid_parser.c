@@ -110,7 +110,6 @@ static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
 }
 
 void hid_parser(uint8_t *data, uint32_t len) {
-    struct hid_reports reports = {0};
     struct hid_report wip_report;
     uint8_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
@@ -279,4 +278,8 @@ void hid_parser(uint8_t *data, uint32_t len) {
     if (report_id) {
         printf("\n");
     }
+}
+
+int32_t hid_fingerprint(void) {
+    return KB;
 }

@@ -47,6 +47,17 @@ enum {
     WIRED_MAX,
 };
 
+/* Report type ID */
+enum {
+    REPORT_NONE = -1,
+    KB,
+    MOUSE,
+    PAD,
+    EXTRA,
+    RUMBLE,
+    LEDS,
+};
+
 enum {
     BTN_NONE = -1,
     PAD_LX_LEFT,
@@ -297,13 +308,6 @@ struct hid_report {
     struct hid_usage usage[REPORT_MAX_USAGE];
 };
 
-struct hid_reports {
-    struct hid_report kb;
-    struct hid_report ptr;
-    struct hid_report pad;
-    struct hid_report extra;
-};
-
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
@@ -314,7 +318,7 @@ struct bt_data {
     int32_t dev_type;
     uint32_t report_id;
     uint32_t report_cnt;
-    struct hid_reports reports;
+    struct hid_report reports[4];
     uint8_t input[128];
     int32_t axes_cal[6];
     uint32_t sdp_len;
