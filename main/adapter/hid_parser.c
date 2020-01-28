@@ -4,8 +4,6 @@
 #include "hid_parser.h"
 #include "../zephyr/usb_hid.h"
 
-#define REPORT_MAX_USAGE 16
-
 /* List of usage we don't care about */
 static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
     switch (page) {
@@ -110,26 +108,6 @@ static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
             return 0;
     }
 }
-
-struct hid_usage {
-    uint8_t usage_page;
-    uint8_t usage;
-    uint8_t bit_offset;
-    uint8_t bit_size;
-};
-
-struct hid_report {
-    uint8_t id;
-    uint8_t type;
-    struct hid_usage usage[REPORT_MAX_USAGE];
-};
-
-struct hid_reports {
-    struct hid_report kb;
-    struct hid_report ptr;
-    struct hid_report pad;
-    struct hid_report extra;
-};
 
 void hid_parser(uint8_t *data, uint32_t len) {
     struct hid_reports reports = {0};

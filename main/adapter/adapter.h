@@ -10,6 +10,7 @@
 
 #define BT_MAX_DEV   7 /* BT limitation */
 #define WIRED_MAX_DEV 12 /* Saturn limit */
+#define REPORT_MAX_USAGE 16
 
 /* BT device ID */
 enum {
@@ -281,6 +282,26 @@ struct raw_fb {
     uint8_t data[0];
 };
 
+struct hid_usage {
+    uint8_t usage_page;
+    uint8_t usage;
+    uint8_t bit_offset;
+    uint8_t bit_size;
+};
+
+struct hid_report {
+    uint8_t id;
+    uint8_t type;
+    struct hid_usage usage[REPORT_MAX_USAGE];
+};
+
+struct hid_reports {
+    struct hid_report kb;
+    struct hid_report ptr;
+    struct hid_report pad;
+    struct hid_report extra;
+};
+
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
@@ -291,9 +312,7 @@ struct bt_data {
     int32_t dev_type;
     uint32_t report_id;
     uint32_t report_cnt;
-    uint32_t report_pad;
-    uint32_t report_kb;
-    uint32_t report_m;
+    struct hid_reports reports;
     uint8_t input[128];
     int32_t axes_cal[6];
     uint32_t sdp_len;
