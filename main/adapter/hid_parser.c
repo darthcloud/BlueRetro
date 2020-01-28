@@ -148,6 +148,7 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 usage_page = *desc++;
                 break;
             case 0x06: /* USAGE_PAGE16 */
+                usage_page = 0xFF;
                 desc += 2;
                 break;
             case HID_LI_USAGE: /* 0x09 */
@@ -207,7 +208,7 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 report_size = *desc++;
                 break;
             case HID_MI_INPUT: /* 0x81 */
-                if (!(*desc & 0x01)) {
+                if (!(*desc & 0x01) && usage_page != 0xFF && usage_list[0] != 0xFF) {
                     if (report_size == 1) {
                         wip_report.usage[report_usage_idx].usage_page = usage_page;
                         wip_report.usage[report_usage_idx].usage = usage_list[0];
