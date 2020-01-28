@@ -242,6 +242,7 @@ void hid_parser(uint8_t *data, uint32_t len) {
                     report_bit_offset += report_size * report_cnt;
                 }
                 usage = usage_list;
+                memset(usage_list, 0xFF, sizeof(usage_list));
                 desc++;
                 break;
             case HID_GI_REPORT_ID: /* 0x85 */
