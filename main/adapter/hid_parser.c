@@ -4,6 +4,9 @@
 #include "hid_parser.h"
 #include "../zephyr/usb_hid.h"
 
+#define REPORT_MAX_USAGE 16
+
+/* List of usage we don't care about */
 static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
     switch (page) {
         case 0x01: /* Generic Desktop Ctrls */
@@ -118,7 +121,7 @@ struct hid_usage {
 struct hid_report {
     uint8_t id;
     uint8_t type;
-    struct hid_usage usage[8];
+    struct hid_usage usage[REPORT_MAX_USAGE];
 };
 
 struct hid_reports {
@@ -131,7 +134,7 @@ struct hid_reports {
 void hid_parser(uint8_t *data, uint32_t len) {
     struct hid_reports reports = {0};
     struct hid_report wip_report;
-    uint8_t usage_list[16] = {0};
+    uint8_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t usage_page = 0;
@@ -208,7 +211,7 @@ void hid_parser(uint8_t *data, uint32_t len) {
                 report_size = *desc++;
                 break;
             case HID_MI_INPUT: /* 0x81 */
-                if (!(*desc & 0x01) && usage_page != 0xFF && usage_list[0] != 0xFF) {
+                if (!(*desc & 0x01) && usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
                     if (report_size == 1) {
                         wip_report.usage[report_usage_idx].usage_page = usage_page;
                         wip_report.usage[report_usage_idx].usage = usage_list[0];
@@ -219,7 +222,10 @@ void hid_parser(uint8_t *data, uint32_t len) {
                         ++report_usage_idx;
                     }
                     else {
-                        const uint32_t idx_end = report_usage_idx + report_cnt;
+                        uint32_t idx_end = report_usage_idx + report_cnt;
+                        if (idx_end > REPORT_MAX_USAGE) {
+                            idx_end = REPORT_MAX_USAGE;
+                        }
                         for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
                             wip_report.usage[report_usage_idx].usage_page = usage_page;
                             printf("%02X", usage_page);
