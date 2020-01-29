@@ -280,6 +280,10 @@ void hid_parser(uint8_t *data, uint32_t len) {
     }
 }
 
-int32_t hid_fingerprint(void) {
+int32_t hid_report_fingerprint(struct hid_report *report) {
     return KB;
+}
+
+int32_t hid_device_fingerprint(struct hid_report *report) {
+    return HID_KB;
 }
