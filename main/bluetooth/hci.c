@@ -33,7 +33,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"Nintendo RVL-CNT-01", WII_CORE},
     {"Wireless Controller", PS4_DS4},
     {"Xbox Wireless Controller", XB1_S},
-    {"Pro Controller", SWITCH_PRO},
+    {"Pro Controller", SW},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {

@@ -23,7 +23,7 @@ enum {
     WIIU_PRO,
     PS4_DS4,
     XB1_S,
-    SWITCH_PRO,
+    SW,
     BT_MAX,
 };
 
