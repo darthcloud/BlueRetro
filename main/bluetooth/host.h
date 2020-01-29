@@ -34,7 +34,7 @@ struct bt_dev {
     int32_t flags;
     uint32_t pkt_retry;
     uint8_t remote_bdaddr[6];
-    int8_t type;
+    int32_t type;
     uint16_t acl_handle;
     uint32_t sdp_state;
     uint32_t hid_state;

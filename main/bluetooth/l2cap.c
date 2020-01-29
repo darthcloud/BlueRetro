@@ -321,7 +321,9 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             break;
         case BT_L2CAP_INFO_RSP:
             printf("# BT_L2CAP_INFO_RSP\n");
-            bt_l2cap_cmd_sdp_conn_req(device);
+            if (device->type <= HID_GENERIC) {
+                bt_l2cap_cmd_sdp_conn_req(device);
+            }
             break;
     }
 }
