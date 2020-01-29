@@ -109,13 +109,54 @@ static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
     }
 }
 
-void hid_parser(uint8_t *data, uint32_t len) {
+static int32_t hid_report_fingerprint(struct hid_report *report) {
+    int32_t type = REPORT_NONE;
+    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+        if (report->usages[i].usage_page) {
+            switch (report->usages[i].usage_page) {
+                case USAGE_GEN_DESKTOP:
+                    switch (report->usages[i].usage) {
+                        case USAGE_GEN_DESKTOP_X:
+                        case USAGE_GEN_DESKTOP_Y:
+                            if (report->usages[i].flags & 0x04) {
+                                /* relative */
+                                return MOUSE;
+                            }
+                            else {
+                                return PAD;
+                            }
+                        case 0x39: /* HAT_SWITCH */
+                            return PAD;
+                        case 0x85: /* Menu */
+                            return EXTRA;
+                    }
+                    break;
+                case USAGE_GEN_KEYBOARD:
+                    return KB;
+                case USAGE_GEN_BUTTON:
+                    type = PAD;
+                    break;
+            }
+        }
+        else {
+            break;
+        }
+    }
+    return type;
+}
+
+static int32_t hid_device_fingerprint(struct hid_report *report) {
+    return HID_KB;
+}
+
+void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     struct hid_report wip_report;
     uint8_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t usage_page = 0;
     uint8_t *usage = usage_list;
+    int32_t report_type = REPORT_NONE;
     uint8_t report_id = 0;
     uint32_t report_size = 0;
     uint32_t report_cnt = 0;
@@ -243,6 +284,9 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case HID_GI_REPORT_ID: /* 0x85 */
                 /* process previous report fingerprint */
                 if (report_id) {
+                    report_type = hid_report_fingerprint(&wip_report);
+                    if (report_type != REPORT_NONE) {
+                    }
                     printf("\n");
                 }
                 memset((void *)&wip_report, 0, sizeof(wip_report));
@@ -280,44 +324,4 @@ void hid_parser(uint8_t *data, uint32_t len) {
     if (report_id) {
         printf("\n");
     }
-}
-
-int32_t hid_report_fingerprint(struct hid_report *report) {
-    int32_t type = REPORT_NONE;
-    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
-        if (report->usages[i].usage_page) {
-            switch (report->usages[i].usage_page) {
-                case USAGE_GEN_DESKTOP:
-                    switch (report->usages[i].usage) {
-                        case USAGE_GEN_DESKTOP_X:
-                        case USAGE_GEN_DESKTOP_Y:
-                            if (report->usages[i].flags & 0x04) {
-                                /* relative */
-                                return MOUSE;
-                            }
-                            else {
-                                return PAD;
-                            }
-                        case 0x39: /* HAT_SWITCH */
-                            return PAD;
-                        case 0x85: /* Menu */
-                            return EXTRA;
-                    }
-                    break;
-                case USAGE_GEN_KEYBOARD:
-                    return KB;
-                case USAGE_GEN_BUTTON:
-                    type = PAD;
-                    break;
-            }
-        }
-        else {
-            break;
-        }
-    }
-    return type;
-}
-
-int32_t hid_device_fingerprint(struct hid_report *report) {
-    return HID_KB;
 }

@@ -305,7 +305,6 @@ struct hid_usage {
 
 struct hid_report {
     uint8_t id;
-    uint8_t type;
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
 

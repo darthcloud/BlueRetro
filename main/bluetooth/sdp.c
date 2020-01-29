@@ -3,8 +3,8 @@
 #include "../zephyr/types.h"
 #include "../zephyr/sdp.h"
 #include "../util.h"
-#include "../adapter/hid_parser.h"
 #include "host.h"
+#include "../adapter/hid_parser.h"
 #include "l2cap.h"
 #include "sdp.h"
 
@@ -198,12 +198,12 @@ void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, u
 }
 #endif
 
-void bt_sdp_parser(uint8_t *data, uint32_t len) {
+void bt_sdp_parser(struct bt_data *bt_data) {
     const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
     uint8_t *hid_desc = NULL;
     uint32_t hid_desc_len = 0;
 
-    hid_desc = memmem(data, len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
+    hid_desc = memmem(bt_data->sdp_data, bt_data->sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
 
     if (hid_desc) {
         hid_desc += 3;
@@ -232,25 +232,22 @@ void bt_sdp_parser(uint8_t *data, uint32_t len) {
                 break;
         }
 
-        switch (*hid_desc) {
+        switch (*hid_desc++) {
             case BT_SDP_TEXT_STR8:
-                hid_desc++;
                 hid_desc_len = *hid_desc;
                 hid_desc++;
                 break;
             case BT_SDP_TEXT_STR16:
-                hid_desc++;
                 hid_desc_len = sys_be16_to_cpu(*(uint16_t *)hid_desc);
                 hid_desc += 2;
                 break;
             case BT_SDP_TEXT_STR32:
-                hid_desc++;
                 hid_desc_len = sys_be32_to_cpu(*(uint32_t *)hid_desc);
                 hid_desc += 4;
                 break;
         }
         printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
-        hid_parser(hid_desc, hid_desc_len);
+        hid_parser(bt_data, hid_desc, hid_desc_len);
     }
 }
 

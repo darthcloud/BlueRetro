@@ -127,7 +127,7 @@ static void bt_host_task(void *param) {
         for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
             if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
                 if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA)) {
-                    bt_sdp_parser(bt_adapter.data[i].sdp_data, bt_adapter.data[i].sdp_len);
+                    bt_sdp_parser(&bt_adapter.data[i]);
                     atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
                 }
             }
