@@ -181,14 +181,12 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
 
 static int32_t hid_device_fingerprint(struct hid_report *report) {
     uint8_t fp[REPORT_MAX_USAGE*2] = {0};
-    int32_t type = BT_NONE;
     uint32_t fp_len = 0;
 
     switch (hid_report_fingerprint(report)) {
         case KB:
-            return HID_KB;
         case MOUSE:
-            return HID_MOUSE;
+            return HID_GENERIC;
         case PAD:
             for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
                 if (report->usages[i].usage_page) {
@@ -204,9 +202,9 @@ static int32_t hid_device_fingerprint(struct hid_report *report) {
                     return hid_fp[i].dev_type;
                 }
             }
-            return HID_PAD;
+            return HID_GENERIC;
     }
-    return type;
+    return BT_NONE;
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {

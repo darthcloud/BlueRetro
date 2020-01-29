@@ -1,5 +1,5 @@
 #include "host.h"
-#include "hidp_kbm.h"
+#include "hidp_generic.h"
 #include "hidp_ps3.h"
 #include "hidp_wii.h"
 #include "hidp_ps4.h"
@@ -15,9 +15,7 @@ const uint8_t bt_hid_led_dev_id_map[] = {
 };
 
 static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
-    NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
+    NULL, /* HID_GENERIC */
     bt_hid_ps3_init, /* PS3_DS3 */
     bt_hid_wii_init, /* WII_CORE */
     bt_hid_wii_init, /* WII_NUNCHUCK */
@@ -25,13 +23,11 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     bt_hid_wii_init, /* WIIU_PRO */
     bt_hid_ps4_init, /* PS4_DS4 */
     bt_hid_xb1_init, /* XB1_S */
-    bt_hid_sw_init, /* SWITCH_PRO */
+    bt_hid_sw_init, /* SW */
 };
 
 static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
-    NULL, /* HID_PAD */
-    bt_hid_kbm_hdlr, /* HID_KB */
-    bt_hid_kbm_hdlr, /* HID_MOUSE */
+    bt_hid_generic_hdlr, /* HID_GENERIC */
     bt_hid_ps3_hdlr, /* PS3_DS3 */
     bt_hid_wii_hdlr, /* WII_CORE */
     bt_hid_wii_hdlr, /* WII_NUNCHUCK */
@@ -39,13 +35,11 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     bt_hid_wii_hdlr, /* WIIU_PRO */
     bt_hid_ps4_hdlr, /* PS4_DS4 */
     bt_hid_xb1_hdlr, /* XB1_S */
-    bt_hid_sw_hdlr, /* SWITCH_PRO */
+    bt_hid_sw_hdlr, /* SW */
 };
 
 static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
-    NULL, /* HID_PAD */
-    NULL, /* HID_KB */
-    NULL, /* HID_MOUSE */
+    NULL, /* HID_GENERIC */
     bt_hid_cmd_ps3_set_conf, /* PS3_DS3 */
     bt_hid_cmd_wii_set_feedback, /* WII_CORE */
     bt_hid_cmd_wii_set_feedback, /* WII_NUNCHUCK */
@@ -53,7 +47,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
     bt_hid_cmd_ps4_set_conf, /* PS4_DS4 */
     bt_hid_cmd_xb1_rumble, /* XB1_S */
-    bt_hid_cmd_sw_set_conf, /* SWITCH_PRO */
+    bt_hid_cmd_sw_set_conf, /* SW */
 };
 
 void bt_hid_init(struct bt_dev *device) {
@@ -72,17 +66,6 @@ void bt_hid_feedback(struct bt_dev *device, void *report) {
     if (device->type > BT_NONE && bt_hid_feedback_list[device->type]) {
         bt_hid_feedback_list[device->type](device, report);
     }
-}
-
-int8_t bt_hid_minor_class_to_type(uint8_t minor) {
-    int8_t type = HID_PAD;
-    if (minor & 0x80) {
-        type = HID_MOUSE;
-    }
-    else if (minor & 0x40) {
-        type = HID_KB;
-    }
-    return type;
 }
 
 void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t hidp_hdr, uint8_t protocol, uint16_t len) {

@@ -15,9 +15,7 @@
 /* BT device ID */
 enum {
     BT_NONE = -1,
-    HID_PAD,
-    HID_KB,
-    HID_MOUSE,
+    HID_GENERIC,
     PS3_DS3,
     WII_CORE,
     WII_NUNCHUCK,

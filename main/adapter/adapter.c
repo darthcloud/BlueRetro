@@ -37,8 +37,6 @@ const uint32_t generic_btns_mask[32] = {
 
 static to_generic_t to_generic_func[BT_MAX] = {
     NULL,
-    NULL,
-    NULL,
     ps3_to_generic,
     NULL,
     NULL,
@@ -80,8 +78,6 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
 };
 
 static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
-    NULL,
-    NULL,
     NULL,
     ps3_fb_from_generic,
     wii_fb_from_generic,
