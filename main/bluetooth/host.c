@@ -128,6 +128,10 @@ static void bt_host_task(void *param) {
             if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
                 if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA)) {
                     bt_sdp_parser(&bt_adapter.data[i]);
+                    if (bt_adapter.data[i].dev_type > HID_GENERIC) {
+                        bt_dev[i].type = bt_adapter.data[i].dev_type;
+                        bt_hid_init(&bt_dev[i]);
+                    }
                     atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
                 }
             }
