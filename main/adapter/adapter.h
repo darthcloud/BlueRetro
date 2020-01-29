@@ -52,8 +52,9 @@ enum {
     MOUSE,
     PAD,
     EXTRA,
-    RUMBLE,
-    LEDS,
+    REPORT_MAX,
+    //RUMBLE,
+    //LEDS,
 };
 
 enum {
@@ -303,6 +304,7 @@ struct hid_usage {
 
 struct hid_report {
     uint8_t id;
+    uint32_t len;
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
 
@@ -316,7 +318,8 @@ struct bt_data {
     int32_t dev_type;
     uint32_t report_id;
     uint32_t report_cnt;
-    struct hid_report reports[4];
+    int32_t report_type;
+    struct hid_report reports[REPORT_MAX];
     uint8_t input[128];
     int32_t axes_cal[6];
     uint32_t sdp_len;
