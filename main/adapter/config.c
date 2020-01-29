@@ -23,8 +23,8 @@ static void config_init_struct(struct config *data) {
         data->out_cfg[i].acc_mode = 0x00;
         data->in_cfg[i].bt_dev_id = 0x00;
         data->in_cfg[i].bt_subdev_id = 0x00;
-        data->in_cfg[i].map_size = KB_MAX;
-        for (uint32_t j = 0; j < KB_MAX; j++) {
+        data->in_cfg[i].map_size = KBM_MAX;
+        for (uint32_t j = 0; j < KBM_MAX; j++) {
             data->in_cfg[i].map_cfg[j].src_btn = j;
             data->in_cfg[i].map_cfg[j].dst_btn = j;
             data->in_cfg[i].map_cfg[j].dst_id = i;
