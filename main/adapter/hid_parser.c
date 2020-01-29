@@ -4,6 +4,40 @@
 #include "hid_parser.h"
 #include "../zephyr/usb_hid.h"
 
+struct hid_fingerprint {
+    int32_t dev_type;
+    uint32_t fp_len;
+    uint8_t fp[REPORT_MAX_USAGE*2];
+};
+
+static const struct hid_fingerprint hid_fp[] = {
+    {
+        .dev_type = PS3_DS3,
+        .fp_len = 10,
+        .fp = {0x09, 0x01, 0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35},
+    },
+    {
+        .dev_type = PS4_DS4,
+        .fp_len = 16,
+        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35, 0x01, 0x39, 0x09, 0x01, 0x01, 0x33, 0x01, 0x34},
+    },
+    {
+        .dev_type = XB1_S,
+        .fp_len = 16,
+        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34, 0x01, 0x32, 0x01, 0x35, 0x01, 0x39, 0x09, 0x01},
+    },
+    {
+        .dev_type = XB1_S,
+        .fp_len = 16,
+        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35, 0x02, 0xC5, 0x02, 0xC4, 0x01, 0x39, 0x09, 0x01},
+    },
+    {
+        .dev_type = SWITCH_PRO,
+        .fp_len = 12,
+        .fp = {0x09, 0x01, 0x01, 0x39, 0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34},
+    },
+};
+
 /* List of usage we don't care about */
 static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
     switch (page) {
@@ -146,7 +180,33 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
 }
 
 static int32_t hid_device_fingerprint(struct hid_report *report) {
-    return HID_KB;
+    uint8_t fp[REPORT_MAX_USAGE*2] = {0};
+    int32_t type = BT_NONE;
+    uint32_t fp_len = 0;
+
+    switch (hid_report_fingerprint(report)) {
+        case KB:
+            return HID_KB;
+        case MOUSE:
+            return HID_MOUSE;
+        case PAD:
+            for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+                if (report->usages[i].usage_page) {
+                    fp[fp_len++] = report->usages[i].usage_page;
+                    fp[fp_len++] = report->usages[i].usage;
+                }
+                else {
+                    break;
+                }
+            }
+            for (uint32_t i = 0; i < sizeof(hid_fp)/sizeof(hid_fp[0]); i++) {
+                if (memcmp(hid_fp[i].fp, fp, fp_len) == 0) {
+                    return hid_fp[i].dev_type;
+                }
+            }
+            return HID_PAD;
+    }
+    return type;
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
@@ -157,6 +217,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t usage_page = 0;
     uint8_t *usage = usage_list;
     int32_t report_type = REPORT_NONE;
+    int32_t dev_type = BT_NONE;
     uint8_t report_id = 0;
     uint32_t report_size = 0;
     uint32_t report_cnt = 0;
@@ -286,7 +347,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 if (report_id) {
                     report_type = hid_report_fingerprint(&wip_report);
                     if (report_type != REPORT_NONE) {
+                        dev_type = hid_device_fingerprint(&wip_report);
                         memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
+                        printf("rtype: %u dtype: %u", report_type, dev_type);
                     }
                     printf("\n");
                 }
