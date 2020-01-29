@@ -286,6 +286,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 if (report_id) {
                     report_type = hid_report_fingerprint(&wip_report);
                     if (report_type != REPORT_NONE) {
+                        memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
                     }
                     printf("\n");
                 }
