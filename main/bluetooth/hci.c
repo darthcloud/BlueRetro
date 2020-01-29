@@ -27,13 +27,13 @@ static const char bt_default_pin[][5] = {
 };
 
 static const struct bt_name_type bt_name_type[] = {
-    {"PLAYSTATION(R)3 Controller", PS3_DS3},
+    {"PLAYSTATION(R)3", PS3_DS3},
     {"Nintendo RVL-CNT-01-UC", WIIU_PRO}, /* Must be before WII_CORE */
-    {"Nintendo RVL-CNT-01-TR", WII_CORE},
     {"Nintendo RVL-CNT-01", WII_CORE},
     {"Wireless Controller", PS4_DS4},
     {"Xbox Wireless Controller", XB1_S},
     {"Pro Controller", SW},
+    {"Joy-Con", SW},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
