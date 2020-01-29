@@ -386,6 +386,12 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
         }
     }
     if (report_id) {
+        report_type = hid_report_fingerprint(&wip_report);
+        if (report_type != REPORT_NONE) {
+            dev_type = hid_device_fingerprint(&wip_report);
+            memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
+            printf("rtype: %u dtype: %u", report_type, dev_type);
+        }
         printf("\n");
     }
 }
