@@ -196,12 +196,13 @@ void hid_parser(uint8_t *data, uint32_t len) {
             case HID_MI_INPUT: /* 0x81 */
                 if (!(*desc & 0x01) && usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
                     if (report_size == 1) {
-                        wip_report.usage[report_usage_idx].usage_page = usage_page;
-                        wip_report.usage[report_usage_idx].usage = usage_list[0];
-                        wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
-                        wip_report.usage[report_usage_idx].bit_size = report_cnt * report_size;
-                        wip_report.usage[report_usage_idx].logical_min = logical_min;
-                        wip_report.usage[report_usage_idx].logical_max = logical_max;
+                        wip_report.usages[report_usage_idx].usage_page = usage_page;
+                        wip_report.usages[report_usage_idx].usage = usage_list[0];
+                        wip_report.usages[report_usage_idx].flags = *desc;
+                        wip_report.usages[report_usage_idx].bit_offset = report_bit_offset;
+                        wip_report.usages[report_usage_idx].bit_size = report_cnt * report_size;
+                        wip_report.usages[report_usage_idx].logical_min = logical_min;
+                        wip_report.usages[report_usage_idx].logical_max = logical_max;
                         printf("%02X%02X %u %u ", usage_page, usage_list[0], report_bit_offset, report_cnt * report_size);
                         report_bit_offset += report_cnt * report_size;
                         ++report_usage_idx;
@@ -212,20 +213,21 @@ void hid_parser(uint8_t *data, uint32_t len) {
                             idx_end = REPORT_MAX_USAGE;
                         }
                         for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
-                            wip_report.usage[report_usage_idx].usage_page = usage_page;
+                            wip_report.usages[report_usage_idx].usage_page = usage_page;
                             printf("%02X", usage_page);
                             if (usage == usage_list || usage == usage_list+1) {
-                                wip_report.usage[report_usage_idx].usage = usage_list[0];
+                                wip_report.usages[report_usage_idx].usage = usage_list[0];
                                 printf("%02X ", usage_list[0]);
                             }
                             else {
-                                wip_report.usage[report_usage_idx].usage = usage_list[i];
+                                wip_report.usages[report_usage_idx].usage = usage_list[i];
                                 printf("%02X ", usage_list[i]);
                             }
-                            wip_report.usage[report_usage_idx].bit_offset = report_bit_offset;
-                            wip_report.usage[report_usage_idx].bit_size = report_size;
-                            wip_report.usage[report_usage_idx].logical_min = logical_min;
-                            wip_report.usage[report_usage_idx].logical_max = logical_max;
+                            wip_report.usages[report_usage_idx].flags = *desc;
+                            wip_report.usages[report_usage_idx].bit_offset = report_bit_offset;
+                            wip_report.usages[report_usage_idx].bit_size = report_size;
+                            wip_report.usages[report_usage_idx].logical_min = logical_min;
+                            wip_report.usages[report_usage_idx].logical_max = logical_max;
                             printf("%u %u, ", report_bit_offset, report_size);
                             report_bit_offset += report_size;
                         }
@@ -281,7 +283,39 @@ void hid_parser(uint8_t *data, uint32_t len) {
 }
 
 int32_t hid_report_fingerprint(struct hid_report *report) {
-    return KB;
+    int32_t type = REPORT_NONE;
+    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+        if (report->usages[i].usage_page) {
+            switch (report->usages[i].usage_page) {
+                case USAGE_GEN_DESKTOP:
+                    switch (report->usages[i].usage) {
+                        case USAGE_GEN_DESKTOP_X:
+                        case USAGE_GEN_DESKTOP_Y:
+                            if (report->usages[i].flags & 0x04) {
+                                /* relative */
+                                return MOUSE;
+                            }
+                            else {
+                                return PAD;
+                            }
+                        case 0x39: /* HAT_SWITCH */
+                            return PAD;
+                        case 0x85: /* Menu */
+                            return EXTRA;
+                    }
+                    break;
+                case USAGE_GEN_KEYBOARD:
+                    return KB;
+                case USAGE_GEN_BUTTON:
+                    type = PAD;
+                    break;
+            }
+        }
+        else {
+            break;
+        }
+    }
+    return type;
 }
 
 int32_t hid_device_fingerprint(struct hid_report *report) {
