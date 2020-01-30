@@ -13,6 +13,7 @@
 #include "n64.h"
 #include "dc.h"
 #include "gc.h"
+#include "hid_generic.h"
 #include "ps3.h"
 #include "wii.h"
 #include "ps4.h"
@@ -36,7 +37,7 @@ const uint32_t generic_btns_mask[32] = {
 };
 
 static to_generic_t to_generic_func[BT_MAX] = {
-    NULL,
+    hid_to_generic,
     ps3_to_generic,
     NULL,
     NULL,

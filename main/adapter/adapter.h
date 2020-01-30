@@ -296,6 +296,7 @@ struct hid_usage {
 };
 
 struct hid_report {
+    atomic_t flags;
     uint8_t id;
     uint32_t len;
     struct hid_usage usages[REPORT_MAX_USAGE];
