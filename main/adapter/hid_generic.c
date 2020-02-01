@@ -101,7 +101,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (buttons & hid_btns_mask[MOUSE][i]) {
-                ctrl_data->btns[0].value |= hid_btns_mask[MOUSE][i];
+                ctrl_data->btns[0].value |= generic_btns_mask[i];
             }
         }
     }
