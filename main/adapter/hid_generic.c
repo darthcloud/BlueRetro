@@ -115,7 +115,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
 
     for (uint32_t i = 0; i < sizeof(hid_axes_idx[MOUSE]); i++) {
         if (hid_axes_idx[MOUSE][i] > -1) {
-            uint32_t len = bt_data->reports[MOUSE].usages[hid_axes_idx[MOUSE][i]].bit_size;
+            int32_t len = bt_data->reports[MOUSE].usages[hid_axes_idx[MOUSE][i]].bit_size;
             uint32_t offset = bt_data->reports[MOUSE].usages[hid_axes_idx[MOUSE][i]].bit_offset;
             uint32_t mask = (1 << len) - 1;
             uint32_t byte_offset = offset / 8;
@@ -123,7 +123,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
 
             ctrl_data->axes[i].meta = &hid_axes_meta[MOUSE][i];
 
-            for (; len; len -= 8) {
+            for (; len > 0; len -= 8) {
                 ctrl_data->axes[i].value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
             }
         }
