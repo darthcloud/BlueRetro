@@ -122,9 +122,9 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
             uint32_t bit_shift = offset % 8;
 
             ctrl_data->axes[i].meta = &hid_axes_meta[MOUSE][i];
-
-            for (; len > 0; len -= 8) {
-                ctrl_data->axes[i].value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+            ctrl_data->axes[i].value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+            if (ctrl_data->axes[i].value & BIT(len - 1)) {
+                ctrl_data->axes[i].value |= ~mask;
             }
         }
     }
