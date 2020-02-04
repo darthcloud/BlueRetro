@@ -25,6 +25,12 @@
 #define N64_BIT_PERIOD_TICKS 8
 #define GC_BIT_PERIOD_TICKS 10
 
+#define N64_MOUSE 0x0002
+#define N64_CTRL 0x0005
+
+#define N64_SLOT_EMPTY 0x00
+#define N64_SLOT_OCCUPIED 0x01
+
 enum {
     RMT_MEM_CHANGE
 };
@@ -81,7 +87,7 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 
 static atomic_t rmt_flags = 0;
 static uint8_t buf[32 * 1024] = {0};
-static uint8_t ctrl_ident[3] = {0x05, 0x00, 0x01};
+static uint8_t ctrl_ident[3];
 static uint32_t poll_after_mem_wr = 0;
 static uint8_t last_rumble[4] = {0};
 
@@ -177,12 +183,23 @@ static void IRAM_ATTR n64_isr(void *arg) {
                 switch (buf[0]) {
                     case 0x00:
                     case 0xFF:
-                        if (config.out_cfg[channel].acc_mode > ACC_NONE) {
-                            ctrl_ident[2] = 0x01;
+                        switch (config.out_cfg[channel].dev_mode) {
+                            case DEV_MOUSE:
+                                *(uint16_t *)ctrl_ident = N64_MOUSE;
+                                ctrl_ident[2] = N64_SLOT_EMPTY;
+                                break;
+                            case DEV_PAD:
+                            default:
+                                *(uint16_t *)ctrl_ident = N64_CTRL;
+                                if (config.out_cfg[channel].acc_mode > ACC_NONE) {
+                                    ctrl_ident[2] = N64_SLOT_OCCUPIED;
+                                }
+                                else {
+                                    ctrl_ident[2] = N64_SLOT_EMPTY;
+                                }
+                                break;
                         }
-                        else {
-                            ctrl_ident[2] = 0x00;
-                        }
+
                         nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, ctrl_ident, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
