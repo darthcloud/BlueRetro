@@ -67,7 +67,7 @@ const uint32_t dc_btns_mask[32] = {
     0, BIT(DC_C), 0, 0,
 };
 
-void dc_init_buffer(struct wired_data *wired_data) {
+void dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct dc_map *map = (struct dc_map *)wired_data->output;
 
     map->buttons = 0xFFFF;
@@ -76,7 +76,7 @@ void dc_init_buffer(struct wired_data *wired_data) {
     }
 }
 
-void dc_meta_init(struct generic_ctrl *ctrl_data) {
+void dc_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX; i++) {
@@ -88,7 +88,7 @@ void dc_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -121,7 +121,7 @@ void dc_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_da
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void dc_fb_to_generic(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
+void dc_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
     fb_data->wired_id = raw_fb_data[0];
     fb_data->cycles = 0;
     fb_data->start = 0;

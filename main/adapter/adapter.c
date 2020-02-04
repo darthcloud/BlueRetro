@@ -340,7 +340,7 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
 
 void adapter_init_buffer(uint8_t wired_id) {
     if (wired_adapter.system_id != WIRED_NONE && buffer_init_func[wired_adapter.system_id]) {
-        buffer_init_func[wired_adapter.system_id](&wired_adapter.data[wired_id]);
+        buffer_init_func[wired_adapter.system_id](config.out_cfg[wired_id].dev_mode, &wired_adapter.data[wired_id]);
     }
 }
 
@@ -354,12 +354,12 @@ void adapter_bridge(struct bt_data *bt_data) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
-            meta_init_func[wired_adapter.system_id](ctrl_output);
+            meta_init_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, ctrl_output);
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
 
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
-                from_generic_func[wired_adapter.system_id](&ctrl_output[i], &wired_adapter.data[i]);
+                from_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
             }
         }
     }
@@ -393,7 +393,7 @@ uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt
         fb_to_generic_func[wired_adapter.system_id](fb_data, fb_len, &fb_input);
 
         if (bt_data->dev_id != BT_NONE && fb_from_generic_func[bt_data->dev_type]) {
-            fb_from_generic_func[bt_data->dev_type](&fb_input, bt_data);
+            fb_from_generic_func[bt_data->dev_type](config.out_cfg[bt_data->dev_id].dev_mode, &fb_input, bt_data);
             ret = 1;
         }
     }
