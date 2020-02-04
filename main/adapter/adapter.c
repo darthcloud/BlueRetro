@@ -56,6 +56,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
+    NULL,
     n64_from_generic,
     dc_from_generic,
     NULL,
@@ -64,6 +65,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
 };
 
 static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -98,6 +100,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
+    NULL,
     n64_meta_init,
     dc_meta_init,
     NULL,
@@ -106,6 +109,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 };
 
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
+    NULL,
     NULL,
     NULL,
     NULL,

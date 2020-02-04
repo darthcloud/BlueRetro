@@ -30,6 +30,7 @@ enum {
 /* Wired system ID */
 enum {
     WIRED_NONE = -1,
+    WIRED_AUTO,
     NES,
     SMS,
     PCE,
@@ -234,8 +235,7 @@ enum {
 
 /* Dev mode */
 enum {
-    DEV_AUTO = 0,
-    DEV_PAD,
+    DEV_PAD = 0,
     DEV_PAD_ALT,
     DEV_KB,
     DEV_MOUSE,
@@ -247,6 +247,34 @@ enum {
     ACC_MEM,
     ACC_RUMBLE,
     ACC_BOTH,
+};
+
+/* Multitap mode */
+enum {
+    NONE = 0,
+    SLOT_1,
+    SLOT_2,
+    DUAL,
+    ALT,
+};
+
+/* Scaling mode */
+enum {
+    LINEAR = 0,
+    AGGRESSIVE,
+    RELAXED,
+    WIDE,
+    S_CURVE,
+    PASSTHROUGH,
+};
+
+/* Diagonal Scaling mode */
+enum {
+    DIAG_PASSTHROUGH = 0,
+    CIRCLE_SQUARE,
+    CIRCLE_HEX,
+    SQUARE_CIRCLE,
+    SQUARE_HEX,
 };
 
 struct ctrl_meta {
