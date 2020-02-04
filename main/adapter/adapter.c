@@ -171,8 +171,17 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                 if (abs_src_value > deadzone) {
                     int32_t value = abs_src_value - deadzone;
                     int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
-                    float scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
-                    float fvalue = dst_sign * value * scale;
+                    float scale, fvalue;
+                    switch (map_cfg->algo & 0xF) {
+                        case LINEAR:
+                            scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
+                            break;
+                        default:
+                            scale = 1;
+                            break;
+
+                    }
+                    fvalue = dst_sign * value * scale;
                     value = (int32_t)fvalue;
 
                     if (abs(value) > abs(out->axes[dst_axis_idx].value)) {
