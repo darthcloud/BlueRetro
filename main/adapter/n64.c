@@ -55,8 +55,8 @@ const uint32_t n64_btns_mask[32] = {
     BIT(N64_Z), BIT(N64_R), 0, 0,
 };
 
-const uint32_t n64_mouse_mask[4] = {0x0005000F, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t n64_mouse_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t n64_mouse_mask[4] = {0x000500F0, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t n64_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t n64_mouse_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -98,29 +98,26 @@ void n64_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
     }
 }
 
-static void n64_ctrl_mouse_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_map map_tmp;
     uint32_t map_mask = 0xFFFF;
-    const uint32_t *desc = (dev_mode == DEV_MOUSE) ? n64_mouse_desc : n64_desc;
-    const uint32_t *btns_mask = (dev_mode == DEV_MOUSE) ? n64_mouse_btns_mask : n64_btns_mask;
-
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons |= btns_mask[i];
-                map_mask &= ~btns_mask[i];
+                map_tmp.buttons |= n64_btns_mask[i];
+                map_mask &= ~n64_btns_mask[i];
             }
-            else if (map_mask & btns_mask[i]) {
-                map_tmp.buttons &= ~btns_mask[i];
+            else if (map_mask & n64_btns_mask[i]) {
+                map_tmp.buttons &= ~n64_btns_mask[i];
             }
         }
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(n64_axes_meta); i++) {
-        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & desc[0])) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & n64_desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[n64_axes_idx[i]] = 127;
             }
@@ -136,12 +133,49 @@ static void n64_ctrl_mouse_from_generic(int32_t dev_mode, struct generic_ctrl *c
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
+static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct n64_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
+
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.buttons |= n64_mouse_btns_mask[i];
+                map_mask &= ~n64_mouse_btns_mask[i];
+            }
+            else if (map_mask & n64_mouse_btns_mask[i]) {
+                map_tmp.buttons &= ~n64_mouse_btns_mask[i];
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(n64_axes_meta); i++) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i + 2) & n64_mouse_desc[0])) {
+            if (ctrl_data->axes[i + 2].value > ctrl_data->axes[i + 2].meta->size_max) {
+                map_tmp.axes[n64_axes_idx[i]] = 127;
+            }
+            else if (ctrl_data->axes[i + 2].value < ctrl_data->axes[i + 2].meta->size_min) {
+                map_tmp.axes[n64_axes_idx[i]] = -128;
+            }
+            else {
+                map_tmp.axes[n64_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
+            }
+        }
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
 void n64_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
-        case DEV_PAD:
         case DEV_MOUSE:
+            n64_mouse_from_generic(ctrl_data, wired_data);
+            break;
+        case DEV_PAD:
         default:
-            n64_ctrl_mouse_from_generic(dev_mode, ctrl_data, wired_data);
+            n64_ctrl_from_generic(ctrl_data, wired_data);
             break;
     }
 }
