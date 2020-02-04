@@ -11,7 +11,8 @@
 
 typedef void (*wired_init_t)(void);
 
-static const wired_init_t wired_init[] = {
+static const wired_init_t wired_init[WIRED_MAX] = {
+    NULL,
     NULL,
     NULL,
     NULL,

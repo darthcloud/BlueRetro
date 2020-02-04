@@ -86,14 +86,15 @@ void n64_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
                 case DEV_MOUSE:
                     ctrl_data[i].mask = n64_mouse_mask;
                     ctrl_data[i].desc = n64_mouse_desc;
+                    ctrl_data[i].axes[j + 2].meta = &n64_axes_meta[j];
                     break;
                 case DEV_PAD:
                 default:
                     ctrl_data[i].mask = n64_mask;
                     ctrl_data[i].desc = n64_desc;
+                    ctrl_data[i].axes[j].meta = &n64_axes_meta[j];
                     break;
             }
-            ctrl_data[i].axes[j].meta = &n64_axes_meta[j];
         }
     }
 }
