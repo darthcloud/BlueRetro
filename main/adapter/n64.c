@@ -96,7 +96,7 @@ void n64_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_d
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(n64_axes_meta); i++) {
-        if (ctrl_data->map_mask[0] & axis_to_btn_mask(i)) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & n64_desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[n64_axes_idx[i]] = 127;
             }

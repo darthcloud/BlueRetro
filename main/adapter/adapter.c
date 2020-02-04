@@ -276,15 +276,23 @@ uint8_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
         case PAD_LX_RIGHT:
+        case MOUSE_WX_LEFT:
+        case MOUSE_WX_RIGHT:
             return AXIS_LX;
         case PAD_LY_DOWN:
         case PAD_LY_UP:
+        case MOUSE_WY_DOWN:
+        case MOUSE_WY_UP:
             return AXIS_LY;
         case PAD_RX_LEFT:
         case PAD_RX_RIGHT:
+        //case MOUSE_X_LEFT:
+        //case MOUSE_X_RIGHT:
             return AXIS_RX;
         case PAD_RY_DOWN:
         case PAD_RY_UP:
+        //case MOUSE_Y_DOWN:
+        //case MOUSE_Y_UP:
             return AXIS_RY;
         case PAD_LM:
             return TRIG_L;
@@ -297,13 +305,13 @@ uint8_t btn_id_to_axis(uint8_t btn_id) {
 uint32_t axis_to_btn_mask(uint8_t axis) {
     switch (axis) {
         case AXIS_LX:
-            return BIT(PAD_LX_LEFT) | BIT(PAD_LX_RIGHT);
+            return BIT(PAD_LX_LEFT) | BIT(PAD_LX_RIGHT) | BIT(MOUSE_WX_LEFT) | BIT(MOUSE_WX_RIGHT);
         case AXIS_LY:
-            return BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP);
+            return BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP) | BIT(MOUSE_WY_DOWN) | BIT(MOUSE_WY_UP);
         case AXIS_RX:
-            return BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
+            return BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT); /* BIT(MOUSE_X_LEFT) | BIT(MOUSE_X_RIGHT) */
         case AXIS_RY:
-            return BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
+            return BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP); /* BIT(MOUSE_Y_DOWN) | BIT(MOUSE_Y_UP) */
         case TRIG_L:
             return BIT(PAD_LM);
         case TRIG_R:
