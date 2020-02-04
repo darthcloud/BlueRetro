@@ -44,7 +44,6 @@ struct n64_map {
 
 const uint32_t n64_mask[4] = {0x331F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
-
 const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(N64_C_LEFT), BIT(N64_C_RIGHT), BIT(N64_C_DOWN), BIT(N64_C_UP),
@@ -54,6 +53,19 @@ const uint32_t n64_btns_mask[32] = {
     BIT(N64_START), 0, 0, 0,
     BIT(N64_Z), BIT(N64_L), 0, 0,
     BIT(N64_Z), BIT(N64_R), 0, 0,
+};
+
+const uint32_t n64_mouse_mask[4] = {0x0005000F, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t n64_mouse_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t n64_mouse_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(N64_B), 0, 0, 0,
+    BIT(N64_A), 0, 0, 0,
 };
 
 void n64_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
@@ -70,33 +82,45 @@ void n64_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
 
     for (uint32_t i = 0; i < WIRED_MAX; i++) {
         for (uint32_t j = 0; j < ARRAY_SIZE(n64_axes_meta); j++) {
-            ctrl_data[i].mask = n64_mask;
-            ctrl_data[i].desc = n64_desc;
+            switch (dev_mode) {
+                case DEV_MOUSE:
+                    ctrl_data[i].mask = n64_mouse_mask;
+                    ctrl_data[i].desc = n64_mouse_desc;
+                    break;
+                case DEV_PAD:
+                default:
+                    ctrl_data[i].mask = n64_mask;
+                    ctrl_data[i].desc = n64_desc;
+                    break;
+            }
             ctrl_data[i].axes[j].meta = &n64_axes_meta[j];
         }
     }
 }
 
-static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_ctrl_mouse_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_map map_tmp;
     uint32_t map_mask = 0xFFFF;
+    const uint32_t *desc = (dev_mode == DEV_MOUSE) ? n64_mouse_desc : n64_desc;
+    const uint32_t *btns_mask = (dev_mode == DEV_MOUSE) ? n64_mouse_btns_mask : n64_btns_mask;
+
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons |= n64_btns_mask[i];
-                map_mask &= ~n64_btns_mask[i];
+                map_tmp.buttons |= btns_mask[i];
+                map_mask &= ~btns_mask[i];
             }
-            else if (map_mask & n64_btns_mask[i]) {
-                map_tmp.buttons &= ~n64_btns_mask[i];
+            else if (map_mask & btns_mask[i]) {
+                map_tmp.buttons &= ~btns_mask[i];
             }
         }
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(n64_axes_meta); i++) {
-        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & n64_desc[0])) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[n64_axes_idx[i]] = 127;
             }
@@ -115,8 +139,9 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
 void n64_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_PAD:
+        case DEV_MOUSE:
         default:
-            n64_ctrl_from_generic(ctrl_data, wired_data);
+            n64_ctrl_mouse_from_generic(dev_mode, ctrl_data, wired_data);
             break;
     }
 }
