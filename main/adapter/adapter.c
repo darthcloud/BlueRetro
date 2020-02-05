@@ -177,7 +177,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                             scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
                             break;
                         default:
-                            scale = 1;
+                            scale = ((float)map_cfg->perc_max)/100;
                             break;
 
                     }
