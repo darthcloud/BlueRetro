@@ -390,10 +390,10 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
     uint32_t ret = 0;
     if (wired_adapter.system_id != WIRED_NONE && fb_to_generic_func[wired_adapter.system_id]) {
-        fb_to_generic_func[wired_adapter.system_id](fb_data, fb_len, &fb_input);
+        fb_to_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, fb_data, fb_len, &fb_input);
 
         if (bt_data->dev_id != BT_NONE && fb_from_generic_func[bt_data->dev_type]) {
-            fb_from_generic_func[bt_data->dev_type](config.out_cfg[bt_data->dev_id].dev_mode, &fb_input, bt_data);
+            fb_from_generic_func[bt_data->dev_type](&fb_input, bt_data);
             ret = 1;
         }
     }

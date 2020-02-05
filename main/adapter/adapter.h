@@ -376,8 +376,8 @@ struct bt_adapter {
 
 typedef void (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
-typedef void (*fb_to_generic_t)(uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data);
-typedef void (*fb_from_generic_t)(int32_t dev_mode, struct generic_fb *fb_data, struct bt_data *bt_data);
+typedef void (*fb_to_generic_t)(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data);
+typedef void (*fb_from_generic_t)(struct generic_fb *fb_data, struct bt_data *bt_data);
 typedef void (*meta_init_t)(int32_t dev_mode, struct generic_ctrl *ctrl_data);
 typedef void (*buffer_init_t)(int32_t dev_mode, struct wired_data *wired_data);
 
