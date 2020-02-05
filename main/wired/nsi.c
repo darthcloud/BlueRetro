@@ -86,8 +86,7 @@ static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 //uint8_t mempak[32 * 1024] = {0};
 
 static atomic_t rmt_flags = 0;
-static uint8_t buf[32 * 1024] = {0};
-static uint8_t ctrl_ident[3];
+static uint8_t buf[128] = {0};
 static uint32_t poll_after_mem_wr = 0;
 static uint8_t last_rumble[4] = {0};
 
@@ -185,26 +184,36 @@ static void IRAM_ATTR n64_isr(void *arg) {
                     case 0xFF:
                         switch (config.out_cfg[channel].dev_mode) {
                             case DEV_MOUSE:
-                                *(uint16_t *)ctrl_ident = N64_MOUSE;
-                                ctrl_ident[2] = N64_SLOT_EMPTY;
+                                *(uint16_t *)buf = N64_MOUSE;
+                                buf[2] = N64_SLOT_EMPTY;
                                 break;
                             case DEV_PAD:
                             default:
-                                *(uint16_t *)ctrl_ident = N64_CTRL;
+                                *(uint16_t *)buf = N64_CTRL;
                                 if (config.out_cfg[channel].acc_mode > ACC_NONE) {
-                                    ctrl_ident[2] = N64_SLOT_OCCUPIED;
+                                    buf[2] = N64_SLOT_OCCUPIED;
                                 }
                                 else {
-                                    ctrl_ident[2] = N64_SLOT_EMPTY;
+                                    buf[2] = N64_SLOT_EMPTY;
                                 }
                                 break;
                         }
 
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, ctrl_ident, 3, &crc, STOP_BIT_2US);
+                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[channel].output, 4, &crc, STOP_BIT_2US);
+                        memcpy(buf, wired_adapter.data[channel].output, 4);
+                        if (config.out_cfg[channel].dev_mode == DEV_MOUSE) {
+                            if (atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_NEW_DATA)) {
+                                atomic_clear_bit(&wired_adapter.data[channel].flags, WIRED_NEW_DATA);
+                            }
+                            else {
+                                wired_adapter.data[channel].output[2] = 0x00;
+                                wired_adapter.data[channel].output[3] = 0x00;
+                            }
+                        }
+                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         ++wired_adapter.data[channel].frame_cnt;

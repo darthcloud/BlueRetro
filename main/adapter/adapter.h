@@ -230,6 +230,7 @@ enum {
 
 /* Wired flags */
 enum {
+    WIRED_NEW_DATA,
     WIRED_SAVE_MEM,
 };
 
