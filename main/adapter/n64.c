@@ -55,7 +55,7 @@ const uint32_t n64_btns_mask[32] = {
     BIT(N64_Z), BIT(N64_R), 0, 0,
 };
 
-const uint32_t n64_mouse_mask[4] = {0x000500F0, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t n64_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t n64_mouse_btns_mask[32] = {
     0, 0, 0, 0,
