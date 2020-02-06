@@ -328,11 +328,19 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
         case PAD_RY_UP:
         case PAD_LM:
         case PAD_RM:
+        case MOUSE_WX_RIGHT:
+        case MOUSE_WY_UP:
+        //case MOUSE_X_RIGHT:
+        //case MOUSE_Y_UP:
             return polarity ? -1 : 1;
         case PAD_LX_LEFT:
         case PAD_LY_DOWN:
         case PAD_RY_DOWN:
         case PAD_RX_LEFT:
+        case MOUSE_WX_LEFT:
+        case MOUSE_WY_DOWN:
+        //case MOUSE_X_LEFT:
+        //case MOUSE_Y_DOWN:
             return polarity ? 1 : -1;
     }
     return 1;
