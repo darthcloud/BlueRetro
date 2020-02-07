@@ -79,7 +79,7 @@ void dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
 void dc_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
-    for (uint32_t i = 0; i < WIRED_MAX; i++) {
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ARRAY_SIZE(dc_axes_meta); j++) {
             ctrl_data[i].mask = dc_mask;
             ctrl_data[i].desc = dc_desc;
