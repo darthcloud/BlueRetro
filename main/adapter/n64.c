@@ -138,7 +138,7 @@ static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
     struct n64_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
-    *(int32_t *)&map_tmp = atomic_get((int32_t *)&wired_data->output);
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
@@ -161,12 +161,13 @@ static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
                 map_tmp.axes[n64_axes_idx[i]] = -128;
             }
             else {
-                map_tmp.axes[n64_axes_idx[i]] += (uint8_t)(ctrl_data->axes[i + 2].value + ctrl_data->axes[i + 2].meta->neutral);
+                map_tmp.axes[n64_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i + 2].value + ctrl_data->axes[i + 2].meta->neutral);
             }
         }
     }
 
-    atomic_set((int32_t *)&wired_data->output, *(int32_t *)&map_tmp);
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    atomic_set_bit(&wired_data->flags, WIRED_NEW_DATA);
 }
 
 void n64_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
