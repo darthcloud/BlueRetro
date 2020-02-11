@@ -204,15 +204,6 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         break;
                     case 0x01:
                         memcpy(buf, wired_adapter.data[channel].output, 4);
-                        if (config.out_cfg[channel].dev_mode == DEV_MOUSE) {
-                            if (atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_NEW_DATA)) {
-                                atomic_clear_bit(&wired_adapter.data[channel].flags, WIRED_NEW_DATA);
-                            }
-                            else {
-                                wired_adapter.data[channel].output[2] = 0x00;
-                                wired_adapter.data[channel].output[3] = 0x00;
-                            }
-                        }
                         nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
