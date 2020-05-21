@@ -20,6 +20,7 @@
 #define BT_DEV_MAX 7
 
 #define LINK_KEYS_FILE "/sd/linkkeys.bin"
+#define BDADDR_FILE "/sd/bdaddr.bin"
 
 enum {
     /* BT CTRL flags */
@@ -45,6 +46,7 @@ static uint8_t frag_buf[1024];
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* H4_TRACE */
+static int32_t bt_host_load_bdaddr_from_file(void);
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
 static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
@@ -80,6 +82,31 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     }
 }
 #endif /* H4_TRACE */
+
+static int32_t bt_host_load_bdaddr_from_file(void) {
+    struct stat st;
+    int32_t ret = -1;
+
+    if (stat(BDADDR_FILE, &st) != 0) {
+        printf("%s: No BDADDR on SD. Using ESP32's MAC\n", __FUNCTION__);
+    }
+    else {
+        FILE *file = fopen(BDADDR_FILE, "rb");
+        if (file == NULL) {
+            printf("%s: failed to open file for reading\n", __FUNCTION__);
+        }
+        else {
+            uint8_t test_mac[6];
+            fread((void *)test_mac, sizeof(test_mac), 1, file);
+            fclose(file);
+            test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
+            esp_base_mac_addr_set(test_mac);
+            printf("%s: Using BDADDR.BIN MAC\n", __FUNCTION__);
+            ret = 0;
+        }
+    }
+    return ret;
+}
 
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data) {
     struct stat st;
@@ -310,8 +337,6 @@ void bt_host_q_wait_pkt(uint32_t ms) {
 }
 
 int32_t bt_host_init(void) {
-    uint8_t test_mac[6] = {0x84, 0x4b, 0xf5, 0xa7, 0x41, 0xea};
-
     /* Initialize NVS — it is used to store PHY calibration data */
     int32_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -320,7 +345,7 @@ int32_t bt_host_init(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    esp_base_mac_addr_set(test_mac);
+    bt_host_load_bdaddr_from_file();
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
