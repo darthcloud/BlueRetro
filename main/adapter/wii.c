@@ -18,6 +18,24 @@ enum {
 };
 
 enum {
+    WII_CLASSIC_R = 1,
+    WII_CLASSIC_PLUS,
+    WII_CLASSIC_HOME,
+    WII_CLASSIC_MINUS,
+    WII_CLASSIC_L,
+    WII_CLASSIC_D_DOWN,
+    WII_CLASSIC_D_RIGHT,
+    WII_CLASSIC_D_UP,
+    WII_CLASSIC_D_LEFT,
+    WII_CLASSIC_ZR,
+    WII_CLASSIC_X,
+    WII_CLASSIC_A,
+    WII_CLASSIC_Y,
+    WII_CLASSIC_B,
+    WII_CLASSIC_ZL,
+};
+
+enum {
     WIIU_R = 1,
     WIIU_PLUS,
     WIIU_HOME,
@@ -37,6 +55,13 @@ enum {
     WIIU_LJ,
 };
 
+struct wiic_map {
+    uint16_t core;
+    uint8_t reserved[3];
+    uint8_t axes[4];
+    uint16_t buttons;
+} __packed;
+
 struct wiiu_map {
     uint8_t reserved[5];
     uint16_t axes[4];
@@ -53,6 +78,16 @@ static const uint8_t wiiu_axes_idx[4] =
     0,       2,       1,       3
 };
 
+static const struct ctrl_meta wiic_axes_meta[6] =
+{
+    {.neutral = 0x20, .abs_max = 0x1B},
+    {.neutral = 0x20, .abs_max = 0x1B},
+    {.neutral = 0x10, .abs_max = 0x0D},
+    {.neutral = 0x10, .abs_max = 0x0D},
+    {.neutral = 0x02, .abs_max = 0x1D},
+    {.neutral = 0x02, .abs_max = 0x1D},
+};
+
 static const struct ctrl_meta wiiu_axes_meta =
 {
     .neutral = 0x800,
@@ -61,6 +96,8 @@ static const struct ctrl_meta wiiu_axes_meta =
 
 static const uint32_t wii_mask[4] = {0x007F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wii_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiic_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiiu_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiiu_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 
@@ -73,6 +110,26 @@ static const uint32_t wii_btns_mask[32] = {
     BIT(WII_CORE_PLUS), BIT(WII_CORE_MINUS), BIT(WII_CORE_HOME), 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
+};
+static const uint32_t wiic_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WII_CLASSIC_D_LEFT), BIT(WII_CLASSIC_D_RIGHT), BIT(WII_CLASSIC_D_DOWN), BIT(WII_CLASSIC_D_UP),
+    0, 0, 0, 0,
+    BIT(WII_CLASSIC_Y), BIT(WII_CLASSIC_A), BIT(WII_CLASSIC_B), BIT(WII_CLASSIC_X),
+    BIT(WII_CLASSIC_PLUS), BIT(WII_CLASSIC_MINUS), BIT(WII_CLASSIC_HOME), 0,
+    0, BIT(WII_CLASSIC_ZL), BIT(WII_CLASSIC_L), 0,
+    0, BIT(WII_CLASSIC_ZR), BIT(WII_CLASSIC_R), 0,
+};
+static const uint32_t wiic_core_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WII_CORE_D_UP), BIT(WII_CORE_D_DOWN), BIT(WII_CORE_D_LEFT), BIT(WII_CORE_D_RIGHT),
+    0, 0, 0, 0,
+    0, 0, 0, BIT(WII_CORE_B),
+    0, 0, 0, BIT(WII_CORE_1),
+    0, 0, 0, BIT(WII_CORE_2),
 };
 static const uint32_t wiiu_btns_mask[32] = {
     0, 0, 0, 0,
@@ -97,6 +154,47 @@ void wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         if (*buttons & wii_btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
+    }
+}
+
+void wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    struct wiic_map *map = (struct wiic_map *)bt_data->input;
+    uint8_t axes[6];
+
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
+    ctrl_data->mask = (uint32_t *)wiic_mask;
+    ctrl_data->desc = (uint32_t *)wiic_desc;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (map->core & wiic_core_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (~map->buttons & wiic_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    axes[0] = map->axes[0] & 0x3F;
+    axes[1] = map->axes[1] & 0x3F;
+    axes[2] = ((map->axes[0] & 0xC0) >> 3) | ((map->axes[1] & 0xC0) >> 5) | ((map->axes[2] & 0x80) >> 7);
+    axes[3] = map->axes[2] & 0x1F;
+    axes[4] = ((map->axes[2] & 0x60) >> 2) | ((map->axes[3] & 0xE0) >> 5);
+    axes[5] = map->axes[3] & 0x1F;
+
+    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+        for (uint32_t i = 0; i < ARRAY_SIZE(wiic_axes_meta); i++) {
+            bt_data->axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
+        }
+        atomic_set_bit(&bt_data->flags, BT_INIT);
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(wiic_axes_meta); i++) {
+        ctrl_data->axes[i].meta = &wiic_axes_meta[i];
+        ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
 }
 
