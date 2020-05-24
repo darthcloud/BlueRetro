@@ -39,7 +39,7 @@ const uint32_t generic_btns_mask[32] = {
 static to_generic_t to_generic_func[BT_MAX] = {
     hid_to_generic,
     ps3_to_generic,
-    NULL,
+    wii_to_generic,
     NULL,
     NULL,
     wiiu_to_generic,
