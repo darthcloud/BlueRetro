@@ -40,7 +40,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     hid_to_generic,
     ps3_to_generic,
     wii_to_generic,
-    NULL,
+    wiin_to_generic,
     wiic_to_generic,
     wiiu_to_generic,
     ps4_to_generic,

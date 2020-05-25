@@ -36,6 +36,11 @@ enum {
 };
 
 enum {
+    WII_NUNCHUCK_Z = 0,
+    WII_NUNCHUCK_C,
+};
+
+enum {
     WIIU_R = 1,
     WIIU_PLUS,
     WIIU_HOME,
@@ -62,6 +67,13 @@ struct wiic_map {
     uint16_t buttons;
 } __packed;
 
+struct wiin_map {
+    uint16_t core;
+    uint8_t reserved[3];
+    uint8_t axes[5];
+    uint8_t buttons;
+} __packed;
+
 struct wiiu_map {
     uint8_t reserved[5];
     uint16_t axes[4];
@@ -76,6 +88,12 @@ static const uint8_t wiiu_axes_idx[4] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
     0,       2,       1,       3
+};
+
+static const struct ctrl_meta wiin_axes_meta[2] =
+{
+    {.neutral = 0x80, .abs_max = 0x63},
+    {.neutral = 0x80, .abs_max = 0x63},
 };
 
 static const struct ctrl_meta wiic_axes_meta[6] =
@@ -96,6 +114,8 @@ static const struct ctrl_meta wiiu_axes_meta =
 
 static const uint32_t wii_mask[4] = {0x007F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wii_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiin_mask[4] = {0x13770F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiin_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiiu_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -110,6 +130,26 @@ static const uint32_t wii_btns_mask[32] = {
     BIT(WII_CORE_PLUS), BIT(WII_CORE_MINUS), BIT(WII_CORE_HOME), 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
+};
+static const uint32_t wiin_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WII_NUNCHUCK_Z), BIT(WII_NUNCHUCK_C), 0, 0,
+    0, 0, 0, 0,
+};
+static const uint32_t wiin_core_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WII_CORE_D_LEFT), BIT(WII_CORE_D_RIGHT), BIT(WII_CORE_D_DOWN), BIT(WII_CORE_D_UP),
+    0, 0, 0, 0,
+    BIT(WII_CORE_A), BIT(WII_CORE_2), BIT(WII_CORE_1), 0,
+    BIT(WII_CORE_PLUS), BIT(WII_CORE_MINUS), BIT(WII_CORE_HOME), 0,
+    0, 0, 0, 0,
+    BIT(WII_CORE_B), 0, 0, 0,
 };
 static const uint32_t wiic_btns_mask[32] = {
     0, 0, 0, 0,
@@ -154,6 +194,39 @@ void wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         if (*buttons & wii_btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
+    }
+}
+
+void wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    struct wiin_map *map = (struct wiin_map *)bt_data->input;
+
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
+    ctrl_data->mask = (uint32_t *)wiin_mask;
+    ctrl_data->desc = (uint32_t *)wiin_desc;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (map->core & wiin_core_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (~map->buttons & wiin_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+        for (uint32_t i = 0; i < ARRAY_SIZE(wiin_axes_meta); i++) {
+            bt_data->axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
+        }
+        atomic_set_bit(&bt_data->flags, BT_INIT);
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(wiin_axes_meta); i++) {
+        ctrl_data->axes[i].meta = &wiin_axes_meta[i];
+        ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
 }
 
