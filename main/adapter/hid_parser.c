@@ -391,6 +391,10 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
         }
     }
     if (report_id) {
+        wip_report.len = report_bit_offset / 8;
+        if (report_bit_offset % 8) {
+            wip_report.len++;
+        }
         report_type = hid_report_fingerprint(&wip_report);
         if (report_type != REPORT_NONE) {
             dev_type = hid_device_fingerprint(&wip_report);
