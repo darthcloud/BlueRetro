@@ -8,6 +8,7 @@
 #include <freertos/task.h>
 #include <driver/gpio.h>
 #include <driver/rmt.h>
+#include <driver/periph_ctrl.h>
 #include <esp_task_wdt.h>
 #include "../zephyr/atomic.h"
 #include "../zephyr/types.h"
