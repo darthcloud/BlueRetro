@@ -202,8 +202,10 @@ void bt_sdp_parser(struct bt_data *bt_data) {
     const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
     uint8_t *hid_desc = NULL;
     uint32_t hid_desc_len = 0;
+    uint32_t hid_offset = 0;
 
     hid_desc = memmem(bt_data->sdp_data, bt_data->sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
+    hid_offset = hid_desc - bt_data->sdp_data;
 
     if (hid_desc) {
         hid_desc += 3;
@@ -247,6 +249,10 @@ void bt_sdp_parser(struct bt_data *bt_data) {
                 break;
         }
         printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
+        if ((hid_offset + hid_desc_len) > bt_data->sdp_len) {
+            printf("# %s HID descriptor size exceed buffer size: %d, trunc\n", __FUNCTION__, bt_data->sdp_len);
+            hid_desc_len = bt_data->sdp_len - hid_offset;
+        }
         hid_parser(bt_data, hid_desc, hid_desc_len);
     }
 }
@@ -281,6 +287,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 
             if (target_len > sizeof(bt_adapter.data[device->id].sdp_data)) {
                 cp_len = sizeof(bt_adapter.data[device->id].sdp_data) - bt_adapter.data[device->id].sdp_len;
+                printf("# %s SDP data > buffer will be trunc to %d, cp_len %d\n", __FUNCTION__, sizeof(bt_adapter.data[device->id].sdp_data), cp_len);
             }
             else {
                 cp_len = sys_be16_to_cpu(att_rsp->att_list_len);

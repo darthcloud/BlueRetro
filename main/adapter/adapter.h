@@ -346,7 +346,7 @@ struct bt_data {
     uint8_t input[128];
     int32_t axes_cal[6];
     uint32_t sdp_len;
-    uint8_t sdp_data[1024];
+    uint8_t sdp_data[2048];
 } __packed;
 
 struct wired_data {
