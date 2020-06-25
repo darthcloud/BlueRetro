@@ -383,6 +383,10 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 usage = usage_list;
                 desc++;
                 break;
+            case 0xB2: /* FEATURE16 */
+                usage = usage_list;
+                desc += 2;
+                break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
                 break;
             default:
