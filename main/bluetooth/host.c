@@ -371,7 +371,7 @@ int32_t bt_host_init(void) {
 
     bt_host_load_keys_from_file(&bt_host_link_keys);
 
-    xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 2048, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 4096, NULL, 5, NULL, 0);
 
     bt_hci_init();
 

@@ -39,7 +39,7 @@ static const struct hid_fingerprint hid_fp[] = {
 };
 
 /* List of usage we don't care about */
-static uint32_t hid_usage_is_collection(uint8_t page, uint8_t usage) {
+static uint32_t hid_usage_is_collection(uint8_t page, uint16_t usage) {
     switch (page) {
         case 0x01: /* Generic Desktop Ctrls */
             switch (usage) {
@@ -161,14 +161,17 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
                             }
                         case 0x39: /* HAT_SWITCH */
                             return PAD;
-                        case 0x85: /* Menu */
-                            return EXTRA;
                     }
                     break;
                 case USAGE_GEN_KEYBOARD:
                     return KB;
                 case USAGE_GEN_BUTTON:
                     type = PAD;
+                    break;
+                case 0x0C: /* CONSUMER */
+                    if (type == REPORT_NONE) {
+                        type = EXTRA;
+                    }
                     break;
             }
         }
@@ -209,11 +212,11 @@ static int32_t hid_device_fingerprint(struct hid_report *report) {
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     struct hid_report wip_report;
-    uint8_t usage_list[REPORT_MAX_USAGE] = {0};
+    uint16_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t usage_page = 0;
-    uint8_t *usage = usage_list;
+    uint16_t *usage = usage_list;
     int32_t report_type = REPORT_NONE;
     int32_t dev_type = BT_NONE;
     uint8_t report_id = 0;
@@ -241,7 +244,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc++;
                 break;
             case 0x0A: /* USAGE16 */
-                *usage++ = 0xFF;
+                *usage++ = *(uint16_t *)desc;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
@@ -344,6 +347,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 /* process previous report fingerprint */
                 if (report_id) {
                     wip_report.len = report_bit_offset / 8;
+                    wip_report.usage_cnt = report_usage_idx;
                     if (report_bit_offset % 8) {
                         wip_report.len++;
                     }
@@ -396,6 +400,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     }
     if (report_id) {
         wip_report.len = report_bit_offset / 8;
+        wip_report.usage_cnt = report_usage_idx;
         if (report_bit_offset % 8) {
             wip_report.len++;
         }

@@ -8,6 +8,9 @@
 #define __packed    __attribute__((__packed__))
 #endif
 
+#define RESET   "\033[0m"
+#define BOLD   "\033[1m\033[37m"
+
 #define BT_MAX_DEV   7 /* BT limitation */
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 #define REPORT_MAX_USAGE 16
@@ -316,7 +319,7 @@ struct raw_fb {
 
 struct hid_usage {
     uint8_t usage_page;
-    uint8_t usage;
+    uint16_t usage;
     uint8_t flags;
     uint32_t bit_offset;
     uint32_t bit_size;
@@ -328,6 +331,7 @@ struct hid_report {
     atomic_t flags;
     uint8_t id;
     uint32_t len;
+    uint32_t usage_cnt;
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
 

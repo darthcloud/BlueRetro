@@ -22,7 +22,7 @@ static void hid_mouse_init(struct hid_report *report) {
     memset(hid_axes_idx[MOUSE], -1, sizeof(hid_axes_idx[MOUSE]));
     hid_btn_idx[MOUSE] = -1;
 
-    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
         switch (report->usages[i].usage_page) {
             case USAGE_GEN_DESKTOP:
                 switch (report->usages[i].usage) {
@@ -139,7 +139,7 @@ static void hid_pad_init(struct hid_report *report) {
     hid_hat_idx[PAD] = -1;
 
     /* Detect if Z axis is Right joystick or a trigger */
-    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
         if (report->usages[i].usage_page == USAGE_GEN_DESKTOP && report->usages[i].usage == USAGE_GEN_DESKTOP_X) {
             i++;
             if (report->usages[i].usage_page == USAGE_GEN_DESKTOP && report->usages[i].usage == USAGE_GEN_DESKTOP_Y) {
@@ -157,7 +157,7 @@ static void hid_pad_init(struct hid_report *report) {
     }
 
     /* Build mask, desc, idx and meta base on usage */
-    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
         switch (report->usages[i].usage_page) {
             case USAGE_GEN_DESKTOP:
                 switch (report->usages[i].usage) {
@@ -355,7 +355,35 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     }
 }
 
+//#define HID_DEBUG
 void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+#ifdef HID_DEBUG
+    struct hid_report *report = &bt_data->reports[bt_data->report_type];
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
+        int32_t len = report->usages[i].bit_size;
+        uint32_t offset = report->usages[i].bit_offset;
+        uint32_t mask = (1 << len) - 1;
+        uint32_t byte_offset = offset / 8;
+        uint32_t bit_shift = offset % 8;
+        uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        if (report->usages[i].bit_size <= 4) {
+            printf("%02X%02X: %s%X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+        }
+        else if (report->usages[i].bit_size <= 8) {
+            printf("%02X%02X: %s%02X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+        }
+        else if (report->usages[i].bit_size <= 12) {
+            printf("%02X%02X: %s%03X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+        }
+        else if (report->usages[i].bit_size <= 16) {
+            printf("%02X%02X: %s%04X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+        }
+        else if (report->usages[i].bit_size <= 32) {
+            printf("%02X%02X: %s%08X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+        }
+    }
+    printf("\n");
+#else
     switch (bt_data->report_type) {
         case KB:
             hid_kb_to_generic(bt_data, ctrl_data);
@@ -372,4 +400,5 @@ void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             printf("# Unknown report type: %02X\n", bt_data->report_type);
             break;
     }
+#endif
 }
