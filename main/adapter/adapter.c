@@ -354,6 +354,7 @@ void adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
+//#define INPUT_DBG
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
     //uint32_t end, start = xthal_get_ccount();
@@ -363,6 +364,11 @@ void adapter_bridge(struct bt_data *bt_data) {
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
+#ifdef INPUT_DBG
+        printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s\n",
+            BOLD, ctrl_input.axes[0].value, RESET, BOLD, ctrl_input.axes[1].value, RESET, BOLD, ctrl_input.axes[2].value, RESET, BOLD, ctrl_input.axes[3].value, RESET,
+            BOLD, ctrl_input.axes[4].value, RESET, BOLD, ctrl_input.axes[5].value, RESET, BOLD, ctrl_input.btns[0].value, RESET);
+#else
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
             meta_init_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, ctrl_output);
 
@@ -372,6 +378,7 @@ void adapter_bridge(struct bt_data *bt_data) {
                 from_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
             }
         }
+#endif
     }
 #endif
     //end = xthal_get_ccount();
