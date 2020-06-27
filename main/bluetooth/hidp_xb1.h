@@ -9,6 +9,10 @@ struct bt_hidp_xb1_status {
     uint8_t data[15];
 } __packed;
 
+struct bt_hidp_xb1_adaptive_status {
+    uint8_t data[54];
+} __packed;
+
 #define BT_HIDP_XB1_RUMBLE 0x03
 struct bt_hidp_xb1_rumble {
     uint8_t enable;

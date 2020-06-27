@@ -23,6 +23,7 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     bt_hid_wii_init, /* WIIU_PRO */
     bt_hid_ps4_init, /* PS4_DS4 */
     bt_hid_xb1_init, /* XB1_S */
+    bt_hid_xb1_init, /* XB1_ADAPTIVE */
     bt_hid_sw_init, /* SW */
 };
 
@@ -35,6 +36,7 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     bt_hid_wii_hdlr, /* WIIU_PRO */
     bt_hid_ps4_hdlr, /* PS4_DS4 */
     bt_hid_xb1_hdlr, /* XB1_S */
+    bt_hid_xb1_hdlr, /* XB1_ADAPTIVE */
     bt_hid_sw_hdlr, /* SW */
 };
 
@@ -47,6 +49,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
     bt_hid_cmd_ps4_set_conf, /* PS4_DS4 */
     bt_hid_cmd_xb1_rumble, /* XB1_S */
+    bt_hid_cmd_xb1_rumble, /* XB1_ADAPTIVE */
     bt_hid_cmd_sw_set_conf, /* SW */
 };
 

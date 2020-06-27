@@ -3,9 +3,9 @@
 #include "../util.h"
 #include "xb1.h"
 
+/* xinput buttons */
 enum {
-    XB1_XBOX,
-    XB1_A = XB1_XBOX,
+    XB1_A = 0,
     XB1_B,
     XB1_X,
     XB1_Y,
@@ -15,6 +15,33 @@ enum {
     XB1_MENU,
     XB1_LJ,
     XB1_RJ,
+};
+
+/* dinput buttons */
+enum {
+    XB1_DI_A = 0,
+    XB1_DI_B,
+    XB1_DI_X = 3,
+    XB1_DI_Y,
+    XB1_DI_LB = 6,
+    XB1_DI_RB,
+    XB1_DI_MENU = 11,
+    XB1_DI_LJ = 13,
+    XB1_DI_RJ,
+    XB1_DI_VIEW = 16,
+};
+
+/* report 2 */
+enum {
+    XB1_XBOX = 0,
+};
+
+/* adaptive extra */
+enum {
+    XB1_ADAPTIVE_X1 = 0,
+    XB1_ADAPTIVE_X2,
+    XB1_ADAPTIVE_X3,
+    XB1_ADAPTIVE_X4,
 };
 
 const uint8_t xb1_axes_idx[6] =
@@ -41,7 +68,9 @@ const struct ctrl_meta xb1_axes_meta[6] =
 struct xb1_map {
     uint16_t axes[6];
     uint8_t hat;
-    uint16_t buttons;
+    uint32_t buttons; /* include view for dinput */
+    uint8_t pad[15]; /* adaptive controller unmap */
+    uint8_t extra; /* adaptive extra buttons */
 } __packed;
 
 struct xb1_rumble {
@@ -73,6 +102,7 @@ const struct xb1_rumble xb1_rumble_off = {
 
 const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t xb1_adaptive_mask[4] = {0xBB3FFFFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
 const uint32_t xb1_btns_mask[32] = {
@@ -86,6 +116,28 @@ const uint32_t xb1_btns_mask[32] = {
     0, BIT(XB1_RB), 0, BIT(XB1_RJ),
 };
 
+const uint32_t xb1_dinput_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(XB1_DI_X), BIT(XB1_DI_B), BIT(XB1_DI_A), BIT(XB1_DI_Y),
+    BIT(XB1_DI_MENU), BIT(XB1_DI_VIEW), 0, 0,
+    0, BIT(XB1_DI_LB), 0, BIT(XB1_DI_LJ),
+    0, BIT(XB1_DI_RB), 0, BIT(XB1_DI_RJ),
+};
+
+const uint32_t xb1_adaptive_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(XB1_ADAPTIVE_X4), BIT(XB1_ADAPTIVE_X3), BIT(XB1_ADAPTIVE_X2), BIT(XB1_ADAPTIVE_X1),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+};
+
 void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->input;
 
@@ -94,10 +146,25 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     ctrl_data->desc = (uint32_t *)xb1_desc;
 
     if (bt_data->report_id == 0x01) {
-        ctrl_data->mask = (uint32_t *)xb1_mask;
+        const uint32_t *btns_mask;
+
+        if (bt_data->dev_type == XB1_ADAPTIVE) {
+            ctrl_data->mask = (uint32_t *)xb1_adaptive_mask;
+            btns_mask = xb1_dinput_btns_mask;
+
+            for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+                if (map->extra & xb1_adaptive_btns_mask[i]) {
+                    ctrl_data->btns[0].value |= generic_btns_mask[i];
+                }
+            }
+        }
+        else {
+            ctrl_data->mask = (uint32_t *)xb1_mask;
+            btns_mask = xb1_btns_mask;
+        }
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-            if (map->buttons & xb1_btns_mask[i]) {
+            if (map->buttons & btns_mask[i]) {
                 ctrl_data->btns[0].value |= generic_btns_mask[i];
             }
         }

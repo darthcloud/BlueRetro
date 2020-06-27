@@ -45,6 +45,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
     wiiu_to_generic,
     ps4_to_generic,
     xb1_to_generic,
+    xb1_to_generic,
     sw_to_generic,
 };
 
@@ -88,6 +89,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
     wii_fb_from_generic,
     wii_fb_from_generic,
     ps4_fb_from_generic,
+    xb1_fb_from_generic,
     xb1_fb_from_generic,
     sw_fb_from_generic,
 };

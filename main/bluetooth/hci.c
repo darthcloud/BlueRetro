@@ -32,6 +32,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"Nintendo RVL-CNT-01", WII_CORE},
     {"Wireless Controller", PS4_DS4},
     {"Xbox Wireless Controller", XB1_S},
+    {"Xbox Adaptive Controller", XB1_ADAPTIVE},
     {"Pro Controller", SW},
     {"Joy-Con", SW},
 };
