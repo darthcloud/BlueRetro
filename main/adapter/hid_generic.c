@@ -319,7 +319,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         uint32_t hat = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
         uint32_t min = bt_data->reports[PAD].usages[hid_hat_idx[PAD]].logical_min;
 
-        ctrl_data->btns[0].value |= hat_to_ld_btns[(hat) - min];
+        ctrl_data->btns[0].value |= hat_to_ld_btns[(hat - min) & 0xF];
     }
 
     for (uint32_t i = 0; i < sizeof(hid_axes_idx[PAD]); i++) {
