@@ -171,28 +171,6 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 case BT_HIDP_WII_CORE_ACC_EXT:
                 {
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_wii_core_acc_ext));
-#if 0
-                    struct wiiu_pro_map *wiiu_pro = (struct wiiu_pro_map *)&bt_hci_acl_packet->pl.hidp.hidp_data.wii_core_acc_ext.ext;
-                    device->report_cnt++;
-                    input.format = device->type;
-                    if (atomic_test_bit(&bt_flags, BT_CTRL_READY) && atomic_test_bit(&input.flags, BTIO_UPDATE_CTRL)) {
-                        bt_hid_cmd_wii_set_led(device->acl_handle, device->intr_chan.dcid, input.leds_rumble);
-                        atomic_clear_bit(&input.flags, BTIO_UPDATE_CTRL);
-                    }
-                    memcpy(&input.io.wiiu_pro, wiiu_pro, sizeof(*wiiu_pro));
-                    translate_status(sd_config, &input, output);
-                    min_lx = min(min_lx, wiiu_pro->axes[0]);
-                    min_ly = min(min_ly, wiiu_pro->axes[2]);
-                    min_rx = min(min_rx, wiiu_pro->axes[1]);
-                    min_ry = min(min_ry, wiiu_pro->axes[3]);
-                    max_lx = max(max_lx, wiiu_pro->axes[0]);
-                    max_ly = max(max_ly, wiiu_pro->axes[2]);
-                    max_rx = max(max_rx, wiiu_pro->axes[1]);
-                    max_ry = max(max_ry, wiiu_pro->axes[3]);
-                    printf("JG2019 MIN LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", min_lx, min_ly, min_rx, min_ry);
-                    printf("JG2019 MAX LX 0x%04X LY 0x%04X RX 0x%04X RY 0x%04X\n", max_lx, max_ly, max_rx, max_ry);
-                    printf("JG2019 %04X %04X %04X %04X\n", wiiu_pro->axes[0] - 0x800, wiiu_pro->axes[2] - 0x800, wiiu_pro->axes[1] - 0x800, wiiu_pro->axes[3] - 0x800);
-#endif
                     break;
                 }
             }
