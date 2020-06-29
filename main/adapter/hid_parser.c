@@ -4,6 +4,16 @@
 #include "hid_parser.h"
 #include "../zephyr/usb_hid.h"
 
+#define HID_STACK_MAX 4
+
+struct hid_stack_element {
+    uint32_t report_size;
+    uint32_t report_cnt;
+    int32_t logical_min;
+    int32_t logical_max;
+    uint8_t usage_page;
+};
+
 struct hid_fingerprint {
     int32_t dev_type;
     uint32_t fp_len;
@@ -211,34 +221,31 @@ static int32_t hid_device_fingerprint(struct hid_report *report) {
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
+    struct hid_stack_element hid_stack[HID_STACK_MAX] = {0};
+    uint8_t hid_stack_idx = 0;
     struct hid_report wip_report;
     uint16_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
-    uint8_t usage_page = 0;
     uint16_t *usage = usage_list;
     int32_t report_type = REPORT_NONE;
     int32_t dev_type = BT_NONE;
     uint8_t report_id = 0;
-    uint32_t report_size = 0;
-    uint32_t report_cnt = 0;
-    int32_t logical_min = 0;
-    int32_t logical_max = 0;
     uint32_t report_bit_offset = 0;
     uint32_t report_usage_idx = 0;
 
     while (desc < end) {
         switch (*desc++) {
             case HID_GI_USAGE_PAGE: /* 0x05 */
-                usage_page = *desc++;
+                hid_stack[hid_stack_idx].usage_page = *desc++;
                 break;
             case 0x06: /* USAGE_PAGE16 */
-                usage_page = 0xFF;
+                hid_stack[hid_stack_idx].usage_page = 0xFF;
                 desc += 2;
                 break;
             case HID_LI_USAGE: /* 0x09 */
             case HID_LI_USAGE_MIN(1): /* 0x19 */
-                if (!hid_usage_is_collection(usage_page, *desc)) {
+                if (!hid_usage_is_collection(hid_stack[hid_stack_idx].usage_page, *desc)) {
                     *usage++ = *desc;
                 }
                 desc++;
@@ -248,25 +255,25 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
-                logical_min = *desc++;
+                hid_stack[hid_stack_idx].logical_min = *desc++;
                 break;
             case HID_GI_LOGICAL_MIN(2): /* 0x16 */
-                logical_min = *(int16_t *)desc;
+                hid_stack[hid_stack_idx].logical_min = *(int16_t *)desc;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MIN(3): /* 0x17 */
-                logical_min = *(int32_t *)desc;
+                hid_stack[hid_stack_idx].logical_min = *(int32_t *)desc;
                 desc += 4;
                 break;
             case HID_GI_LOGICAL_MAX(1): /* 0x25 */
-                logical_max = *desc++;
+                hid_stack[hid_stack_idx].logical_max = *desc++;
                 break;
             case HID_GI_LOGICAL_MAX(2): /* 0x26 */
-                logical_max = *(int16_t *)desc;
+                hid_stack[hid_stack_idx].logical_max = *(int16_t *)desc;
                 desc += 2;
                 break;
             case HID_GI_LOGICAL_MAX(3): /* 0x27 */
-                logical_max = *(int32_t *)desc;
+                hid_stack[hid_stack_idx].logical_max = *(int32_t *)desc;
                 desc += 4;
                 break;
             case HID_LI_USAGE_MAX(1): /* 0x29 */
@@ -294,30 +301,30 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc += 2;
                 break;
             case HID_GI_REPORT_SIZE: /* 0x75 */
-                report_size = *desc++;
+                hid_stack[hid_stack_idx].report_size = *desc++;
                 break;
             case HID_MI_INPUT: /* 0x81 */
-                if (!(*desc & 0x01) && usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
-                    if (report_size == 1) {
-                        wip_report.usages[report_usage_idx].usage_page = usage_page;
+                if (!(*desc & 0x01) && hid_stack[hid_stack_idx].usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
+                    if (hid_stack[hid_stack_idx].report_size == 1) {
+                        wip_report.usages[report_usage_idx].usage_page = hid_stack[hid_stack_idx].usage_page;
                         wip_report.usages[report_usage_idx].usage = usage_list[0];
                         wip_report.usages[report_usage_idx].flags = *desc;
                         wip_report.usages[report_usage_idx].bit_offset = report_bit_offset;
-                        wip_report.usages[report_usage_idx].bit_size = report_cnt * report_size;
-                        wip_report.usages[report_usage_idx].logical_min = logical_min;
-                        wip_report.usages[report_usage_idx].logical_max = logical_max;
-                        printf("%02X%02X %u %u ", usage_page, usage_list[0], report_bit_offset, report_cnt * report_size);
-                        report_bit_offset += report_cnt * report_size;
+                        wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
+                        wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
+                        wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
+                        printf("%02X%02X %u %u ", hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset, hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
+                        report_bit_offset += hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
                         ++report_usage_idx;
                     }
                     else {
-                        uint32_t idx_end = report_usage_idx + report_cnt;
+                        uint32_t idx_end = report_usage_idx + hid_stack[hid_stack_idx].report_cnt;
                         if (idx_end > REPORT_MAX_USAGE) {
                             idx_end = REPORT_MAX_USAGE;
                         }
                         for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
-                            wip_report.usages[report_usage_idx].usage_page = usage_page;
-                            printf("%02X", usage_page);
+                            wip_report.usages[report_usage_idx].usage_page = hid_stack[hid_stack_idx].usage_page;
+                            printf("%02X", hid_stack[hid_stack_idx].usage_page);
                             if (usage == usage_list || usage == usage_list+1) {
                                 wip_report.usages[report_usage_idx].usage = usage_list[0];
                                 printf("%02X ", usage_list[0]);
@@ -328,16 +335,16 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                             }
                             wip_report.usages[report_usage_idx].flags = *desc;
                             wip_report.usages[report_usage_idx].bit_offset = report_bit_offset;
-                            wip_report.usages[report_usage_idx].bit_size = report_size;
-                            wip_report.usages[report_usage_idx].logical_min = logical_min;
-                            wip_report.usages[report_usage_idx].logical_max = logical_max;
-                            printf("%u %u, ", report_bit_offset, report_size);
-                            report_bit_offset += report_size;
+                            wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_size;
+                            wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
+                            wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
+                            printf("%u %u, ", report_bit_offset, hid_stack[hid_stack_idx].report_size);
+                            report_bit_offset += hid_stack[hid_stack_idx].report_size;
                         }
                     }
                 }
                 else {
-                    report_bit_offset += report_size * report_cnt;
+                    report_bit_offset += hid_stack[hid_stack_idx].report_size * hid_stack[hid_stack_idx].report_cnt;
                 }
                 usage = usage_list;
                 memset(usage_list, 0xFF, sizeof(usage_list));
@@ -374,14 +381,23 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc++;
                 break;
             case HID_GI_REPORT_COUNT: /* 0x95 */
-                report_cnt = *desc++;
+                hid_stack[hid_stack_idx].report_cnt = *desc++;
                 break;
             case 0x96: /* REPORT_COUNT16 */
-                report_cnt = *(uint16_t *)desc;
+                hid_stack[hid_stack_idx].report_cnt = *(uint16_t *)desc;
                 desc += 2;
                 break;
             case HID_MI_COLLECTION: /* 0xA1 */
                 desc++;
+                break;
+            case 0xA4: /* PUSH */
+                if (hid_stack_idx < (HID_STACK_MAX - 1)) {
+                    memcpy(&hid_stack[hid_stack_idx + 1], &hid_stack[hid_stack_idx], sizeof(hid_stack[0]));
+                    hid_stack_idx++;
+                }
+                else {
+                    printf("%s HID stack overflow\n", __FUNCTION__);
+                }
                 break;
             case 0xB1: /* FEATURE */
                 usage = usage_list;
@@ -390,6 +406,14 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
             case 0xB2: /* FEATURE16 */
                 usage = usage_list;
                 desc += 2;
+                break;
+            case 0xB4: /* POP */
+                if (hid_stack_idx > 0) {
+                    hid_stack_idx--;
+                }
+                else {
+                    printf("%s HID stack underrun\n", __FUNCTION__);
+                }
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
                 break;
