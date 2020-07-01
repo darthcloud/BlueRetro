@@ -355,6 +355,7 @@ void adapter_init_buffer(uint8_t wired_id) {
 }
 
 //#define INPUT_DBG
+//#define INPUT_MAP_DBG
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
     //uint32_t end, start = xthal_get_ccount();
@@ -374,9 +375,16 @@ void adapter_bridge(struct bt_data *bt_data) {
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
 
+#ifdef INPUT_MAP_DBG
+            printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s\n",
+                BOLD, ctrl_output[0].axes[0].value, RESET, BOLD, ctrl_output[0].axes[1].value, RESET, BOLD, ctrl_output[0].axes[2].value, RESET, BOLD, ctrl_output[0].axes[3].value, RESET,
+                BOLD, ctrl_output[0].axes[4].value, RESET, BOLD, ctrl_output[0].axes[5].value, RESET, BOLD, ctrl_output[0].btns[0].value, RESET, BOLD, ctrl_output[0].btns[1].value, RESET,
+                BOLD, ctrl_output[0].btns[2].value, RESET, BOLD, ctrl_output[0].btns[3].value, RESET);
+#else
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 from_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
             }
+#endif
         }
 #endif
     }
