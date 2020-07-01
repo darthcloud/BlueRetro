@@ -15,7 +15,98 @@ static uint32_t hid_mask[REPORT_MAX][4] = {0};
 static uint32_t hid_desc[REPORT_MAX][4] = {0};
 static uint32_t hid_btns_mask[REPORT_MAX][32] = {0};
 
+static const uint32_t hid_kb_bitfield_to_generic[8] = {
+    KB_LCTRL,
+    KB_LSHIFT,
+    KB_LALT,
+    KB_LWIN,
+    KB_RCTRL,
+    KB_RSHIFT,
+    KB_RALT,
+    KB_RWIN,
+};
+
+static const uint32_t hid_kb_key_to_generic[] = {
+    0, 0, 0, 0, KB_A, KB_B, KB_C, KB_D,
+    KB_E, KB_F, KB_G, KB_H, KB_I, KB_J, KB_K, KB_L,
+    KB_M, KB_N, KB_O, KB_P, KB_Q, KB_R, KB_S, KB_T,
+    KB_U, KB_V, KB_W, KB_X, KB_Y, KB_Z, KB_1, KB_2,
+    KB_3, KB_4, KB_5, KB_6, KB_7, KB_8, KB_9, KB_0,
+    KB_ENTER, KB_ESC, KB_BACKSPACE, KB_TAB, KB_SPACE, KB_MINUS, KB_EQUAL, KB_LEFTBRACE,
+    KB_RIGHTBRACE, KB_BACKSLASH, KB_HASH, KB_SEMICOLON, KB_APOSTROPHE, KB_GRAVE, KB_COMMA, KB_DOT,
+    KB_SLASH, KB_CAPSLOCK, KB_F1, KB_F2, KB_F3, KB_F4, KB_F5, KB_F6,
+    KB_F7, KB_F8, KB_F9, KB_F10, KB_F11, KB_F12, KB_PSCREEN, KB_SCROLL,
+    KB_PAUSE, KB_INSERT, KB_HOME, KB_PAGEUP, KB_DEL, KB_END, KB_PAGEDOWN, KB_RIGHT,
+    KB_LEFT, KB_DOWN, KB_UP, KB_NUMLOCK, KB_KP_DIV, KB_KP_MULTI, KB_KP_MINUS, KB_KP_PLUS,
+    KB_KP_ENTER, KB_KP_1, KB_KP_2, KB_KP_3, KB_KP_4, KB_KP_5, KB_KP_6, KB_KP_7,
+    KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT,
+};
+
+static void hid_kb_init(struct hid_report *report) {
+    memset(hid_axes_idx[KB], -1, sizeof(hid_axes_idx[KB]));
+    hid_btn_idx[KB] = -1;
+
+    for (uint32_t i = 0, key_idx = 0; i < report->usage_cnt; i++) {
+        switch (report->usages[i].usage_page) {
+            case USAGE_GEN_KEYBOARD:
+                if (report->usages[i].usage >= 0xE0 && report->usages[i].usage <= 0xE7) {
+                    hid_mask[KB][0] |= BIT(KB_LWIN & 0x1F) | BIT(KB_LCTRL & 0x1F) | BIT(KB_LSHIFT & 0x1F);
+                    hid_mask[KB][3] |= BIT(KB_LALT & 0x1F) | BIT(KB_RCTRL & 0x1F) | BIT(KB_RSHIFT & 0x1F) | BIT(KB_RALT & 0x1F) | BIT(KB_RWIN & 0x1F);
+                    hid_btn_idx[KB] = i;
+                }
+                else if (key_idx < 6) {
+                    hid_mask[KB][0] |= 0xBBBFFFFF;
+                    hid_mask[KB][1] |= 0xFFFFFFFF;
+                    hid_mask[KB][2] |= 0xFFFFFFFF;
+                    hid_mask[KB][3] |= 0x3FFF;
+                    hid_axes_idx[KB][key_idx] = i;
+                    key_idx++;
+                }
+                break;
+        }
+    }
+}
+
 static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    if (!atomic_test_bit(&bt_data->reports[KB].flags, BT_INIT)) {
+        hid_kb_init(&bt_data->reports[KB]);
+        atomic_set_bit(&bt_data->reports[KB].flags, BT_INIT);
+    }
+
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
+    ctrl_data->mask = (uint32_t *)hid_mask[KB];
+    ctrl_data->desc = (uint32_t *)hid_desc[KB];
+
+    if (hid_btn_idx[KB] > -1) {
+        uint32_t len = bt_data->reports[KB].usages[hid_btn_idx[KB]].bit_size;
+        uint32_t offset = bt_data->reports[KB].usages[hid_btn_idx[KB]].bit_offset;
+        uint32_t mask = (1 << len) - 1;
+        uint32_t byte_offset = offset / 8;
+        uint32_t bit_shift = offset % 8;
+        uint32_t buttons = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+
+        for (uint8_t i = 0, mask = 1; mask; i++, mask <<= 1) {
+            if (buttons & mask) {
+                ctrl_data->btns[(hid_kb_bitfield_to_generic[i] >> 5)].value |= BIT(hid_kb_bitfield_to_generic[i] & 0x1F);
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < sizeof(hid_axes_idx[KB]); i++) {
+        if (hid_axes_idx[KB][i] > -1) {
+            int32_t len = bt_data->reports[KB].usages[hid_axes_idx[KB][i]].bit_size;
+            uint32_t offset = bt_data->reports[KB].usages[hid_axes_idx[KB][i]].bit_offset;
+            uint32_t mask = (1 << len) - 1;
+            uint32_t byte_offset = offset / 8;
+            uint32_t bit_shift = offset % 8;
+            uint32_t key = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+
+            if (key > 3 && key < ARRAY_SIZE(hid_kb_key_to_generic)) {
+                ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
+            }
+        }
+    }
 }
 
 static void hid_mouse_init(struct hid_report *report) {
