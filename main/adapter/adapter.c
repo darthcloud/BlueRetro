@@ -10,6 +10,7 @@
 #include "../util.h"
 #include "config.h"
 #include "adapter.h"
+#include "segaio.h"
 #include "n64.h"
 #include "dc.h"
 #include "gc.h"
@@ -54,10 +55,10 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
+    segaio_from_generic,
     NULL,
     NULL,
-    NULL,
-    NULL,
+    segaio_from_generic,
     n64_from_generic,
     dc_from_generic,
     NULL,
@@ -99,10 +100,10 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
+    segaio_meta_init,
     NULL,
     NULL,
-    NULL,
-    NULL,
+    segaio_meta_init,
     n64_meta_init,
     dc_meta_init,
     NULL,
@@ -115,10 +116,10 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL,
     NULL,
     NULL,
+    segaio_init_buffer,
     NULL,
     NULL,
-    NULL,
-    NULL,
+    segaio_init_buffer,
     n64_init_buffer,
     dc_init_buffer,
     NULL,

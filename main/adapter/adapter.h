@@ -40,8 +40,8 @@ enum {
     PCE,
     GENESIS,
     SNES,
-    SATURN,
     PSX,
+    SATURN,
     N64,
     DC,
     PS2,
@@ -258,11 +258,11 @@ enum {
 
 /* Multitap mode */
 enum {
-    NONE = 0,
-    SLOT_1,
-    SLOT_2,
-    DUAL,
-    ALT,
+    MT_NONE = 0,
+    MT_SLOT_1,
+    MT_SLOT_2,
+    MT_DUAL,
+    MT_ALT,
 };
 
 /* Scaling mode */
