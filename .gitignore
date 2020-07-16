@@ -52,6 +52,7 @@ Mkfile.old
 dkms.conf
 
 # BlueRetro addition
+.python-version
 sdkconfig.old
 *.h4
 build/
