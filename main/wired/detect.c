@@ -11,6 +11,8 @@
 #include "../adapter/adapter.h"
 #include "detect.h"
 
+#define ALT_SYS_PIN 39
+
 static intr_handle_t intr_hdl;
 
 static const uint8_t detect_pin_low[] = {
@@ -18,15 +20,17 @@ static const uint8_t detect_pin_low[] = {
 };
 
 static const uint8_t detect_pin_high[] = {
-    32, 33, 34, 35
+    32, 33, 34, 35,
 };
 
-static const uint8_t system_id_low[] = {
-    N64, GC, DC, WII_EXT
+static const uint8_t system_id_low[][4] = {
+    {N64, GC, DC, WII_EXT},
+    {N64, GC, DC, WII_EXT},
 };
 
-static const uint8_t system_id_high[] = {
-    NES, PCE, PSX, GENESIS
+static const uint8_t system_id_high[][4] = {
+    {NES, PCE, PSX, GENESIS},
+    {SNES, PCE, PS2, SATURN},
 };
 
 static void IRAM_ATTR detect_intr(void* arg) {
@@ -37,7 +41,12 @@ static void IRAM_ATTR detect_intr(void* arg) {
         if (wired_adapter.system_id == WIRED_NONE) {
             for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_high); i++) {
                 if (high_io & BIT(detect_pin_high[i] - 32)) {
-                    wired_adapter.system_id = system_id_high[i];
+                    if (GPIO.in1.val & BIT(ALT_SYS_PIN - 32)) {
+                        wired_adapter.system_id = system_id_high[0][i];
+                    }
+                    else {
+                        wired_adapter.system_id = system_id_high[1][i];
+                    }
                 }
             }
         }
@@ -47,7 +56,12 @@ static void IRAM_ATTR detect_intr(void* arg) {
         if (wired_adapter.system_id == WIRED_NONE) {
             for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_low); i++) {
                 if (low_io & BIT(detect_pin_low[i])) {
-                    wired_adapter.system_id = system_id_low[i];
+                    if (GPIO.in1.val & BIT(ALT_SYS_PIN - 32)) {
+                        wired_adapter.system_id = system_id_low[0][i];
+                    }
+                    else {
+                        wired_adapter.system_id = system_id_low[1][i];
+                    }
                 }
             }
         }
@@ -76,6 +90,13 @@ void detect_init(void) {
         gpio_config(&io_conf);
     }
 
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << ALT_SYS_PIN;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
+
     wired_adapter.system_id = WIRED_NONE;
 
     adapter_init_buffer(0);
@@ -92,4 +113,5 @@ void detect_deinit(void) {
     for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_high); i++) {
         gpio_reset_pin(detect_pin_high[i]);
     }
+    gpio_reset_pin(ALT_SYS_PIN);
 }
