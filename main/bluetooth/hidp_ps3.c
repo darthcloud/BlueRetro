@@ -6,7 +6,7 @@ static const uint8_t bt_init_magic[] = {
     0x42, 0x03, 0x00, 0x00
 };
 
-static const uint8_t config[] = {
+static const uint8_t ps3_config[] = {
     0x01, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
     0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
@@ -32,7 +32,7 @@ void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report) {
 
 void bt_hid_ps3_init(struct bt_dev *device) {
     struct bt_hidp_ps3_set_conf set_conf;
-    memcpy((void *)&set_conf, config, sizeof(set_conf));
+    memcpy((void *)&set_conf, ps3_config, sizeof(set_conf));
     set_conf.leds = (bt_hid_led_dev_id_map[device->id] << 1);
 
     printf("# %s\n", __FUNCTION__);

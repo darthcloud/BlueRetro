@@ -27,7 +27,7 @@ static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-static const uint8_t config[] = {
+static const uint8_t ps3_config[] = {
     0x01, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
     0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
@@ -117,7 +117,7 @@ void ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 
 void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->output;
-    memcpy((void *)set_conf, config, sizeof(*set_conf));
+    memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
     set_conf->leds = (led_dev_id_map[bt_data->dev_id] << 1);
 
     if (fb_data->state) {
