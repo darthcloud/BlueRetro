@@ -47,6 +47,10 @@ static void wired_init_task(void *arg) {
         adapter_init_buffer(i);
     }
 
+    while (config.magic != CONFIG_MAGIC) {
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
     }

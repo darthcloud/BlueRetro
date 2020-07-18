@@ -3,6 +3,7 @@
 
 #include "adapter.h"
 
+#define CONFIG_MAGIC 0xA5A5A5A5
 #define ADAPTER_MAPPING_MAX 255
 
 struct map_cfg {
