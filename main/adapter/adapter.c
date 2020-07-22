@@ -10,6 +10,7 @@
 #include "../util.h"
 #include "config.h"
 #include "adapter.h"
+#include "npiso.h"
 #include "segaio.h"
 #include "n64.h"
 #include "dc.h"
@@ -52,11 +53,11 @@ static to_generic_t to_generic_func[BT_MAX] = {
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL,
-    NULL,
+    npiso_from_generic,
     NULL,
     NULL,
     segaio_from_generic,
-    NULL,
+    npiso_from_generic,
     NULL,
     segaio_from_generic,
     n64_from_generic,
@@ -97,11 +98,11 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL,
-    NULL,
+    npiso_meta_init,
     NULL,
     NULL,
     segaio_meta_init,
-    NULL,
+    npiso_meta_init,
     NULL,
     segaio_meta_init,
     n64_meta_init,
@@ -113,11 +114,11 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL,
-    NULL,
+    npiso_init_buffer,
     NULL,
     NULL,
     segaio_init_buffer,
-    NULL,
+    npiso_init_buffer,
     NULL,
     segaio_init_buffer,
     n64_init_buffer,
