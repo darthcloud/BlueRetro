@@ -10,6 +10,8 @@ See [BlueRetroRoot repo](https://github.com/darthcloud/BlueRetroRoot) for matchi
 
 See [BlueRetroHW repo](https://github.com/darthcloud/BlueRetroHW) for hardware files.
 
+See [BlueRetro mapping reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vRln_dhkahEIhq4FQY_p461r5qvLn-Hkl89ZtfyIOGAqdnPtQZ5Ihfsjvd94fRbaHX8wU3F-r2ODYbM/pubhtml)
+
 See [BlueRetro config page](https://darthcloud.github.io/samples/web-bluetooth/blueretro.html) for advance configuration interface.
 
 See [BlueRetro preset page](https://darthcloud.github.io/samples/web-bluetooth/blueretro_presets.html) for preset configuration.
