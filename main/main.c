@@ -12,6 +12,22 @@
 
 typedef void (*wired_init_t)(void);
 
+static const char *sys_name[WIRED_MAX] = {
+    "AUTO",
+    "NES",
+    "SMS",
+    "PCE",
+    "MD-GEN",
+    "SNES",
+    "PSX",
+    "SATURN",
+    "N64",
+    "DC",
+    "PS2",
+    "GC",
+    "Wii-EXT",
+};
+
 static const wired_init_t wired_init[WIRED_MAX] = {
     NULL,
     NULL,
@@ -41,7 +57,7 @@ static void wired_init_task(void *arg) {
     wired_adapter.system_id = DC;
 #endif
 
-    printf("# Detected system : %d\n", wired_adapter.system_id);
+    printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
 
     for (uint32_t i = 0; i < WIRED_MAX; i++) {
         adapter_init_buffer(i);
@@ -49,6 +65,11 @@ static void wired_init_task(void *arg) {
 
     while (config.magic != CONFIG_MAGIC) {
         vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
+    if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {
+        wired_adapter.system_id = config.global_cfg.system_cfg;
+        printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
