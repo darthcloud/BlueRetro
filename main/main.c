@@ -6,6 +6,7 @@
 #include "adapter/config.h"
 #include "bluetooth/host.h"
 #include "wired/detect.h"
+#include "wired/npiso.h"
 #include "wired/sega_io.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
@@ -30,11 +31,11 @@ static const char *sys_name[WIRED_MAX] = {
 
 static const wired_init_t wired_init[WIRED_MAX] = {
     NULL,
-    NULL,
+    npiso_init,
     NULL,
     NULL,
     sega_io_init,
-    NULL,
+    npiso_init,
     NULL,
     sega_io_init,
     nsi_init,
