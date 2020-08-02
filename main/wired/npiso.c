@@ -249,6 +249,70 @@ static void IRAM_ATTR npiso_nes_fs_isr(void* arg) {
     if (low_io) GPIO.status_w1tc = low_io;
 }
 
+static void IRAM_ATTR npiso_sfc_snes_2p_isr(void* arg) {
+    const uint32_t low_io = GPIO.acpu_int;
+    const uint32_t high_io = GPIO.acpu_int1.intr;
+    uint32_t idx0, idx1;
+
+    /* reset bit counter, set first bit */
+    if (high_io & NPISO_LATCH_MASK) {
+        set_data(0, 0, wired_adapter.data[0].output[0] & 0x80);
+        set_data(1, 0, wired_adapter.data[1].output[0] & 0x80);
+        cnt[0] = 1;
+        cnt[1] = 1;
+        mask[0] = 0x40;
+        mask[1] = 0x40;
+    }
+
+    idx0 = cnt[0] >> 3;
+    idx1 = cnt[1] >> 3;
+
+    /* Update port 0 */
+    if (low_io & P1_CLK_MASK) {
+        while (!(GPIO.in & P1_CLK_MASK)); /* Wait rising edge */
+        switch (idx0) {
+            case 0:
+                set_data(0, 0, wired_adapter.data[0].output[0] & mask[0]);
+                break;
+            case 1:
+                set_data(0, 0, wired_adapter.data[0].output[1] & mask[0]);
+                break;
+            default:
+                set_data(0, 0, 0);
+                break;
+        }
+        cnt[0]++;
+        mask[0] >>= 1;
+        if (!mask[0]) {
+            mask[0] = 0x80;
+        }
+    }
+
+    /* Update port 1 */
+    if (low_io & P2_CLK_MASK) {
+        while (!(GPIO.in & P2_CLK_MASK)); /* Wait rising edge */
+        switch (idx1) {
+            case 0:
+                set_data(1, 0, wired_adapter.data[1].output[0] & mask[1]);
+                break;
+            case 1:
+                set_data(1, 0, wired_adapter.data[1].output[1] & mask[1]);
+                break;
+            default:
+                set_data(1, 0, 0);
+                break;
+        }
+        cnt[1]++;
+        mask[1] >>= 1;
+        if (!mask[1]) {
+            mask[1] = 0x80;
+        }
+    }
+
+    if (high_io) GPIO.status1_w1tc.intr_st = high_io;
+    if (low_io) GPIO.status_w1tc = low_io;
+}
+
 void npiso_init(void)
 {
     gpio_config_t io_conf = {0};
@@ -374,6 +438,11 @@ void npiso_init(void)
         esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_fc_4p_isr, NULL, NULL);
     }
     else {
-        esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_fc_nes_2p_isr, NULL, NULL);
+        if (wired_adapter.system_id == NES) {
+            esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_fc_nes_2p_isr, NULL, NULL);
+        }
+        else {
+            esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_sfc_snes_2p_isr, NULL, NULL);
+        }
     }
 }
