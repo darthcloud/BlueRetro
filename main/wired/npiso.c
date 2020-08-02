@@ -17,6 +17,24 @@
 #define NPISO_LATCH_MASK (1U << 0) /* First of 2nd bank of GPIO */
 #define NPISO_TIMEOUT 4096
 
+#define P1_CLK_PIN 5
+#define P1_SEL_PIN 23
+#define P1_D0_PIN 19
+#define P1_D1_PIN 21
+#define P2_CLK_PIN 18
+#define P2_SEL_PIN 26
+#define P2_D0_PIN 22
+#define P2_D1_PIN 25
+
+#define P1_CLK_MASK (1U << P1_CLK_PIN)
+#define P1_SEL_MASK (1U << P1_SEL_PIN)
+#define P1_D0_MASK (1U << P1_D0_PIN)
+#define P1_D1_MASK (1U << P1_D1_PIN)
+#define P2_CLK_MASK (1U << P2_CLK_PIN)
+#define P2_SEL_MASK (1U << P2_SEL_PIN)
+#define P2_D0_MASK (1U << P2_D0_PIN)
+#define P2_D1_MASK (1U << P2_D1_PIN)
+
 enum {
     NPISO_CLK = 0,
     NPISO_SEL,
@@ -39,14 +57,16 @@ enum {
 };
 
 static const uint8_t gpio_pins[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
-    { 5, 23, 19, 21},
-    {18, 26, 22, 25},
+    {P1_CLK_PIN, P1_SEL_PIN, P1_D0_PIN, P1_D1_PIN},
+    {P2_CLK_PIN, P2_SEL_PIN, P2_D0_PIN, P2_D1_PIN},
 };
 
+#if 0
 static const uint32_t gpio_mask[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
-    {(1U <<  5), (1U << 23), (1U << 19), (1U << 21)},
-    {(1U << 18), (1U << 26), (1U << 22), (1U << 25)},
+    {P1_CLK_MASK, P1_SEL_MASK, P1_D0_MASK, P1_D1_MASK},
+    {P2_CLK_MASK, P2_SEL_MASK, P2_D0_MASK, P2_D1_MASK},
 };
+#endif
 
 static uint8_t dev_type[NPISO_PORT_MAX] = {0};
 static uint8_t mt_first_port[NPISO_PORT_MAX] = {0};
@@ -80,7 +100,8 @@ static void IRAM_ATTR npiso_fc_nes_2p_isr(void* arg) {
     }
 
     /* Update port 0 */
-    if (low_io & gpio_mask[0][NPISO_CLK]) {
+    if (low_io & P1_CLK_MASK) {
+        while (!(GPIO.in & P1_CLK_MASK)); /* Wait rising edge */
         if (cnt[0] > 7) {
             set_data(0, 0, 0);
         }
@@ -92,7 +113,8 @@ static void IRAM_ATTR npiso_fc_nes_2p_isr(void* arg) {
     }
 
     /* Update port 1 */
-    if (low_io & gpio_mask[1][NPISO_CLK]) {
+    if (low_io & P2_CLK_MASK) {
+        while (!(GPIO.in & P2_CLK_MASK)); /* Wait rising edge */
         if (cnt[1] > 7) {
             set_data(1, 0, 0);
         }
@@ -124,7 +146,8 @@ static void IRAM_ATTR npiso_fc_4p_isr(void* arg) {
     }
 
     /* Update port 0 */
-    if (low_io & gpio_mask[0][NPISO_CLK]) {
+    if (low_io & P1_CLK_MASK) {
+        while (!(GPIO.in & P1_CLK_MASK)); /* Wait rising edge */
         if (cnt[0] > 7) {
             set_data(0, 0, 0);
             set_data(0, 1, 0);
@@ -138,7 +161,8 @@ static void IRAM_ATTR npiso_fc_4p_isr(void* arg) {
     }
 
     /* Update port 1 */
-    if (low_io & gpio_mask[1][NPISO_CLK]) {
+    if (low_io & P2_CLK_MASK) {
+        while (!(GPIO.in & P2_CLK_MASK)); /* Wait rising edge */
         if (cnt[1] > 7) {
             set_data(1, 0, 0);
             set_data(1, 1, 0);
@@ -174,7 +198,8 @@ static void IRAM_ATTR npiso_nes_fs_isr(void* arg) {
     idx1 = cnt[1] >> 3;
 
     /* Update port 0 */
-    if (low_io & gpio_mask[0][NPISO_CLK]) {
+    if (low_io & P1_CLK_MASK) {
+        while (!(GPIO.in & P1_CLK_MASK)); /* Wait rising edge */
         switch (idx0) {
             case 0:
                 set_data(0, 0, wired_adapter.data[0].output[0] & mask[0]);
@@ -197,7 +222,8 @@ static void IRAM_ATTR npiso_nes_fs_isr(void* arg) {
     }
 
     /* Update port 1 */
-    if (low_io & gpio_mask[1][NPISO_CLK]) {
+    if (low_io & P2_CLK_MASK) {
+        while (!(GPIO.in & P2_CLK_MASK)); /* Wait rising edge */
         switch (idx1) {
             case 0:
                 set_data(1, 0, wired_adapter.data[1].output[0] & mask[1]);
@@ -310,7 +336,7 @@ void npiso_init(void)
 
     /* Clocks */
     for (uint32_t i = 0; i < NPISO_PORT_MAX; i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+        io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
         io_conf.pin_bit_mask = 1ULL << gpio_pins[i][NPISO_CLK];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
