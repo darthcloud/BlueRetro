@@ -927,6 +927,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_DISCONN_COMPLETE\n");
             bt_host_get_dev_from_handle(disconn_complete->handle, &device);
             if (device) {
+                printf("# DISCONN from dev: %d\n", device->id);
                 bt_host_reset_dev(device);
                 if (bt_host_get_active_dev(&device) == BT_NONE) {
                     bt_hci_cmd_periodic_inquiry(NULL);
@@ -935,11 +936,17 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             else {
                 bt_host_get_dev_conf(&device);
-                if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND) && disconn_complete->handle == device->acl_handle) {
-                    bt_host_reset_dev(device);
-                    if (bt_host_get_active_dev(&device) == BT_NONE) {
-                        bt_hci_cmd_le_set_adv_enable(NULL);
+                if (device && disconn_complete->handle == device->acl_handle) {
+                    printf("# DISCONN from BLE config interface\n");
+                    if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
+                        bt_host_reset_dev(device);
+                        if (bt_host_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_cmd_le_set_adv_enable(NULL);
+                        }
                     }
+                }
+                else {
+                    printf("# DISCONN for non existing device handle: %04X\n", disconn_complete->handle);
                 }
             }
             break;

@@ -13,6 +13,7 @@
 
 #define BT_MAX_DEV   7 /* BT limitation */
 #define WIRED_MAX_DEV 12 /* Saturn limit */
+#define ADAPTER_MAX_AXES 6
 #define REPORT_MAX_USAGE 16
 
 /* BT device ID */
@@ -305,7 +306,7 @@ struct generic_ctrl {
     const uint32_t *desc;
     uint32_t map_mask[4];
     struct ctrl btns[4];
-    struct ctrl axes[6];
+    struct ctrl axes[ADAPTER_MAX_AXES];
 };
 
 struct generic_fb {
@@ -351,7 +352,7 @@ struct bt_data {
     int32_t report_type;
     struct hid_report reports[REPORT_MAX];
     uint8_t input[128];
-    int32_t axes_cal[6];
+    int32_t axes_cal[ADAPTER_MAX_AXES];
     uint32_t sdp_len;
     uint8_t sdp_data[2048];
 } __packed;

@@ -44,7 +44,7 @@ enum {
     XB1_ADAPTIVE_X4,
 };
 
-const uint8_t xb1_axes_idx[6] =
+const uint8_t xb1_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       4,      5
@@ -55,7 +55,7 @@ const struct ctrl_meta xb1_btn_meta =
     .polarity = 0,
 };
 
-const struct ctrl_meta xb1_axes_meta[6] =
+const struct ctrl_meta xb1_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x8000, .abs_max = 0x8000},
     {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
@@ -173,13 +173,13 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->btns[0].value |= hat_to_ld_btns[(map->hat - 1) & 0xF];
 
         if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-            for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+            for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 bt_data->axes_cal[i] = -(map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral);
             }
             atomic_set_bit(&bt_data->flags, BT_INIT);
         }
 
-        for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             ctrl_data->axes[i].meta = &xb1_axes_meta[i];
             ctrl_data->axes[i].value = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->axes_cal[i];
         }

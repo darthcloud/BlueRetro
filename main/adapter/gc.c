@@ -18,7 +18,7 @@ enum {
     GC_L,
 };
 
-const uint8_t gc_axes_idx[6] =
+const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       4,      5
@@ -29,7 +29,7 @@ const struct ctrl_meta gc_btns_meta =
     .polarity = 0,
 };
 
-const struct ctrl_meta gc_axes_meta[6] =
+const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
@@ -62,7 +62,7 @@ void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct gc_map *map = (struct gc_map *)wired_data->output;
 
     map->buttons = 0x8020;
-    for (uint32_t i = 0; i < ARRAY_SIZE(gc_axes_meta); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         map->axes[gc_axes_idx[i]] = gc_axes_meta[i].neutral;
     }
 }
@@ -71,7 +71,7 @@ void gc_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
-        for (uint32_t j = 0; j < ARRAY_SIZE(gc_axes_meta); j++) {
+        for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
             ctrl_data[i].mask = gc_mask;
             ctrl_data[i].desc = gc_desc;
             ctrl_data[i].axes[j].meta = &gc_axes_meta[j];
@@ -97,7 +97,7 @@ void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
         }
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(gc_axes_meta); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & gc_desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[gc_axes_idx[i]] = 127;

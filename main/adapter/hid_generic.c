@@ -8,9 +8,9 @@
 
 struct hid_report_meta {
     int8_t hid_btn_idx;
-    int8_t hid_axes_idx[6];
+    int8_t hid_axes_idx[ADAPTER_MAX_AXES];
     int8_t hid_hat_idx;
-    struct ctrl_meta hid_axes_meta[6];
+    struct ctrl_meta hid_axes_meta[ADAPTER_MAX_AXES];
     uint32_t hid_mask[4];
     uint32_t hid_desc[4];
     uint32_t hid_btns_mask[32];
@@ -211,13 +211,13 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
     }
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             bt_data->axes_cal[i] = meta->hid_axes_meta[i].neutral;
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
-    for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (meta->hid_axes_idx[i] > -1) {
             int32_t len = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_size;
             uint32_t offset = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_offset;
@@ -426,7 +426,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         ctrl_data->btns[0].value |= hat_to_ld_btns[(hat - min) & 0xF];
     }
 
-    for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (meta->hid_axes_idx[i] > -1) {
             int32_t len = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_size;
             uint32_t offset = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_offset;

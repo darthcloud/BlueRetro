@@ -4,6 +4,7 @@
 #include "sw.h"
 
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30
+#define SW_AXES_MAX 4
 
 enum {
     SW_B,
@@ -28,7 +29,7 @@ static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-const uint8_t sw_axes_idx[4] =
+const uint8_t sw_axes_idx[SW_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
     0,       1,       2,       3
@@ -39,7 +40,7 @@ const struct ctrl_meta sw_btn_meta =
     .polarity = 0,
 };
 
-const struct ctrl_meta sw_axes_meta[] =
+const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
 {
     {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00},
     {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00, .polarity = 1},
@@ -95,13 +96,13 @@ void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+        for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
             bt_data->axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+    for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &sw_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral + bt_data->axes_cal[i];
     }

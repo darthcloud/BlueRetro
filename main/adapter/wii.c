@@ -3,6 +3,8 @@
 #include "../util.h"
 #include "wii.h"
 
+#define WIIU_AXES_MAX 4
+#define NUNCHUCK_AXES_MAX 2
 enum {
     WII_CORE_D_LEFT = 0,
     WII_CORE_D_RIGHT,
@@ -84,19 +86,19 @@ static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-static const uint8_t wiiu_axes_idx[4] =
+static const uint8_t wiiu_axes_idx[WIIU_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
     0,       2,       1,       3
 };
 
-static const struct ctrl_meta wiin_axes_meta[2] =
+static const struct ctrl_meta wiin_axes_meta[NUNCHUCK_AXES_MAX] =
 {
     {.neutral = 0x80, .abs_max = 0x63},
     {.neutral = 0x80, .abs_max = 0x63},
 };
 
-static const struct ctrl_meta wiic_axes_meta[6] =
+static const struct ctrl_meta wiic_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x20, .abs_max = 0x1B},
     {.neutral = 0x20, .abs_max = 0x1B},
@@ -218,13 +220,13 @@ void wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     }
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < ARRAY_SIZE(wiin_axes_meta); i++) {
+        for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
             bt_data->axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(wiin_axes_meta); i++) {
+    for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &wiin_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
@@ -259,13 +261,13 @@ void wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     axes[5] = map->axes[3] & 0x1F;
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < ARRAY_SIZE(wiic_axes_meta); i++) {
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             bt_data->axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(wiic_axes_meta); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &wiic_axes_meta[i];
         ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
@@ -286,13 +288,13 @@ void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     }
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+        for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
             bt_data->axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral);
         }
         atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+    for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &wiiu_axes_meta;
         ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->axes_cal[i];
     }

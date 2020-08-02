@@ -19,7 +19,7 @@ enum {
     SATURN_R,
 };
 
-const uint8_t segaio_axes_idx[6] =
+const uint8_t segaio_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       0,       3,      2
@@ -30,7 +30,7 @@ const struct ctrl_meta segaio_btns_meta =
     .polarity = 1,
 };
 
-const struct ctrl_meta segaio_axes_meta[6] =
+const struct ctrl_meta segaio_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -63,7 +63,7 @@ void segaio_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct segaio_map *map = (struct segaio_map *)wired_data->output;
 
     map->buttons = 0xFFFF;
-    for (uint32_t i = 0; i < ARRAY_SIZE(segaio_axes_meta); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (i == 2 || i == 3) {
             continue;
         }
@@ -77,7 +77,7 @@ void segaio_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         ctrl_data[i].mask = segaio_mask;
         ctrl_data[i].desc = segaio_desc;
-        for (uint32_t j = 0; j < ARRAY_SIZE(segaio_axes_meta); j++) {
+        for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
             ctrl_data[i].axes[j].meta = &segaio_axes_meta[j];
         }
     }
@@ -99,7 +99,7 @@ void segaio_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struc
         }
     }
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(segaio_axes_meta); i++) {
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (i == 2 || i == 3) {
             continue;
         }
