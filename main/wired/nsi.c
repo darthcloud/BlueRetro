@@ -36,11 +36,8 @@ enum {
     RMT_MEM_CHANGE
 };
 
-static const uint8_t gpio_pin[4][2] = {
-    {19, 21},
-    { 3,  3},
-    {26, 26},
-    {27, 27},
+static const uint8_t gpio_pin[4] = {
+    19, 5, 26, 27
 };
 
 static const uint8_t rmt_ch[4][2] = {
@@ -380,10 +377,10 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_thres = 0; /* No minimum length */
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i][system]], PIN_FUNC_GPIO);
-        gpio_set_direction(gpio_pin[i][system], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
-        gpio_matrix_out(gpio_pin[i][system], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
-        gpio_matrix_in(gpio_pin[i][system], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i]], PIN_FUNC_GPIO);
+        gpio_set_direction(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
+        gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
+        gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
 
         rmt_set_tx_intr_en(rmt_ch[i][system], 1);
         rmt_set_rx_intr_en(rmt_ch[i][system], 1);

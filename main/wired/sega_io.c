@@ -62,7 +62,7 @@ enum {
 
 static const uint8_t gpio_pin[2][7] = {
     {35, 27, 26, 23, 18,  5,  3},
-    {36,  0, 33, 25, 22, 21, 19},
+    {36, 16, 33, 25, 22, 21, 19},
 };
 
 static const uint16_t gen_cycle_mask[8][6] = {

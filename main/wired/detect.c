@@ -24,8 +24,8 @@ static const uint8_t detect_pin_high[] = {
 };
 
 static const uint8_t system_id_low[][4] = {
-    {N64, GC, DC, WII_EXT},
-    {N64, GC, DC, WII_EXT},
+    {N64, SMS, DC, WII_EXT},
+    {GC, SMS, DC, WII_EXT},
 };
 
 static const uint8_t system_id_high[][4] = {
