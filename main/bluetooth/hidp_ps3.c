@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <esp_timer.h>
 #include "host.h"
 #include "hidp_ps3.h"
 
@@ -14,12 +15,29 @@ static const uint8_t ps3_config[] = {
     0x00, 0x00, 0x00
 };
 
+static void *ps3_timer_hdl;
+
 static void bt_hid_cmd_ps3_bt_init(struct bt_dev *device) {
     struct bt_hidp_ps3_bt_init *bt_init = (struct bt_hidp_ps3_bt_init *)bt_hci_pkt_tmp.hidp_data;
 
     memcpy((void *)bt_init, bt_init_magic, sizeof(*bt_init));
 
     bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_FE, BT_HIDP_PS3_BT_INIT, sizeof(*bt_init));
+}
+
+static void bt_hid_ps3_init_callback(void *arg) {
+    struct bt_dev *device = (struct bt_dev *)arg;
+    struct bt_hidp_ps3_set_conf set_conf;
+    memcpy((void *)&set_conf, ps3_config, sizeof(set_conf));
+    set_conf.leds = (bt_hid_led_dev_id_map[device->id] << 1);
+
+    printf("# %s\n", __FUNCTION__);
+
+    esp_timer_delete(ps3_timer_hdl);
+    ps3_timer_hdl = NULL;
+
+    bt_hid_cmd_ps3_bt_init(device);
+    bt_hid_cmd_ps3_set_conf(device, (void *)&set_conf);
 }
 
 void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report) {
@@ -31,14 +49,17 @@ void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_ps3_init(struct bt_dev *device) {
-    struct bt_hidp_ps3_set_conf set_conf;
-    memcpy((void *)&set_conf, ps3_config, sizeof(set_conf));
-    set_conf.leds = (bt_hid_led_dev_id_map[device->id] << 1);
+    /* PS3 ctrl not yet ready to RX config, delay 20ms */
+    const esp_timer_create_args_t ps3_timer_args = {
+        .callback = &bt_hid_ps3_init_callback,
+        .arg = (void *)device,
+        .name = "ps3_init_timer"
+    };
 
     printf("# %s\n", __FUNCTION__);
 
-    bt_hid_cmd_ps3_bt_init(device);
-    bt_hid_cmd_ps3_set_conf(device, (void *)&set_conf);
+    esp_timer_create(&ps3_timer_args, (esp_timer_handle_t *)&ps3_timer_hdl);
+    esp_timer_start_once(ps3_timer_hdl, 20000);
 }
 
 void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
