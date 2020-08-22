@@ -888,7 +888,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
                     bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
-                    bt_hci_cmd_read_remote_features(&device->acl_handle);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                         bt_hci_cmd_auth_requested(&device->acl_handle);
                     }
@@ -998,6 +997,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     int8_t type = bt_hci_get_type_from_name(remote_name_req_complete->name);
                     if (type > BT_NONE) {
                         device->type = bt_hci_get_type_from_name(remote_name_req_complete->name);
+                    }
+                    if (device->type == HID_GENERIC) {
+                        bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }
                     printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
                 }
