@@ -145,10 +145,50 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
     return ret;
 }
 
-static void bt_host_task(void *param) {
-    size_t packet_len, fb_len;
-    uint8_t *packet, *fb_data;
+static void bt_tx_task(void *param) {
+    size_t packet_len;
+    uint8_t *packet;
 
+    while(1) {
+        /* TX packet from Q */
+        if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
+            packet = (uint8_t *)xRingbufferReceive(txq_hdl, &packet_len, portMAX_DELAY);
+            if (packet) {
+                if (packet[0] == 0xFF) {
+                    /* Internal wait packet */
+                    vTaskDelay(packet[1] / portTICK_PERIOD_MS);
+                }
+                else {
+#ifdef H4_TRACE
+                    bt_h4_trace(packet, packet_len, BT_TX);
+#endif /* H4_TRACE */
+                    atomic_clear_bit(&bt_flags, BT_CTRL_READY);
+                    esp_vhci_host_send_packet(packet, packet_len);
+                }
+                vRingbufferReturnItem(txq_hdl, (void *)packet);
+            }
+        }
+    }
+}
+
+static void bt_fb_task(void *param) {
+    size_t fb_len;
+    uint8_t *fb_data;
+
+    while(1) {
+        /* Look for rumble/led feedback data */
+        fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, portMAX_DELAY);
+        if (fb_data) {
+            struct bt_dev *device = &bt_dev[fb_data[0]];
+            if (adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id])) {
+                bt_hid_feedback(device, bt_adapter.data[device->id].output);
+            }
+            vRingbufferReturnItem(wired_adapter.input_q_hdl, (void *)fb_data);
+        }
+    }
+}
+
+static void bt_host_task(void *param) {
     while(1) {
         /* Per device housekeeping */
         for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
@@ -163,35 +203,6 @@ static void bt_host_task(void *param) {
                     }
                     atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
                 }
-            }
-        }
-
-        /* Look for rumble/led feedback data */
-        fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, 0);
-        if (fb_data) {
-            struct bt_dev *device = &bt_dev[fb_data[0]];
-            if (adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id])) {
-                bt_hid_feedback(device, bt_adapter.data[device->id].output);
-            }
-            vRingbufferReturnItem(wired_adapter.input_q_hdl, (void *)fb_data);
-        }
-
-        /* TX packet from Q */
-        if (atomic_test_bit(&bt_flags, BT_CTRL_READY)) {
-            packet = (uint8_t *)xRingbufferReceive(txq_hdl, &packet_len, 0);
-            if (packet) {
-                if (packet[0] == 0xFF) {
-                    /* Internal wait packet */
-                    vTaskDelay(packet[1] / portTICK_PERIOD_MS);
-                }
-                else {
-#ifdef H4_TRACE
-                    bt_h4_trace(packet, packet_len, BT_TX);
-#endif /* H4_TRACE */
-                    atomic_clear_bit(&bt_flags, BT_CTRL_READY);
-                    esp_vhci_host_send_packet(packet, packet_len);
-                }
-                vRingbufferReturnItem(txq_hdl, (void *)packet);
             }
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -374,6 +385,8 @@ int32_t bt_host_init(void) {
     bt_host_load_keys_from_file(&bt_host_link_keys);
 
     xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_fb_task, "bt_fb_task", 1024, NULL, 10, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_tx_task, "bt_tx_task", 2048, NULL, 11, NULL, 0);
 
     bt_hci_init();
 
