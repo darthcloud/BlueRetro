@@ -12,6 +12,7 @@ This is my wildcard entry to the #2020HACKADAYPRIZE
 * [Main hackaday.io page](https://hackaday.io/project/170365-blueretro)
 * [Web-Bluetooth (BLE) configuration interface](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
 * [Hardware Design](https://hackaday.io/project/170365-blueretro/log/182054-blueretro-hardware-design)
+* [Software Design](https://hackaday.io/project/170365-blueretro/log/182603-blueretro-software-design)
 ## General documentation
 * [Learning Bluetooth Classic (BR/EDR) with HCI traces](https://hackaday.io/project/170365-blueretro/log/178249-learning-bluetooth-classic-bredr-with-hci-traces)
 * [Xbox One Adaptive controller](https://hackaday.io/project/170365-blueretro/log/179869-xbox-one-adaptive-controller)
