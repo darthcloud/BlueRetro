@@ -1,5 +1,5 @@
 # BlueRetro
-![BlueRetro](https://cdn.hackaday.io/images/7104601597769319104.png)
+![BlueRetro](https://cdn.hackaday.io/images/5521711598645122765.jpg)
 
 BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game consoles.
 
@@ -7,7 +7,6 @@ BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game 
 Lost or broken controllers? Reproduction too expensive? Need those rare and obscure accessories? Just use the Bluetooth devices you already got! The project is open source hardware & software. It's built for the popular ESP32 chip. All processing for Bluetooth and HID input decoding is done on a single core which makes it easy for other projects to use the Bluetooth stack within their own project as long the application is running on the other core. Wii, Switch, PS3, PS4, Xbox One & generic HID Bluetooth devices are supported. NES, SNES, Saturn, N64, GameCube & Dreamcast are supported with simultaneous 4+ players using a single adapter. Soon Atari 5200, Genesis/Megadrive, PSX, PS2, PCE....
 This is my wildcard entry to the #2020HACKADAYPRIZE
 
-# BlueRetro logs entries
 ## Project documentation
 * [Main hackaday.io page](https://hackaday.io/project/170365-blueretro)
 * [Web-Bluetooth (BLE) configuration interface](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
@@ -30,6 +29,8 @@ This is my wildcard entry to the #2020HACKADAYPRIZE
 * [2020-07-29 - First BlueRetro DIY user!](https://hackaday.io/project/170365/log/181547-2020-07-29-progress-update-first-blueretro-diy-user)
 * [2020-08-13 - PCB design WIP](https://hackaday.io/project/170365-blueretro/log/182171-2020-08-13-progress-update-pcb-design-wip)
 * [2020-08-17 - PCB under production](https://hackaday.io/project/170365-blueretro/log/182339-2020-08-17-progress-update-proto-pcb-under-production)
+* [2020-08-24 - PCBs received!](https://hackaday.io/project/170365-blueretro/log/182690-2020-08-24-progress-update-pcbs-received)
+* [2020-08-28 - PCB prototype assembled!](https://hackaday.io/project/170365-blueretro/log/182871-2020-08-28-progress-update-pcb-prototype-assembled)
 # Other links
 * [Software files repository](https://github.com/darthcloud/BlueRetro)
 * [BlueRetro mapping label reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vRln_dhkahEIhq4FQY_p461r5qvLn-Hkl89ZtfyIOGAqdnPtQZ5Ihfsjvd94fRbaHX8wU3F-r2ODYbM/pubhtml)
@@ -39,3 +40,5 @@ This is my wildcard entry to the #2020HACKADAYPRIZE
 * [Advance configuration web interface](https://darthcloud.github.io/BlueRetroWebCfg/blueretro.html)
 * [Preset configuration web interface](https://darthcloud.github.io/BlueRetroWebCfg/blueretro_presets.html)
 * [Wireless traces repository](https://github.com/darthcloud/bt_traces)
+
+
