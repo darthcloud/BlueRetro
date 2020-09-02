@@ -18,6 +18,7 @@
 #include "wired/maple.h"
 #include "wired/jvs.h"
 #include "wired/parallel.h"
+#include "wired/ps_spi.h"
 
 typedef void (*wired_init_t)(void);
 
@@ -57,13 +58,13 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
     NULL, /* JAGUAR */
-    NULL, /* PSX */
+    ps_spi_init, /* PSX */
     sega_io_init, /* SATURN */
     NULL, /* PCFX */
     jvs_init, /* JVS */
     nsi_init, /* N64 */
     maple_init, /* DC */
-    NULL, /* PS2 */
+    ps_spi_init, /* PS2 */
     nsi_init, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */

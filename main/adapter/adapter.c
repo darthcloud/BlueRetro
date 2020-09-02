@@ -22,6 +22,7 @@
 #include "n64.h"
 #include "dc.h"
 #include "gc.h"
+#include "ps.h"
 #include "hid_generic.h"
 #include "ps3.h"
 #include "wii.h"
@@ -88,13 +89,13 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
     NULL, /* JAGUAR */
-    NULL, /* PSX */
+    ps_from_generic, /* PSX */
     segaio_from_generic, /* SATURN */
     NULL, /* PCFX */
     jvs_from_generic, /* JVS */
     n64_from_generic, /* N64 */
     dc_from_generic, /* DC */
-    NULL, /* PS2 */
+    ps_from_generic, /* PS2 */
     gc_from_generic, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */
@@ -112,13 +113,13 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
     NULL, /* JAGUAR */
-    NULL, /* PSX */
+    ps_fb_to_generic, /* PSX */
     NULL, /* SATURN */
     NULL, /* PCFX */
     NULL, /* JVS */
     n64_fb_to_generic, /* N64 */
     dc_fb_to_generic, /* DC */
-    NULL, /* PS2 */
+    ps_fb_to_generic, /* PS2 */
     gc_fb_to_generic, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */
@@ -136,13 +137,13 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
     NULL, /* JAGUAR */
-    NULL, /* PSX */
+    ps_meta_init, /* PSX */
     segaio_meta_init, /* SATURN */
     NULL, /* PCFX */
     jvs_meta_init, /* JVS */
     n64_meta_init, /* N64 */
     dc_meta_init, /* DC */
-    NULL, /* PS2 */
+    ps_meta_init, /* PS2 */
     gc_meta_init, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */
@@ -160,13 +161,13 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
     NULL, /* JAGUAR */
-    NULL, /* PSX */
+    ps_init_buffer, /* PSX */
     segaio_init_buffer, /* SATURN */
     NULL, /* PCFX */
     jvs_init_buffer, /* JVS */
     n64_init_buffer, /* N64 */
     dc_init_buffer, /* DC */
-    NULL, /* PS2 */
+    ps_init_buffer, /* PS2 */
     gc_init_buffer, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */
