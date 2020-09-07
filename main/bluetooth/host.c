@@ -6,6 +6,7 @@
 #include <esp_system.h>
 #include <esp_bt.h>
 #include <nvs_flash.h>
+#include <driver/gpio.h>
 #include "host.h"
 #include "hci.h"
 #include "l2cap.h"
@@ -190,6 +191,15 @@ static void bt_fb_task(void *param) {
 
 static void bt_host_task(void *param) {
     while(1) {
+        /* Disconnect all devices on BOOT switch press */
+        if (!gpio_get_level(0)) {
+            printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
+            for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+                if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
+                    bt_hci_disconnect(&bt_dev[i]);
+                }
+            }
+        }
         /* Per device housekeeping */
         for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
             if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
@@ -350,6 +360,7 @@ void bt_host_q_wait_pkt(uint32_t ms) {
 }
 
 int32_t bt_host_init(void) {
+    gpio_config_t io_conf = {0};
     /* Initialize NVS — it is used to store PHY calibration data */
     int32_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -357,6 +368,14 @@ int32_t bt_host_init(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    /* INIT BOOT SW */
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.pin_bit_mask = BIT(0);
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
 
     bt_host_load_bdaddr_from_file();
 
