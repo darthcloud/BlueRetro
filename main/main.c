@@ -2,6 +2,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "drivers/sd.h"
+#include "drivers/led.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
@@ -80,13 +81,17 @@ static void wired_init_task(void *arg) {
 }
 
 static void wl_init_task(void *arg) {
+    err_led_clear();
+
     if (sd_init()) {
+        err_led_set();
         printf("SD init fail!\n");
     }
 
     config_init();
 
     if (bt_host_init()) {
+        err_led_set();
         printf("Bluetooth init fail!\n");
     }
     vTaskDelete(NULL);
