@@ -26,6 +26,7 @@
 enum {
     /* BT CTRL flags */
     BT_CTRL_READY,
+    BT_HOST_DISCONN_SW_INHIBIT,
 };
 
 struct bt_host_link_keys {
@@ -43,6 +44,7 @@ static atomic_t bt_flags = 0;
 static uint32_t frag_size = 0;
 static uint32_t frag_offset = 0;
 static uint8_t frag_buf[1024];
+static esp_timer_handle_t disconn_sw_timer_hdl;
 
 #ifdef H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
@@ -83,6 +85,15 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     }
 }
 #endif /* H4_TRACE */
+
+static void bt_host_disconn_sw_callback(void *arg) {
+    printf("# %s\n", __FUNCTION__);
+
+    esp_timer_delete(disconn_sw_timer_hdl);
+    disconn_sw_timer_hdl = NULL;
+
+    atomic_clear_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT);
+}
 
 static int32_t bt_host_load_bdaddr_from_file(void) {
     struct stat st;
@@ -192,13 +203,24 @@ static void bt_fb_task(void *param) {
 static void bt_host_task(void *param) {
     while(1) {
         /* Disconnect all devices on BOOT switch press */
-        if (!gpio_get_level(0)) {
+        if (!gpio_get_level(0) && !atomic_test_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT)) {
+            const esp_timer_create_args_t disconn_sw_timer_args = {
+                .callback = &bt_host_disconn_sw_callback,
+                .arg = NULL,
+                .name = "disconn_sw_timer"
+            };
+
+            atomic_set_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT);
             printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
             for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
                 if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
                     bt_hci_disconnect(&bt_dev[i]);
                 }
             }
+
+            /* Inhibit SW press for 2 seconds */
+            esp_timer_create(&disconn_sw_timer_args, (esp_timer_handle_t *)&disconn_sw_timer_hdl);
+            esp_timer_start_once(disconn_sw_timer_hdl, 2000000);
         }
         /* Per device housekeeping */
         for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
