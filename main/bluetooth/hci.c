@@ -68,6 +68,7 @@ static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
 static void bt_hci_cmd_periodic_inquiry(void *cp);
 static void bt_hci_cmd_exit_periodic_inquiry(void *cp);
 static void bt_hci_cmd_connect(void *bdaddr);
+static void bt_hci_cmd_disconnect(void *handle);
 static void bt_hci_cmd_accept_conn_req(void *bdaddr);
 static void bt_hci_cmd_link_key_neg_reply(void *bdaddr);
 static void bt_hci_cmd_pin_code_reply(void *cp);
@@ -255,6 +256,17 @@ static void bt_hci_cmd_connect(void *bdaddr) {
     connect->allow_role_switch = 0x01;
 
     bt_hci_cmd(BT_HCI_OP_CONNECT, sizeof(*connect));
+}
+
+static void bt_hci_cmd_disconnect(void *handle) {
+    struct bt_hci_cp_disconnect *disconnect = (struct bt_hci_cp_disconnect *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    disconnect->handle = *(uint16_t *)handle;
+    disconnect->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+    disconnect->reason = BT_HCI_ERR_REMOTE_POWER_OFF;
+
+    bt_hci_cmd(BT_HCI_OP_DISCONNECT, sizeof(*disconnect));
 }
 
 static void bt_hci_cmd_accept_conn_req(void *bdaddr) {
@@ -823,6 +835,12 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
 void bt_hci_init(void) {
     bt_config_state = 0;
     bt_hci_q_conf(0);
+}
+
+void bt_hci_disconnect(struct bt_dev *device) {
+    if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
+        bt_hci_cmd_disconnect(&device->acl_handle);
+    }
 }
 
 void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
