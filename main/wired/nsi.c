@@ -317,10 +317,12 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
-                        if (last_rumble[port] != buf[1]) {
-                            last_rumble[port] = buf[1];
-                            buf[0] = port;
-                            adapter_q_fb(buf, 2);
+                        if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
+                            if (last_rumble[port] != buf[1]) {
+                                last_rumble[port] = buf[1];
+                                buf[0] = port;
+                                adapter_q_fb(buf, 2);
+                            }
                         }
 
                         ++wired_adapter.data[port].frame_cnt;
