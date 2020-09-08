@@ -52,6 +52,10 @@ static void wired_init_task(void *arg) {
 #if 1
     detect_init();
     while (wired_adapter.system_id == WIRED_NONE) {
+        if (config.magic == CONFIG_MAGIC && config.global_cfg.system_cfg < WIRED_MAX
+            && config.global_cfg.system_cfg != WIRED_AUTO) {
+            break;
+        }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
     detect_deinit();
@@ -59,10 +63,8 @@ static void wired_init_task(void *arg) {
     wired_adapter.system_id = DC;
 #endif
 
-    printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
-
-    for (uint32_t i = 0; i < WIRED_MAX; i++) {
-        adapter_init_buffer(i);
+    if (wired_adapter.system_id >= 0) {
+        printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
     while (config.magic != CONFIG_MAGIC) {
@@ -72,6 +74,10 @@ static void wired_init_task(void *arg) {
     if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {
         wired_adapter.system_id = config.global_cfg.system_cfg;
         printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
+    }
+
+    for (uint32_t i = 0; i < WIRED_MAX; i++) {
+        adapter_init_buffer(i);
     }
 
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
