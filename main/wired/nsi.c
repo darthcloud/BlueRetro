@@ -318,10 +318,12 @@ static void IRAM_ATTR gc_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
 
                         if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
-                            if (last_rumble[port] != buf[1]) {
-                                last_rumble[port] = buf[1];
-                                buf[0] = port;
-                                adapter_q_fb(buf, 2);
+                            uint8_t rumble_data[2];
+                            rumble_data[1] = buf[1] & 0x01;
+                            if (last_rumble[port] != rumble_data[1]) {
+                                last_rumble[port] = rumble_data[1];
+                                rumble_data[0] = port;
+                                adapter_q_fb(rumble_data, 2);
                             }
                         }
 

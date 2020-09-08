@@ -426,7 +426,7 @@ int32_t bt_host_init(void) {
     bt_host_load_keys_from_file(&bt_host_link_keys);
 
     xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(&bt_fb_task, "bt_fb_task", 1024, NULL, 10, NULL, 0);
+    xTaskCreatePinnedToCore(&bt_fb_task, "bt_fb_task", 2048, NULL, 10, NULL, 0);
     xTaskCreatePinnedToCore(&bt_tx_task, "bt_tx_task", 2048, NULL, 11, NULL, 0);
 
     bt_hci_init();
