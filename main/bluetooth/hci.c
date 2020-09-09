@@ -1013,7 +1013,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     if (type > BT_NONE) {
                         device->type = bt_hci_get_type_from_name(remote_name_req_complete->name);
                     }
-                    if (device->type == HID_GENERIC) {
+                    if (device->type == HID_GENERIC || device->type == SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
