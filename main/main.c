@@ -11,6 +11,7 @@
 #include "wired/sega_io.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
+#include "wired/jvs.h"
 
 typedef void (*wired_init_t)(void);
 
