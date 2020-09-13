@@ -24,13 +24,13 @@ static const uint8_t detect_pin_high[] = {
 };
 
 static const uint8_t system_id_low[][4] = {
-    {N64, SMS, DC, WII_EXT},
-    {GC, SMS, DC, WII_EXT},
+    {N64, JVS, DC, WII_EXT},
+    {GC, CDI, REAL_3DO, EXP_BOARD},
 };
 
 static const uint8_t system_id_high[][4] = {
     {NES, PCE, PSX, GENESIS},
-    {SNES, PCE, PS2, SATURN},
+    {SNES, PCFX, PS2, SATURN},
 };
 
 static void IRAM_ATTR detect_intr(void* arg) {

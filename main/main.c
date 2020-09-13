@@ -17,34 +17,50 @@ typedef void (*wired_init_t)(void);
 
 static const char *sys_name[WIRED_MAX] = {
     "AUTO",
+    "PARALLEL_1P",
+    "PARALLEL_2P",
     "NES",
-    "SMS",
     "PCE",
-    "MD-GEN",
+    "MD-GENESIS",
     "SNES",
+    "CD-i",
+    "CD32",
+    "3DO",
+    "JAGUAR",
     "PSX",
     "SATURN",
+    "PC-FX",
+    "JVS",
     "N64",
     "DC",
     "PS2",
     "GC",
     "Wii-EXT",
+    "Exp Board",
 };
 
 static const wired_init_t wired_init[WIRED_MAX] = {
-    NULL,
-    npiso_init,
-    NULL,
-    NULL,
-    sega_io_init,
-    npiso_init,
-    NULL,
-    sega_io_init,
-    nsi_init,
-    maple_init,
-    NULL,
-    nsi_init,
-    NULL,
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    npiso_init, /* NES */
+    NULL, /* PCE */
+    sega_io_init, /* GENESIS */
+    npiso_init, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    sega_io_init, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    nsi_init, /* N64 */
+    maple_init, /* DC */
+    NULL, /* PS2 */
+    nsi_init, /* GC */
+    NULL, /* WII_EXT */
+    NULL, /* EXP_BOARD */
 };
 
 static void wired_init_task(void *arg) {

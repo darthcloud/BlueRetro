@@ -39,93 +39,125 @@ const uint32_t generic_btns_mask[32] = {
 };
 
 static to_generic_t to_generic_func[BT_MAX] = {
-    hid_to_generic,
-    ps3_to_generic,
-    wii_to_generic,
-    wiin_to_generic,
-    wiic_to_generic,
-    wiiu_to_generic,
-    ps4_to_generic,
-    xb1_to_generic,
-    xb1_to_generic,
-    sw_to_generic,
+    hid_to_generic, /* HID_GENERIC */
+    ps3_to_generic, /* PS3_DS3 */
+    wii_to_generic, /* WII_CORE */
+    wiin_to_generic, /* WII_NUNCHUCK */
+    wiic_to_generic, /* WII_CLASSIC */
+    wiiu_to_generic, /* WIIU_PRO */
+    ps4_to_generic, /* PS4_DS4 */
+    xb1_to_generic, /* XB1_S */
+    xb1_to_generic, /* XB1_ADAPTIVE */
+    sw_to_generic, /* SW */
 };
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
-    NULL,
-    npiso_from_generic,
-    NULL,
-    NULL,
-    segaio_from_generic,
-    npiso_from_generic,
-    NULL,
-    segaio_from_generic,
-    n64_from_generic,
-    dc_from_generic,
-    NULL,
-    gc_from_generic,
-    NULL,
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    npiso_from_generic, /* NES */
+    NULL, /* PCE */
+    segaio_from_generic, /* GENESIS */
+    npiso_from_generic, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    segaio_from_generic, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    n64_from_generic, /* N64 */
+    dc_from_generic, /* DC */
+    NULL, /* PS2 */
+    gc_from_generic, /* GC */
+    NULL, /* WII_EXT */
+    NULL, /* EXP_BOARD */
 };
 
 static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    n64_fb_to_generic,
-    dc_fb_to_generic,
-    NULL,
-    gc_fb_to_generic,
-    NULL,
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    NULL, /* NES */
+    NULL, /* PCE */
+    NULL, /* GENESIS */
+    NULL, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    NULL, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    n64_fb_to_generic, /* N64 */
+    dc_fb_to_generic, /* DC */
+    NULL, /* PS2 */
+    gc_fb_to_generic, /* GC */
+    NULL, /* WII_EXT */
+    NULL, /* EXP_BOARD */
 };
 
 static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
-    NULL,
-    ps3_fb_from_generic,
-    wii_fb_from_generic,
-    wii_fb_from_generic,
-    wii_fb_from_generic,
-    wii_fb_from_generic,
-    ps4_fb_from_generic,
-    xb1_fb_from_generic,
-    xb1_fb_from_generic,
-    sw_fb_from_generic,
+    NULL, /* HID_GENERIC */
+    ps3_fb_from_generic, /* PS3_DS3 */
+    wii_fb_from_generic, /* WII_CORE */
+    wii_fb_from_generic, /* WII_NUNCHUCK */
+    wii_fb_from_generic, /* WII_CLASSIC */
+    wii_fb_from_generic, /* WIIU_PRO */
+    ps4_fb_from_generic, /* PS4_DS4 */
+    xb1_fb_from_generic, /* XB1_S */
+    xb1_fb_from_generic, /* XB1_ADAPTIVE */
+    sw_fb_from_generic, /* SW */
 };
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
-    NULL,
-    npiso_meta_init,
-    NULL,
-    NULL,
-    segaio_meta_init,
-    npiso_meta_init,
-    NULL,
-    segaio_meta_init,
-    n64_meta_init,
-    dc_meta_init,
-    NULL,
-    gc_meta_init,
-    NULL,
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    npiso_meta_init, /* NES */
+    NULL, /* PCE */
+    segaio_meta_init, /* GENESIS */
+    npiso_meta_init, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    segaio_meta_init, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    n64_meta_init, /* N64 */
+    dc_meta_init, /* DC */
+    NULL, /* PS2 */
+    gc_meta_init, /* GC */
+    NULL, /* WII_EXT */
+    NULL, /* EXP_BOARD */
 };
 
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
-    NULL,
-    npiso_init_buffer,
-    NULL,
-    NULL,
-    segaio_init_buffer,
-    npiso_init_buffer,
-    NULL,
-    segaio_init_buffer,
-    n64_init_buffer,
-    dc_init_buffer,
-    NULL,
-    gc_init_buffer,
-    NULL,
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    npiso_init_buffer, /* NES */
+    NULL, /* PCE */
+    segaio_init_buffer, /* GENESIS */
+    npiso_init_buffer, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    segaio_init_buffer, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    n64_init_buffer, /* N64 */
+    dc_init_buffer, /* DC */
+    NULL, /* PS2 */
+    gc_init_buffer, /* GC */
+    NULL, /* WII_EXT */
+    NULL, /* EXP_BOARD */
 };
 
 struct generic_ctrl ctrl_input;
