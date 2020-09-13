@@ -54,7 +54,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* PSX */
     sega_io_init, /* SATURN */
     NULL, /* PCFX */
-    NULL, /* JVS */
+    jvs_init, /* JVS */
     nsi_init, /* N64 */
     maple_init, /* DC */
     NULL, /* PS2 */
