@@ -36,7 +36,6 @@ static void bt_hid_ps3_init_callback(void *arg) {
     esp_timer_delete(ps3_timer_hdl);
     ps3_timer_hdl = NULL;
 
-    bt_hid_cmd_ps3_bt_init(device);
     bt_hid_cmd_ps3_set_conf(device, (void *)&set_conf);
 }
 
@@ -59,7 +58,8 @@ void bt_hid_ps3_init(struct bt_dev *device) {
     printf("# %s\n", __FUNCTION__);
 
     esp_timer_create(&ps3_timer_args, (esp_timer_handle_t *)&ps3_timer_hdl);
-    esp_timer_start_once(ps3_timer_hdl, 20000);
+    esp_timer_start_once(ps3_timer_hdl, 1000000);
+    bt_hid_cmd_ps3_bt_init(device);
 }
 
 void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
