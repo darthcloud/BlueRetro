@@ -16,6 +16,7 @@
 #include "config.h"
 #include "adapter.h"
 #include "npiso.h"
+#include "genesis.h"
 #include "segaio.h"
 #include "jvs.h"
 #include "n64.h"
@@ -63,7 +64,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* PARALLEL_2P */
     npiso_from_generic, /* NES */
     NULL, /* PCE */
-    segaio_from_generic, /* GENESIS */
+    genesis_from_generic, /* GENESIS */
     npiso_from_generic, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
@@ -124,7 +125,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* PARALLEL_2P */
     npiso_meta_init, /* NES */
     NULL, /* PCE */
-    segaio_meta_init, /* GENESIS */
+    genesis_meta_init, /* GENESIS */
     npiso_meta_init, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
@@ -148,7 +149,7 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* PARALLEL_2P */
     npiso_init_buffer, /* NES */
     NULL, /* PCE */
-    segaio_init_buffer, /* GENESIS */
+    genesis_init_buffer, /* GENESIS */
     npiso_init_buffer, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
@@ -423,6 +424,7 @@ void adapter_bridge(struct bt_data *bt_data) {
                 BOLD, ctrl_output[0].btns[2].value, RESET, BOLD, ctrl_output[0].btns[3].value, RESET);
 #else
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
+                ctrl_output[i].index = i;
                 from_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
             }
 #endif

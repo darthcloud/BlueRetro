@@ -17,6 +17,25 @@
 #include "../adapter/config.h"
 #include "maple.h"
 
+#define P1_TH_PIN 35
+#define P1_TR_PIN 27
+#define P1_TL_PIN 26
+#define P1_R_PIN 23
+#define P1_L_PIN 18
+#define P1_D_PIN 5
+#define P1_U_PIN 3
+
+#define P2_TH_PIN 36
+#define P2_TR_PIN 16
+#define P2_TL_PIN 33
+#define P2_R_PIN 25
+#define P2_L_PIN 22
+#define P2_D_PIN 21
+#define P2_U_PIN 19
+
+#define EA_CTRL_PIN 1
+#define TP_CTRL_PIN 32
+
 #define SIO_TH 0
 #define SIO_TR 1
 #define SIO_TL 2
@@ -85,6 +104,8 @@ static uint8_t dev_type[2] = {0};
 static uint8_t mt_dev_type[2][MT_PORT_MAX] = {0};
 static uint8_t mt_first_port[2] = {0};
 static uint8_t buffer[6*6];
+static uint32_t *map1 = (uint32_t *)wired_adapter.data[0].output;
+static uint32_t *map2 = (uint32_t *)wired_adapter.data[1].output;
 
 #if 0
 static uint8_t IRAM_ATTR get_id1(uint8_t val) {
@@ -358,28 +379,59 @@ static void IRAM_ATTR sega_io_isr(void* arg) {
     if (low_io) GPIO.status_w1tc = low_io;
 }
 
-#if 0
+static void IRAM_ATTR genesis_2p_isr(void* arg) {
+    //static uint32_t last = 0;
+    //uint32_t cur = xthal_get_ccount();
+    uint32_t cycle = !(GPIO.in1.val & BIT(P1_TH_PIN - 32));
+    uint32_t cycle2 = !(GPIO.in1.val & BIT(P2_TH_PIN - 32));
+
+    GPIO.out = map1[cycle] & map2[cycle2];
+    GPIO.out1.val = map1[cycle + 3] & map2[cycle2 + 3];
+
+    if (GPIO.in1.val & BIT(P2_TH_PIN - 32)) {
+        while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
+        GPIO.out = map1[0] & map2[cycle2];
+        GPIO.out1.val = map1[3] & map2[cycle2 + 3];
+    }
+    else {
+        while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32)));
+        GPIO.out = map1[cycle] & map2[0];
+        GPIO.out1.val = map1[cycle + 3] & map2[3];
+    }
+
+    //last = cur;
+    const uint32_t low_io = GPIO.acpu_int;
+    const uint32_t high_io = GPIO.acpu_int1.intr;
+    if (high_io) GPIO.status1_w1tc.intr_st = high_io;
+    if (low_io) GPIO.status_w1tc = low_io;
+}
+
 static void selection_refresh_task(void *arg) {
+    uint32_t th0, th1;
+
+    while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
     while (1) {
-        for (uint8_t port = 0; port < 2; port++) {
-            switch (dev_type[port]) {
-                case DEV_GENESIS_3BTNS:
-                case DEV_GENESIS_6BTNS:
-                    set_th_selection(port);
-                    break;
-                case DEV_SATURN_DIGITAL:
-                    set_th_tr_selection(port);
-                    break;
-            }
+        while ((th0 = (GPIO.in1.val & BIT(P1_TH_PIN - 32))) && (th1 = (GPIO.in1.val & BIT(P2_TH_PIN - 32))));
+
+        if (!th0) {
+            GPIO.out = map1[1] & map2[0];
+            GPIO.out1.val = map1[4] & map2[3];
+            while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
+            GPIO.out = map1[0] & map2[0];
+            GPIO.out1.val = map1[3] & map2[3];
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        else {
+            GPIO.out = map1[0] & map2[1];
+            GPIO.out1.val = map1[3] & map2[4];
+            while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32)));
+            GPIO.out = map1[0] & map2[0];
+            GPIO.out1.val = map1[3] & map2[3];
+        }
     }
 }
-#endif
 
 void sega_io_init(void)
 {
-    uint8_t start_task = 0;
     gpio_config_t io_conf = {0};
     uint8_t port_cnt = 0;
 
@@ -441,6 +493,17 @@ void sega_io_init(void)
         }
     }
     else {
+        io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+        io_conf.mode = GPIO_MODE_OUTPUT;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pin_bit_mask = 1ULL << TP_CTRL_PIN;
+        gpio_config(&io_conf);
+        io_conf.pin_bit_mask = 1ULL << EA_CTRL_PIN;
+        gpio_config(&io_conf);
+        gpio_set_level(TP_CTRL_PIN, 0);
+        gpio_set_level(EA_CTRL_PIN, 0);
+
         switch (config.global_cfg.multitap_cfg) {
             case MT_SLOT_1:
                 dev_type[0] = DEV_GENESIS_MULTITAP;
@@ -478,12 +541,12 @@ void sega_io_init(void)
 
     /* TH */
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        if (dev_type[i] == DEV_SATURN_ANALOG) {
+        //if (dev_type[i] == DEV_SATURN_ANALOG) {
             io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
-        }
-        else {
-            io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-        }
+        //}
+        //else {
+        //    io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+        //}
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TH];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -539,7 +602,10 @@ void sega_io_init(void)
                     sel[i] = 0;
                 }
                 set_th_selection(i);
-                start_task = 1;
+                if (i) {
+                    //esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, genesis_2p_isr, NULL, NULL);
+                    xTaskCreatePinnedToCore(selection_refresh_task, "selection_refresh_task", 2048, NULL, 10, NULL, 1);
+                }
                 break;
             case DEV_GENESIS_MULTITAP:
                 break;
@@ -556,7 +622,6 @@ void sega_io_init(void)
                 }
                 sel[i] = tmp;
                 set_th_tr_selection(i);
-                start_task = 1;
                 break;
             }
             case DEV_SATURN_DIGITAL_TWH:
@@ -564,14 +629,13 @@ void sega_io_init(void)
             case DEV_SATURN_MULTITAP:
             case DEV_SATURN_KB:
                 tx_nibble(i, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
+                if (i) {
+                    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, sega_io_isr, NULL, NULL);
+                }
                 break;
             case DEV_EA_MULTITAP:
                 break;
         }
     }
 
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, sega_io_isr, NULL, NULL);
-    if (start_task) {
-        //xTaskCreatePinnedToCore(selection_refresh_task, "selection_refresh_task", 2048, NULL, 10, NULL, 1);
-    }
 }
