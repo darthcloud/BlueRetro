@@ -1,8 +1,8 @@
-/* ESP32 RMT NSI Driver
- *
- * ESP32 app demonstrating sniffing Nintendo's serial interface via RMT peripheral.
- *
-*/
+/*
+ * Copyright (c) 2019-2020, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>

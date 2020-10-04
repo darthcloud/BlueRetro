@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2020, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 #include "host.h"
 #include "hidp_wii.h"

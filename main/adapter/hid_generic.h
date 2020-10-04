@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2020, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _HID_GENERIC_H_
 #define _HID_GENERIC_H_
 #include "adapter.h"

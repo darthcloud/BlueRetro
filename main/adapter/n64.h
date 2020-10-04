@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2020, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _N64_H_
 #define _N64_H_
 #include "adapter.h"

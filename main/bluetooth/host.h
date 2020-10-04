@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2020, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _BT_HOST_H_
 #define _BT_HOST_H_
 
