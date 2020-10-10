@@ -9,6 +9,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <xtensa/hal.h>
+#include <esp32/dport_access.h>
 #include <esp_intr_alloc.h>
 #include "driver/gpio.h"
 #include "../zephyr/types.h"
@@ -68,6 +69,12 @@
 #define ID2_NON_CONNECTION 0xF
 
 #define TWH_TIMEOUT 4096
+#define SIX_BTNS_TIMEOUT 90 /* 9us */
+
+#define SIX_BTNS_P1_C2_LO_MASK ~(BIT(P1_D_PIN) | BIT(P1_U_PIN))
+#define SIX_BTNS_P2_C2_LO_MASK ~(BIT(P2_D_PIN) | BIT(P2_U_PIN))
+#define SIX_BTNS_P1_C3_LO_MASK (BIT(P1_D_PIN) | BIT(P1_U_PIN) | BIT(P1_L_PIN) | BIT(P1_R_PIN))
+#define SIX_BTNS_P2_C3_LO_MASK (BIT(P2_D_PIN) | BIT(P2_U_PIN) | BIT(P2_L_PIN) | BIT(P2_R_PIN))
 
 #define MT_PORT_MAX 6
 enum {
@@ -408,25 +415,141 @@ static void IRAM_ATTR genesis_2p_isr(void* arg) {
 
 static void selection_refresh_task(void *arg) {
     uint32_t th0, th1;
+    uint32_t timeout;
 
     while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
     while (1) {
+        timeout = 0;
         while ((th0 = (GPIO.in1.val & BIT(P1_TH_PIN - 32))) && (th1 = (GPIO.in1.val & BIT(P2_TH_PIN - 32))));
 
         if (!th0) {
-            GPIO.out = map1[1] & map2[0];
+            GPIO.out = map1[1] & map2[0];                                /* P1 Cycle0 low */
             GPIO.out1.val = map1[4] & map2[3];
-            while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
-            GPIO.out = map1[0] & map2[0];
+            DPORT_STALL_OTHER_CPU_START();
+            timeout = 0;
+            while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                if (++timeout > SIX_BTNS_TIMEOUT) {
+                    goto next_poll;
+                }
+            }
+            GPIO.out = map1[0] & map2[0];                                /* P1 Cycle0 high */
             GPIO.out1.val = map1[3] & map2[3];
+            if (dev_type[0] == DEV_GENESIS_6BTNS) {
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[1] & map2[0];                            /* P1 Cycle1 low */
+                GPIO.out1.val = map1[4] & map2[3];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[0];                            /* P1 Cycle1 high */
+                GPIO.out1.val = map1[3] & map2[3];
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = (map1[1] & SIX_BTNS_P1_C2_LO_MASK) & map2[0]; /* P1 Cycle2 low */
+                GPIO.out1.val = map1[4] & map2[3];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[2] & map2[0];                            /* P1 Cycle2 high XYXM */
+                GPIO.out1.val = map1[5] & map2[3];
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = (map1[1] | SIX_BTNS_P1_C3_LO_MASK) & map2[0]; /* P1 Cycle3 low */
+                GPIO.out1.val = map1[4] & map2[3];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[0];                            /* P1 Cycle3 high */
+                GPIO.out1.val = map1[3] & map2[3];
+            }
         }
         else {
-            GPIO.out = map1[0] & map2[1];
+            GPIO.out = map1[0] & map2[1];                                /* P2 Cycle0 low */
             GPIO.out1.val = map1[3] & map2[4];
-            while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32)));
-            GPIO.out = map1[0] & map2[0];
+            DPORT_STALL_OTHER_CPU_START();
+            timeout = 0;
+            while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                if (++timeout > SIX_BTNS_TIMEOUT) {
+                    goto next_poll;
+                }
+            }
+            GPIO.out = map1[0] & map2[0];                                /* P2 Cycle0 high */
             GPIO.out1.val = map1[3] & map2[3];
+            if (dev_type[1] == DEV_GENESIS_6BTNS) {
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[1];                            /* P2 Cycle1 low */
+                GPIO.out1.val = map1[3] & map2[4];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[0];                            /* P2 Cycle1 high */
+                GPIO.out1.val = map1[3] & map2[3];
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & (map2[1] & SIX_BTNS_P2_C2_LO_MASK); /* P2 Cycle2 low */
+                GPIO.out1.val = map1[3] & map2[4];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[2];                            /* P2 Cycle2 high XYZM */
+                GPIO.out1.val = map1[3] & map2[5];
+                timeout = 0;
+                while ((GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & (map2[1] | SIX_BTNS_P2_C3_LO_MASK); /* P2 Cycle3 low */
+                GPIO.out1.val = map1[3] & map2[4];
+                timeout = 0;
+                while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32))) {
+                    if (++timeout > SIX_BTNS_TIMEOUT) {
+                        goto next_poll;
+                    }
+                }
+                GPIO.out = map1[0] & map2[0];                            /* P2 Cycle3 high */
+                GPIO.out1.val = map1[3] & map2[3];
+            }
         }
+next_poll:
+        DPORT_STALL_OTHER_CPU_END();
     }
 }
 

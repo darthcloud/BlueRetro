@@ -134,13 +134,17 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
 
     map->buttons[0] = 0xFFFFFFFD;
     map->buttons[1] = 0xFF7BFFFD;
+    map->buttons[2] = 0xFFFFFFFD;
     map2->buttons[0] = 0xFFFFFFFD;
     map2->buttons[1] = 0xFDBFFFFD;
+    map2->buttons[2] = 0xFFFFFFFD;
 
     map->buttons_high[0] = 0xFFFFFFFE;
     map->buttons_high[1] = 0xFFFFFFFE;
+    map->buttons_high[2] = 0xFFFFFFFE;
     map2->buttons_high[0] = 0xFFFFFFFE;
     map2->buttons_high[1] = 0xFFFFFFFE;
+    map2->buttons_high[2] = 0xFFFFFFFE;
 }
 
 void genesis_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
@@ -182,6 +186,7 @@ void genesis_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
         }
     }
 
+#if 0
     if (ctrl_data->index < 2) {
         struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
         struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;
@@ -190,5 +195,6 @@ void genesis_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
         GPIO.out = map1->buttons[cycle] & map2->buttons[cycle2];
         GPIO.out1.val = map1->buttons_high[cycle] & map2->buttons_high[cycle2];
     }
+#endif
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
