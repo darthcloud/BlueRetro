@@ -109,9 +109,11 @@ static void bt_att_cmd_find_info_rsp_uuid16(uint16_t handle, uint16_t start) {
     bt_att_cmd(handle, BT_ATT_OP_FIND_INFO_RSP, 5);
 }
 
+#if 0
 static void bt_att_cmd_find_info_rsp_uuid128(uint16_t handle, uint16_t start) {
     printf("# %s\n", __FUNCTION__);
 }
+#endif
 
 static void bt_att_cmd_gatt_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
@@ -399,6 +401,13 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             }
             break;
         }
+        case BT_ATT_OP_FIND_TYPE_REQ:
+        {
+            struct bt_att_find_type_req *fd_type_req = (struct bt_att_find_type_req *)bt_hci_acl_pkt->att_data;
+            printf("# BT_ATT_OP_FIND_TYPE_REQ\n");
+            bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_FIND_TYPE_REQ, fd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+            break;
+        }
         case BT_ATT_OP_READ_TYPE_REQ:
         {
             struct bt_att_read_type_req *rd_type_req = (struct bt_att_read_type_req *)bt_hci_acl_pkt->att_data;
@@ -560,6 +569,9 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 config_update();
             }
             bt_att_cmd_exec_wr_rsp(device->acl_handle);
+            break;
         }
+        default:
+            printf("# Unsupported OPCODE: 0x%02X\n", bt_hci_acl_pkt->att_hdr.code);
     }
 }
