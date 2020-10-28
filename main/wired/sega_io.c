@@ -460,7 +460,7 @@ static void IRAM_ATTR genesis_2p_isr(void* arg) {
     if (low_io) GPIO.status_w1tc = low_io;
 }
 
-static void selection_refresh_task(void *arg) {
+static void IRAM_ATTR selection_refresh_task(void *arg) {
     uint32_t timeout, cur_in, prev_in, change, lock = 0;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p1_out1 = GPIO.out1.val | ~P1_OUT1_MASK;
