@@ -17,7 +17,6 @@
 #include "adapter.h"
 #include "npiso.h"
 #include "segaio.h"
-#include "jvs.h"
 #include "n64.h"
 #include "dc.h"
 #include "gc.h"
@@ -72,7 +71,6 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* PSX */
     segaio_from_generic, /* SATURN */
     NULL, /* PCFX */
-    jvs_from_generic, /* JVS */
     n64_from_generic, /* N64 */
     dc_from_generic, /* DC */
     NULL, /* PS2 */
@@ -96,7 +94,6 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     NULL, /* PSX */
     NULL, /* SATURN */
     NULL, /* PCFX */
-    NULL, /* JVS */
     n64_fb_to_generic, /* N64 */
     dc_fb_to_generic, /* DC */
     NULL, /* PS2 */
@@ -133,7 +130,6 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* PSX */
     segaio_meta_init, /* SATURN */
     NULL, /* PCFX */
-    jvs_meta_init, /* JVS */
     n64_meta_init, /* N64 */
     dc_meta_init, /* DC */
     NULL, /* PS2 */
@@ -157,7 +153,6 @@ static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* PSX */
     segaio_init_buffer, /* SATURN */
     NULL, /* PCFX */
-    jvs_init_buffer, /* JVS */
     n64_init_buffer, /* N64 */
     dc_init_buffer, /* DC */
     NULL, /* PS2 */

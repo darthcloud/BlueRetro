@@ -16,7 +16,6 @@
 #include "wired/sega_io.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
-#include "wired/jvs.h"
 
 typedef void (*wired_init_t)(void);
 
@@ -35,7 +34,6 @@ static const char *sys_name[WIRED_MAX] = {
     "PSX",
     "SATURN",
     "PC-FX",
-    "JVS",
     "N64",
     "DC",
     "PS2",
@@ -59,7 +57,6 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* PSX */
     sega_io_init, /* SATURN */
     NULL, /* PCFX */
-    jvs_init, /* JVS */
     nsi_init, /* N64 */
     maple_init, /* DC */
     NULL, /* PS2 */
@@ -71,40 +68,31 @@ static const wired_init_t wired_init[WIRED_MAX] = {
 static void wired_init_task(void *arg) {
     adapter_init();
 
-#if 1
-    detect_init();
-    while (wired_adapter.system_id == WIRED_NONE) {
-        if (config.magic == CONFIG_MAGIC && config.global_cfg.system_cfg < WIRED_MAX
-            && config.global_cfg.system_cfg != WIRED_AUTO) {
-            break;
-        }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
-    detect_deinit();
-#else
     wired_adapter.system_id = DC;
-#endif
 
     if (wired_adapter.system_id >= 0) {
         printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
-    while (config.magic != CONFIG_MAGIC) {
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
+    //while (config.magic != CONFIG_MAGIC) {
+    //    vTaskDelay(10 / portTICK_PERIOD_MS);
+    //}
 
-    if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {
-        wired_adapter.system_id = config.global_cfg.system_cfg;
-        printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
-    }
+    //if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {
+    //    wired_adapter.system_id = DC;
+    //    printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
+    //}
 
-    for (uint32_t i = 0; i < WIRED_MAX; i++) {
-        adapter_init_buffer(i);
-    }
+    //for (uint32_t i = 0; i < WIRED_MAX; i++) {
+
+    adapter_init_buffer(wired_adapter.system_id);
+    //}
 
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
     }
+
+    printf("Deleting Task\n");
     vTaskDelete(NULL);
 }
 
@@ -127,7 +115,7 @@ static void wl_init_task(void *arg) {
 
 void app_main()
 {
-    xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2048, NULL, 10, NULL, 0);
+//    xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2048, NULL, 10, NULL, 0);
     xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, NULL, 10, NULL, 1);
 }
 

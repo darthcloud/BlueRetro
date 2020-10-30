@@ -42,6 +42,8 @@
 #define CMD_BLOCK_WRITE   0x0C
 #define CMD_SET_CONDITION 0x0E
 
+#define CMD_SEND_SERIAL_STRING   0xA0
+
 #define ADDR_MASK   0x3F
 #define ADDR_CTRL   0x20
 #define ADDR_MEM    0x01
@@ -57,6 +59,8 @@
 
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 #define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
+
+uint32_t dummy_data[2];
 
 struct maple_pkt {
     union {
@@ -363,17 +367,30 @@ maple_end:
                         pkt.data32[27] = 0xF401;
                         pkt.data32[27] |= 0xAE01 << 16;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                        ets_printf("%02X %02X: cmd: 0x%02X, %02X\n", src, dst, cmd, port);
                         break;
                     case CMD_GET_CONDITION:
                         pkt.len = 3;
                         pkt.cmd = CMD_DATA_TX;
                         pkt.data32[0] = ID_CTRL;
-                        memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
+                        //memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
+                        pkt.data32[1] = dummy_data[0]++;
+                        pkt.data32[2] = dummy_data[1]++;
+                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                        ++wired_adapter.data[port].frame_cnt;
+                        ets_printf("%02X %02X: cmd: 0x%02X, %02X\n", src, dst, cmd, port);
+                        break;
+                    case CMD_SEND_SERIAL_STRING:
+                        ets_printf("%02X %02X: cmd: 0x%02X, %02X, %s\n", src, dst, cmd, port, &pkt.data[4]);
+        uint8_t data[545];
+                        pkt.len = 1;
+                        pkt.cmd = CMD_DATA_TX;
+                        pkt.data32[0] = ID_CTRL;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         ++wired_adapter.data[port].frame_cnt;
                         break;
                     default:
-                        ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                        ets_printf("%02X %02X: Unk cmd: 0x%02X, %02X\n", src, dst, cmd, port);
                         break;
                 }
                 break;
@@ -445,6 +462,8 @@ maple_end:
 
 void maple_init(void)
 {
+    printf("Maple Init Started\n");
+
     gpio_config_t io_conf[4][2] = {0};
 
     for (uint32_t i = 0; i < ARRAY_SIZE(io_conf); i++) {
@@ -470,5 +489,7 @@ void maple_init(void)
     GPIO.out_w1ts = DEBUG;
 #endif
 
+    printf("Maple Init: Enabling interrupt\n");
     esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
+    printf("Maple Init Complete\n");
 }

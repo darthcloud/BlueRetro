@@ -54,7 +54,6 @@ enum {
     PSX,
     SATURN,
     PCFX,
-    JVS,
     N64,
     DC,
     PS2,
