@@ -173,11 +173,11 @@ void ps_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
 }
 
 void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    switch (bt_data->report_type) {
-        case KB:
+    switch (bt_data->report_id) {
+        case 0x01:
             ps_hid_to_generic(bt_data, ctrl_data);
             break;
-        case 11:
+        case 0x11:
             ps_ps4_to_generic(bt_data, ctrl_data);
             break;
         default:
