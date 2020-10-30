@@ -8,8 +8,8 @@
 
 #include "hidp.h"
 
-#define BT_HIDP_PS4_STATUS 0x01
-#define BT_HIDP_PS4_STATUS2 0x11
+#define BT_HIDP_HID_STATUS 0x01
+#define BT_HIDP_PS4_STATUS 0x11
 struct bt_hidp_ps4_status {
     uint8_t data[77];
 } __packed;

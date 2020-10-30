@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <string.h>
 #include "../zephyr/types.h"
 #include "../util.h"
@@ -56,6 +57,19 @@ const struct ctrl_meta ps4_axes_meta[ADAPTER_MAX_AXES] =
     {.neutral = 0x00, .abs_max = 0xFF},
 };
 
+struct hid_map {
+    union {
+        struct {
+            uint8_t reserved2[4];
+            union {
+                uint8_t hat;
+                uint32_t buttons;
+            };
+        };
+        uint8_t axes[9];
+    };
+} __packed;
+
 struct ps4_map {
     uint8_t reserved[2];
     union {
@@ -98,7 +112,7 @@ const uint32_t ps4_btns_mask[32] = {
     0, BIT(PS4_R1), 0, BIT(PS4_R3),
 };
 
-void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+void ps_ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct ps4_map *map = (struct ps4_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -125,6 +139,50 @@ void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+    }
+}
+
+void ps_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    struct hid_map *map = (struct hid_map *)bt_data->input;
+
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
+    ctrl_data->mask = (uint32_t *)ps4_mask;
+    ctrl_data->desc = (uint32_t *)ps4_desc;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (map->buttons & ps4_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    /* Convert hat to regular btns */
+    ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
+
+    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            bt_data->axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
+        }
+        atomic_set_bit(&bt_data->flags, BT_INIT);
+    }
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        ctrl_data->axes[i].meta = &ps4_axes_meta[i];
+        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+    }
+}
+
+void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    switch (bt_data->report_type) {
+        case KB:
+            ps_hid_to_generic(bt_data, ctrl_data);
+            break;
+        case 11:
+            ps_ps4_to_generic(bt_data, ctrl_data);
+            break;
+        default:
+            printf("# Unknown report type: %02X\n", bt_data->report_type);
+            break;
     }
 }
 

@@ -49,8 +49,12 @@ void bt_hid_ps4_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
-                //case BT_HIDP_PS4_STATUS:
-                case BT_HIDP_PS4_STATUS2:
+                case BT_HIDP_HID_STATUS:
+                {
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, 9);
+                    break;
+                }
+                case BT_HIDP_PS4_STATUS:
                 {
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps4_status));
                     break;
