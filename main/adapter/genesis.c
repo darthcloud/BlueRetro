@@ -251,6 +251,11 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         map1->buttons[1] = 0xFFFDFFFD;
         map1->buttons[2] = 0xFFFDFFFD;
     }
+    else if (config.global_cfg.multitap_cfg == MT_ALT) {
+        map1->buttons[0] = 0xFFFDFFFF;
+        map1->buttons[1] = 0xFF79FFFF;
+        map1->buttons[2] = 0xF379FFD7;
+    }
     else {
         map1->buttons[0] = 0xFFFDFFFD;
         map1->buttons[1] = 0xFF79FFFD;
@@ -263,9 +268,17 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         map2->buttons[2] = 0xFFFDFFFD;
     }
     else if (config.global_cfg.multitap_cfg == MT_ALT) {
-        map2->buttons[0] = 0xFFFDFFFD;
-        map2->buttons[1] = 0xFFFDFFFD;
-        map2->buttons[2] = 0xFFFDFFFD;
+        struct genesis_map *map3 = (struct genesis_map *)wired_adapter.data[2].output;
+        struct genesis_map *map4 = (struct genesis_map *)wired_adapter.data[3].output;
+        map2->buttons[0] = 0xFFFDFFFF;
+        map2->buttons[1] = 0xFF79FFFF;
+        map2->buttons[2] = 0xF379FFD7;
+        map3->buttons[0] = 0xFFFDFFFF;
+        map3->buttons[1] = 0xFF79FFFF;
+        map3->buttons[2] = 0xF379FFD7;
+        map4->buttons[0] = 0xFFFDFFFF;
+        map4->buttons[1] = 0xFF79FFFF;
+        map4->buttons[2] = 0xF379FFD7;
     }
     else {
         map2->buttons[0] = 0xFFFDFFFD;

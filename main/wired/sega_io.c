@@ -642,6 +642,37 @@ next_poll:
     }
 }
 
+static void IRAM_ATTR ea_genesis_task(void *arg) {
+    uint32_t cur_in0, prev_in0, change0 = 0, cur_in1, prev_in1, change1 = 1, id = 0;
+
+    cur_in0 = GPIO.in;
+    cur_in1 = GPIO.in1.val;
+    while (1) {
+        prev_in0 = cur_in0;
+        prev_in1 = cur_in1;
+        cur_in0 = GPIO.in;
+        cur_in1 = GPIO.in1.val;
+        while (!(change0 = cur_in0 ^ prev_in0) && !(change1 = cur_in1 ^ prev_in1)) {
+            prev_in0 = cur_in0;
+            prev_in1 = cur_in1;
+            cur_in0 = GPIO.in;
+            cur_in1 = GPIO.in1.val;
+        }
+        if (cur_in1 & BIT(P2_TH_PIN - 32)) {
+            GPIO.out = map1[2];
+        }
+        else {
+            id = ((cur_in0 & BIT(P2_TR_PIN)) >> (P2_TR_PIN - 1)) | ((cur_in1 & BIT(P2_TL_PIN -32)) >> (P2_TL_PIN - 32));
+            if (cur_in1 & BIT(P1_TH_PIN - 32)) {
+                GPIO.out = *(uint32_t *)&wired_adapter.data[id].output[0];
+            }
+            else {
+                GPIO.out = *(uint32_t *)&wired_adapter.data[id].output[4];
+            }
+        }
+    }
+}
+
 void sega_io_init(void)
 {
     gpio_config_t io_conf = {0};
@@ -733,6 +764,7 @@ void sega_io_init(void)
             case MT_ALT:
                 dev_type[0] = DEV_EA_MULTITAP;
                 dev_type[1] = DEV_EA_MULTITAP;
+                gpio_set_level(EA_CTRL_PIN, 1);
                 break;
             default:
                 mt_first_port[1] = 1;
@@ -790,7 +822,7 @@ void sega_io_init(void)
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TR];
-        if (dev_type[i] == DEV_GENESIS_3BTNS || dev_type[i] == DEV_GENESIS_6BTNS) {
+        if (dev_type[i] == DEV_GENESIS_3BTNS || dev_type[i] == DEV_GENESIS_6BTNS || (i == 0 && dev_type[0] == DEV_EA_MULTITAP)) {
             io_conf.mode = GPIO_MODE_OUTPUT;
         }
         else {
@@ -807,9 +839,14 @@ void sega_io_init(void)
     /* TL, R, L, D, U */
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         for (uint32_t j = SIO_TL; j <= SIO_U; j++) {
+            if (j == SIO_TL && i == 1 && dev_type[1] == DEV_EA_MULTITAP) {
+                io_conf.mode = GPIO_MODE_INPUT;
+            }
+            else {
+                io_conf.mode = GPIO_MODE_OUTPUT;
+            }
             io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
             io_conf.pin_bit_mask = 1ULL << gpio_pin[i][j];
-            io_conf.mode = GPIO_MODE_OUTPUT;
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
             gpio_config(&io_conf);
@@ -823,6 +860,7 @@ void sega_io_init(void)
             case DEV_GENESIS_3BTNS:
             case DEV_GENESIS_6BTNS:
             case DEV_GENESIS_MULTITAP:
+            case DEV_EA_MULTITAP:
                 start_thread = 1;
                 break;
             case DEV_GENESIS_MOUSE:
@@ -835,13 +873,18 @@ void sega_io_init(void)
             case DEV_SATURN_KB:
                 tx_nibble(i, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
                 break;
-            case DEV_EA_MULTITAP:
-                break;
+            default:
+                printf("%s Unsupported dev type: %d\n", __FUNCTION__, dev_type[i]);
         }
     }
 
     if (start_thread) {
-        xTaskCreatePinnedToCore(sega_genesis_task, "sega_genesis_task", 2048, NULL, 10, NULL, 1);
+        if (dev_type[0] == DEV_EA_MULTITAP) {
+            xTaskCreatePinnedToCore(ea_genesis_task, "ea_genesis_task", 2048, NULL, 10, NULL, 1);
+        }
+        else {
+            xTaskCreatePinnedToCore(sega_genesis_task, "sega_genesis_task", 2048, NULL, 10, NULL, 1);
+        }
     }
     else {
         esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, sega_io_isr, NULL, NULL);
