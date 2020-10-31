@@ -107,43 +107,12 @@ static const uint8_t gpio_pin[2][7] = {
     {36, 16, 33, 25, 22, 21, 19},
 };
 
-static const uint16_t gen_cycle_mask[8][6] = {
-    {0x0010, 0x0020, 0x0000, 0x0000, 0x0004, 0x0008},
-    {0x0010, 0x0020, 0x0040, 0x0080, 0x0001, 0x0002},
-    {0x0010, 0x0020, 0x0000, 0x0000, 0x0004, 0x0008},
-    {0x0010, 0x0020, 0x0040, 0x0080, 0x0001, 0x0002},
-    {0x0000, 0x0000, 0x0000, 0x0000, 0x0004, 0x0008},
-    {0x1000, 0x2000, 0x4000, 0x8000, 0xFFFF, 0xFFFF},
-    {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0004, 0x0008},
-};
-
-static uint8_t sel[2] = {0};
 static uint8_t dev_type[2] = {0};
 static uint8_t mt_dev_type[2][MT_PORT_MAX] = {0};
 static uint8_t mt_first_port[2] = {0};
 static uint8_t buffer[6*6];
 static uint32_t *map1 = (uint32_t *)wired_adapter.data[0].output;
 static uint32_t *map2 = (uint32_t *)wired_adapter.data[1].output;
-
-#if 0
-static uint8_t IRAM_ATTR get_id1(uint8_t val) {
-    uint8_t id1 = 0;
-
-    if ((val & 0x80) || (val & 0x40)) {
-        id1 |= 0x8;
-    }
-    if ((val & 0x20) || (val & 0x10)) {
-        id1 |= 0x4;
-    }
-    if ((val & 0x08) || (val & 0x04)) {
-        id1 |= 0x2;
-    }
-    if ((val & 0x02) || (val & 0x01)) {
-        id1 |= 0x1;
-    }
-    return id1;
-}
-#endif
 
 static void IRAM_ATTR tx_nibble(uint8_t port, uint8_t data) {
     for (uint8_t i = SIO_R, mask = 0x8; mask; mask >>= 1, i++) {
@@ -175,44 +144,6 @@ static void IRAM_ATTR set_sio(uint8_t port, uint8_t sio, uint8_t value) {
             GPIO.out1_w1tc.val = BIT(pin - 32);
         }
     }
-}
-
-/* Genesis 3/6 buttons */
-static void IRAM_ATTR set_th_selection(uint8_t port) {
-    uint16_t input = *(uint16_t *)wired_adapter.data[port].output;
-    uint8_t value = 0;
-
-    for (uint8_t i = 0, mask = 0x01; i < ARRAY_SIZE(gen_cycle_mask[0]); i++, mask <<= 1) {
-        if ((gen_cycle_mask[sel[port]][i] & input) || gen_cycle_mask[sel[port]][i] == 0xFFFF) {
-            value |= mask;
-        }
-    }
-
-    for (uint8_t i = SIO_TR, mask = 0x2; mask; mask >>= 1, i++) {
-        set_sio(port, i, value & mask);
-    }
-}
-
-/* Saturn digital pad */
-static void IRAM_ATTR set_th_tr_selection(uint8_t port) {
-    uint8_t value = 0;
-
-    switch (sel[port]) {
-        case 0x0:
-            value = wired_adapter.data[port].output[0] >> 4;
-            break;
-        case 0x1:
-            value = wired_adapter.data[port].output[0] & 0xF;
-            break;
-        case 0x2:
-            value = wired_adapter.data[port].output[1] >> 4;
-            break;
-        case 0x3:
-            value = (wired_adapter.data[port].output[1] & 0xF);
-            value &= 0xC;
-            break;
-    }
-    tx_nibble(port, value);
 }
 
 /* Three-Wire Handshake */
@@ -349,8 +280,6 @@ static void IRAM_ATTR set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t
 }
 
 static void IRAM_ATTR sega_io_isr(void* arg) {
-    static uint32_t last = 0;
-    uint32_t cur = xthal_get_ccount();
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
     uint8_t port = 0;
@@ -369,44 +298,6 @@ static void IRAM_ATTR sega_io_isr(void* arg) {
     }
 
     switch (dev_type[port]) {
-        case DEV_GENESIS_3BTNS:
-            if (GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32)) {
-                sel[port] = 1;
-            }
-            else {
-                sel[port] = 0;
-            }
-            set_th_selection(port);
-            break;
-        case DEV_GENESIS_6BTNS:
-            if (sel[port] > 0 && ((cur - last)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ < 100)) {
-                sel[port]++;
-            }
-            else if (GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32)) {
-                sel[port] = 1;
-            }
-            else {
-                sel[port] = 0;
-            }
-            set_th_selection(port);
-            break;
-        case DEV_GENESIS_MULTITAP:
-            break;
-        case DEV_GENESIS_MOUSE:
-            break;
-        case DEV_SATURN_DIGITAL:
-        {
-            uint8_t tmp = 0;
-            if (GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32)) {
-                tmp |= 0x1;
-            }
-            if (GPIO.in & BIT(gpio_pin[port][SIO_TR])) {
-                tmp |= 0x2;
-            }
-            sel[port] = tmp;
-            set_th_tr_selection(port);
-            break;
-        }
         case DEV_SATURN_DIGITAL_TWH:
             if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
                 set_analog_digital_pad(port, mt_first_port[port]);
@@ -424,43 +315,15 @@ static void IRAM_ATTR sega_io_isr(void* arg) {
             break;
         case DEV_SATURN_KB:
             break;
-        case DEV_EA_MULTITAP:
-            break;
+        default:
+            ets_printf("BADTYPE%s\n", dev_type[port]);
     }
 
-    last = cur;
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
 }
 
-static void IRAM_ATTR genesis_2p_isr(void* arg) {
-    //static uint32_t last = 0;
-    //uint32_t cur = xthal_get_ccount();
-    uint32_t cycle = !(GPIO.in1.val & BIT(P1_TH_PIN - 32));
-    uint32_t cycle2 = !(GPIO.in1.val & BIT(P2_TH_PIN - 32));
-
-    GPIO.out = map1[cycle] & map2[cycle2];
-    GPIO.out1.val = map1[cycle + 3] & map2[cycle2 + 3];
-
-    if (GPIO.in1.val & BIT(P2_TH_PIN - 32)) {
-        while (!(GPIO.in1.val & BIT(P1_TH_PIN - 32)));
-        GPIO.out = map1[0] & map2[cycle2];
-        GPIO.out1.val = map1[3] & map2[cycle2 + 3];
-    }
-    else {
-        while (!(GPIO.in1.val & BIT(P2_TH_PIN - 32)));
-        GPIO.out = map1[cycle] & map2[0];
-        GPIO.out1.val = map1[cycle + 3] & map2[3];
-    }
-
-    //last = cur;
-    const uint32_t low_io = GPIO.acpu_int;
-    const uint32_t high_io = GPIO.acpu_int1.intr;
-    if (high_io) GPIO.status1_w1tc.intr_st = high_io;
-    if (low_io) GPIO.status_w1tc = low_io;
-}
-
-static void IRAM_ATTR selection_refresh_task(void *arg) {
+static void IRAM_ATTR sega_genesis_task(void *arg) {
     uint32_t timeout, cur_in, prev_in, change, lock = 0;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p1_out1 = GPIO.out1.val | ~P1_OUT1_MASK;
@@ -770,9 +633,6 @@ p2_reverse_poll:
                 p2_out0 = GPIO.out | ~P2_OUT0_MASK;
                 p2_out1 = GPIO.out1.val | ~P2_OUT1_MASK;
             }
-//p2_next_poll:
-            //p2_out0 = GPIO.out | ~P2_OUT0_MASK;
-            //p2_out1 = GPIO.out1.val | ~P2_OUT1_MASK;
         }
 next_poll:
         if (lock) {
@@ -912,12 +772,13 @@ void sega_io_init(void)
 
     /* TH */
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        //if (dev_type[i] == DEV_SATURN_ANALOG) {
+        if (dev_type[i] == DEV_SATURN_ANALOG || dev_type[i] == DEV_SATURN_DIGITAL_TWH
+            || dev_type[i] == DEV_SATURN_MULTITAP || dev_type[i] == DEV_SATURN_KB) {
             io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
-        //}
-        //else {
-        //    io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-        //}
+        }
+        else {
+            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+        }
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TH];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -927,12 +788,7 @@ void sega_io_init(void)
 
     /* TR */
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        if (dev_type[i] == DEV_SATURN_DIGITAL) {
-            io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-        }
-        else {
-            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-        }
+        io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TR];
         if (dev_type[i] == DEV_GENESIS_3BTNS || dev_type[i] == DEV_GENESIS_6BTNS) {
             io_conf.mode = GPIO_MODE_OUTPUT;
@@ -966,33 +822,13 @@ void sega_io_init(void)
         switch (dev_type[i]) {
             case DEV_GENESIS_3BTNS:
             case DEV_GENESIS_6BTNS:
-                if (GPIO.in1.val & BIT(gpio_pin[i][SIO_TH] - 32)) {
-                    sel[i] = 1;
-                }
-                else {
-                    sel[i] = 0;
-                }
-                set_th_selection(i);
-                start_thread = 1;
-                break;
             case DEV_GENESIS_MULTITAP:
                 start_thread = 1;
                 break;
             case DEV_GENESIS_MOUSE:
                 break;
             case DEV_SATURN_DIGITAL:
-            {
-                uint8_t tmp = 0;
-                if (GPIO.in1.val & BIT(gpio_pin[i][SIO_TH] - 32)) {
-                    tmp |= 0x1;
-                }
-                if (GPIO.in & BIT(gpio_pin[i][SIO_TR])) {
-                    tmp |= 0x2;
-                }
-                sel[i] = tmp;
-                set_th_tr_selection(i);
                 break;
-            }
             case DEV_SATURN_DIGITAL_TWH:
             case DEV_SATURN_ANALOG:
             case DEV_SATURN_MULTITAP:
@@ -1005,7 +841,7 @@ void sega_io_init(void)
     }
 
     if (start_thread) {
-        xTaskCreatePinnedToCore(selection_refresh_task, "selection_refresh_task", 2048, NULL, 10, NULL, 1);
+        xTaskCreatePinnedToCore(sega_genesis_task, "sega_genesis_task", 2048, NULL, 10, NULL, 1);
     }
     else {
         esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, sega_io_isr, NULL, NULL);
