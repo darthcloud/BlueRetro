@@ -11,6 +11,7 @@
 #include <xtensa/hal.h>
 #include <esp32/dport_access.h>
 #include <esp_intr_alloc.h>
+#include <esp_task_wdt.h>
 #include "driver/gpio.h"
 #include "../zephyr/types.h"
 #include "../util.h"
@@ -879,6 +880,12 @@ void sega_io_init(void)
     }
 
     if (start_thread) {
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+        TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+        if (idle_1 != NULL){
+            ESP_ERROR_CHECK(esp_task_wdt_delete(idle_1));
+        }
+#endif
         if (dev_type[0] == DEV_EA_MULTITAP) {
             xTaskCreatePinnedToCore(ea_genesis_task, "ea_genesis_task", 2048, NULL, 10, NULL, 1);
         }
