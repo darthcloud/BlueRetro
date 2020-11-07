@@ -30,6 +30,7 @@
 #include "sw.h"
 #include "parallel_1p.h"
 #include "parallel_2p.h"
+#include "parallel_auto.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -61,7 +62,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
 };
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
-    NULL, /* WIRED_AUTO */
+    para_auto_from_generic, /* WIRED_AUTO */
     para_1p_from_generic, /* PARALLEL_1P */
     para_2p_from_generic, /* PARALLEL_2P */
     npiso_from_generic, /* NES */
@@ -122,7 +123,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
 };
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
-    NULL, /* WIRED_AUTO */
+    para_auto_meta_init, /* WIRED_AUTO */
     para_1p_meta_init, /* PARALLEL_1P */
     para_2p_meta_init, /* PARALLEL_2P */
     npiso_meta_init, /* NES */
@@ -146,7 +147,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 };
 
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
-    NULL, /* WIRED_AUTO */
+    para_auto_init_buffer, /* WIRED_AUTO */
     para_1p_init_buffer, /* PARALLEL_1P */
     para_2p_init_buffer, /* PARALLEL_2P */
     npiso_init_buffer, /* NES */

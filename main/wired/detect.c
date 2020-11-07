@@ -63,7 +63,7 @@ static void IRAM_ATTR detect_intr(void* arg) {
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
     if (high_io) {
-        if (wired_adapter.system_id == WIRED_NONE) {
+        if (wired_adapter.system_id <= WIRED_AUTO) {
             for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_high); i++) {
                 if (high_io & BIT(detect_pin_high[i] - 32)) {
                     if (GPIO.in1.val & BIT(ALT_SYS_PIN - 32)) {
@@ -78,7 +78,7 @@ static void IRAM_ATTR detect_intr(void* arg) {
         GPIO.status1_w1tc.intr_st = high_io;
     }
     if (low_io) {
-        if (wired_adapter.system_id == WIRED_NONE) {
+        if (wired_adapter.system_id <= WIRED_AUTO) {
             for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_low); i++) {
                 if (low_io & BIT(detect_pin_low[i])) {
                     if (GPIO.in1.val & BIT(ALT_SYS_PIN - 32)) {
@@ -124,7 +124,7 @@ void detect_init(void) {
 
     parallel_io_init();
 
-    wired_adapter.system_id = WIRED_NONE;
+    wired_adapter.system_id = WIRED_AUTO;
 
     adapter_init_buffer(0);
 

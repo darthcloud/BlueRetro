@@ -74,7 +74,7 @@ static void wired_init_task(void *arg) {
 
 #if 1
     detect_init();
-    while (wired_adapter.system_id == WIRED_NONE) {
+    while (wired_adapter.system_id <= WIRED_AUTO) {
         if (config.magic == CONFIG_MAGIC && config.global_cfg.system_cfg < WIRED_MAX
             && config.global_cfg.system_cfg != WIRED_AUTO) {
             break;
