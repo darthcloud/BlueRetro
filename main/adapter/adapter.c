@@ -28,6 +28,7 @@
 #include "ps4.h"
 #include "xb1.h"
 #include "sw.h"
+#include "parallel_2p.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -61,7 +62,7 @@ static to_generic_t to_generic_func[BT_MAX] = {
 static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* WIRED_AUTO */
     NULL, /* PARALLEL_1P */
-    NULL, /* PARALLEL_2P */
+    para_2p_from_generic, /* PARALLEL_2P */
     npiso_from_generic, /* NES */
     NULL, /* PCE */
     genesis_from_generic, /* GENESIS */
@@ -122,7 +123,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
 static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* WIRED_AUTO */
     NULL, /* PARALLEL_1P */
-    NULL, /* PARALLEL_2P */
+    para_2p_meta_init, /* PARALLEL_2P */
     npiso_meta_init, /* NES */
     NULL, /* PCE */
     genesis_meta_init, /* GENESIS */
@@ -146,7 +147,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* WIRED_AUTO */
     NULL, /* PARALLEL_1P */
-    NULL, /* PARALLEL_2P */
+    para_2p_init_buffer, /* PARALLEL_2P */
     npiso_init_buffer, /* NES */
     NULL, /* PCE */
     genesis_init_buffer, /* GENESIS */
