@@ -42,22 +42,6 @@ static const uint8_t output_list[] = {
     3, 5, 18, 23, 26, 27
 };
 
-static void parallel_io_init(void)
-{
-    gpio_config_t io_conf = {0};
-
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-
-    for (uint32_t i = 0; i < ARRAY_SIZE(output_list); i++) {
-        io_conf.pin_bit_mask = 1ULL << output_list[i];
-        gpio_config(&io_conf);
-        gpio_set_level(output_list[i], 1);
-    }
-}
-
 static void IRAM_ATTR detect_intr(void* arg) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
@@ -121,8 +105,6 @@ void detect_init(void) {
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
-
-    parallel_io_init();
 
     wired_adapter.system_id = WIRED_AUTO;
 

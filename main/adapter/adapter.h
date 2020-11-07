@@ -253,6 +253,7 @@ enum {
     WIRED_NEW_DATA,
     WIRED_SAVE_MEM,
     WIRED_WAITING_FOR_RELEASE,
+    WIRED_GPIO_INIT,
 };
 
 /* Dev mode */

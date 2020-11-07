@@ -38,6 +38,26 @@ static const uint32_t para_auto_btns_mask[32] = {
     0, 0, 0, 0,
 };
 
+static const uint8_t output_list[] = {
+    3, 5, 18, 23, 26, 27
+};
+
+static void parallel_io_init(void)
+{
+    gpio_config_t io_conf = {0};
+
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(output_list); i++) {
+        io_conf.pin_bit_mask = 1ULL << output_list[i];
+        gpio_config(&io_conf);
+        gpio_set_level(output_list[i], 1);
+    }
+}
+
 void para_auto_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct para_auto_map *map = (struct para_auto_map *)wired_data->output;
 
@@ -57,6 +77,11 @@ void para_auto_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, st
     if (ctrl_data->index < 1) {
         struct para_auto_map map_tmp;
         memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+        if (!atomic_test_bit(&wired_data->flags, WIRED_GPIO_INIT)) {
+            parallel_io_init();
+            atomic_set_bit(&wired_data->flags, WIRED_GPIO_INIT);
+        }
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (ctrl_data->map_mask[0] & BIT(i)) {
