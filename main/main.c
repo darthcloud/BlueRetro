@@ -17,6 +17,7 @@
 #include "wired/nsi.h"
 #include "wired/maple.h"
 #include "wired/jvs.h"
+#include "wired/parallel.h"
 
 typedef void (*wired_init_t)(void);
 
@@ -46,8 +47,8 @@ static const char *sys_name[WIRED_MAX] = {
 
 static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* WIRED_AUTO */
-    NULL, /* PARALLEL_1P */
-    NULL, /* PARALLEL_2P */
+    parallel_io_init, /* PARALLEL_1P */
+    parallel_io_init, /* PARALLEL_2P */
     npiso_init, /* NES */
     NULL, /* PCE */
     sega_io_init, /* GENESIS */
