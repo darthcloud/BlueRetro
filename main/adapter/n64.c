@@ -167,7 +167,7 @@ static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
                 map_tmp.axes[n64_axes_idx[i]] = -128;
             }
             else {
-                map_tmp.axes[n64_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i + 2].value + ctrl_data->axes[i + 2].meta->neutral);
+                map_tmp.axes[n64_axes_idx[i]] += (uint8_t)(ctrl_data->axes[i + 2].value + ctrl_data->axes[i + 2].meta->neutral);
             }
         }
     }
