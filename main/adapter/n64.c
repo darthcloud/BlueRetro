@@ -160,10 +160,11 @@ static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
 
     for (uint32_t i = 0; i < N64_AXES_MAX; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i + 2) & n64_mouse_desc[0])) {
-            if (ctrl_data->axes[i + 2].value > ctrl_data->axes[i + 2].meta->size_max) {
+            int32_t tmp_val = ctrl_data->axes[i + 2].value + (int8_t)map_tmp.axes[n64_axes_idx[i]];
+            if (tmp_val > ctrl_data->axes[i + 2].meta->size_max) {
                 map_tmp.axes[n64_axes_idx[i]] = 127;
             }
-            else if (ctrl_data->axes[i + 2].value < ctrl_data->axes[i + 2].meta->size_min) {
+            else if (tmp_val < ctrl_data->axes[i + 2].meta->size_min) {
                 map_tmp.axes[n64_axes_idx[i]] = -128;
             }
             else {
