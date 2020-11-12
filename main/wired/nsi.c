@@ -28,7 +28,7 @@
 
 #define N64_MOUSE 0x0002
 #define N64_CTRL 0x0005
-
+#define N64_KB 0x0200
 #define N64_SLOT_EMPTY 0x00
 #define N64_SLOT_OCCUPIED 0x01
 
@@ -181,6 +181,10 @@ static void IRAM_ATTR n64_isr(void *arg) {
                     case 0x00:
                     case 0xFF:
                         switch (config.out_cfg[channel].dev_mode) {
+                            case DEV_KB:
+                                *(uint16_t *)buf = N64_KB;
+                                buf[2] = N64_SLOT_EMPTY;
+                                break;
                             case DEV_MOUSE:
                                 *(uint16_t *)buf = N64_MOUSE;
                                 buf[2] = N64_SLOT_EMPTY;
@@ -201,21 +205,29 @@ static void IRAM_ATTR n64_isr(void *arg) {
                         RMT.conf_ch[channel].conf1.tx_start = 1;
                         break;
                     case 0x01:
-                        memcpy(buf, wired_adapter.data[channel].output, 4);
-                        if (config.out_cfg[channel].dev_mode == DEV_MOUSE) {
-                            wired_adapter.data[channel].output[2] = 0;
-                            wired_adapter.data[channel].output[3] = 0;
-                        }
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
-
-                        ++wired_adapter.data[channel].frame_cnt;
-                        ++poll_after_mem_wr;
-                        if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
-                            if (!atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM)) {
-                                atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM);
-                                atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
+                        if (config.out_cfg[channel].dev_mode != DEV_KB) {
+                            memcpy(buf, wired_adapter.data[channel].output, 4);
+                            if (config.out_cfg[channel].dev_mode == DEV_MOUSE) {
+                                wired_adapter.data[channel].output[2] = 0;
+                                wired_adapter.data[channel].output[3] = 0;
                             }
+                            nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
+                            RMT.conf_ch[channel].conf1.tx_start = 1;
+
+                            ++wired_adapter.data[channel].frame_cnt;
+                            ++poll_after_mem_wr;
+                            if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
+                                if (!atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM)) {
+                                    atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM);
+                                    atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
+                                }
+                            }
+                        }
+                        else {
+                            RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                            RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                            RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                            RMT.conf_ch[channel].conf1.rx_en = 1;
                         }
                         break;
                     case 0x02:
@@ -260,6 +272,12 @@ static void IRAM_ATTR n64_isr(void *arg) {
                             atomic_set_bit(&rmt_flags, RMT_MEM_CHANGE);
                             //memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
                         }
+                        break;
+                    case 0x13:
+                        memcpy(buf, wired_adapter.data[channel].output, 7);
+                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 7, &crc, STOP_BIT_2US);
+                        RMT.conf_ch[channel].conf1.tx_start = 1;
+                        ++wired_adapter.data[channel].frame_cnt;
                         break;
                     default:
                         /* Bad frame go back RX */
