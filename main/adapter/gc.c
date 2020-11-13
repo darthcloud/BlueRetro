@@ -49,6 +49,13 @@ struct gc_map {
     uint8_t axes[6];
 } __packed;
 
+struct gc_kb_map {
+    uint8_t salt;
+    uint8_t bytes[3];
+    uint8_t key_codes[3];
+    uint8_t xor;
+} __packed;
+
 const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 
@@ -63,12 +70,47 @@ const uint32_t gc_btns_mask[32] = {
     0, BIT(GC_Z), BIT(GC_R), 0,
 };
 
-void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
-    struct gc_map *map = (struct gc_map *)wired_data->output;
+const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000};
+const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+const uint8_t gc_kb_scancode[KBM_MAX] = {
+    0x10, 0x13, 0x22, 0x26, 0x00, 0x00, 0x00, 0x00,
+    0x5C, 0x5F, 0x5D, 0x5E, 0x00, 0x00, 0x00, 0x00,
+    0x20, 0x21, 0x14, 0x15, 0x4c, 0x61, 0x58, 0x4f,
+    0x00, 0x29, 0x56, 0x00, 0x00, 0x27, 0x54, 0x59,
 
-    map->buttons = 0x8020;
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        map->axes[gc_axes_idx[i]] = gc_axes_meta[i].neutral;
+    0x11, 0x12, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B,
+    0x1C, 0x1D, 0x1E, 0x1F, 0x23, 0x24, 0x25, 0x28,
+    0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31,
+    0x32, 0x33, 0x50, 0x51, 0x34, 0x35, 0x38, 0x3B,
+
+    0x3F, 0x39, 0x3A, 0x36, 0x3C, 0x3D, 0x3E, 0x53,
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+    0x48, 0x49, 0x4A, 0x4B, 0x37, 0x0A, 0x00, 0x4D,
+    0x06, 0x08, 0x4E, 0x07, 0x09, 0x00, 0x00, 0x00,
+
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x57, 0x5B,
+    0x55, 0x5A, 0x00,
+};
+
+void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+    switch (dev_mode) {
+        case DEV_KB:
+        {
+            struct gc_kb_map *map = (struct gc_kb_map *)wired_data->output;
+            memset(wired_data->output, 0, sizeof(struct gc_kb_map));
+            break;
+        }
+        default:
+        {
+            struct gc_map *map = (struct gc_map *)wired_data->output;
+
+            map->buttons = 0x8020;
+            for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+                map->axes[gc_axes_idx[i]] = gc_axes_meta[i].neutral;
+            }
+            break;
+        }
     }
 }
 
@@ -77,14 +119,22 @@ void gc_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
-            ctrl_data[i].mask = gc_mask;
-            ctrl_data[i].desc = gc_desc;
-            ctrl_data[i].axes[j].meta = &gc_axes_meta[j];
+            switch (dev_mode) {
+                case DEV_KB:
+                    ctrl_data[i].mask = gc_kb_mask;
+                    ctrl_data[i].desc = gc_kb_desc;
+                    break;
+                default:
+                    ctrl_data[i].mask = gc_mask;
+                    ctrl_data[i].desc = gc_desc;
+                    ctrl_data[i].axes[j].meta = &gc_axes_meta[j];
+                    break;
+            }
         }
     }
 }
 
-void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct gc_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -117,6 +167,36 @@ void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+static void gc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct gc_kb_map map_tmp = {0};
+    uint32_t code_idx = 0;
+
+    for (uint32_t i = 0; i < KBM_MAX && code_idx < ARRAY_SIZE(map_tmp.key_codes); i++) {
+        if (ctrl_data->map_mask[i / 32] & BIT(i & 0x1F)) {
+            if (ctrl_data->btns[i / 32].value & BIT(i & 0x1F)) {
+                if (gc_kb_scancode[i]) {
+                    map_tmp.key_codes[code_idx++] = gc_kb_scancode[i];
+                }
+            }
+        }
+    }
+    map_tmp.salt = (wired_data->output[0] + 1) & 0xF;
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    switch (dev_mode) {
+        case DEV_KB:
+            gc_kb_from_generic(ctrl_data, wired_data);
+            break;
+        case DEV_PAD:
+        default:
+            gc_ctrl_from_generic(ctrl_data, wired_data);
+            break;
+    }
 }
 
 void gc_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {

@@ -76,6 +76,7 @@ static const uint8_t nsi_crc_table[256] = {
 };
 
 static const uint8_t gc_ident[3] = {0x09, 0x00, 0x20};
+static const uint8_t gc_kb_ident[3] = {0x08, 0x20, 0x00};
 static const uint8_t gc_neutral[] = {
     0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x20, 0x20, 0x00, 0x00
 };
@@ -107,6 +108,28 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t item, const uint8_t *d
             ++item_ptr;
             ++item;
         }
+    }
+    *item_ptr = stop_bit;
+    return item;
+}
+
+static uint16_t IRAM_ATTR nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *xor, uint32_t stop_bit) {
+    uint32_t bit_len = item + len * 8;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
+
+    *xor = 0x00;
+    for (; item < bit_len; ++data) {
+        for (uint32_t mask = 0x80; mask; mask >>= 1) {
+            if (*data & mask) {
+                *item_ptr = BIT_ONE;
+            }
+            else {
+                *item_ptr = BIT_ZERO;
+            }
+            ++item_ptr;
+            ++item;
+        }
+        *xor ^= *data;
     }
     *item_ptr = stop_bit;
     return item;
@@ -354,41 +377,68 @@ static void IRAM_ATTR gc_isr(void *arg) {
                 RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                 item = nsi_items_to_bytes(channel * RMT_MEM_ITEM_NUM, buf, 1);
-                switch (buf[0]) {
-                    case 0x00:
-                    case 0xFF:
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_ident, sizeof(gc_ident), &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
-                        break;
-                    case 0x40:
-                        nsi_items_to_bytes(item, buf, 2);
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
-
-                        if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
-                            uint8_t rumble_data[2];
-                            rumble_data[1] = buf[1] & 0x01;
-                            if (last_rumble[port] != rumble_data[1]) {
-                                last_rumble[port] = rumble_data[1];
-                                rumble_data[0] = port;
-                                adapter_q_fb(rumble_data, 2);
-                            }
+                switch (config.out_cfg[port].dev_mode) {
+                    case DEV_KB:
+                        switch (buf[0]) {
+                            case 0x00:
+                            case 0xFF:
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_kb_ident, sizeof(gc_kb_ident), &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
+                                break;
+                            case 0x54:
+                                item = nsi_bytes_to_items_xor(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[port].output, 7, &crc, STOP_BIT_2US);
+                                buf[0] = crc;
+                                nsi_bytes_to_items_xor(item, buf, 1, &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
+                                ++wired_adapter.data[port].frame_cnt;
+                                break;
+                            default:
+                                /* Bad frame go back RX */
+                                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                                RMT.conf_ch[channel].conf1.rx_en = 1;
+                                break;
                         }
-
-                        ++wired_adapter.data[port].frame_cnt;
-                        break;
-                    case 0x41:
-                    case 0x42:
-                        nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
-                        RMT.conf_ch[channel].conf1.tx_start = 1;
-                        wired_adapter.data[port].output[0] &= ~0x20;
                         break;
                     default:
-                        /* Bad frame go back RX */
-                        RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-                        RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-                        RMT.conf_ch[channel].conf1.rx_en = 1;
+                        switch (buf[0]) {
+                            case 0x00:
+                            case 0xFF:
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_ident, sizeof(gc_ident), &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
+                                break;
+                            case 0x40:
+                                nsi_items_to_bytes(item, buf, 2);
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
+
+                                if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
+                                    uint8_t rumble_data[2];
+                                    rumble_data[1] = buf[1] & 0x01;
+                                    if (last_rumble[port] != rumble_data[1]) {
+                                        last_rumble[port] = rumble_data[1];
+                                        rumble_data[0] = port;
+                                        adapter_q_fb(rumble_data, 2);
+                                    }
+                                }
+
+                                ++wired_adapter.data[port].frame_cnt;
+                                break;
+                            case 0x41:
+                            case 0x42:
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
+                                wired_adapter.data[port].output[0] &= ~0x20;
+                                break;
+                            default:
+                                /* Bad frame go back RX */
+                                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                                RMT.conf_ch[channel].conf1.rx_en = 1;
+                                break;
+                        }
                         break;
                 }
                 break;
