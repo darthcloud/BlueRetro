@@ -6,6 +6,7 @@
 #include <string.h>
 #include "../zephyr/types.h"
 #include "../util.h"
+#include "config.h"
 #include "n64.h"
 
 #define N64_AXES_MAX 2
@@ -128,12 +129,12 @@ void n64_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     }
 }
 
-void n64_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
+void n64_meta_init(struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < N64_AXES_MAX; j++) {
-            switch (dev_mode) {
+            switch (config.out_cfg[i].dev_mode) {
                 case DEV_KB:
                     ctrl_data[i].mask = n64_kb_mask;
                     ctrl_data[i].desc = n64_kb_desc;

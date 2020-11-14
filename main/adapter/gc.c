@@ -6,6 +6,7 @@
 #include <string.h>
 #include "../zephyr/types.h"
 #include "../util.h"
+#include "config.h"
 #include "gc.h"
 
 enum {
@@ -97,7 +98,6 @@ void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {
-            struct gc_kb_map *map = (struct gc_kb_map *)wired_data->output;
             memset(wired_data->output, 0, sizeof(struct gc_kb_map));
             break;
         }
@@ -114,15 +114,16 @@ void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     }
 }
 
-void gc_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
+void gc_meta_init(struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
-            switch (dev_mode) {
+            switch (config.out_cfg[i].dev_mode) {
                 case DEV_KB:
                     ctrl_data[i].mask = gc_kb_mask;
                     ctrl_data[i].desc = gc_kb_desc;
+                    ctrl_data[i].axes[j].meta = NULL;
                     break;
                 default:
                     ctrl_data[i].mask = gc_mask;

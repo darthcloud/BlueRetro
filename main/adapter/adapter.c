@@ -418,7 +418,7 @@ void adapter_bridge(struct bt_data *bt_data) {
             BOLD, ctrl_input.btns[2].value, RESET, BOLD, ctrl_input.btns[3].value, RESET);
 #else
         if (wired_adapter.system_id != WIRED_NONE && from_generic_func[wired_adapter.system_id]) {
-            meta_init_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, ctrl_output);
+            meta_init_func[wired_adapter.system_id](ctrl_output);
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
 
@@ -430,7 +430,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 #else
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 ctrl_output[i].index = i;
-                from_generic_func[wired_adapter.system_id](config.out_cfg[bt_data->dev_id].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
+                from_generic_func[wired_adapter.system_id](config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
             }
 #endif
         }

@@ -296,7 +296,7 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     map->twh_buttons = 0xFFFF;
 }
 
-void genesis_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
+void genesis_meta_init(struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
