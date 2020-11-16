@@ -17,7 +17,6 @@
 #include "../util.h"
 #include "../adapter/adapter.h"
 #include "../adapter/config.h"
-#include "maple.h"
 
 #define P1_TH_PIN 35
 #define P1_TR_PIN 27

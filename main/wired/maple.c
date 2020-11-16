@@ -392,7 +392,12 @@ maple_end:
                         pkt.len = 28;
                         pkt.cmd = CMD_INFO_RSP;
                         pkt.data32[0] = ID_CTRL;
-                        pkt.data32[1] = DESC_CTRL_ALT;
+                        if (config.out_cfg[port].dev_mode == DEV_PAD_ALT) {
+                            pkt.data32[1] = DESC_CTRL_ALT;
+                        }
+                        else {
+                            pkt.data32[1] = DESC_CTRL;
+                        }
                         pkt.data32[2] = 0;
                         pkt.data32[3] = 0;
                         memcpy((void *)&pkt.data32[4], ctrl_area_dir_name, sizeof(ctrl_area_dir_name));
