@@ -67,10 +67,10 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report)
                     meta->hid_btn_idx = i;
                 }
                 else if (key_idx < 6) {
-                    meta->hid_mask[0] |= 0xBBBFFFFF;
+                    meta->hid_mask[0] |= 0xE6FF0F0F;
                     meta->hid_mask[1] |= 0xFFFFFFFF;
                     meta->hid_mask[2] |= 0xFFFFFFFF;
-                    meta->hid_mask[3] |= 0x3FFF;
+                    meta->hid_mask[3] |= 0x7FFFF;
                     meta->hid_axes_idx[key_idx] = i;
                     key_idx++;
                 }
