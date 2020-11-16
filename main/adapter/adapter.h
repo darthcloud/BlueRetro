@@ -310,6 +310,7 @@ struct ctrl_meta {
     int32_t polarity;
     int32_t size_min;
     int32_t size_max;
+    int32_t relative;
 };
 
 struct ctrl {

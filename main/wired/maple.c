@@ -46,7 +46,7 @@
 #define CMD_SET_CONDITION 0x0E
 
 #define ADDR_MASK   0x3F
-#define ADDR_CTRL   0x20
+#define ADDR_MAIN   0x20
 #define ADDR_MEM    0x01
 #define ADDR_RUMBLE 0x02
 
@@ -122,7 +122,6 @@ static const uint8_t rumble_area_dir_name[] = {
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 };
 
-#if 0
 static const uint8_t mouse_area_dir_name[] = {
     0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61, 0x73, 0x75, 0x6F, 0x4D,
     0x20, 0x20, 0x20, 0x65, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -132,7 +131,6 @@ static const uint8_t kb_area_dir_name[] = {
     0x65, 0x4B, 0x00, 0x02, 0x61, 0x6F, 0x62, 0x79, 0x20, 0x20, 0x64, 0x72, 0x20, 0x20, 0x20, 0x20,
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 };
-#endif
 
 static const uint8_t brand[] = {
     0x64, 0x6F, 0x72, 0x50, 0x64, 0x65, 0x63, 0x75, 0x20, 0x79, 0x42, 0x20, 0x55, 0x20, 0x72, 0x6F,
@@ -380,99 +378,173 @@ maple_end:
             src = pkt.dst;
             dst = pkt.src;
         }
-        switch(src & ADDR_MASK) {
-            case ADDR_CTRL:
-                pkt.src = src;
-                if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                    pkt.src |= ADDR_RUMBLE;
-                }
-                pkt.dst = dst;
-                switch (cmd) {
-                    case CMD_INFO_REQ:
-                        pkt.len = 28;
-                        pkt.cmd = CMD_INFO_RSP;
-                        pkt.data32[0] = ID_CTRL;
-                        if (config.out_cfg[port].dev_mode == DEV_PAD_ALT) {
-                            pkt.data32[1] = DESC_CTRL_ALT;
+        switch (config.out_cfg[port].dev_mode) {
+            case DEV_KB:
+                switch(src & ADDR_MASK) {
+                    case ADDR_MAIN:
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        switch (cmd) {
+                            case CMD_INFO_REQ:
+                                pkt.len = 28;
+                                pkt.cmd = CMD_INFO_RSP;
+                                pkt.data32[0] = ID_KB;
+                                pkt.data32[1] = DESC_KB;
+                                pkt.data32[2] = 0;
+                                pkt.data32[3] = 0;
+                                memcpy((void *)&pkt.data32[4], kb_area_dir_name, sizeof(kb_area_dir_name));
+                                memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
+                                pkt.data32[27] = PWR_KB;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_GET_CONDITION:
+                                pkt.len = 3;
+                                pkt.cmd = CMD_DATA_TX;
+                                pkt.data32[0] = ID_KB;
+                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                ++wired_adapter.data[port].frame_cnt;
+                                break;
+                            default:
+                                ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                                break;
                         }
-                        else {
-                            pkt.data32[1] = DESC_CTRL;
-                        }
-                        pkt.data32[2] = 0;
-                        pkt.data32[3] = 0;
-                        memcpy((void *)&pkt.data32[4], ctrl_area_dir_name, sizeof(ctrl_area_dir_name));
-                        memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
-                        pkt.data32[27] = PWR_CTRL;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        break;
-                    case CMD_GET_CONDITION:
-                        pkt.len = 3;
-                        pkt.cmd = CMD_DATA_TX;
-                        pkt.data32[0] = ID_CTRL;
-                        memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        ++wired_adapter.data[port].frame_cnt;
-                        break;
-                    default:
-                        ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
                         break;
                 }
                 break;
-            case ADDR_RUMBLE:
-                pkt.src = src;
-                pkt.dst = dst;
-                switch (cmd) {
-                    case CMD_INFO_REQ:
-                        pkt.len = 28;
-                        pkt.cmd = CMD_INFO_RSP;
-                        pkt.data32[0] = ID_RUMBLE;
-                        pkt.data32[1] = DESC_RUMBLE;
-                        pkt.data32[2] = 0;
-                        pkt.data32[3] = 0;
-                        memcpy((void *)&pkt.data32[4], rumble_area_dir_name, sizeof(rumble_area_dir_name));
-                        memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
-                        pkt.data32[27] = PWR_RUMBLE;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        break;
-                    case CMD_GET_CONDITION:
-                    case CMD_MEM_INFO_REQ:
-                        pkt.len = 0x02;
-                        pkt.cmd = CMD_DATA_TX;
-                        pkt.data32[0] = ID_RUMBLE;
-                        pkt.data32[1] = rumble_val;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        break;
-                    case CMD_BLOCK_READ:
-                        pkt.len = 0x03;
-                        pkt.cmd = CMD_DATA_TX;
-                        pkt.data32[0] = ID_RUMBLE;
-                        pkt.data32[1] = 0;
-                        pkt.data32[2] = rumble_max;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        break;
-                    case CMD_BLOCK_WRITE:
-                        pkt.len = 0x00;
-                        pkt.cmd = CMD_ACK;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        if (!bad_frame) {
-                            rumble_max = pkt.data32[2];
+            case DEV_MOUSE:
+                switch(src & ADDR_MASK) {
+                    case ADDR_MAIN:
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        switch (cmd) {
+                            case CMD_INFO_REQ:
+                                pkt.len = 28;
+                                pkt.cmd = CMD_INFO_RSP;
+                                pkt.data32[0] = ID_MOUSE;
+                                pkt.data32[1] = DESC_MOUSE;
+                                pkt.data32[2] = 0;
+                                pkt.data32[3] = 0;
+                                memcpy((void *)&pkt.data32[4], mouse_area_dir_name, sizeof(mouse_area_dir_name));
+                                memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
+                                pkt.data32[27] = PWR_MOUSE;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_GET_CONDITION:
+                                pkt.len = 6;
+                                pkt.cmd = CMD_DATA_TX;
+                                pkt.data32[0] = ID_MOUSE;
+                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 5);
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                ((uint32_t *)wired_adapter.data[port].output)[1] = 0x00020002;
+                                ((uint32_t *)wired_adapter.data[port].output)[2] = 0x00020002;
+                                ((uint32_t *)wired_adapter.data[port].output)[3] = 0x00020002;
+                                ((uint32_t *)wired_adapter.data[port].output)[4] = 0x00020002;
+                                ++wired_adapter.data[port].frame_cnt;
+                                break;
+                            default:
+                                ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                                break;
                         }
                         break;
-                    case CMD_SET_CONDITION:
-                        pkt.len = 0x00;
-                        pkt.cmd = CMD_ACK;
-                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                        if (!bad_frame) {
-                            rumble_val = pkt.data32[1];
-                            if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                                pkt.data[3] = port;
-                                *(uint32_t *)&pkt.data[4] = rumble_max;
-                                adapter_q_fb(pkt.data + 3, 9);
-                            }
+                }
+                break;
+            default:
+                switch(src & ADDR_MASK) {
+                    case ADDR_MAIN:
+                        pkt.src = src;
+                        if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                            pkt.src |= ADDR_RUMBLE;
+                        }
+                        pkt.dst = dst;
+                        switch (cmd) {
+                            case CMD_INFO_REQ:
+                                pkt.len = 28;
+                                pkt.cmd = CMD_INFO_RSP;
+                                pkt.data32[0] = ID_CTRL;
+                                if (config.out_cfg[port].dev_mode == DEV_PAD_ALT) {
+                                    pkt.data32[1] = DESC_CTRL_ALT;
+                                }
+                                else {
+                                    pkt.data32[1] = DESC_CTRL;
+                                }
+                                pkt.data32[2] = 0;
+                                pkt.data32[3] = 0;
+                                memcpy((void *)&pkt.data32[4], ctrl_area_dir_name, sizeof(ctrl_area_dir_name));
+                                memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
+                                pkt.data32[27] = PWR_CTRL;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_GET_CONDITION:
+                                pkt.len = 3;
+                                pkt.cmd = CMD_DATA_TX;
+                                pkt.data32[0] = ID_CTRL;
+                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                ++wired_adapter.data[port].frame_cnt;
+                                break;
+                            default:
+                                ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                                break;
                         }
                         break;
-                    default:
-                        ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                    case ADDR_RUMBLE:
+                        pkt.src = src;
+                        pkt.dst = dst;
+                        switch (cmd) {
+                            case CMD_INFO_REQ:
+                                pkt.len = 28;
+                                pkt.cmd = CMD_INFO_RSP;
+                                pkt.data32[0] = ID_RUMBLE;
+                                pkt.data32[1] = DESC_RUMBLE;
+                                pkt.data32[2] = 0;
+                                pkt.data32[3] = 0;
+                                memcpy((void *)&pkt.data32[4], rumble_area_dir_name, sizeof(rumble_area_dir_name));
+                                memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
+                                pkt.data32[27] = PWR_RUMBLE;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_GET_CONDITION:
+                            case CMD_MEM_INFO_REQ:
+                                pkt.len = 0x02;
+                                pkt.cmd = CMD_DATA_TX;
+                                pkt.data32[0] = ID_RUMBLE;
+                                pkt.data32[1] = rumble_val;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_BLOCK_READ:
+                                pkt.len = 0x03;
+                                pkt.cmd = CMD_DATA_TX;
+                                pkt.data32[0] = ID_RUMBLE;
+                                pkt.data32[1] = 0;
+                                pkt.data32[2] = rumble_max;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                break;
+                            case CMD_BLOCK_WRITE:
+                                pkt.len = 0x00;
+                                pkt.cmd = CMD_ACK;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                if (!bad_frame) {
+                                    rumble_max = pkt.data32[2];
+                                }
+                                break;
+                            case CMD_SET_CONDITION:
+                                pkt.len = 0x00;
+                                pkt.cmd = CMD_ACK;
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                if (!bad_frame) {
+                                    rumble_val = pkt.data32[1];
+                                    if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                                        pkt.data[3] = port;
+                                        *(uint32_t *)&pkt.data[4] = rumble_max;
+                                        adapter_q_fb(pkt.data + 3, 9);
+                                    }
+                                }
+                                break;
+                            default:
+                                ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                                break;
+                        }
                         break;
                 }
                 break;

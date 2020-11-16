@@ -6,6 +6,7 @@
 #include <string.h>
 #include "../zephyr/types.h"
 #include "../util.h"
+#include "config.h"
 #include "dc.h"
 
 enum {
@@ -27,10 +28,32 @@ enum {
     DC_LD_RIGHT,
 };
 
+enum {
+    DC_KB_LCTRL = 0,
+    DC_KB_LSHIFT,
+    DC_KB_LALT,
+    DC_KB_LWIN,
+    DC_KB_RCTRL,
+    DC_KB_RSHIFT,
+    DC_KB_RALT,
+    DC_KB_RWIN,
+};
+
 const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     7,       6,       5,       4,       0,      1
+};
+
+const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    2,       3,       1,       0,       5,      4
+};
+
+const uint8_t dc_kb_keycode_idx[] =
+{
+    1, 0, 7, 6, 5, 4
 };
 
 const struct ctrl_meta dc_btns_meta =
@@ -48,6 +71,16 @@ const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
+const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
+{
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200, .polarity = 1},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+};
+
 struct dc_map {
     union {
         struct {
@@ -58,9 +91,24 @@ struct dc_map {
     };
 } __packed;
 
+struct dc_mouse_map {
+    uint8_t reserved[3];
+    uint8_t buttons;
+    uint16_t axes[8];
+} __packed;
+
+struct dc_kb_map {
+    union {
+        struct {
+            uint8_t reserved[3];
+            uint8_t bitfield;
+        };
+        uint8_t key_codes[8];
+    };
+} __packed;
+
 const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, 0x00000000};
 const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-
 const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -72,12 +120,87 @@ const uint32_t dc_btns_mask[32] = {
     0, BIT(DC_C), 0, 0,
 };
 
-void dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
-    struct dc_map *map = (struct dc_map *)wired_data->output;
+const uint32_t dc_mouse_mask[4] = {0x1901C0F0, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t dc_mouse_desc[4] = {0x0000C0F0, 0x00000000, 0x00000000, 0x00000000};
+const uint32_t dc_mouse_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(DC_D), 0, 0, BIT(DC_Y),
+    BIT(DC_X), 0, 0, 0,
+};
 
-    map->buttons = 0xFFFF;
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        map->axes[dc_axes_idx[i]] = dc_axes_meta[i].neutral;
+const uint32_t dc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
+const uint32_t dc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+const uint8_t dc_kb_scancode[KBM_MAX] = {
+ /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
+    0x04, 0x07, 0x16, 0x1A, 0x00, 0x00, 0x00, 0x00,
+ /* KB_LEFT, KB_RIGHT, KB_DOWN, KB_UP, MOUSE_WX_LEFT, MOUSE_WX_RIGHT, MOUSE_WY_DOWN, MOUSE_WY_UP */
+    0x50, 0x4F, 0x51, 0x52, 0x00, 0x00, 0x00, 0x00,
+ /* KB_Q, KB_R, KB_E, KB_F, KB_ESC, KB_ENTER, KB_LWIN, KB_HASH */
+    0x14, 0x15, 0x08, 0x09, 0x29, 0x28, 0x00, 0x35,
+ /* MOUSE_RIGHT, KB_Z, KB_LCTRL, MOUSE_MIDDLE, MOUSE_LEFT, KB_X, KB_LSHIFT, KB_SPACE */
+    0x00, 0x1D, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x2C,
+
+ /* KB_B, KB_C, KB_G, KB_H, KB_I, KB_J, KB_K, KB_L */
+    0x05, 0x06, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+ /* KB_M, KB_N, KB_O, KB_P, KB_T, KB_U, KB_V, KB_Y */
+    0x10, 0x11, 0x12, 0x13, 0x17, 0x18, 0x19, 0x1C,
+ /* KB_1, KB_2, KB_3, KB_4, KB_5, KB_6, KB_7, KB_8 */
+    0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
+ /* KB_9, KB_0, KB_BACKSPACE, KB_TAB, KB_MINUS, KB_EQUAL, KB_LEFTBRACE, KB_RIGHTBRACE */
+    0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x30, 0x32,
+
+ /* KB_BACKSLASH, KB_SEMICOLON, KB_APOSTROPHE, KB_GRAVE, KB_COMMA, KB_DOT, KB_SLASH, KB_CAPSLOCK */
+    0x87, 0x33, 0x34, 0x89, 0x36, 0x37, 0x38, 0x39,
+ /* KB_F1, KB_F2, KB_F3, KB_F4, KB_F5, KB_F6, KB_F7, KB_F8 */
+    0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41,
+ /* KB_F9, KB_F10, KB_F11, KB_F12, KB_PSCREEN, KB_SCROLL, KB_PAUSE, KB_INSERT */
+    0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
+ /* KB_HOME, KB_PAGEUP, KB_DEL, KB_END, KB_PAGEDOWN, KB_NUMLOCK, KB_KP_DIV, KB_KP_MULTI */
+    0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x53, 0x54, 0x55,
+
+ /* KB_KP_MINUS, KB_KP_PLUS, KB_KP_ENTER, KB_KP_1, KB_KP_2, KB_KP_3, KB_KP_4, KB_KP_5 */
+    0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D,
+ /* KB_KP_6, KB_KP_7, KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT, KB_LALT, KB_RCTRL */
+    0x5E, 0x5F, 0x60, 0x61, 0x62, 0x63, 0x00, 0x00,
+ /* KB_RSHIFT, KB_RALT, KB_RWIN */
+    0x00, 0x00, 0x00,
+};
+
+void dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+    switch (dev_mode) {
+        case DEV_KB:
+        {
+            memset(wired_data->output, 0x00, sizeof(struct dc_kb_map));
+            break;
+        }
+        case DEV_MOUSE:
+        {
+            struct dc_mouse_map *map = (struct dc_mouse_map *)wired_data->output;
+
+            map->reserved[0] = 0x00;
+            map->reserved[1] = 0x00;
+            map->reserved[2] = 0x00;
+            map->buttons = 0xFF;
+            for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
+                map->axes[i] = sys_cpu_to_be16(dc_mouse_axes_meta[0].neutral);
+            }
+            break;
+        }
+        default:
+        {
+            struct dc_map *map = (struct dc_map *)wired_data->output;
+
+            map->buttons = 0xFFFF;
+            for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+                map->axes[dc_axes_idx[i]] = dc_axes_meta[i].neutral;
+            }
+            break;
+        }
     }
 }
 
@@ -86,14 +209,29 @@ void dc_meta_init(struct generic_ctrl *ctrl_data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
-            ctrl_data[i].mask = dc_mask;
-            ctrl_data[i].desc = dc_desc;
-            ctrl_data[i].axes[j].meta = &dc_axes_meta[j];
+            switch (config.out_cfg[i].dev_mode) {
+                case DEV_KB:
+                    ctrl_data[i].mask = dc_kb_mask;
+                    ctrl_data[i].desc = dc_kb_desc;
+                    goto exit_axes_loop;
+                case DEV_MOUSE:
+                    ctrl_data[i].mask = dc_mouse_mask;
+                    ctrl_data[i].desc = dc_mouse_desc;
+                    ctrl_data[i].axes[j].meta = &dc_mouse_axes_meta[j];
+                    break;
+                default:
+                    ctrl_data[i].mask = dc_mask;
+                    ctrl_data[i].desc = dc_desc;
+                    ctrl_data[i].axes[j].meta = &dc_axes_meta[j];
+                    break;
+            }
         }
+exit_axes_loop:
+        ;
     }
 }
 
-void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -124,6 +262,105 @@ void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct dc_mouse_map map_tmp;
+
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (ctrl_data->map_mask[0] & BIT(i)) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.buttons &= ~dc_mouse_btns_mask[i];
+            }
+            else {
+                map_tmp.buttons |= dc_mouse_btns_mask[i];
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & dc_mouse_desc[0])) {
+            int32_t tmp_val = ctrl_data->axes[i].value;
+
+            if (ctrl_data->axes[i].meta->relative) {
+                tmp_val += sys_be16_to_cpu(map_tmp.axes[dc_mouse_axes_idx[i]]);
+            }
+            else {
+                map_tmp.axes[dc_mouse_axes_idx[i]] = 0;
+            }
+
+            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
+                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0x3FF);
+            }
+            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
+                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0);
+            }
+            else {
+                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(sys_be16_to_cpu(map_tmp.axes[dc_mouse_axes_idx[i]]) + (uint16_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral));
+            }
+        }
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+static void dc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct dc_kb_map map_tmp = {0};
+    uint32_t code_idx = 0;
+
+    for (uint32_t i = 0; i < KBM_MAX && code_idx < ARRAY_SIZE(dc_kb_keycode_idx); i++) {
+        if (ctrl_data->map_mask[i / 32] & BIT(i & 0x1F)) {
+            if (ctrl_data->btns[i / 32].value & BIT(i & 0x1F)) {
+                if (dc_kb_scancode[i]) {
+                    map_tmp.key_codes[dc_kb_keycode_idx[code_idx++]] = dc_kb_scancode[i];
+                }
+            }
+        }
+    }
+
+    if (ctrl_data->map_mask[0] & BIT(KB_LCTRL & 0x1F) && ctrl_data->btns[0].value & BIT(KB_LCTRL & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_LCTRL);
+    }
+    if (ctrl_data->map_mask[0] & BIT(KB_LSHIFT & 0x1F) && ctrl_data->btns[0].value & BIT(KB_LSHIFT & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_LSHIFT);
+    }
+    if (ctrl_data->map_mask[3] & BIT(KB_LALT & 0x1F) && ctrl_data->btns[3].value & BIT(KB_LALT & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_LALT);
+    }
+    if (ctrl_data->map_mask[0] & BIT(KB_LWIN & 0x1F) && ctrl_data->btns[0].value & BIT(KB_LWIN & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_LWIN);
+    }
+    if (ctrl_data->map_mask[3] & BIT(KB_RCTRL & 0x1F) && ctrl_data->btns[3].value & BIT(KB_RCTRL & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_RCTRL);
+    }
+    if (ctrl_data->map_mask[3] & BIT(KB_RSHIFT & 0x1F) && ctrl_data->btns[3].value & BIT(KB_RSHIFT & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_RSHIFT);
+    }
+    if (ctrl_data->map_mask[3] & BIT(KB_RALT & 0x1F) && ctrl_data->btns[3].value & BIT(KB_RALT & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_RALT);
+    }
+    if (ctrl_data->map_mask[3] & BIT(KB_RWIN & 0x1F) && ctrl_data->btns[3].value & BIT(KB_RWIN & 0x1F)) {
+        map_tmp.bitfield |= BIT(DC_KB_RWIN);
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    switch (dev_mode) {
+        case DEV_KB:
+            dc_kb_from_generic(ctrl_data, wired_data);
+            break;
+        case DEV_MOUSE:
+            dc_mouse_from_generic(ctrl_data, wired_data);
+            break;
+        case DEV_PAD:
+        default:
+            dc_ctrl_from_generic(ctrl_data, wired_data);
+            break;
+    }
 }
 
 void dc_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
