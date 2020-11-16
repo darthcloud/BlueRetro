@@ -57,6 +57,12 @@
 #define DESC_MOUSE    0x000E0700
 #define DESC_KB       0x01020080
 
+#define PWR_CTRL   0xAE01F401
+#define PWR_VMU    0x7C008200
+#define PWR_RUMBLE 0xC8004006
+#define PWR_MOUSE  0x9001F401
+#define PWR_KB     0x5E019001
+
 #define TIMEOUT 8
 
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
@@ -391,8 +397,7 @@ maple_end:
                         pkt.data32[3] = 0;
                         memcpy((void *)&pkt.data32[4], ctrl_area_dir_name, sizeof(ctrl_area_dir_name));
                         memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
-                        pkt.data32[27] = 0xF401;
-                        pkt.data32[27] |= 0xAE01 << 16;
+                        pkt.data32[27] = PWR_CTRL;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_GET_CONDITION:
@@ -421,8 +426,7 @@ maple_end:
                         pkt.data32[3] = 0;
                         memcpy((void *)&pkt.data32[4], rumble_area_dir_name, sizeof(rumble_area_dir_name));
                         memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
-                        pkt.data32[27] = 0x4006;
-                        pkt.data32[27] |= 0xC800 << 16;
+                        pkt.data32[27] = PWR_RUMBLE;
                         maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                         break;
                     case CMD_GET_CONDITION:
