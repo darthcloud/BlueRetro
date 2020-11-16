@@ -11,12 +11,15 @@
 #include <xtensa/hal.h>
 #include <esp32/dport_access.h>
 #include <esp_intr_alloc.h>
+#include <esp_timer.h>
 #include "driver/gpio.h"
 #include "../zephyr/types.h"
 #include "../util.h"
 #include "../adapter/adapter.h"
 #include "../adapter/config.h"
 #include "maple.h"
+
+//#define WIRED_TRACE
 
 #define ID_CTRL    0x00000001
 #define ID_VMU_MEM 0x00000002
@@ -54,8 +57,6 @@
 #define DESC_MOUSE    0x000E0700
 #define DESC_KB       0x01020080
 
-//#define WIRED_TRACE
-#define DEBUG  (1ULL << 25)
 #define TIMEOUT 8
 
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
@@ -74,11 +75,13 @@ struct maple_pkt {
     };
 } __packed;
 
-static const uint8_t gpio_pin[4][2] = {
+static const uint8_t gpio_pin[][2] = {
     {21, 22},
+#ifndef WIRED_TRACE
     { 3,  5},
     {18, 23},
     {26, 27},
+#endif
 };
 
 static uint8_t pin_to_port[] = {
@@ -95,6 +98,7 @@ static uint32_t maple0_to_maple1[] = {
     0x00, 0x00, BIT(27), 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+#ifndef WIRED_TRACE
 static const uint8_t ctrl_area_dir_name[] = {
     0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61, 0x74, 0x6E, 0x6F, 0x43,
     0x6C, 0x6C, 0x6F, 0x72, 0x20, 0x20, 0x72, 0x65, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -130,6 +134,9 @@ static const uint8_t brand[] = {
     0x45, 0x53, 0x20, 0x6D, 0x45, 0x20, 0x41, 0x47, 0x52, 0x45, 0x54, 0x4E, 0x53, 0x49, 0x52, 0x50,
     0x4C, 0x2C, 0x53, 0x45, 0x20, 0x2E, 0x44, 0x54, 0x20, 0x20, 0x20, 0x20,
 };
+#else
+static uint32_t cur_us = 0, pre_us = 0;
+#endif
 
 static struct maple_pkt pkt;
 static uint32_t rumble_max = 0x00020013;
@@ -331,7 +338,9 @@ maple_end:
         bad_frame = ((bit_cnt - 1) % 8);
 
 #ifdef WIRED_TRACE
-        ets_printf("%08X ", xthal_get_ccount());
+        pre_us = cur_us;
+        cur_us = xthal_get_ccount();;
+        ets_printf("+%07u: ", (cur_us - pre_us)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
         byte = ((bit_cnt - 1) / 8);
         if (bad_frame) {
             ++byte;
@@ -467,30 +476,18 @@ maple_end:
 
 void maple_init(void)
 {
-    gpio_config_t io_conf[4][2] = {0};
+    gpio_config_t io_conf;
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(io_conf); i++) {
-        for (uint32_t j = 0; j < ARRAY_SIZE(io_conf[0]); j++) {
-            io_conf[i][j].intr_type = j ? 0 : GPIO_PIN_INTR_NEGEDGE;
-            io_conf[i][j].pin_bit_mask = BIT(gpio_pin[i][j]);
-            io_conf[i][j].mode = GPIO_MODE_INPUT;
-            io_conf[i][j].pull_down_en = GPIO_PULLDOWN_DISABLE;
-            io_conf[i][j].pull_up_en = GPIO_PULLUP_DISABLE;
-            gpio_config(&io_conf[i][j]);
+    for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
+        for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {
+            io_conf.intr_type = j ? 0 : GPIO_PIN_INTR_NEGEDGE;
+            io_conf.pin_bit_mask = BIT(gpio_pin[i][j]);
+            io_conf.mode = GPIO_MODE_INPUT;
+            io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+            io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+            gpio_config(&io_conf);
         }
     }
-
-#if 0
-    gpio_config_t io_conf2 = {
-        .intr_type = 0,
-        .pin_bit_mask = DEBUG,
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_ENABLE
-    };
-    gpio_config(&io_conf2);
-    GPIO.out_w1ts = DEBUG;
-#endif
 
     esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
 }
