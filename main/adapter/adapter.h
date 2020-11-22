@@ -34,6 +34,7 @@ enum {
     XB1_S,
     XB1_ADAPTIVE,
     SW,
+    PS5_DS,
     BT_MAX,
 };
 

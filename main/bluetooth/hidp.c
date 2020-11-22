@@ -7,7 +7,7 @@
 #include "hidp_generic.h"
 #include "hidp_ps3.h"
 #include "hidp_wii.h"
-#include "hidp_ps4.h"
+#include "hidp_ps4_ps5.h"
 #include "hidp_xb1.h"
 #include "hidp_sw.h"
 
@@ -26,10 +26,11 @@ static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
     bt_hid_wii_init, /* WII_NUNCHUCK */
     bt_hid_wii_init, /* WII_CLASSIC */
     bt_hid_wii_init, /* WIIU_PRO */
-    bt_hid_ps4_init, /* PS4_DS4 */
+    bt_hid_ps4_ps5_init, /* PS4_DS4 */
     bt_hid_xb1_init, /* XB1_S */
     bt_hid_xb1_init, /* XB1_ADAPTIVE */
     bt_hid_sw_init, /* SW */
+    bt_hid_ps4_ps5_init, /* PS5_DS */
 };
 
 static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
@@ -39,10 +40,11 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
     bt_hid_wii_hdlr, /* WII_NUNCHUCK */
     bt_hid_wii_hdlr, /* WII_CLASSIC */
     bt_hid_wii_hdlr, /* WIIU_PRO */
-    bt_hid_ps4_hdlr, /* PS4_DS4 */
+    bt_hid_ps4_ps5_hdlr, /* PS4_DS4 */
     bt_hid_xb1_hdlr, /* XB1_S */
     bt_hid_xb1_hdlr, /* XB1_ADAPTIVE */
     bt_hid_sw_hdlr, /* SW */
+    bt_hid_ps4_ps5_hdlr, /* PS5_DS */
 };
 
 static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
@@ -56,6 +58,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
     bt_hid_cmd_xb1_rumble, /* XB1_S */
     bt_hid_cmd_xb1_rumble, /* XB1_ADAPTIVE */
     bt_hid_cmd_sw_set_conf, /* SW */
+    bt_hid_cmd_ps5_set_conf, /* PS5_DS */
 };
 
 void bt_hid_init(struct bt_dev *device) {

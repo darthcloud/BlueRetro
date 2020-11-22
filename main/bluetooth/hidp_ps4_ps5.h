@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BT_HIDP_PS4_H_
-#define _BT_HIDP_PS4_H_
+#ifndef _BT_HIDP_PS4_PS5_H_
+#define _BT_HIDP_PS4_PS5_H_
 
 #include "hidp.h"
 
 #define BT_HIDP_HID_STATUS 0x01
 #define BT_HIDP_PS4_STATUS 0x11
+#define BT_HIDP_PS5_STATUS 0x31
 struct bt_hidp_ps4_status {
     uint8_t data[77];
 } __packed;
@@ -29,8 +30,22 @@ struct bt_hidp_ps4_set_conf {
     uint32_t crc;
 } __packed;
 
-void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report);
-void bt_hid_ps4_init(struct bt_dev *device);
-void bt_hid_ps4_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+#define BT_HIDP_PS5_SET_CONF 0x31
+struct bt_hidp_ps5_set_conf {
+    uint8_t conf0;
+    uint8_t cmd;
+    uint8_t conf1;
+    uint8_t r_rumble;
+    uint8_t l_rumble;
+    uint8_t tbd1[41];
+    uint16_t conf2;
+    uint8_t tbd2[25];
+    uint32_t crc;
+} __packed;
 
-#endif /* _BT_HIDP_PS4_H_ */
+void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report);
+void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report);
+void bt_hid_ps4_ps5_init(struct bt_dev *device);
+void bt_hid_ps4_ps5_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+
+#endif /* _BT_HIDP_PS4_PS5_H_ */

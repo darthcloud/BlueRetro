@@ -25,7 +25,7 @@
 #include "hid_generic.h"
 #include "ps3.h"
 #include "wii.h"
-#include "ps4.h"
+#include "ps4_ps5.h"
 #include "xb1.h"
 #include "sw.h"
 #include "parallel_1p.h"
@@ -55,10 +55,25 @@ static to_generic_t to_generic_func[BT_MAX] = {
     wiin_to_generic, /* WII_NUNCHUCK */
     wiic_to_generic, /* WII_CLASSIC */
     wiiu_to_generic, /* WIIU_PRO */
-    ps4_to_generic, /* PS4_DS4 */
+    ps4_ps5_to_generic, /* PS4_DS4 */
     xb1_to_generic, /* XB1_S */
     xb1_to_generic, /* XB1_ADAPTIVE */
     sw_to_generic, /* SW */
+    ps4_ps5_to_generic, /* PS5_DS */
+};
+
+static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
+    NULL, /* HID_GENERIC */
+    ps3_fb_from_generic, /* PS3_DS3 */
+    wii_fb_from_generic, /* WII_CORE */
+    wii_fb_from_generic, /* WII_NUNCHUCK */
+    wii_fb_from_generic, /* WII_CLASSIC */
+    wii_fb_from_generic, /* WIIU_PRO */
+    ps4_fb_from_generic, /* PS4_DS4 */
+    xb1_fb_from_generic, /* XB1_S */
+    xb1_fb_from_generic, /* XB1_ADAPTIVE */
+    sw_fb_from_generic, /* SW */
+    ps5_fb_from_generic, /* PS5_DS4 */
 };
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
@@ -107,19 +122,6 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     gc_fb_to_generic, /* GC */
     NULL, /* WII_EXT */
     NULL, /* EXP_BOARD */
-};
-
-static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
-    NULL, /* HID_GENERIC */
-    ps3_fb_from_generic, /* PS3_DS3 */
-    wii_fb_from_generic, /* WII_CORE */
-    wii_fb_from_generic, /* WII_NUNCHUCK */
-    wii_fb_from_generic, /* WII_CLASSIC */
-    wii_fb_from_generic, /* WIIU_PRO */
-    ps4_fb_from_generic, /* PS4_DS4 */
-    xb1_fb_from_generic, /* XB1_S */
-    xb1_fb_from_generic, /* XB1_ADAPTIVE */
-    sw_fb_from_generic, /* SW */
 };
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
