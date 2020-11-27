@@ -43,6 +43,12 @@ const struct ctrl_meta n64_axes_meta[N64_AXES_MAX] =
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x54},
 };
 
+const struct ctrl_meta n64_mouse_axes_meta[N64_AXES_MAX] =
+{
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
+};
+
 struct n64_map {
     uint16_t buttons;
     uint8_t axes[2];
@@ -92,7 +98,7 @@ void n64_meta_init(int32_t dev_mode, struct generic_ctrl *ctrl_data) {
                 case DEV_MOUSE:
                     ctrl_data[i].mask = n64_mouse_mask;
                     ctrl_data[i].desc = n64_mouse_desc;
-                    ctrl_data[i].axes[j + 2].meta = &n64_axes_meta[j];
+                    ctrl_data[i].axes[j + 2].meta = &n64_mouse_axes_meta[j];
                     break;
                 case DEV_PAD:
                 default:
