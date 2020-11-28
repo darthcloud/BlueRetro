@@ -88,7 +88,6 @@ struct ps5_map {
 
 static const uint32_t ps4_mask[4] = {0xBBFF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps4_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-
 static const uint32_t ps4_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,

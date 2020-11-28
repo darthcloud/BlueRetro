@@ -49,18 +49,13 @@ enum {
     XB1_ADAPTIVE_X4,
 };
 
-const uint8_t xb1_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t xb1_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       4,      5
 };
 
-const struct ctrl_meta xb1_btn_meta =
-{
-    .polarity = 0,
-};
-
-const struct ctrl_meta xb1_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta xb1_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x8000, .abs_max = 0x8000},
     {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
@@ -89,7 +84,7 @@ struct xb1_rumble {
     uint8_t cnt;
 } __packed;
 
-const struct xb1_rumble xb1_rumble_on = {
+static const struct xb1_rumble xb1_rumble_on = {
     .enable = 0x03,
     .mag_l = 0x1e,
     .mag_r = 0x1e,
@@ -97,7 +92,7 @@ const struct xb1_rumble xb1_rumble_on = {
     .cnt = 0x00,
 };
 
-const struct xb1_rumble xb1_rumble_off = {
+static const struct xb1_rumble xb1_rumble_off = {
     .enable = 0x03,
     .mag_l = 0x00,
     .mag_r = 0x00,
@@ -105,12 +100,11 @@ const struct xb1_rumble xb1_rumble_off = {
     .cnt = 0xFF,
 };
 
-const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t xb1_adaptive_mask[4] = {0xBB3FFFFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t xb1_btns_mask[32] = {
+static const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t xb1_adaptive_mask[4] = {0xBB3FFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t xb1_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -121,7 +115,7 @@ const uint32_t xb1_btns_mask[32] = {
     0, BIT(XB1_RB), 0, BIT(XB1_RJ),
 };
 
-const uint32_t xb1_dinput_btns_mask[32] = {
+static const uint32_t xb1_dinput_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -132,7 +126,7 @@ const uint32_t xb1_dinput_btns_mask[32] = {
     0, BIT(XB1_DI_RB), 0, BIT(XB1_DI_RJ),
 };
 
-const uint32_t xb1_adaptive_btns_mask[32] = {
+static const uint32_t xb1_adaptive_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,

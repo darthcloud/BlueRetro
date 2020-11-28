@@ -28,19 +28,19 @@ enum {
     PS_S,
 };
 
-const uint8_t ps_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t ps_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     2,       3,       0,       1,       14,     15
 };
 
-const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       1,       0,     1
 };
 
-const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -50,7 +50,7 @@ const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
-const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 128},
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 128, .polarity = 1},
@@ -66,9 +66,9 @@ struct ps_map {
     uint8_t analog_btn;
 } __packed;
 
-const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t ps_btns_mask[32] = {
+static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PS_D_LEFT), BIT(PS_D_RIGHT), BIT(PS_D_DOWN), BIT(PS_D_UP),
@@ -78,7 +78,7 @@ const uint32_t ps_btns_mask[32] = {
     BIT(PS_L2), BIT(PS_L1), 0, BIT(PS_L3),
     BIT(PS_R2), BIT(PS_R1), 0, BIT(PS_R3),
 };
-const uint8_t ps_btns_idx[32] = {
+static const uint8_t ps_btns_idx[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     5, 4, 7, 6,
@@ -89,9 +89,9 @@ const uint8_t ps_btns_idx[32] = {
     15, 13, 0, 0,
 };
 
-const uint32_t ps_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t ps_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t ps_mouse_btns_mask[32] = {
+static const uint32_t ps_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_mouse_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -160,7 +160,7 @@ exit_axes_loop:
     }
 }
 
-void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct ps_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -208,7 +208,7 @@ void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void ps_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void ps_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct ps_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));

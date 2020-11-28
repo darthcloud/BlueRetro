@@ -30,13 +30,13 @@ enum {
     JVS_3,
 };
 
-const uint8_t jvs_axes_idx[JVS_AXES_MAX] =
+static const uint8_t jvs_axes_idx[JVS_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY  */
     0,       1,
 };
 
-const struct ctrl_meta jvs_axes_meta[JVS_AXES_MAX] =
+static const struct ctrl_meta jvs_axes_meta[JVS_AXES_MAX] =
 {
     {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
     {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
@@ -49,10 +49,9 @@ struct jvs_map {
     uint8_t test;
 } __packed;
 
-const uint32_t jvs_mask[4] = {0xBBFF0F0F, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t jvs_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t jvs_btns_mask[32] = {
+static const uint32_t jvs_mask[4] = {0xBBFF0F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jvs_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jvs_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(JVS_LD_LEFT), BIT(JVS_LD_RIGHT), BIT(JVS_LD_DOWN), BIT(JVS_LD_UP),

@@ -70,7 +70,6 @@ struct genesis_map {
 
 static const uint32_t genesis_mask[4] = {0x223F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t genesis_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
 static const uint32_t genesis_btns_mask[2][3][32] = {
     {
         /* TH HIGH */

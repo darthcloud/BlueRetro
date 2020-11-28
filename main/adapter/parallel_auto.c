@@ -26,7 +26,6 @@ struct para_auto_map {
 
 static const uint32_t para_auto_mask[4] = {0x00050F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t para_auto_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
 static const uint32_t para_auto_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,

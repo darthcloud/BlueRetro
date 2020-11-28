@@ -40,18 +40,13 @@ static const uint8_t ps3_config[] = {
     0x00, 0x00, 0x00
 };
 
-const uint8_t ps3_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t ps3_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       12,     13
 };
 
-const struct ctrl_meta ps3_btn_meta =
-{
-    .polarity = 0,
-};
-
-const struct ctrl_meta ps3_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta ps3_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x80, .abs_max = 0x80},
     {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -78,10 +73,9 @@ struct ps3_set_conf {
     uint8_t tbd2[25];
 } __packed;
 
-const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t ps3_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t ps3_btns_mask[32] = {
+static const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps3_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps3_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PS3_D_LEFT), BIT(PS3_D_RIGHT), BIT(PS3_D_DOWN), BIT(PS3_D_UP),

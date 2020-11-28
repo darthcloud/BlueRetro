@@ -39,29 +39,24 @@ enum {
     DC_KB_RWIN,
 };
 
-const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     7,       6,       5,       4,       0,      1
 };
 
-const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     2,       3,       1,       0,       5,      4
 };
 
-const uint8_t dc_kb_keycode_idx[] =
+static const uint8_t dc_kb_keycode_idx[] =
 {
     1, 0, 7, 6, 5, 4
 };
 
-const struct ctrl_meta dc_btns_meta =
-{
-    .polarity = 1,
-};
-
-const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -71,7 +66,7 @@ const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
-const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
     {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
@@ -107,9 +102,9 @@ struct dc_kb_map {
     };
 } __packed;
 
-const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t dc_btns_mask[32] = {
+static const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(DC_LD_LEFT), BIT(DC_LD_RIGHT), BIT(DC_LD_DOWN), BIT(DC_LD_UP),
@@ -120,9 +115,9 @@ const uint32_t dc_btns_mask[32] = {
     0, BIT(DC_C), 0, 0,
 };
 
-const uint32_t dc_mouse_mask[4] = {0x1901C0F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t dc_mouse_desc[4] = {0x0000C0F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t dc_mouse_btns_mask[32] = {
+static const uint32_t dc_mouse_mask[4] = {0x1901C0F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t dc_mouse_desc[4] = {0x0000C0F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t dc_mouse_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -133,9 +128,9 @@ const uint32_t dc_mouse_btns_mask[32] = {
     BIT(DC_X), 0, 0, 0,
 };
 
-const uint32_t dc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
-const uint32_t dc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-const uint8_t dc_kb_scancode[KBM_MAX] = {
+static const uint32_t dc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
+static const uint32_t dc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint8_t dc_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
     0x04, 0x07, 0x16, 0x1A, 0x00, 0x00, 0x00, 0x00,
  /* KB_LEFT, KB_RIGHT, KB_DOWN, KB_UP, MOUSE_WX_LEFT, MOUSE_WX_RIGHT, MOUSE_WY_DOWN, MOUSE_WY_UP */
@@ -231,7 +226,7 @@ exit_axes_loop:
     }
 }
 
-void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -264,7 +259,7 @@ void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_mouse_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));

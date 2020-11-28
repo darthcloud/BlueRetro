@@ -23,19 +23,13 @@ enum {
     NPISO_A,
 };
 
-const struct ctrl_meta npiso_btns_meta =
-{
-    .polarity = 1,
-};
-
 struct npiso_map {
     uint16_t buttons;
 } __packed;
 
-const uint32_t npiso_mask[4] = {0x113F0F00, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t npiso_btns_mask[32] = {
+static const uint32_t npiso_mask[4] = {0x113F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(NPISO_LD_LEFT), BIT(NPISO_LD_RIGHT), BIT(NPISO_LD_DOWN), BIT(NPISO_LD_UP),

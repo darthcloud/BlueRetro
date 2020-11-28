@@ -27,24 +27,19 @@ enum {
     N64_L,
 };
 
-const uint8_t n64_axes_idx[N64_AXES_MAX] =
+static const uint8_t n64_axes_idx[N64_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY  */
     0,       1
 };
 
-const struct ctrl_meta n64_btns_meta =
-{
-    .polarity = 0,
-};
-
-const struct ctrl_meta n64_axes_meta[N64_AXES_MAX] =
+static const struct ctrl_meta n64_axes_meta[N64_AXES_MAX] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x54},
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x54},
 };
 
-const struct ctrl_meta n64_mouse_axes_meta[N64_AXES_MAX] =
+static const struct ctrl_meta n64_mouse_axes_meta[N64_AXES_MAX] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
@@ -60,9 +55,9 @@ struct n64_kb_map {
     uint8_t bitfield;
 } __packed;
 
-const uint32_t n64_mask[4] = {0x331F0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t n64_btns_mask[32] = {
+static const uint32_t n64_mask[4] = {0x331F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(N64_C_LEFT), BIT(N64_C_RIGHT), BIT(N64_C_DOWN), BIT(N64_C_UP),
     BIT(N64_LD_LEFT), BIT(N64_LD_RIGHT), BIT(N64_LD_DOWN), BIT(N64_LD_UP),
@@ -73,9 +68,9 @@ const uint32_t n64_btns_mask[32] = {
     BIT(N64_Z), BIT(N64_R), 0, 0,
 };
 
-const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t n64_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t n64_mouse_btns_mask[32] = {
+static const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_mouse_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -86,9 +81,9 @@ const uint32_t n64_mouse_btns_mask[32] = {
     BIT(N64_A), 0, 0, 0,
 };
 
-const uint32_t n64_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x2D7FFFFF, 0x0007C000};
-const uint32_t n64_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-const uint16_t n64_kb_scancode[KBM_MAX] = {
+static const uint32_t n64_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x2D7FFFFF, 0x0007C000};
+static const uint32_t n64_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint16_t n64_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
     0x070D, 0x0705, 0x070C, 0x0105, 0x0000, 0x0000, 0x0000, 0x0000,
  /* KB_LEFT, KB_RIGHT, KB_DOWN, KB_UP, MOUSE_WX_LEFT, MOUSE_WX_RIGHT, MOUSE_WY_DOWN, MOUSE_WY_UP */

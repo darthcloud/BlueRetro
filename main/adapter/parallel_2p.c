@@ -40,7 +40,6 @@ struct para_2p_map {
 
 static const uint32_t para_2p_mask[4] = {0x00050F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t para_2p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
 static const uint32_t para_2p_btns_mask[2][32] = {
     {
         0, 0, 0, 0,

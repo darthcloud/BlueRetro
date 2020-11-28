@@ -24,18 +24,13 @@ enum {
     SATURN_R,
 };
 
-const uint8_t segaio_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t segaio_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       0,       3,      2
 };
 
-const struct ctrl_meta segaio_btns_meta =
-{
-    .polarity = 1,
-};
-
-const struct ctrl_meta segaio_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta segaio_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -50,10 +45,9 @@ struct segaio_map {
     uint8_t axes[4];
 } __packed;
 
-const uint32_t segaio_mask[4] = {0xBB1F0F0F, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t segaio_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t segaio_btns_mask[32] = {
+static const uint32_t segaio_mask[4] = {0xBB1F0F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t segaio_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t segaio_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(SATURN_LD_LEFT), BIT(SATURN_LD_RIGHT), BIT(SATURN_LD_DOWN), BIT(SATURN_LD_UP),

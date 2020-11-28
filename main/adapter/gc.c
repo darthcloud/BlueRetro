@@ -24,18 +24,13 @@ enum {
     GC_L,
 };
 
-const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       4,      5
 };
 
-const struct ctrl_meta gc_btns_meta =
-{
-    .polarity = 0,
-};
-
-const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
@@ -57,10 +52,9 @@ struct gc_kb_map {
     uint8_t xor;
 } __packed;
 
-const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t gc_btns_mask[32] = {
+static const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t gc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(GC_LD_LEFT), BIT(GC_LD_RIGHT), BIT(GC_LD_DOWN), BIT(GC_LD_UP),
@@ -71,9 +65,9 @@ const uint32_t gc_btns_mask[32] = {
     0, BIT(GC_Z), BIT(GC_R), 0,
 };
 
-const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000};
-const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-const uint8_t gc_kb_scancode[KBM_MAX] = {
+static const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000};
+static const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint8_t gc_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
     0x10, 0x13, 0x22, 0x26, 0x00, 0x00, 0x00, 0x00,
  /* KB_LEFT, KB_RIGHT, KB_DOWN, KB_UP, MOUSE_WX_LEFT, MOUSE_WX_RIGHT, MOUSE_WY_DOWN, MOUSE_WY_UP */
@@ -150,7 +144,7 @@ void gc_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct gc_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 

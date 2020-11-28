@@ -25,7 +25,6 @@ struct para_1p_map {
 
 static const uint32_t para_1p_mask[4] = {0x017F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t para_1p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
 static const uint32_t para_1p_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,

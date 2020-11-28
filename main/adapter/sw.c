@@ -34,18 +34,13 @@ static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-const uint8_t sw_axes_idx[SW_AXES_MAX] =
+static const uint8_t sw_axes_idx[SW_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY  */
     0,       1,       2,       3
 };
 
-const struct ctrl_meta sw_btn_meta =
-{
-    .polarity = 0,
-};
-
-const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
+static const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
 {
     {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00},
     {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00, .polarity = 1},
@@ -69,10 +64,9 @@ struct sw_conf {
 static const uint8_t sw_rumble_on[] = {0x28, 0x88, 0x60, 0x61, 0x28, 0x88, 0x60, 0x61};
 static const uint8_t sw_rumble_off[] = {0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40};
 
-const uint32_t sw_mask[4] = {0xFFFF0FFF, 0x00000000, 0x00000000, 0x00000000};
-const uint32_t sw_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
-
-const uint32_t sw_btns_mask[32] = {
+static const uint32_t sw_mask[4] = {0xFFFF0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
