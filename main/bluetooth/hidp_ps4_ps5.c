@@ -5,27 +5,22 @@
 
 #include <stdio.h>
 #include <esp32/rom/crc.h>
+#include <esp_timer.h>
 #include "host.h"
 #include "hidp_ps4_ps5.h"
 
-static const uint8_t bt_ps4_led_dev_id_map[][3] = {
-    {0x00, 0x00, 0x40},
-    {0x40, 0x00, 0x00},
-    {0x00, 0x40, 0x00},
-    {0x20, 0x00, 0x20},
-    {0x02, 0x01, 0x00},
-    {0x00, 0x01, 0x01},
-    {0x01, 0x01, 0x01},
+static const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
+    0xFF0000, /* Blue */
+    0x0000FF, /* Red */
+    0x00FF00, /* Green */
+    0xFF00FF, /* Pink */
+    0xFFFF00, /* Cyan */
+    0x0080FF, /* Orange */
+    0x00FFFF, /* Yellow */
+    0xFF0080, /* Purple */
 };
 
-static void bt_hid_cmd_ps5_rumble_init(struct bt_dev *device) {
-    struct bt_hidp_ps5_set_conf ps5_set_conf = {
-        .conf0 = 0x02,
-        .cmd = 0x02,
-    };
-
-    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
-}
+static void *ps5_timer_hdl;
 
 void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
     struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_hci_pkt_tmp.hidp_data;
@@ -39,6 +34,32 @@ void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
         sizeof(bt_hci_pkt_tmp.hidp_hdr) + sizeof(*set_conf) - sizeof(set_conf->crc));
 
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_PS4_SET_CONF, sizeof(*set_conf));
+}
+
+static void bt_hid_cmd_ps5_rumble_init(struct bt_dev *device) {
+    struct bt_hidp_ps5_set_conf ps5_set_conf = {
+        .conf0 = 0x02,
+        .cmd = 0x02,
+    };
+
+    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
+}
+
+static void bt_hid_ps5_init_callback(void *arg) {
+    struct bt_dev *device = (struct bt_dev *)arg;
+    struct bt_hidp_ps5_set_conf ps5_set_conf = {
+        .conf0 = 0x02,
+        .conf1 = 0x08,
+    };
+    struct bt_hidp_ps5_set_conf ps5_set_led = {
+        .conf0 = 0x02,
+        .conf1 = 0x04,
+    };
+    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->id];
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
+    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
 }
 
 void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
@@ -61,22 +82,22 @@ void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_ps4_ps5_init(struct bt_dev *device) {
+    const esp_timer_create_args_t ps5_timer_args = {
+        .callback = &bt_hid_ps5_init_callback,
+        .arg = (void *)device,
+        .name = "ps5_init_timer"
+    };
     struct bt_hidp_ps4_set_conf ps4_set_conf = {
         .conf0 = 0xc4,
         .conf1 = 0x07,
     };
-    struct bt_hidp_ps5_set_conf ps5_set_conf = {
-        .conf0 = 0x02,
-        .conf1 = 0x04,
-        .conf2 = 0xFFFF,
-    };
-
-    memcpy(ps4_set_conf.leds, bt_ps4_led_dev_id_map[device->id], sizeof(ps4_set_conf.leds));
+    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->id];
 
     printf("# %s\n", __FUNCTION__);
 
+    esp_timer_create(&ps5_timer_args, (esp_timer_handle_t *)&ps5_timer_hdl);
+    esp_timer_start_once(ps5_timer_hdl, 1000000);
     bt_hid_cmd_ps4_set_conf(device, (void *)&ps4_set_conf);
-    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
 }
 
 void bt_hid_ps4_ps5_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {

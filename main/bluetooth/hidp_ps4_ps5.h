@@ -23,8 +23,13 @@ struct bt_hidp_ps4_set_conf {
     uint8_t tbd1[2];
     uint8_t r_rumble;
     uint8_t l_rumble;
-    uint8_t leds[3];
-    uint8_t led_on_delay;
+    union {
+        struct {
+            uint8_t rgb[3];
+            uint8_t led_on_delay;
+        };
+        uint32_t leds;
+    };
     uint8_t led_off_delay;
     uint8_t tbd2[61];
     uint32_t crc;
@@ -37,9 +42,9 @@ struct bt_hidp_ps5_set_conf {
     uint8_t conf1;
     uint8_t r_rumble;
     uint8_t l_rumble;
-    uint8_t tbd1[41];
-    uint16_t conf2;
-    uint8_t tbd2[25];
+    uint8_t tbd1[40];
+    uint32_t leds;
+    uint8_t tbd2[24];
     uint32_t crc;
 } __packed;
 
