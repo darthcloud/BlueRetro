@@ -361,7 +361,7 @@ struct bt_data {
     /* Bi-directional */
     atomic_t flags;
     /* from adapter */
-    uint8_t output[64];
+    uint8_t output[128];
     /* from wireless */
     int32_t dev_id;
     int32_t dev_type;

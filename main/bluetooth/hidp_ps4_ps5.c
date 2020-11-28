@@ -9,7 +9,7 @@
 #include "host.h"
 #include "hidp_ps4_ps5.h"
 
-static const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
+const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
     0xFF0000, /* Blue */
     0x0000FF, /* Red */
     0x00FF00, /* Green */

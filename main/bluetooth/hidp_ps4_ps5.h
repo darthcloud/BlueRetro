@@ -48,6 +48,8 @@ struct bt_hidp_ps5_set_conf {
     uint32_t crc;
 } __packed;
 
+extern const uint32_t bt_ps4_ps5_led_dev_id_map[];
+
 void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report);
 void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report);
 void bt_hid_ps4_ps5_init(struct bt_dev *device);

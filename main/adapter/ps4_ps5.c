@@ -27,16 +27,6 @@ enum {
     PS4_TP,
 };
 
-static const uint8_t ps4_led_dev_id_map[][3] = {
-    {0x00, 0x00, 0x40},
-    {0x40, 0x00, 0x00},
-    {0x00, 0x40, 0x00},
-    {0x20, 0x00, 0x20},
-    {0x02, 0x01, 0x00},
-    {0x00, 0x01, 0x01},
-    {0x01, 0x01, 0x01},
-};
-
 static const uint8_t ps4_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
@@ -221,12 +211,12 @@ void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_data->output;
     memset((void *)set_conf, 0, sizeof(*set_conf));
     set_conf->conf0 = 0xc4;
-    set_conf->conf1 = 0x07;
-
-    memcpy(set_conf->leds, ps4_led_dev_id_map[bt_data->dev_id], sizeof(set_conf->leds));
+    set_conf->conf1 = 0x03;
+    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->dev_id];
 
     if (fb_data->state) {
-        set_conf->r_rumble = 0xFF;
+        set_conf->r_rumble = 0x7F;
+        set_conf->l_rumble = 0x7F;
     }
 }
 
