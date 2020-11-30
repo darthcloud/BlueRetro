@@ -78,7 +78,7 @@ static fb_from_generic_t fb_from_generic_func[BT_MAX] = {
 };
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
-    para_auto_from_generic, /* WIRED_AUTO */
+    NULL, //para_auto_from_generic, /* WIRED_AUTO */
     para_1p_from_generic, /* PARALLEL_1P */
     para_2p_from_generic, /* PARALLEL_2P */
     npiso_from_generic, /* NES */
@@ -126,7 +126,7 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
 };
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
-    para_auto_meta_init, /* WIRED_AUTO */
+    NULL, //para_auto_meta_init, /* WIRED_AUTO */
     para_1p_meta_init, /* PARALLEL_1P */
     para_2p_meta_init, /* PARALLEL_2P */
     npiso_meta_init, /* NES */
@@ -150,7 +150,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
 };
 
 static buffer_init_t buffer_init_func[WIRED_MAX] = {
-    para_auto_init_buffer, /* WIRED_AUTO */
+    NULL, //para_auto_init_buffer, /* WIRED_AUTO */
     para_1p_init_buffer, /* PARALLEL_1P */
     para_2p_init_buffer, /* PARALLEL_2P */
     npiso_init_buffer, /* NES */
