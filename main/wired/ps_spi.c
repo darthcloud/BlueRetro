@@ -453,7 +453,13 @@ static void IRAM_ATTR spi_isr(void* arg) {
         }
         else if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state) {
             uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
-            if ((port->idx - 2) % 8  == 0) {
+            if (port->idx == 3 && port->rx_buf[port->active_rx_buf][2] == 0x00) {
+                port->mt_state = 0;
+                port->valid = 0;
+                port->spi_hw->slave.trans_inten = 0;
+                goto early_end;
+            }
+            else if ((port->idx - 2) % 8  == 0) {
                 port->tx_buf[port->idx + 1] = port->dev_id[port->mt_idx];
             }
             else if ((port->idx - 3) % 8  == 0) {
