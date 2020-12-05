@@ -17,6 +17,8 @@
 #include "../util.h"
 #include "../adapter/adapter.h"
 #include "../adapter/config.h"
+#include "../adapter/kb_monitor.h"
+#include "../adapter/saturn.h"
 
 #define P1_TH_PIN 35
 #define P1_TR_PIN 27
@@ -205,9 +207,29 @@ static void IRAM_ATTR set_analog_pad(uint8_t port, uint8_t src_port) {
     set_sio(port, SIO_TL, 1);
 }
 
+/* Saturn keyboard */
+static void IRAM_ATTR set_saturn_keyboard(uint8_t port, uint8_t src_port) {
+    uint32_t len;
+    buffer[0] = (ID2_SATURN_KB << 4) | 4;
+    memcpy(&buffer[1], wired_adapter.data[src_port].output, 2);
+    if (kbmon_get_code(src_port, &buffer[3], &len)) {
+        buffer[3] = 0x06;
+        buffer[4] = 0x00;
+    }
+    buffer[5] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
+
+    /* Set ID0 2nd nibble */
+    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE & 0xF);
+
+    twh_tx(port, buffer, 6);
+    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
+    set_sio(port, SIO_TL, 1);
+}
+
 /* Saturn multitap */
 static void IRAM_ATTR set_saturn_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) {
     uint8_t *data = buffer;
+    uint32_t len;
     *data++ = (ID2_SATURN_MULTITAP << 4) | 1;
     *data++ = nb_port << 4;
 
@@ -223,6 +245,16 @@ static void IRAM_ATTR set_saturn_multitap(uint8_t port, uint8_t first_port, uint
                 *data++ = (ID2_SATURN_ANALOG_PAD << 4) | 6;
                 memcpy(data, wired_adapter.data[j].output, 6);
                 data += 6;
+                break;
+            case DEV_SATURN_KB:
+                *data++ = (ID2_SATURN_KB << 4) | 4;
+                memcpy(data, wired_adapter.data[j].output, 2);
+                data += 2;
+                if (kbmon_get_code(j, data, &len)) {
+                    buffer[3] = 0x06;
+                    buffer[4] = 0x00;
+                }
+                data += len;
                 break;
         }
     }
@@ -297,26 +329,23 @@ static void IRAM_ATTR sega_io_isr(void* arg) {
         port = 1;
     }
 
-    switch (dev_type[port]) {
-        case DEV_SATURN_DIGITAL_TWH:
-            if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
+    if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
+        switch (dev_type[port]) {
+            case DEV_SATURN_DIGITAL_TWH:
                 set_analog_digital_pad(port, mt_first_port[port]);
-            }
-            break;
-        case DEV_SATURN_ANALOG:
-            if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
+                break;
+            case DEV_SATURN_ANALOG:
                 set_analog_pad(port, mt_first_port[port]);
-            }
-            break;
-        case DEV_SATURN_MULTITAP:
-            if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
+                break;
+            case DEV_SATURN_MULTITAP:
                 set_saturn_multitap(port, mt_first_port[port], MT_PORT_MAX);
-            }
-            break;
-        case DEV_SATURN_KB:
-            break;
-        default:
-            ets_printf("BADTYPE%s\n", dev_type[port]);
+                break;
+            case DEV_SATURN_KB:
+                set_saturn_keyboard(port, mt_first_port[port]);
+                break;
+            default:
+                ets_printf("BADTYPE%s\n", dev_type[port]);
+        }
     }
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
@@ -710,6 +739,7 @@ void sega_io_init(void)
                             break;
                         case DEV_KB:
                             mt_dev_type[i][j] = DEV_SATURN_KB;
+                            kbmon_init(j + i * 2, saturn_kb_id_to_scancode);
                             break;
                         case DEV_MOUSE:
                             mt_dev_type[i][j] = DEV_GENESIS_MOUSE;
@@ -727,6 +757,7 @@ void sega_io_init(void)
                         break;
                     case DEV_KB:
                         dev_type[i] = DEV_SATURN_KB;
+                        kbmon_init(i, saturn_kb_id_to_scancode);
                         break;
                     case DEV_MOUSE:
                         dev_type[i] = DEV_GENESIS_MOUSE;
