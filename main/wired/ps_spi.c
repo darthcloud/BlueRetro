@@ -13,6 +13,8 @@
 #include "../util.h"
 #include "../adapter/adapter.h"
 #include "../adapter/config.h"
+#include "../adapter/kb_monitor.h"
+#include "../adapter/ps.h"
 #include "ps_spi.h"
 
 enum {
@@ -276,7 +278,14 @@ static void IRAM_ATTR ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uin
             if (size < 6) {
                 size = 6;
             }
-            memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
+            if (port->dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
+                uint32_t len = 0;
+                memset(rsp, 0x00, size);
+                kbmon_get_code(id + port->mt_first_port, rsp, &len);
+            }
+            else {
+                memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
+            }
             if (port->dev_type == DEV_PSX_MOUSE) {
                 wired_adapter.data[id + port->mt_first_port].output[2] = 0x00;
                 wired_adapter.data[id + port->mt_first_port].output[3] = 0x00;
@@ -565,6 +574,9 @@ void ps_spi_init(void) {
                     break;
                 case DEV_KB:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
+                    ps_ctrl_ports[i].dev_id[0] = 0x96;
+                    kbmon_init(i, ps_kb_id_to_scancode);
+                    kbmon_set_typematic(i, 1, 500000, 90000);
                     break;
                 case DEV_MOUSE:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_MOUSE;
