@@ -319,7 +319,6 @@ void ps_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
         case DEV_MOUSE:
             ps_mouse_from_generic(ctrl_data, wired_data);
             break;
-        case DEV_PAD:
         default:
             ps_ctrl_from_generic(ctrl_data, wired_data);
             break;

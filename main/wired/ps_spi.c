@@ -138,21 +138,23 @@ static void IRAM_ATTR toggle_dsr(uint32_t port) {
 }
 
 static void IRAM_ATTR ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
-    if (wired_adapter.data[id + port->mt_first_port].output[18]) {
-        if (!port->analog_btn[id]) {
-            port->analog_btn[id] = 1;
-        }
-    }
-    else {
-        if (port->analog_btn[id]) {
-            port->analog_btn[id] = 0;
-            port->rumble_r_state[id] = 0;
-            port->rumble_l_state[id] = 0;
-            if (port->dev_id[id] == 0x41) {
-                port->dev_id[id] = 0x73;
+    if (port->dev_type != DEV_PSX_MOUSE && port->dev_type != DEV_PSX_FLIGHT && port->dev_type != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
+        if (wired_adapter.data[id + port->mt_first_port].output[18]) {
+            if (!port->analog_btn[id]) {
+                port->analog_btn[id] = 1;
             }
-            else {
-                port->dev_id[id] = 0x41;
+        }
+        else {
+            if (port->analog_btn[id]) {
+                port->analog_btn[id] = 0;
+                port->rumble_r_state[id] = 0;
+                port->rumble_l_state[id] = 0;
+                if (port->dev_id[id] == 0x41) {
+                    port->dev_id[id] = 0x73;
+                }
+                else {
+                    port->dev_id[id] = 0x41;
+                }
             }
         }
     }
@@ -482,7 +484,9 @@ static void IRAM_ATTR spi_isr(void* arg) {
         }
         else {
             if (port->idx == 1) {
-                if (port->dev_type == DEV_PSX_MOUSE && port->rx_buf[port->active_rx_buf][1] != 0x42) {
+                /* Special dev only ACK 0x42 */
+                if ((port->dev_type == DEV_PSX_MOUSE || port->dev_type == DEV_PSX_FLIGHT || port->dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER)
+                    && port->rx_buf[port->active_rx_buf][1] != 0x42) {
                     port->valid = 0;
                     port->spi_hw->slave.trans_inten = 0;
                     goto early_end;
@@ -571,6 +575,7 @@ void ps_spi_init(void) {
                     break;
                 case DEV_PAD_ALT:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_FLIGHT;
+                    ps_ctrl_ports[i].dev_id[0] = 0x53;
                     break;
                 case DEV_KB:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
