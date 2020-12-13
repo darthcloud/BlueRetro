@@ -32,6 +32,12 @@ static const uint8_t saturn_axes_idx[ADAPTER_MAX_AXES] =
     0,       1,       0,       0,       3,      2
 };
 
+static const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    0,       1,       0,       1,       0,     1
+};
+
 static const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
@@ -40,6 +46,16 @@ static const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1}, //NA
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
+};
+
+static const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
+{
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
 };
 
 struct saturn_map {
@@ -53,6 +69,14 @@ struct saturn_map {
     };
 } __packed;
 
+struct sega_mouse_map {
+    union {
+        uint8_t buttons;
+        uint8_t flags;
+    };
+    uint8_t axes[2];
+} __packed;
+
 static const uint32_t saturn_mask[4] = {0xBB1F0F0F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t saturn_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t saturn_btns_mask[32] = {
@@ -64,6 +88,19 @@ static const uint32_t saturn_btns_mask[32] = {
     BIT(SATURN_START), 0, 0, 0,
     0, BIT(SATURN_Z), 0, BIT(SATURN_L),
     0, BIT(SATURN_C), 0, BIT(SATURN_R),
+};
+
+static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(SATURN_START), 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(SATURN_C), 0, 0, BIT(SATURN_A),
+    BIT(SATURN_B), 0, 0, 0,
 };
 
 static const uint32_t saturn_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
@@ -118,6 +155,7 @@ void saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         }
         case DEV_MOUSE:
         {
+            memset(wired_data->output, 0 , 3);
             break;
         }
         default:
@@ -147,7 +185,10 @@ void saturn_meta_init(struct generic_ctrl *ctrl_data) {
                     ctrl_data[i].desc = saturn_kb_desc;
                     goto exit_axes_loop;
                 case DEV_MOUSE:
-                    //break;
+                    ctrl_data[i].mask = sega_mouse_mask;
+                    ctrl_data[i].desc = sega_mouse_desc;
+                    ctrl_data[i].axes[j].meta = &sega_mouse_axes_meta[j];
+                    break;
                 default:
                     ctrl_data[i].mask = saturn_mask;
                     ctrl_data[i].desc = saturn_desc;
@@ -196,10 +237,65 @@ void saturn_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void saturn_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void saturn_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct sega_mouse_map map_tmp;
+
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (ctrl_data->map_mask[0] & BIT(i)) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.buttons |= sega_mouse_btns_mask[i];
+            }
+            else {
+                map_tmp.buttons &= ~sega_mouse_btns_mask[i];
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & sega_mouse_desc[0])) {
+            uint8_t sign_mask;
+            int32_t tmp_val;
+
+            if (i & 0x01) {
+                sign_mask = 0x20;
+            }
+            else {
+                sign_mask = 0x10;
+            }
+
+            if (map_tmp.flags & sign_mask) {
+                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]] | 0xFFFFFFF0);
+            }
+            else {
+                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]]);
+            }
+
+            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = 0xFF;
+                map_tmp.flags &= ~sign_mask;
+            }
+            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = 0x00;
+                map_tmp.flags |= sign_mask;
+            }
+            else {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = (uint8_t)tmp_val;
+                if (tmp_val < 0) {
+                    map_tmp.flags |= sign_mask;
+                }
+                else {
+                    map_tmp.flags &= ~sign_mask;
+                }
+            }
+        }
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void saturn_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void saturn_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     uint16_t buttons = *(uint16_t *)wired_data->output;
 
     /* Use BlueRetro KB/Gamepad mapping here */

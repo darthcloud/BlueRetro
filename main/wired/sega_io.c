@@ -50,10 +50,21 @@
 #define ID0_GENESIS_PAD 0x00 //TBD
 #define ID0_MOUSE 0x0B
 #define ID0_GENESIS_MULTITAP 0x00 //TBD
-#define ID0_SATURN_PAD 0x40
+#define ID0_SATURN_PAD 0xC0
 #define ID0_SATURN_THREEWIRE_HANDSHAKE 0x11
 #define ID0_SATURN_CLOCKED_SERIAL 0x22
 #define ID0_SATURN_CLOCKED_PARALLEL 0x33
+
+#define P1_MOUSE_ID0_HI 0xFF79FFD5
+#define P1_MOUSE_ID0_LO 0xFFF9FFFD
+#define P2_MOUSE_ID0_HI 0xFD95FFFD
+#define P2_MOUSE_ID0_LO 0xFFBDFFFD
+#define P1_SAT_TWH_ID0_LO_HI 0xFF79FFDD
+#define P2_SAT_TWH_ID0_LO_HI 0xFD9DFFFD
+#define P1_SAT_PARA_ID0_LO 0xFFFDFFD5
+#define P1_SAT_PARA_ID0_HI 0xFFFDFFFD
+#define P2_SAT_PARA_ID0_LO 0xFFD5FFFD
+#define P2_SAT_PARA_ID0_HI 0xFFFDFFFD
 
 #define ID1_MOUSE 0x3
 #define ID1_SATURN_PERI 0x5
@@ -67,7 +78,7 @@
 #define ID2_SATURN_POINTING 0x2
 #define ID2_SATURN_KB 0x3
 #define ID2_SATURN_MULTITAP 0x4
-#define ID2_SATURN_MOUSE 0xE
+#define ID2_LEGACY 0xE
 #define ID2_NON_CONNECTION 0xF
 
 #define TWH_TIMEOUT 4096
@@ -90,7 +101,8 @@ enum {
     DEV_GENESIS_3BTNS,
     DEV_GENESIS_6BTNS,
     DEV_GENESIS_MULTITAP,
-    DEV_GENESIS_MOUSE,
+    DEV_SEGA_MOUSE,
+    DEV_GENESIS_XBAND_KB,
     DEV_SATURN_DIGITAL,
     DEV_SATURN_DIGITAL_TWH,
     DEV_SATURN_ANALOG,
@@ -101,7 +113,7 @@ enum {
 };
 
 static const uint8_t gen_ids[DEV_TYPE_MAX] = {
-    0xF, 0x0, 0x1, 0xF, 0x2, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0x0, 0x1, 0xF, 0x2, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
 };
 
 static const uint8_t gpio_pin[2][7] = {
@@ -109,6 +121,8 @@ static const uint8_t gpio_pin[2][7] = {
     {36, 16, 33, 25, 22, 21, 19},
 };
 
+static uint32_t id0_lo[2];
+static uint32_t id0_hi[2];
 static uint8_t dev_type[2] = {0};
 static uint8_t mt_dev_type[2][MT_PORT_MAX] = {0};
 static uint8_t mt_first_port[2] = {0};
@@ -149,8 +163,9 @@ static void IRAM_ATTR set_sio(uint8_t port, uint8_t sio, uint8_t value) {
 }
 
 /* Three-Wire Handshake */
-static void IRAM_ATTR twh_tx(uint8_t port, uint8_t *data, uint32_t len) {
-    uint32_t timeout;
+static void IRAM_ATTR twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay) {
+    uint32_t timeout = 0;
+    uint8_t tl_state = 0;
     /* TX data */
     for (uint32_t i = 0; i < len; i++) {
         timeout = 0;
@@ -162,7 +177,9 @@ static void IRAM_ATTR twh_tx(uint8_t port, uint8_t *data, uint32_t len) {
             timeout++;
         }
         tx_nibble(port, data[i] >> 4);
-        set_sio(port, SIO_TL, 0);
+        ets_delay_us(ack_delay);
+        set_sio(port, SIO_TL, tl_state);
+        tl_state ^= 0x01;
 
         timeout = 0;
         while (!(GPIO.in & BIT(gpio_pin[port][SIO_TR])))
@@ -173,7 +190,36 @@ static void IRAM_ATTR twh_tx(uint8_t port, uint8_t *data, uint32_t len) {
             timeout++;
         }
         tx_nibble(port, data[i] & 0xF);
-        set_sio(port, SIO_TL, 1);
+        ets_delay_us(ack_delay);
+        set_sio(port, SIO_TL, tl_state);
+        tl_state ^= 0x01;
+    }
+
+    /* Answer extra cycle with last byte */
+    while (1) {
+        timeout = 0;
+        while (GPIO.in & BIT(gpio_pin[port][SIO_TR]))
+        {
+            if (GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32) || timeout > TWH_TIMEOUT) {
+                goto end;
+            }
+            timeout++;
+        }
+        ets_delay_us(ack_delay);
+        set_sio(port, SIO_TL, tl_state);
+        tl_state ^= 0x01;
+
+        timeout = 0;
+        while (!(GPIO.in & BIT(gpio_pin[port][SIO_TR])))
+        {
+            if (GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32) || timeout > TWH_TIMEOUT) {
+                goto end;
+            }
+            timeout++;
+        }
+        ets_delay_us(ack_delay);
+        set_sio(port, SIO_TL, tl_state);
+        tl_state ^= 0x01;
     }
 end:
     ;
@@ -185,12 +231,7 @@ static void IRAM_ATTR set_analog_digital_pad(uint8_t port, uint8_t src_port) {
     memcpy(&buffer[1], wired_adapter.data[src_port].output, 2);
     buffer[3] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
-    /* Set ID0 2nd nibble */
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE & 0xF);
-
-    twh_tx(port, buffer, 4);
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
-    set_sio(port, SIO_TL, 1);
+    twh_tx(port, buffer, 4, 0);
 }
 
 /* Saturn analog pad */
@@ -199,12 +240,27 @@ static void IRAM_ATTR set_analog_pad(uint8_t port, uint8_t src_port) {
     memcpy(&buffer[1], wired_adapter.data[src_port].output, 6);
     buffer[7] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
-    /* Set ID0 2nd nibble */
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE & 0xF);
+    twh_tx(port, buffer, 8, 0);
+}
 
-    twh_tx(port, buffer, 8);
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
-    set_sio(port, SIO_TL, 1);
+/* SEGA Mouse */
+static void IRAM_ATTR set_sega_mouse(uint8_t port, uint8_t src_port) {
+    buffer[0] = 0xFF;
+    if (wired_adapter.system_id == GENESIS) {
+        memcpy(&buffer[1], &wired_adapter.data[src_port].output[24], 3);
+        wired_adapter.data[src_port].output[24] &= 0x0F;
+        wired_adapter.data[src_port].output[25] = 0x00;
+        wired_adapter.data[src_port].output[26] = 0x00;
+    }
+    else {
+        memcpy(&buffer[1], wired_adapter.data[src_port].output, 3);
+        wired_adapter.data[src_port].output[0] &= 0x0F;
+        wired_adapter.data[src_port].output[1] = 0x00;
+        wired_adapter.data[src_port].output[2] = 0x00;
+    }
+    buffer[4] = ID0_MOUSE >> 4;
+
+    twh_tx(port, buffer, 5, 14);
 }
 
 /* Saturn keyboard */
@@ -218,12 +274,7 @@ static void IRAM_ATTR set_saturn_keyboard(uint8_t port, uint8_t src_port) {
     }
     buffer[5] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
-    /* Set ID0 2nd nibble */
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE & 0xF);
-
-    twh_tx(port, buffer, 6);
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
-    set_sio(port, SIO_TL, 1);
+    twh_tx(port, buffer, 6, 0);
 }
 
 /* Saturn multitap */
@@ -256,17 +307,20 @@ static void IRAM_ATTR set_saturn_multitap(uint8_t port, uint8_t first_port, uint
                 }
                 data += len;
                 break;
+            case DEV_SEGA_MOUSE:
+                *data++ = (ID2_LEGACY << 4) | 3;
+                memcpy(data, wired_adapter.data[j].output, 3);
+                wired_adapter.data[j].output[0] &= 0x0F;
+                wired_adapter.data[j].output[1] = 0x00;
+                wired_adapter.data[j].output[2] = 0x00;
+                data += 3;
+                break;
         }
     }
 
     *data++ = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
-    /* Set ID0 2nd nibble */
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE & 0xF);
-
-    twh_tx(port, buffer, data - buffer);
-    tx_nibble(port, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
-    set_sio(port, SIO_TL, 1);
+    twh_tx(port, buffer, data - buffer, 0);
 }
 
 /* MegaDrive/Genesis multitap */
@@ -302,54 +356,31 @@ static void IRAM_ATTR set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t
                     odd = 1;
                 }
                 break;
+            case DEV_SEGA_MOUSE:
+                if (odd) {
+                    *data++ &= (wired_adapter.data[j].output[24] >> 4) | 0xF0;
+                    *data = (wired_adapter.data[j].output[24] << 4) | 0xF;
+                    *data++ &= (wired_adapter.data[j].output[25] >> 4) | 0xF0;
+                    *data = (wired_adapter.data[j].output[25] << 4) | 0xF;
+                    *data++ &= (wired_adapter.data[j].output[26] >> 4) | 0xF0;
+                    *data = (wired_adapter.data[j].output[26] << 4) | 0xF;
+                }
+                else {
+                    *data++ = wired_adapter.data[j].output[24];
+                    *data++ = wired_adapter.data[j].output[25];
+                    *data++ = wired_adapter.data[j].output[26];
+                }
+                wired_adapter.data[j].output[24] &= 0x0F;
+                wired_adapter.data[j].output[25] = 0x00;
+                wired_adapter.data[j].output[26] = 0x00;
+                break;
         }
     }
     if (odd) {
         data++;
     }
 
-    twh_tx(port, buffer, data - buffer);
-}
-
-static void IRAM_ATTR sega_io_isr(void* arg) {
-    const uint32_t low_io = GPIO.acpu_int;
-    const uint32_t high_io = GPIO.acpu_int1.intr;
-    uint8_t port = 0;
-
-    if (high_io & BIT(gpio_pin[0][SIO_TH] - 32)) {
-        port = 0;
-    }
-    else if (high_io & BIT(gpio_pin[1][SIO_TH] - 32)) {
-        port = 1;
-    }
-    else if (low_io & BIT(gpio_pin[0][SIO_TR])) {
-        port = 0;
-    }
-    else if (low_io & BIT(gpio_pin[1][SIO_TR])) {
-        port = 1;
-    }
-
-    if (!(GPIO.in1.val & BIT(gpio_pin[port][SIO_TH] - 32))) {
-        switch (dev_type[port]) {
-            case DEV_SATURN_DIGITAL_TWH:
-                set_analog_digital_pad(port, mt_first_port[port]);
-                break;
-            case DEV_SATURN_ANALOG:
-                set_analog_pad(port, mt_first_port[port]);
-                break;
-            case DEV_SATURN_MULTITAP:
-                set_saturn_multitap(port, mt_first_port[port], MT_PORT_MAX);
-                break;
-            case DEV_SATURN_KB:
-                set_saturn_keyboard(port, mt_first_port[port]);
-                break;
-            default:
-                ets_printf("BADTYPE%s\n", dev_type[port]);
-        }
-    }
-
-    if (high_io) GPIO.status1_w1tc.intr_st = high_io;
-    if (low_io) GPIO.status_w1tc = low_io;
+    twh_tx(port, buffer, data - buffer, 0);
 }
 
 static void IRAM_ATTR sega_genesis_task(void *arg) {
@@ -387,6 +418,21 @@ p1_poll_start:
                     lock = 0;
                 }
                 set_gen_multitap(0, mt_first_port[0], MT_GEN_PORT_MAX);
+                if (GPIO.in1.val & BIT(P1_TH_PIN - 32)) {
+                    GPIO.out = map1[0] & p2_out0;
+                    GPIO.out1.val = map1[3] & p2_out1;
+                    p1_out0 = GPIO.out | ~P1_OUT0_MASK;
+                    p1_out1 = GPIO.out1.val | ~P1_OUT1_MASK;
+                    goto next_poll;
+                }
+            }
+            else if (dev_type[0] == DEV_SEGA_MOUSE) {
+                GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
+                if (lock) {
+                    DPORT_STALL_OTHER_CPU_END();
+                    lock = 0;
+                }
+                set_sega_mouse(0, mt_first_port[0]);
                 if (GPIO.in1.val & BIT(P1_TH_PIN - 32)) {
                     GPIO.out = map1[0] & p2_out0;
                     GPIO.out1.val = map1[3] & p2_out1;
@@ -543,6 +589,21 @@ p2_poll_start:
                     goto next_poll;
                 }
             }
+            else if (dev_type[1] == DEV_SEGA_MOUSE) {
+                GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
+                if (lock) {
+                    DPORT_STALL_OTHER_CPU_END();
+                    lock = 0;
+                }
+                set_sega_mouse(1, mt_first_port[1]);
+                if (GPIO.in1.val & BIT(P2_TH_PIN - 32)) {
+                    GPIO.out = p1_out0 & map2[0];
+                    GPIO.out1.val = p1_out1 & map2[3];
+                    p2_out0 = GPIO.out | ~P2_OUT0_MASK;
+                    p2_out1 = GPIO.out1.val | ~P2_OUT1_MASK;
+                    goto next_poll;
+                }
+            }
             timeout = 0;
             cur_in = prev_in = GPIO.in1.val;
             while (!(change = cur_in ^ prev_in)) {
@@ -671,6 +732,100 @@ next_poll:
     }
 }
 
+static void IRAM_ATTR sega_saturn_task(void *arg) {
+    uint32_t timeout, cur_in, prev_in, change;
+    uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
+    uint32_t p2_out0 = GPIO.out | ~P2_OUT0_MASK;
+
+    while (1) {
+        timeout = 0;
+        cur_in = prev_in = GPIO.in1.val;
+        while (!(change = cur_in ^ prev_in)) {
+            prev_in = cur_in;
+            cur_in = GPIO.in1.val;
+        }
+
+        if (change & BIT(P1_TH_PIN - 32)) {
+            GPIO.out = id0_lo[0] & p2_out0;
+            p1_out0 = GPIO.out | ~P1_OUT0_MASK;
+            switch (dev_type[0]) {
+                case DEV_SATURN_DIGITAL_TWH:
+                    set_analog_digital_pad(0, mt_first_port[0]);
+                    break;
+                case DEV_SATURN_ANALOG:
+                    set_analog_pad(0, mt_first_port[0]);
+                    break;
+                case DEV_SATURN_MULTITAP:
+                    set_saturn_multitap(0, mt_first_port[0], MT_PORT_MAX);
+                    break;
+                case DEV_SATURN_KB:
+                    set_saturn_keyboard(0, mt_first_port[0]);
+                    break;
+                case DEV_SEGA_MOUSE:
+                    set_sega_mouse(0, mt_first_port[0]);
+                    break;
+                default:
+                    ets_printf("BADTYPE%s\n", dev_type[0]);
+            }
+            if (GPIO.in1.val & BIT(P1_TH_PIN - 32)) {
+                goto p1_set_id0_hi;
+            }
+            timeout = 0;
+            cur_in = prev_in = GPIO.in1.val;
+            while (!(change = cur_in ^ prev_in)) {
+                prev_in = cur_in;
+                cur_in = GPIO.in1.val;
+                if (++timeout > POLL_TIMEOUT) {
+                    goto next_poll;
+                }
+            }
+p1_set_id0_hi:
+            GPIO.out = id0_hi[0] & p2_out0;
+            p1_out0 = GPIO.out | ~P1_OUT0_MASK;
+        }
+        else {
+            GPIO.out = p1_out0 & id0_lo[1];
+            p2_out0 = GPIO.out | ~P2_OUT0_MASK;
+            switch (dev_type[1]) {
+                case DEV_SATURN_DIGITAL_TWH:
+                    set_analog_digital_pad(1, mt_first_port[1]);
+                    break;
+                case DEV_SATURN_ANALOG:
+                    set_analog_pad(1, mt_first_port[1]);
+                    break;
+                case DEV_SATURN_MULTITAP:
+                    set_saturn_multitap(1, mt_first_port[1], MT_PORT_MAX);
+                    break;
+                case DEV_SATURN_KB:
+                    set_saturn_keyboard(1, mt_first_port[1]);
+                    break;
+                case DEV_SEGA_MOUSE:
+                    set_sega_mouse(1, mt_first_port[1]);
+                    break;
+                default:
+                    ets_printf("BADTYPE%s\n", dev_type[1]);
+            }
+            if (GPIO.in1.val & BIT(P2_TH_PIN - 32)) {
+                goto p2_set_id0_hi;
+            }
+            timeout = 0;
+            cur_in = prev_in = GPIO.in1.val;
+            while (!(change = cur_in ^ prev_in)) {
+                prev_in = cur_in;
+                cur_in = GPIO.in1.val;
+                if (++timeout > POLL_TIMEOUT) {
+                    goto next_poll;
+                }
+            }
+p2_set_id0_hi:
+            GPIO.out = p1_out0 & id0_hi[1];
+            p2_out0 = GPIO.out | ~P2_OUT0_MASK;
+        }
+next_poll:
+        ;
+    }
+}
+
 static void IRAM_ATTR ea_genesis_task(void *arg) {
     uint32_t cur_in0, prev_in0, change0 = 0, cur_in1, prev_in1, change1 = 1, id = 0;
 
@@ -706,7 +861,6 @@ void sega_io_init(void)
 {
     gpio_config_t io_conf = {0};
     uint8_t port_cnt = 0;
-    uint32_t start_thread = 0;
 
     if (wired_adapter.system_id == SATURN) {
         switch (config.global_cfg.multitap_cfg) {
@@ -742,7 +896,7 @@ void sega_io_init(void)
                             kbmon_init(j + i * 2, saturn_kb_id_to_scancode);
                             break;
                         case DEV_MOUSE:
-                            mt_dev_type[i][j] = DEV_GENESIS_MOUSE;
+                            mt_dev_type[i][j] = DEV_SEGA_MOUSE;
                             break;
                     }
                 }
@@ -760,7 +914,7 @@ void sega_io_init(void)
                         kbmon_init(i, saturn_kb_id_to_scancode);
                         break;
                     case DEV_MOUSE:
-                        dev_type[i] = DEV_GENESIS_MOUSE;
+                        dev_type[i] = DEV_SEGA_MOUSE;
                         break;
                 }
             }
@@ -812,7 +966,7 @@ void sega_io_init(void)
                             mt_dev_type[i][j] = DEV_GENESIS_6BTNS;
                             break;
                         case DEV_MOUSE:
-                            mt_dev_type[i][j] = DEV_GENESIS_MOUSE;
+                            mt_dev_type[i][j] = DEV_SEGA_MOUSE;
                             break;
                     }
                 }
@@ -826,7 +980,7 @@ void sega_io_init(void)
                         dev_type[i] = DEV_GENESIS_6BTNS;
                         break;
                     case DEV_MOUSE:
-                        dev_type[i] = DEV_GENESIS_MOUSE;
+                        dev_type[i] = DEV_SEGA_MOUSE;
                         break;
                 }
             }
@@ -892,30 +1046,55 @@ void sega_io_init(void)
             case DEV_GENESIS_6BTNS:
             case DEV_GENESIS_MULTITAP:
             case DEV_EA_MULTITAP:
-                start_thread = 1;
                 break;
-            case DEV_GENESIS_MOUSE:
+            case DEV_SEGA_MOUSE:
+                tx_nibble(i, ID0_MOUSE >> 4);
+                if (i == 0) {
+                    id0_hi[i] = P1_MOUSE_ID0_HI;
+                    id0_lo[i] = P1_MOUSE_ID0_LO;
+                }
+                else {
+                    id0_hi[i] = P2_MOUSE_ID0_HI;
+                    id0_lo[i] = P2_MOUSE_ID0_LO;
+                }
                 break;
             case DEV_SATURN_DIGITAL:
+                tx_nibble(i, ID0_SATURN_PAD >> 4);
+                if (i == 0) {
+                    id0_hi[i] = P1_SAT_PARA_ID0_HI;
+                    id0_lo[i] = P1_SAT_PARA_ID0_LO;
+                }
+                else {
+                    id0_hi[i] = P2_SAT_PARA_ID0_HI;
+                    id0_lo[i] = P2_SAT_PARA_ID0_LO;
+                }
                 break;
             case DEV_SATURN_DIGITAL_TWH:
             case DEV_SATURN_ANALOG:
             case DEV_SATURN_MULTITAP:
             case DEV_SATURN_KB:
                 tx_nibble(i, ID0_SATURN_THREEWIRE_HANDSHAKE >> 4);
+                if (i == 0) {
+                    id0_hi[i] = P1_SAT_TWH_ID0_LO_HI;
+                    id0_lo[i] = P1_SAT_TWH_ID0_LO_HI;
+                }
+                else {
+                    id0_hi[i] = P2_SAT_TWH_ID0_LO_HI;
+                    id0_lo[i] = P2_SAT_TWH_ID0_LO_HI;
+                }
                 break;
             default:
                 printf("%s Unsupported dev type: %d\n", __FUNCTION__, dev_type[i]);
         }
     }
 
-    if (start_thread) {
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-        TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-        if (idle_1 != NULL){
-            ESP_ERROR_CHECK(esp_task_wdt_delete(idle_1));
-        }
+    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+    if (idle_1 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_delete(idle_1));
+    }
 #endif
+    if (wired_adapter.system_id == GENESIS) {
         if (dev_type[0] == DEV_EA_MULTITAP) {
             xTaskCreatePinnedToCore(ea_genesis_task, "ea_genesis_task", 2048, NULL, 10, NULL, 1);
         }
@@ -924,6 +1103,6 @@ void sega_io_init(void)
         }
     }
     else {
-        esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, sega_io_isr, NULL, NULL);
+        xTaskCreatePinnedToCore(sega_saturn_task, "sega_saturn_task", 2048, NULL, 10, NULL, 1);
     }
 }

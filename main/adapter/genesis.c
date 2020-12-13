@@ -47,6 +47,11 @@
 #define P2_X P2_L_PIN
 #define P2_MODE P2_R_PIN
 
+#define P1_MOUSE_ID0_HI 0xFF79FFD5
+#define P1_MOUSE_ID0_LO 0xFFF9FFFD
+#define P2_MOUSE_ID0_HI 0xFD95FFFD
+#define P2_MOUSE_ID0_LO 0xFFBDFFFD
+
 enum {
     GENESIS_B = 0,
     GENESIS_C,
@@ -60,6 +65,45 @@ enum {
     GENESIS_Y,
     GENESIS_X,
     GENESIS_MODE,
+};
+
+static const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    0,       1,       0,       1,       0,     1
+};
+
+static const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
+{
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+};
+
+struct sega_mouse_map {
+    uint32_t buttons[3];
+    uint32_t buttons_high[3];
+    union {
+        uint8_t twh_buttons;
+        uint8_t flags;
+    };
+    uint8_t axes[2];
+} __packed;
+
+static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(GENESIS_START), 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(GENESIS_C), 0, 0, BIT(GENESIS_A),
+    BIT(GENESIS_B), 0, 0, 0,
 };
 
 struct genesis_map {
@@ -154,6 +198,64 @@ static const uint32_t genesis_twh_btns_mask[32] = {
     0, BIT(GENESIS_C), 0, 0,
 };
 
+static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct sega_mouse_map map_tmp;
+
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (ctrl_data->map_mask[0] & BIT(i)) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.twh_buttons |= sega_mouse_btns_mask[i];
+            }
+            else {
+                map_tmp.twh_buttons &= ~sega_mouse_btns_mask[i];
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & sega_mouse_desc[0])) {
+            uint8_t sign_mask;
+            int32_t tmp_val;
+
+            if (i & 0x01) {
+                sign_mask = 0x20;
+            }
+            else {
+                sign_mask = 0x10;
+            }
+
+            if (map_tmp.flags & sign_mask) {
+                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]] | 0xFFFFFFF0);
+            }
+            else {
+                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]]);
+            }
+
+            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = 0xFF;
+                map_tmp.flags &= ~sign_mask;
+            }
+            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = 0x00;
+                map_tmp.flags |= sign_mask;
+            }
+            else {
+                map_tmp.axes[sega_mouse_axes_idx[i]] = (uint8_t)tmp_val;
+                if (tmp_val < 0) {
+                    map_tmp.flags |= sign_mask;
+                }
+                else {
+                    map_tmp.flags &= ~sign_mask;
+                }
+            }
+        }
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
 static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
 
@@ -240,7 +342,6 @@ static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired
 }
 
 void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
-    struct genesis_map *map = (struct genesis_map *)wired_data->output;
     /* Hackish but wtv */
     struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
     struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;
@@ -254,6 +355,11 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         map1->buttons[0] = 0xFFFDFFFF;
         map1->buttons[1] = 0xFF79FFFF;
         map1->buttons[2] = 0xF379FFD7;
+    }
+    else if (config.out_cfg[0].dev_mode == DEV_MOUSE) {
+        map1->buttons[0] = P1_MOUSE_ID0_HI;
+        map1->buttons[1] = P1_MOUSE_ID0_LO;
+        map1->buttons[2] = 0xFFFDFFFD;
     }
     else {
         map1->buttons[0] = 0xFFFDFFFD;
@@ -279,6 +385,11 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         map4->buttons[1] = 0xFF79FFFF;
         map4->buttons[2] = 0xF379FFD7;
     }
+    else if (config.out_cfg[1].dev_mode == DEV_MOUSE) {
+        map1->buttons[0] = P2_MOUSE_ID0_HI;
+        map1->buttons[1] = P2_MOUSE_ID0_LO;
+        map1->buttons[2] = 0xFFFDFFFD;
+    }
     else {
         map2->buttons[0] = 0xFFFDFFFD;
         map2->buttons[1] = 0xFDBDFFFD;
@@ -292,73 +403,106 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     map2->buttons_high[1] = 0xFFFFFFFE;
     map2->buttons_high[2] = 0xFFFFFFFE;
 
-    map->twh_buttons = 0xFFFF;
+    if (dev_mode == DEV_MOUSE) {
+        struct sega_mouse_map *map = (struct sega_mouse_map *)wired_data->output;
+        map->flags = 0x00;
+        map->axes[0] = 0x00;
+        map->axes[1] = 0x00;
+    }
+    else {
+        struct genesis_map *map = (struct genesis_map *)wired_data->output;
+        map->twh_buttons = 0xFFFF;
+    }
 }
 
 void genesis_meta_init(struct generic_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
-        ctrl_data[i].mask = genesis_mask;
-        ctrl_data[i].desc = genesis_desc;
+        for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
+            switch (config.out_cfg[i].dev_mode) {
+                //case DEV_KB:
+                //    goto exit_axes_loop;
+                case DEV_MOUSE:
+                    ctrl_data[i].mask = sega_mouse_mask;
+                    ctrl_data[i].desc = sega_mouse_desc;
+                    ctrl_data[i].axes[j].meta = &sega_mouse_axes_meta[j];
+                    break;
+                default:
+                    ctrl_data[i].mask = genesis_mask;
+                    ctrl_data[i].desc = genesis_desc;
+                    goto exit_axes_loop;
+            }
+        }
+exit_axes_loop:
+        ;
     }
 }
 
 void genesis_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
-    switch (ctrl_data->index) {
-        case 0:
-            switch (config.global_cfg.multitap_cfg) {
-                case MT_SLOT_1:
-                case MT_DUAL:
-                    genesis_twh_from_generic(ctrl_data, wired_data);
-                    break;
-                case MT_ALT:
-                    genesis_ea_from_generic(ctrl_data, wired_data);
-                    break;
-                default:
-                    genesis_std_from_generic(ctrl_data, wired_data);
-            }
-            break;
-        case 1:
-            switch (config.global_cfg.multitap_cfg) {
-                case MT_SLOT_2:
-                case MT_DUAL:
-                    genesis_twh_from_generic(ctrl_data, wired_data);
-                    break;
-                case MT_ALT:
-                    genesis_ea_from_generic(ctrl_data, wired_data);
-                    break;
-                default:
-                    genesis_std_from_generic(ctrl_data, wired_data);
-            }
-            break;
-        case 2:
-            if (config.global_cfg.multitap_cfg == MT_ALT) {
-                genesis_ea_from_generic(ctrl_data, wired_data);
-            }
-            else {
-                genesis_twh_from_generic(ctrl_data, wired_data);
-            }
-            break;
-        case 3:
-            if (config.global_cfg.multitap_cfg == MT_ALT) {
-                genesis_ea_from_generic(ctrl_data, wired_data);
-            }
-            else {
-                genesis_twh_from_generic(ctrl_data, wired_data);
-            }
+    switch (dev_mode) {
+        //case DEV_KB:
+        //    break;
+        case DEV_MOUSE:
+            sega_mouse_from_generic(ctrl_data, wired_data);
             break;
         default:
-            genesis_twh_from_generic(ctrl_data, wired_data);
-    }
+            switch (ctrl_data->index) {
+                case 0:
+                    switch (config.global_cfg.multitap_cfg) {
+                        case MT_SLOT_1:
+                        case MT_DUAL:
+                            genesis_twh_from_generic(ctrl_data, wired_data);
+                            break;
+                        case MT_ALT:
+                            genesis_ea_from_generic(ctrl_data, wired_data);
+                            break;
+                        default:
+                            genesis_std_from_generic(ctrl_data, wired_data);
+                    }
+                    break;
+                case 1:
+                    switch (config.global_cfg.multitap_cfg) {
+                        case MT_SLOT_2:
+                        case MT_DUAL:
+                            genesis_twh_from_generic(ctrl_data, wired_data);
+                            break;
+                        case MT_ALT:
+                            genesis_ea_from_generic(ctrl_data, wired_data);
+                            break;
+                        default:
+                            genesis_std_from_generic(ctrl_data, wired_data);
+                    }
+                    break;
+                case 2:
+                    if (config.global_cfg.multitap_cfg == MT_ALT) {
+                        genesis_ea_from_generic(ctrl_data, wired_data);
+                    }
+                    else {
+                        genesis_twh_from_generic(ctrl_data, wired_data);
+                    }
+                    break;
+                case 3:
+                    if (config.global_cfg.multitap_cfg == MT_ALT) {
+                        genesis_ea_from_generic(ctrl_data, wired_data);
+                    }
+                    else {
+                        genesis_twh_from_generic(ctrl_data, wired_data);
+                    }
+                    break;
+                default:
+                    genesis_twh_from_generic(ctrl_data, wired_data);
+            }
 #if 0
-    if (ctrl_data->index < 2) {
-        struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
-        struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;
-        uint32_t cycle = !(GPIO.in1.val & BIT(P1_TH_PIN - 32));
-        uint32_t cycle2 = !(GPIO.in1.val & BIT(P2_TH_PIN - 32));
-        GPIO.out = map1->buttons[cycle] & map2->buttons[cycle2];
-        GPIO.out1.val = map1->buttons_high[cycle] & map2->buttons_high[cycle2];
-    }
+            if (ctrl_data->index < 2) {
+                struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
+                struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;
+                uint32_t cycle = !(GPIO.in1.val & BIT(P1_TH_PIN - 32));
+                uint32_t cycle2 = !(GPIO.in1.val & BIT(P2_TH_PIN - 32));
+                GPIO.out = map1->buttons[cycle] & map2->buttons[cycle2];
+                GPIO.out1.val = map1->buttons_high[cycle] & map2->buttons_high[cycle2];
+            }
 #endif
+            break;
+    }
 }
