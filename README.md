@@ -9,13 +9,14 @@ BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game 
 ## Project documentation
 * [Main hackaday.io page](https://hackaday.io/project/170365-blueretro)
 * [User manual](https://github.com/darthcloud/BlueRetro/wiki)
-* [Web-Bluetooth (BLE) configuration interface](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
-* [Hardware Design](https://hackaday.io/project/170365-blueretro/log/182054-blueretro-hardware-design)
-* [Software Design](https://hackaday.io/project/170365-blueretro/log/182603-blueretro-software-design)
 * [Roadmap](https://docs.google.com/spreadsheets/d/e/2PACX-1vTR9HpZM9DBp986BL8aVeUu7-rP161CXUoBpRx1uX2eSsB6fmjHF_v4mPWj_SDjaliEh6Rq6c2BL1qk/pubhtml)
-* [DevKit PCB assembly checklist](https://hackaday.io/project/170365-blueretro/log/183903-pcb-assembly-checklist)
-* [Input and output specifications](https://hackaday.io/project/170365-blueretro/log/184162-input-and-output-specifications)
-* [Testing BlueRetro](https://hackaday.io/project/170365-blueretro/log/184300-testing-blueretro)
+* [Web-Bluetooth (BLE) configuration interface Documentation](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
+* [Web-Bluetooth (BLE) configuration interface Page](https://blueretro.io)
+* [BlueRetro mapping label reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vRln_dhkahEIhq4FQY_p461r5qvLn-Hkl89ZtfyIOGAqdnPtQZ5Ihfsjvd94fRbaHX8wU3F-r2ODYbM/pubhtml)
+* [Cables building instruction](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-Cables-Build-Instructions)
+* [DIY building instruction](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-DIY-Build-Instructions)
+* [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
+* [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
 
 ## General documentation
 * [Learning Bluetooth Classic (BR/EDR) with HCI traces](https://hackaday.io/project/170365-blueretro/log/178249-learning-bluetooth-classic-bredr-with-hci-traces)
@@ -23,16 +24,4 @@ BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game 
 * [Evolution of SEGA's IO Interface from SG-1000 to Saturn](https://hackaday.io/project/170365-blueretro/log/180790-evolution-of-segas-io-interface-from-sg-1000-to-saturn)
 * [Famicom & NES controller shift register: Parallel-in, Serial-out](https://hackaday.io/project/170365-blueretro/log/181368-famicom-nes-controller-shift-register-parallel-in-serial-out)
 * [SNES 2P & Super Multitap](https://hackaday.io/project/170365-blueretro/log/181686-2020-08-04-progress-update-sfcsnes-support)
-
-## Other links
-* [Software files repository](https://github.com/darthcloud/BlueRetro)
-* [BlueRetro mapping label reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vRln_dhkahEIhq4FQY_p461r5qvLn-Hkl89ZtfyIOGAqdnPtQZ5Ihfsjvd94fRbaHX8wU3F-r2ODYbM/pubhtml)
-* [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
-* [DIY building instruction](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-DIY-Build-Instructions)
-* [Cables building instruction](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-Cables-Build-Instructions)
-* [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
-* [Advance configuration web interface](https://blueretro.io/blueretro.html)
-* [Preset configuration web interface](https://blueretro.io/blueretro_presets.html)
-* [Wireless traces repository](https://github.com/darthcloud/bt_traces)
-
-
+* [PlayStation & PlayStation 2 SPI interface](https://hackaday.io/project/170365-blueretro/log/186471-playstation-playstation-2-spi-interface)
