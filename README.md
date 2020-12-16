@@ -1,9 +1,7 @@
 # BlueRetro
-<p align="center"><img src="https://cdn.hackaday.io/images/5521711598645122765.jpg" width="600"/></p>
-
 BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game consoles. Lost or broken controllers? Reproduction too expensive? Need those rare and obscure accessories? Just use the Bluetooth devices you already got! The project is open source hardware & software under the CERN-OHL-P-2.0 & Apache-2.0 licenses respectively. It's built for the popular ESP32 chip. All processing for Bluetooth and HID input decoding is done on the first core which makes it easy for other projects to use the Bluetooth stack within their own project by using the 2nd core. Wii, Switch, PS3, PS4, PS5, Xbox One & generic HID Bluetooth devices are supported. Parallel 1P (NeoGeo, Supergun, JAMMA, etc), Parallel 2P (Atari 2600, Master System, etc), NES, Mega Drive / Genesis, SNES, Saturn, JVS (Arcade), PSX, N64, Dreamcast, PS2 & GameCube are supported with simultaneous 4+ players using a single adapter. Soon PCE / TG16, CD-i, 3DO, PC-FX...
 
-<p align="center"><img src="https://cdn.hackaday.io/images/7104601597769319104.png" width="600"/></p>
+<p align="center"><img src="https://cdn.hackaday.io/images/5521711598645122765.jpg" width="600"/></p>
 
 ## Project documentation
 * [Main hackaday.io page](https://hackaday.io/project/170365-blueretro)
@@ -16,6 +14,8 @@ BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game 
 * [DIY building instruction](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-DIY-Build-Instructions)
 * [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
 * [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
+
+<p align="center"><img src="https://cdn.hackaday.io/images/7104601597769319104.png" width="600"/></p>
 
 ## General documentation
 * [Learning Bluetooth Classic (BR/EDR) with HCI traces](https://hackaday.io/project/170365-blueretro/log/178249-learning-bluetooth-classic-bredr-with-hci-traces)
