@@ -88,7 +88,7 @@ void bt_hid_ps4_ps5_init(struct bt_dev *device) {
         .name = "ps5_init_timer"
     };
     struct bt_hidp_ps4_set_conf ps4_set_conf = {
-        .conf0 = 0xc4,
+        .conf0 = 0xc0,
         .conf1 = 0x07,
     };
     ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->id];
