@@ -440,7 +440,7 @@ int32_t bt_host_init(void) {
 }
 
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len) {
-    UBaseType_t ret = xRingbufferSend(txq_hdl, (void *)packet, packet_len, 0);
+    UBaseType_t ret = xRingbufferSend(txq_hdl, (void *)packet, packet_len, portMAX_DELAY);
     if (ret != pdTRUE) {
         printf("# %s txq full!\n", __FUNCTION__);
     }
