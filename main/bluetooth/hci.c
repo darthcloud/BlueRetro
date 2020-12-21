@@ -85,7 +85,7 @@ static void bt_hci_cmd_read_remote_features(void *handle);
 static void bt_hci_cmd_read_remote_ext_features(void *handle);
 static void bt_hci_cmd_io_capability_reply(void *bdaddr);
 static void bt_hci_cmd_user_confirm_reply(void *bdaddr);
-//static void bt_hci_cmd_switch_role(void *cp);
+static void bt_hci_cmd_switch_role(void *cp);
 //static void bt_hci_cmd_read_link_policy(void *handle);
 //static void bt_hci_cmd_write_link_policy(void *cp);
 //static void bt_hci_cmd_read_default_link_policy(void *cp);
@@ -393,7 +393,6 @@ static void bt_hci_cmd_user_confirm_reply(void *bdaddr) {
     bt_hci_cmd(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*user_confirm_reply));
 }
 
-#if 0
 static void bt_hci_cmd_switch_role(void *cp) {
     struct bt_hci_cp_switch_role *switch_role = (struct bt_hci_cp_switch_role *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
@@ -403,6 +402,7 @@ static void bt_hci_cmd_switch_role(void *cp) {
     bt_hci_cmd(BT_HCI_OP_SWITCH_ROLE, sizeof(*switch_role));
 }
 
+#if 0
 static void bt_hci_cmd_read_link_policy(void *handle) {
     struct bt_hci_cp_read_link_policy *read_link_policy = (struct bt_hci_cp_read_link_policy *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
@@ -1020,6 +1020,13 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                     if (device->type == HID_GENERIC || device->type == SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
+                    }
+                    if (device->type == PS3_DS3 || device->type == WIIU_PRO) {
+                        struct bt_hci_cp_switch_role switch_role = {
+                            .role = 0x01,
+                        };
+                        memcpy((void *)&switch_role.bdaddr, remote_name_req_complete->bdaddr.val, sizeof(remote_name_req_complete->bdaddr.val));
+                        bt_hci_cmd_switch_role(&switch_role);
                     }
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                         if (device->type == PS4_DS4) {
