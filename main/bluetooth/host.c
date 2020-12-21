@@ -107,12 +107,12 @@ static int32_t bt_host_load_bdaddr_from_file(void) {
     int32_t ret = -1;
 
     if (stat(BDADDR_FILE, &st) != 0) {
-        printf("%s: No BDADDR on SD. Using ESP32's MAC\n", __FUNCTION__);
+        printf("# %s: No BDADDR on SD. Using ESP32's MAC\n", __FUNCTION__);
     }
     else {
         FILE *file = fopen(BDADDR_FILE, "rb");
         if (file == NULL) {
-            printf("%s: failed to open file for reading\n", __FUNCTION__);
+            printf("# %s: failed to open file for reading\n", __FUNCTION__);
         }
         else {
             uint8_t test_mac[6];
@@ -120,7 +120,7 @@ static int32_t bt_host_load_bdaddr_from_file(void) {
             fclose(file);
             test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
             esp_base_mac_addr_set(test_mac);
-            printf("%s: Using BDADDR.BIN MAC\n", __FUNCTION__);
+            printf("# %s: Using BDADDR.BIN MAC\n", __FUNCTION__);
             ret = 0;
         }
     }
@@ -132,13 +132,13 @@ static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data) {
     int32_t ret = -1;
 
     if (stat(LINK_KEYS_FILE, &st) != 0) {
-        printf("%s: No link keys on SD. Creating...\n", __FUNCTION__);
+        printf("# %s: No link keys on SD. Creating...\n", __FUNCTION__);
         ret = bt_host_store_keys_on_file(data);
     }
     else {
         FILE *file = fopen(LINK_KEYS_FILE, "rb");
         if (file == NULL) {
-            printf("%s: failed to open file for reading\n", __FUNCTION__);
+            printf("# %s: failed to open file for reading\n", __FUNCTION__);
         }
         else {
             fread((void *)data, sizeof(*data), 1, file);
@@ -154,7 +154,7 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
 
     FILE *file = fopen(LINK_KEYS_FILE, "wb");
     if (file == NULL) {
-        printf("%s: failed to open file for writing\n", __FUNCTION__);
+        printf("# %s: failed to open file for writing\n", __FUNCTION__);
     }
     else {
         fwrite((void *)data, sizeof(*data), 1, file);
@@ -411,12 +411,12 @@ int32_t bt_host_init(void) {
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        printf("Bluetooth controller initialize failed: %s", esp_err_to_name(ret));
+        printf("# Bluetooth controller initialize failed: %s", esp_err_to_name(ret));
         return ret;
     }
 
     if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM)) != ESP_OK) {
-        printf("Bluetooth controller enable failed: %s", esp_err_to_name(ret));
+        printf("# Bluetooth controller enable failed: %s", esp_err_to_name(ret));
         return ret;
     }
 
@@ -426,7 +426,7 @@ int32_t bt_host_init(void) {
 
     txq_hdl = xRingbufferCreate(256*8, RINGBUF_TYPE_NOSPLIT);
     if (txq_hdl == NULL) {
-        printf("Failed to create ring buffer\n");
+        printf("# Failed to create ring buffer\n");
         return ret;
     }
 
