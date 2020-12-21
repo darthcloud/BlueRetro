@@ -81,6 +81,8 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     else
         printf("O ");
 
+    printf("%.6f ", (float)esp_timer_get_time()/1000000);
+
     for (byte = 0, line = 0; line < line_max; line++) {
         printf("%06X", byte);
         for (col = 0; col < 16 && byte < len; col++, byte++) {
