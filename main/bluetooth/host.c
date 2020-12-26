@@ -18,8 +18,10 @@
 #include "sdp.h"
 #include "att.h"
 #include "../util.h"
+#include "debug.h"
 
 //#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
+//#define BT_DBG /* Run bt_host_dbg function after HID channels are setup */
 
 #define BT_TX 0
 #define BT_RX 1
@@ -32,6 +34,7 @@ enum {
     /* BT CTRL flags */
     BT_CTRL_READY,
     BT_HOST_DISCONN_SW_INHIBIT,
+    BT_HOST_DBG_MODE,
 };
 
 struct bt_host_link_keys {
@@ -316,6 +319,12 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     bt_h4_trace(data, len, BT_RX);
 #endif /* H4_TRACE */
 
+#ifdef BT_DBG
+    if (atomic_test_bit(&bt_flags, BT_HOST_DBG_MODE)) {
+        bt_dbg(data, len);
+    }
+    else {
+#endif
     switch(bt_hci_pkt->h4_hdr.type) {
         case BT_HCI_H4_TYPE_ACL:
             bt_host_acl_hdlr(bt_hci_pkt, len);
@@ -327,6 +336,9 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
             printf("# %s unsupported packet type: 0x%02X\n", __FUNCTION__, bt_hci_pkt->h4_hdr.type);
             break;
     }
+#ifdef BT_DBG
+    }
+#endif
 
     return 0;
 }
@@ -406,6 +418,16 @@ int32_t bt_host_init(void) {
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
+#ifdef BT_DBG
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.pin_bit_mask = 1ULL << 26;
+    gpio_config(&io_conf);
+    gpio_set_level(26, 1);
+#endif
+
     bt_host_load_bdaddr_from_file();
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -478,6 +500,10 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
 }
 
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
+#ifdef BT_DBG
+    atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
+    bt_dbg_init(device->type);
+#else
     if (device->type == HID_GENERIC) {
         uint32_t i = 0;
         for (; i < REPORT_MAX; i++) {
@@ -499,4 +525,5 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         adapter_bridge(&bt_adapter.data[device->id]);
     }
     bt_adapter.data[device->id].report_cnt++;
+#endif
 }
