@@ -669,9 +669,9 @@ void ps_spi_init(void) {
         spi_hw->ctrl.wr_bit_order = 1;
         spi_hw->ctrl.rd_bit_order = 1;
 
-        /* Set be Mode 3, unlike sniffer! */
+        /* Set Mode 3 as per ESP32 TRM, except ck_i_edge that need to be 1 for original PSX! */
         spi_hw->pin.ck_idle_edge = 0;
-        spi_hw->user.ck_i_edge = 0;
+        spi_hw->user.ck_i_edge = 1;
         spi_hw->ctrl2.miso_delay_mode = 1;
         spi_hw->ctrl2.miso_delay_num = 0;
         spi_hw->ctrl2.mosi_delay_mode = 0;
