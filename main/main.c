@@ -22,6 +22,83 @@
 #include "wired/jvs.h"
 #include "wired/parallel.h"
 #include "wired/ps_spi.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_BLUERETRO_SYSTEM_PARALLEL_1P
+#define HARDCODED_SYS PARALLEL_1P
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_PARALLEL_2P
+#define HARDCODED_SYS PARALLEL_2P
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_NES
+#define HARDCODED_SYS NES
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_PCE
+#define HARDCODED_SYS PCE
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_GENESIS
+#define HARDCODED_SYS GENESIS
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_SNES
+#define HARDCODED_SYS SNES
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_CDI
+#define HARDCODED_SYS CDI
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_CD32
+#define HARDCODED_SYS CD32
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_3DO
+#define HARDCODED_SYS REAL_3DO
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_JAGUAR
+#define HARDCODED_SYS JAGUAR
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_PSX_PS2
+#define HARDCODED_SYS PS2
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_SATURN
+#define HARDCODED_SYS SATURN
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_PCFX
+#define HARDCODED_SYS PCFX
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_JVS
+#define HARDCODED_SYS JVS
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_N64
+#define HARDCODED_SYS N64
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_DC
+#define HARDCODED_SYS DC
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_GC
+#define HARDCODED_SYS GC
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_WII_EXT
+#define HARDCODED_SYS WII_EXT
+#else
+#ifdef CONFIG_BLUERETRO_SYSTEM_EXP_BOARD
+#define HARDCODED_SYS EXP_BOARD
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
 
 typedef void (*wired_init_t)(void);
 
@@ -74,7 +151,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
 };
 
 static void wired_init_task(void) {
-#if 1
+#ifdef CONFIG_BLUERETRO_SYSTEM_UNIVERSAL
     detect_init();
     while (wired_adapter.system_id <= WIRED_AUTO) {
         if (config.magic == CONFIG_MAGIC && config.global_cfg.system_cfg < WIRED_MAX
@@ -84,13 +161,14 @@ static void wired_init_task(void) {
         delay_us(1000);
     }
     detect_deinit();
-#else
-    wired_adapter.system_id = DC;
-#endif
 
     if (wired_adapter.system_id >= 0) {
         ets_printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
+#else
+    wired_adapter.system_id = HARDCODED_SYS;
+    ets_printf("# Hardcoded system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
+#endif
 
     while (config.magic != CONFIG_MAGIC) {
         delay_us(1000);
