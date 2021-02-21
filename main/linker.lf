@@ -4,3 +4,4 @@ entries:
     atomic (noflash)
     gpio (noflash)
     intr (noflash)
+    detect (noflash)

@@ -3,22 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <xtensa/hal.h>
-#include <esp_intr_alloc.h>
-#include <driver/gpio.h>
+#include "system/intr.h"
+#include "system/gpio.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "detect.h"
 
 #define ALT_SYS_PIN 39
-
-static intr_handle_t intr_hdl;
 
 static const uint8_t detect_pin_low[] = {
     19, 21, 22, 25,
@@ -44,7 +36,7 @@ static const uint8_t output_list[] = {
 };
 #endif
 
-static void IRAM_ATTR detect_intr(void* arg) {
+static uint32_t detect_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -78,56 +70,57 @@ static void IRAM_ATTR detect_intr(void* arg) {
         }
         GPIO.status_w1tc = low_io;
     }
+    return 0;
 }
 
 void detect_init(void) {
     gpio_config_t io_conf = {0};
 
     for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_low); i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+        io_conf.intr_type = GPIO_INTR_ANYEDGE;
         io_conf.pin_bit_mask = BIT(detect_pin_low[i]);
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_high); i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+        io_conf.intr_type = GPIO_INTR_ANYEDGE;
         io_conf.pin_bit_mask = 1ULL << detect_pin_high[i];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
     }
 
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.pin_bit_mask = 1ULL << ALT_SYS_PIN;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config(&io_conf);
+    gpio_config_iram(&io_conf);
 
     wired_adapter.system_id = WIRED_AUTO;
 
     adapter_init_buffer(0);
 
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, detect_intr, NULL, &intr_hdl);
+    intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, detect_isr);
 }
 
 void detect_deinit(void) {
-    esp_intr_free(intr_hdl);
+    intexc_free_iram(ETS_GPIO_INTR_SOURCE, 19);
 
     for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_low); i++) {
-        gpio_reset_pin(detect_pin_low[i]);
+        gpio_reset_iram(detect_pin_low[i]);
     }
     for (uint32_t i = 0; i < ARRAY_SIZE(detect_pin_high); i++) {
-        gpio_reset_pin(detect_pin_high[i]);
+        gpio_reset_iram(detect_pin_high[i]);
     }
-    gpio_reset_pin(ALT_SYS_PIN);
+    gpio_reset_iram(ALT_SYS_PIN);
 #if 0
     for (uint32_t i = 0; i < ARRAY_SIZE(output_list); i++) {
-        gpio_reset_pin(output_list[i]);
+        gpio_reset_iram(output_list[i]);
     }
 #endif
 }
