@@ -5,9 +5,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../bluetooth/hidp_ps4_ps5.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "bluetooth/hidp_ps4_ps5.h"
 #include "ps4_ps5.h"
 
 enum {

@@ -8,13 +8,13 @@
 #include <driver/gpio.h>
 #include <soc/spi_periph.h>
 #include <esp32/rom/ets_sys.h>
-#include "../zephyr/atomic.h"
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
-#include "../adapter/config.h"
-#include "../adapter/kb_monitor.h"
-#include "../adapter/ps.h"
+#include "zephyr/atomic.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
+#include "adapter/kb_monitor.h"
+#include "adapter/ps.h"
 #include "ps_spi.h"
 
 enum {

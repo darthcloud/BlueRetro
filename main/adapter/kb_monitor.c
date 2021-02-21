@@ -8,8 +8,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/ringbuf.h>
 #include <esp_timer.h>
-#include "../zephyr/types.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "util.h"
 #include "kb_monitor.h"
 
 struct kb_monitor {

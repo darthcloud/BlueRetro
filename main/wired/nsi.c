@@ -10,11 +10,11 @@
 #include <driver/rmt.h>
 #include <driver/periph_ctrl.h>
 #include <esp_task_wdt.h>
-#include "../zephyr/atomic.h"
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
-#include "../adapter/config.h"
+#include "zephyr/atomic.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
 #include "nsi.h"
 
 #define BIT_ZERO 0x80020006

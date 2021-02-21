@@ -4,8 +4,8 @@
  */
 
 #include <string.h>
-#include "../zephyr/types.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "util.h"
 #include "wii.h"
 
 #define WIIU_AXES_MAX 4

@@ -45,11 +45,6 @@ idf_component_register(SRCS "main.c"
                             "wired/ps_spi.c"
                             "zephyr/atomic.S"
                             "zephyr/xtensa_context.S"
-                    INCLUDE_DIRS "."
-                                 "adapter"
-                                 "bluetooth"
-                                 "drivers"
-                                 "wired"
-                                 "zephyr"
+                    PRIV_INCLUDE_DIRS "."
                     LDFRAGMENTS linker.lf)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)

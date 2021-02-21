@@ -11,10 +11,10 @@
 #include <xtensa/hal.h>
 #include <esp_intr_alloc.h>
 #include "driver/gpio.h"
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
-#include "../adapter/config.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
 #include "npiso.h"
 
 #define NPISO_PORT_MAX 2

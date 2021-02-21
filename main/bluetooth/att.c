@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include "host.h"
 #include "att.h"
-#include "../zephyr/uuid.h"
-#include "../zephyr/att.h"
-#include "../zephyr/gatt.h"
-#include "../adapter/config.h"
+#include "zephyr/uuid.h"
+#include "zephyr/att.h"
+#include "zephyr/gatt.h"
+#include "adapter/config.h"
 
 #define ATT_MAX_LEN 512
 

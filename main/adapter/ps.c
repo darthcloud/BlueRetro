@@ -4,8 +4,8 @@
  */
 
 #include <string.h>
-#include "../zephyr/types.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "util.h"
 #include "config.h"
 #include "kb_monitor.h"
 #include "ps.h"

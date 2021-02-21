@@ -4,8 +4,8 @@
  */
 
 #include <string.h>
-#include "../zephyr/types.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "util.h"
 #include "xb1.h"
 
 /* xinput buttons */

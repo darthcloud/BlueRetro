@@ -13,10 +13,10 @@
 #include <esp_intr_alloc.h>
 #include <esp_timer.h>
 #include "driver/gpio.h"
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
-#include "../adapter/config.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
 #include "maple.h"
 
 //#define WIRED_TRACE

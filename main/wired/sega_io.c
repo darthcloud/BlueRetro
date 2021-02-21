@@ -13,12 +13,12 @@
 #include <esp_intr_alloc.h>
 #include <esp_task_wdt.h>
 #include "driver/gpio.h"
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
-#include "../adapter/config.h"
-#include "../adapter/kb_monitor.h"
-#include "../adapter/saturn.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
+#include "adapter/config.h"
+#include "adapter/kb_monitor.h"
+#include "adapter/saturn.h"
 
 #define P1_TH_PIN 35
 #define P1_TR_PIN 27

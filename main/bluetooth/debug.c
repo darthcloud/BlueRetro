@@ -8,7 +8,7 @@
 #include <xtensa/hal.h>
 #include <driver/gpio.h>
 #include "sdkconfig.h"
-#include "../stats.h"
+#include "stats.h"
 
 static uint8_t type;
 static uint32_t counter;

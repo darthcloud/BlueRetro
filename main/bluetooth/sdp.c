@@ -5,11 +5,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../zephyr/types.h"
-#include "../zephyr/sdp.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "zephyr/sdp.h"
+#include "util.h"
 #include "host.h"
-#include "../adapter/hid_parser.h"
+#include "adapter/hid_parser.h"
 #include "l2cap.h"
 #include "sdp.h"
 

@@ -7,7 +7,7 @@
 #define _ADAPTER_H_
 
 #include <esp_attr.h>
-#include "../zephyr/atomic.h"
+#include "zephyr/atomic.h"
 
 #ifndef __packed
 #define __packed    __attribute__((__packed__))

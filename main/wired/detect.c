@@ -11,9 +11,9 @@
 #include <xtensa/hal.h>
 #include <esp_intr_alloc.h>
 #include <driver/gpio.h>
-#include "../zephyr/types.h"
-#include "../util.h"
-#include "../adapter/adapter.h"
+#include "zephyr/types.h"
+#include "util.h"
+#include "adapter/adapter.h"
 #include "detect.h"
 
 #define ALT_SYS_PIN 39

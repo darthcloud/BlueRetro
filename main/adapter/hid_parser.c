@@ -7,7 +7,7 @@
 #include <string.h>
 #include "adapter.h"
 #include "hid_parser.h"
-#include "../zephyr/usb_hid.h"
+#include "zephyr/usb_hid.h"
 
 #define HID_STACK_MAX 4
 

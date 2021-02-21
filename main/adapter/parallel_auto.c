@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "config.h"
-#include "../zephyr/types.h"
-#include "../util.h"
+#include "zephyr/types.h"
+#include "util.h"
 #include "parallel_auto.h"
 #include "driver/gpio.h"
 
