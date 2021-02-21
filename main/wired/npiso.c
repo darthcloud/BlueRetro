@@ -3,14 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <xtensa/hal.h>
-#include <esp_intr_alloc.h>
-#include "driver/gpio.h"
+#include "system/intr.h"
+#include "system/gpio.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
@@ -95,7 +89,7 @@ static uint8_t *cnt0 = &cnts.cnt[0];
 static uint8_t *cnt1 = &cnts.cnt[1];
 static uint32_t idx0, idx1;
 
-static void IRAM_ATTR set_data(uint8_t port, uint8_t data_id, uint8_t value) {
+static void set_data(uint8_t port, uint8_t data_id, uint8_t value) {
     uint8_t pin = gpio_pins[port][NPISO_D0 + data_id];
 
     if (value) {
@@ -106,7 +100,7 @@ static void IRAM_ATTR set_data(uint8_t port, uint8_t data_id, uint8_t value) {
     }
 }
 
-static void IRAM_ATTR npiso_fc_nes_2p_isr(void* arg) {
+static uint32_t npiso_fc_nes_2p_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -148,9 +142,11 @@ static void IRAM_ATTR npiso_fc_nes_2p_isr(void* arg) {
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
+
+    return 0;
 }
 
-static void IRAM_ATTR npiso_fc_4p_isr(void* arg) {
+static uint32_t npiso_fc_4p_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -198,9 +194,11 @@ static void IRAM_ATTR npiso_fc_4p_isr(void* arg) {
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
+
+    return 0;
 }
 
-static void IRAM_ATTR npiso_nes_fs_isr(void* arg) {
+static uint32_t npiso_nes_fs_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -267,9 +265,11 @@ static void IRAM_ATTR npiso_nes_fs_isr(void* arg) {
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
+
+    return 0;
 }
 
-static void IRAM_ATTR npiso_sfc_snes_2p_isr(void* arg) {
+static uint32_t npiso_sfc_snes_2p_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -330,9 +330,11 @@ static void IRAM_ATTR npiso_sfc_snes_2p_isr(void* arg) {
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
+
+    return 0;
 }
 
-static void IRAM_ATTR npiso_sfc_snes_5p_isr(void* arg) {
+static uint32_t npiso_sfc_snes_5p_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -505,6 +507,8 @@ static void IRAM_ATTR npiso_sfc_snes_5p_isr(void* arg) {
 
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
     if (low_io) GPIO.status_w1tc = low_io;
+
+    return 0;
 }
 
 void npiso_init(void)
@@ -586,65 +590,65 @@ void npiso_init(void)
 
     /* Latch */
     if (wired_adapter.system_id == SNES) {
-        io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+        io_conf.intr_type = GPIO_INTR_ANYEDGE;
     }
     else {
-        io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+        io_conf.intr_type = GPIO_INTR_POSEDGE;
     }
     io_conf.pin_bit_mask = 1ULL << NPISO_LATCH_PIN;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    gpio_config(&io_conf);
+    gpio_config_iram(&io_conf);
 
     /* Clocks */
     for (uint32_t i = 0; i < NPISO_PORT_MAX; i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
+        io_conf.intr_type = GPIO_INTR_NEGEDGE;
         io_conf.pin_bit_mask = 1ULL << gpio_pins[i][NPISO_CLK];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
     }
 
     /* Selects */
     for (uint32_t i = 0; i < NPISO_PORT_MAX; i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+        io_conf.intr_type = GPIO_INTR_ANYEDGE;
         io_conf.pin_bit_mask = 1ULL << gpio_pins[i][NPISO_SEL];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
     }
 
     /* D0, D1 */
     for (uint32_t i = 0; i < NPISO_PORT_MAX; i++) {
         for (uint32_t j = NPISO_D0; j <= NPISO_D1; j++) {
-            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+            io_conf.intr_type = GPIO_INTR_DISABLE;
             io_conf.pin_bit_mask = 1ULL << gpio_pins[i][j];
             io_conf.mode = GPIO_MODE_OUTPUT;
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-            gpio_config(&io_conf);
+            gpio_config_iram(&io_conf);
             set_data(i, j &  0x1, 1);
         }
     }
 
     if (dev_type[0] == DEV_FC_NES_MULTITAP) {
-        esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_nes_fs_isr, NULL, NULL);
+        intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_nes_fs_isr);
     }
     else if (dev_type[0] == DEV_FC_MULTITAP_ALT) {
-        esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_fc_4p_isr, NULL, NULL);
+        intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_fc_4p_isr);
     }
     else if (dev_type[0] == DEV_SFC_SNES_PAD && dev_type[1] == DEV_SFC_SNES_MULTITAP) {
-        esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_sfc_snes_5p_isr, NULL, NULL);
+        intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_sfc_snes_5p_isr);
     }
     else {
         if (wired_adapter.system_id == NES) {
-            esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_fc_nes_2p_isr, NULL, NULL);
+            intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_fc_nes_2p_isr);
         }
         else {
-            esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, npiso_sfc_snes_2p_isr, NULL, NULL);
+            intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_sfc_snes_2p_isr);
         }
     }
 }
