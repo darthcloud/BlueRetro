@@ -386,9 +386,9 @@ void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         map4->buttons[2] = 0xF379FFD7;
     }
     else if (config.out_cfg[1].dev_mode == DEV_MOUSE) {
-        map1->buttons[0] = P2_MOUSE_ID0_HI;
-        map1->buttons[1] = P2_MOUSE_ID0_LO;
-        map1->buttons[2] = 0xFFFDFFFD;
+        map2->buttons[0] = P2_MOUSE_ID0_HI;
+        map2->buttons[1] = P2_MOUSE_ID0_LO;
+        map2->buttons[2] = 0xFFFDFFFD;
     }
     else {
         map2->buttons[0] = 0xFFFDFFFD;
