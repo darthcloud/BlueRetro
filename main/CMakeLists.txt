@@ -36,6 +36,7 @@ idf_component_register(SRCS "main.c"
                             "drivers/led.c"
                             "drivers/sd.c"
                             "system/gpio.c"
+                            "system/intr.c"
                             "wired/detect.c"
                             "wired/npiso.c"
                             "wired/sega_io.c"
@@ -49,3 +50,4 @@ idf_component_register(SRCS "main.c"
                     PRIV_INCLUDE_DIRS "."
                     LDFRAGMENTS linker.lf)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "-DXT_INTEXC_HOOKS" APPEND)
