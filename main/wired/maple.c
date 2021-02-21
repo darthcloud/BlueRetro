@@ -4,19 +4,14 @@
  */
 
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <xtensa/hal.h>
 #include <esp32/dport_access.h>
-#include <esp_intr_alloc.h>
 #include <esp_timer.h>
-#include "driver/gpio.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "system/gpio.h"
+#include "system/intr.h"
 #include "maple.h"
 
 //#define WIRED_TRACE
@@ -146,15 +141,15 @@ static struct maple_pkt pkt;
 static uint32_t rumble_max = 0x00020013;
 static uint32_t rumble_val = 0x10E0073B;
 
-static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
+static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
     uint8_t *crc = data + (len - 1);
     *crc = 0x00;
 
     ets_delay_us(55);
 
     GPIO.out_w1ts = maple0 | maple1;
-    gpio_set_direction(gpio_pin[port][0], GPIO_MODE_OUTPUT);
-    gpio_set_direction(gpio_pin[port][1], GPIO_MODE_OUTPUT);
+    gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_OUTPUT);
+    gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_OUTPUT);
     DPORT_STALL_OTHER_CPU_START();
     GPIO.out_w1tc = maple0;
     wait_100ns();
@@ -281,15 +276,14 @@ static void IRAM_ATTR maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, 
     wait_100ns();
     GPIO.out_w1ts = maple1;
 
-    gpio_set_direction(gpio_pin[port][0], GPIO_MODE_INPUT);
-    gpio_set_direction(gpio_pin[port][1], GPIO_MODE_INPUT);
+    gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_INPUT);
+    gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_INPUT);
     DPORT_STALL_OTHER_CPU_END();
     /* Send start sequence */
 
 }
 
-static void IRAM_ATTR maple_rx(void* arg)
-{
+static uint32_t maple_rx(uint32_t cause) {
     const uint32_t maple0 = GPIO.acpu_int;
     uint32_t timeout;
     uint32_t bit_cnt = 0;
@@ -553,6 +547,7 @@ maple_end:
 
         GPIO.status_w1tc = maple0;
     }
+    return 0;
 }
 
 void maple_init(void)
@@ -561,14 +556,14 @@ void maple_init(void)
 
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {
-            io_conf.intr_type = j ? 0 : GPIO_PIN_INTR_NEGEDGE;
+            io_conf.intr_type = j ? 0 : GPIO_INTR_NEGEDGE;
             io_conf.pin_bit_mask = BIT(gpio_pin[i][j]);
             io_conf.mode = GPIO_MODE_INPUT;
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-            gpio_config(&io_conf);
+            gpio_config_iram(&io_conf);
         }
     }
 
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, maple_rx, NULL, NULL);
+    intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, maple_rx);
 }

@@ -6,6 +6,7 @@ entries:
     intr (noflash)
     detect (noflash)
     jvs (noflash)
+    maple (noflash)
     npiso (noflash)
     nsi (noflash)
     ps_spi (noflash)
