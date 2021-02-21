@@ -7,6 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "system/bare_metal_app_cpu.h"
+#include "system/core0_stall.h"
 #include "drivers/sd.h"
 #include "drivers/led.h"
 #include "adapter/adapter.h"
@@ -110,6 +111,8 @@ static void wired_init_task(void) {
 
 static void wl_init_task(void *arg) {
     err_led_clear();
+
+    core0_stall_init();
 
     if (sd_init()) {
         err_led_set();
