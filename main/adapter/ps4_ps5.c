@@ -36,7 +36,7 @@ static const uint8_t ps4_axes_idx[ADAPTER_MAX_AXES] =
 static const uint8_t ps5_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-    0,       1,       2,       3,       5,      6
+    0,       1,       2,       3,       4,      5
 };
 
 static const struct ctrl_meta ps4_axes_meta[ADAPTER_MAX_AXES] =
