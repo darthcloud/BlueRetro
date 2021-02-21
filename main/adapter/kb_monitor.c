@@ -5,9 +5,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/ringbuf.h>
 #include <esp_timer.h>
+#include "queue_bss.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "kb_monitor.h"
@@ -15,7 +14,7 @@
 struct kb_monitor {
     uint32_t dev_id;
     kbmon_id_to_code_t callback;
-    RingbufHandle_t scq_hdl;
+    queue_bss_handle_t scq_hdl;
     uint32_t keys_state[4];
     uint32_t tm_delay;
     uint32_t tm_rate;
@@ -44,7 +43,7 @@ void kbmon_init(uint8_t dev_id, kbmon_id_to_code_t callback) {
         kb_monitors[dev_id].tm_state = 0;
         kb_monitors[dev_id].dev_id = dev_id;
         kb_monitors[dev_id].callback = callback;
-        kb_monitors[dev_id].scq_hdl = xRingbufferCreate(64, RINGBUF_TYPE_NOSPLIT);
+        kb_monitors[dev_id].scq_hdl = queue_bss_init(32, 16);
         if (kb_monitors[dev_id].scq_hdl == NULL) {
             printf("# Failed to create KBMON:%d ring buffer\n", dev_id);
         }
@@ -81,27 +80,27 @@ void kbmon_update(uint8_t dev_id, struct generic_ctrl *ctrl_data) {
 
 int32_t kbmon_set_code(uint8_t dev_id, uint8_t *code, uint32_t len) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
-    UBaseType_t ret = pdFALSE;
+    int32_t ret = -1;
 
     if (kbmon->scq_hdl) {
-        ret = xRingbufferSend(kbmon->scq_hdl, (void *)code, len, 0);
-        if (ret != pdTRUE) {
+        ret = queue_bss_enqueue(kbmon->scq_hdl, code, len);
+        if (ret) {
             printf("# %s KBMON:%d scq full!\n", __FUNCTION__, dev_id);
         }
     }
-    return (ret == pdTRUE ? 0 : -1);
+    return ret;
 }
 
-int32_t kbmon_get_code(uint8_t dev_id, uint8_t *code, uint32_t *len) {
+int32_t IRAM_ATTR kbmon_get_code(uint8_t dev_id, uint8_t *code, uint32_t *len) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
     int32_t ret = -1;
-    uint32_t qlen;
+    uint32_t *qlen;
     if (kbmon->scq_hdl) {
-        uint8_t *qcode = (uint8_t *)xRingbufferReceive(kbmon->scq_hdl, &qlen, 0);
+        uint8_t *qcode = queue_bss_dequeue(kbmon->scq_hdl, &qlen);
         if (qcode) {
-            memcpy(code, qcode, qlen);
-            vRingbufferReturnItem(kbmon->scq_hdl, (void *)qcode);
-            *len = qlen;
+            memcpy(code, qcode, *qlen);
+            queue_bss_return(kbmon->scq_hdl, qcode, qlen);
+            *len = *qlen;
             ret = 0;
         }
     }
