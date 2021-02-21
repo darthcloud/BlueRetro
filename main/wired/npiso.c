@@ -5,6 +5,7 @@
 
 #include "system/intr.h"
 #include "system/gpio.h"
+#include "system/delay.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/adapter.h"
@@ -450,7 +451,7 @@ static uint32_t npiso_sfc_snes_5p_isr(uint32_t cause) {
                             /* Hack to help for games reading too fast on SEL transition */
                             /* Set B following previous SEL controllers detection */
                             while (!(GPIO.in & P2_CLK_MASK)); /* Wait rising edge */
-                            ets_delay_us(2);
+                            delay_us(2);
                             set_data(1, 0, wired_adapter.data[3].output[0] & 0x80);
                             set_data(1, 1, wired_adapter.data[4].output[0] & 0x80);
                         }

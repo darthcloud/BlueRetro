@@ -10,6 +10,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "system/core0_stall.h"
+#include "system/delay.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "sega_io.h"
@@ -171,7 +172,7 @@ static void twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay)
             timeout++;
         }
         tx_nibble(port, data[i] >> 4);
-        ets_delay_us(ack_delay);
+        delay_us(ack_delay);
         set_sio(port, SIO_TL, tl_state);
         tl_state ^= 0x01;
 
@@ -184,7 +185,7 @@ static void twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay)
             timeout++;
         }
         tx_nibble(port, data[i] & 0xF);
-        ets_delay_us(ack_delay);
+        delay_us(ack_delay);
         set_sio(port, SIO_TL, tl_state);
         tl_state ^= 0x01;
     }
@@ -199,7 +200,7 @@ static void twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay)
             }
             timeout++;
         }
-        ets_delay_us(ack_delay);
+        delay_us(ack_delay);
         set_sio(port, SIO_TL, tl_state);
         tl_state ^= 0x01;
 
@@ -211,7 +212,7 @@ static void twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay)
             }
             timeout++;
         }
-        ets_delay_us(ack_delay);
+        delay_us(ack_delay);
         set_sio(port, SIO_TL, tl_state);
         tl_state ^= 0x01;
     }

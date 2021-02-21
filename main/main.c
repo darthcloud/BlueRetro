@@ -8,6 +8,7 @@
 #include <freertos/task.h>
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
+#include "system/delay.h"
 #include "system/led.h"
 #include "system/sd.h"
 #include "adapter/adapter.h"
@@ -80,7 +81,7 @@ static void wired_init_task(void) {
             && config.global_cfg.system_cfg != WIRED_AUTO) {
             break;
         }
-        ets_delay_us(1000);
+        delay_us(1000);
     }
     detect_deinit();
 #else
@@ -92,7 +93,7 @@ static void wired_init_task(void) {
     }
 
     while (config.magic != CONFIG_MAGIC) {
-        ets_delay_us(1000);
+        delay_us(1000);
     }
 
     if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {

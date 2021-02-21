@@ -12,6 +12,7 @@
 #include "driver/gpio.h"
 #include "system/intr.h"
 #include "system/gpio.h"
+#include "system/delay.h"
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
@@ -139,12 +140,12 @@ static void set_output_state(uint32_t port, uint32_t enable) {
 static void toggle_dsr(uint32_t port) {
     if (port == 0) {
         GPIO.out_w1tc = BIT(P1_DSR_PIN);
-        ets_delay_us(2);
+        delay_us(2);
         GPIO.out_w1ts = BIT(P1_DSR_PIN);
     }
     else {
         GPIO.out_w1tc = BIT(P2_DSR_PIN);
-        ets_delay_us(2);
+        delay_us(2);
         GPIO.out_w1ts = BIT(P2_DSR_PIN);
     }
 }
@@ -450,10 +451,10 @@ static void packet_end(void *arg) {
 static void spi_isr(void* arg) {
     struct ps_ctrl_port *port = (struct ps_ctrl_port *)arg;
     if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state && port->idx > 10) {
-        ets_delay_us(0);
+        delay_us(0);
     }
     else {
-        ets_delay_us(14);
+        delay_us(14);
     }
     port->rx_buf[port->active_rx_buf][port->idx] = port->spi_hw->data_buf[0];
     if (!get_dtr_state(port->id)) {

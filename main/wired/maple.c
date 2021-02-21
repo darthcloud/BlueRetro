@@ -10,6 +10,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "system/core0_stall.h"
+#include "system/delay.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "maple.h"
@@ -145,7 +146,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     uint8_t *crc = data + (len - 1);
     *crc = 0x00;
 
-    ets_delay_us(55);
+    delay_us(55);
 
     GPIO.out_w1ts = maple0 | maple1;
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_OUTPUT);

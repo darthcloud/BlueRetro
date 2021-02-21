@@ -14,6 +14,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "system/delay.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "jvs.h"
@@ -256,7 +257,7 @@ static uint32_t uart_rx(uint32_t cause) {
 
         if (tx_len) {
             GPIO.out_w1ts = JVS_RTS_MASK;
-            ets_delay_us(10);
+            delay_us(10);
             jvs_write_txfifo(tx_buf, tx_len);
         }
     }
