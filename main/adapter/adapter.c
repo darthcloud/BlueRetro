@@ -430,8 +430,10 @@ void adapter_bridge(struct bt_data *bt_data) {
                 BOLD, ctrl_output[0].btns[2].value, RESET, BOLD, ctrl_output[0].btns[3].value, RESET);
 #else
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
-                ctrl_output[i].index = i;
-                from_generic_func[wired_adapter.system_id](config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
+                if (out_mask & 0x1) {
+                    ctrl_output[i].index = i;
+                    from_generic_func[wired_adapter.system_id](config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
+                }
             }
 #endif
         }
