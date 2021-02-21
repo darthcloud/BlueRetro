@@ -2,3 +2,4 @@
 archive: libmain.a
 entries:
     atomic (noflash)
+    gpio (noflash)
