@@ -1,0 +1,188 @@
+menu "BlueRetro"
+
+    choice
+        prompt "Select filesystem location"
+        default BLUERETRO_FAT_ON_SDCARD
+        help
+            Select where BlueRetro file are saved.
+
+        config BLUERETRO_FAT_ON_SDCARD
+            bool "Put FAT FS on external SD card"
+            help
+                Put FAT FS on external SD card.
+
+        config BLUERETRO_FAT_ON_SPIFLASH
+            bool "Put FAT FS on internal flash"
+            help
+                Put FAT FS on internal flash.
+
+    endchoice
+
+    choice
+        prompt "Select universal or specific system"
+        default BLUERETRO_SYSTEM_UNIVERSAL
+        help
+            BlueRetro is an universal adapter but you may force it to support
+            only one system.
+
+        config BLUERETRO_SYSTEM_UNIVERSAL
+            bool "UNIVERSAL"
+            help
+                Select this to support all systems.
+
+        config BLUERETRO_SYSTEM_PARALLEL_1P
+            bool "PARALLEL_1P"
+            help
+                Select this to support only PARALLEL_1P.
+
+        config BLUERETRO_SYSTEM_PARALLEL_2P
+            bool "PARALLEL_2P"
+            help
+                Select this to support only PARALLEL_2P.
+
+        config BLUERETRO_SYSTEM_NES
+            bool "NES"
+            help
+                Select this to support only NES.
+
+        config BLUERETRO_SYSTEM_PCE
+            bool "PCE"
+            help
+                Select this to support only PCE.
+
+        config BLUERETRO_SYSTEM_GENESIS
+            bool "MEGADRIVE/GENESIS"
+            help
+                Select this to support only MEGADRIVE/GENESIS.
+
+        config BLUERETRO_SYSTEM_SNES
+            bool "SNES"
+            help
+                Select this to support only SNES.
+
+        config BLUERETRO_SYSTEM_CDI
+            bool "CD-i"
+            help
+                Select this to support only CD-i.
+
+        config BLUERETRO_SYSTEM_CD32
+            bool "CD32"
+            help
+                Select this to support only CD32.
+
+        config BLUERETRO_SYSTEM_3DO
+            bool "3DO"
+            help
+                Select this to support only 3DO.
+
+        config BLUERETRO_SYSTEM_JAGUAR
+            bool "JAGUAR"
+            help
+                Select this to support only JAGUAR.
+
+        config BLUERETRO_SYSTEM_PSX_PS2
+            bool "PSX/PS2"
+            help
+                Select this to support only PSX & PS2.
+
+        config BLUERETRO_SYSTEM_SATURN
+            bool "SATURN"
+            help
+                Select this to support only SATURN.
+
+        config BLUERETRO_SYSTEM_PCFX
+            bool "PC-FX"
+            help
+                Select this to support only PC-FX.
+
+        config BLUERETRO_SYSTEM_JVS
+            bool "JVS"
+            help
+                Select this to support only JVS.
+
+        config BLUERETRO_SYSTEM_N64
+            bool "N64"
+            help
+                Select this to support only N64.
+
+        config BLUERETRO_SYSTEM_DC
+            bool "DC"
+            help
+                Select this to support only DC.
+
+        config BLUERETRO_SYSTEM_GC
+            bool "GC"
+            help
+                Select this to support only GC.
+
+        config BLUERETRO_SYSTEM_WII_EXT
+            bool "Wii ext."
+            help
+                Select this to support only Wii ext.
+
+        config BLUERETRO_SYSTEM_EXP_BOARD
+            bool "Exp. Board"
+            help
+                Select this to support only Ext. Board.
+
+    endchoice
+
+    menu "Debug"
+
+        config BLUERETRO_BT_DISABLE
+            bool "Disable Bluetooth init"
+            help
+                Select this to disable Bluetooth init.
+
+        config BLUERETRO_BT_H4_TRACE
+            bool "Enable Bluetooth H4 tracing"
+            help
+                Select this to enable Bluetooth H4 tracing.
+
+        config BLUERETRO_WIRED_TRACE
+            bool "Enable wired trace"
+            help
+                Select this to enable wired trace.
+
+        config BLUERETRO_BT_TIMING_TESTS
+            bool "Enable Bluetooth timing tests"
+            help
+                Select this to enable Bluetooth timeing tests.
+
+
+        config BLUERETRO_BT_REPORT_INTERVAL_STATS
+            bool "Print interval between receive Bluetooth HID report"
+            depends on BLUERETRO_BT_TIMING_TESTS
+            help
+                Print interval between receive Bluetooth HID report.
+
+        choice
+            prompt "Enable Bluetooth minimum latency test on GPIO26"
+            depends on BLUERETRO_BT_TIMING_TESTS
+            optional
+            help
+                Select to enable Bluetooth minimum latency test.
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_PS3
+                bool "PS3"
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_PS4
+                bool "PS4"
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_PS5
+                bool "PS5"
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_WIIU
+                bool "WIIU"
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_XB1
+                bool "XB1"
+
+            config BLUERETRO_BT_MIN_LATENCY_TEST_SW
+                bool "SW"
+
+        endchoice
+
+    endmenu
+
+endmenu
