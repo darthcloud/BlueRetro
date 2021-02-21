@@ -28,8 +28,8 @@
 #define BT_RX 1
 #define BT_DEV_MAX 7
 
-#define LINK_KEYS_FILE "/sd/linkkeys.bin"
-#define BDADDR_FILE "/sd/bdaddr.bin"
+#define LINK_KEYS_FILE "/fs/linkkeys.bin"
+#define BDADDR_FILE "/fs/bdaddr.bin"
 
 enum {
     /* BT CTRL flags */

@@ -7,10 +7,14 @@
 #include <esp_vfs_fat.h>
 #include <sdmmc_cmd.h>
 #include <driver/sdmmc_host.h>
-#include "sd.h"
+#include <esp_spiffs.h>
+#include <esp_err.h>
+#include "sdkconfig.h"
+#include "fs.h"
 
-#define ROOT "/sd"
+#define ROOT "/fs"
 
+#ifdef CONFIG_BLUERETRO_FAT_ON_SDCARD
 int32_t sd_init(void) {
     int32_t ret;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -48,4 +52,50 @@ int32_t sd_init(void) {
     sdmmc_card_print_info(stdout, card);
 
     return 0;
+}
+#endif
+
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+int32_t spiffs_init(void) {
+    int32_t ret;
+
+    esp_vfs_spiffs_conf_t conf = {
+      .base_path = ROOT,
+      .partition_label = NULL,
+      .max_files = 5,
+      .format_if_mount_failed = true
+    };
+
+    // Use settings defined above to initialize and mount SPIFFS filesystem.
+    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
+    ret = esp_vfs_spiffs_register(&conf);
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            printf("Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            printf("Failed to find SPIFFS partition");
+        } else {
+            printf("Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+        return ret;
+    }
+
+    size_t total = 0, used = 0;
+    esp_spiffs_info(conf.partition_label, &total, &used);
+
+    return 0;
+}
+#endif
+
+int32_t fs_init(void) {
+#ifdef CONFIG_BLUERETRO_FAT_ON_SDCARD
+    return sd_init();
+#else
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+    return spiffs_init();
+#else
+#error Invalid FS config
+#endif
+#endif
 }

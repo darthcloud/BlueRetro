@@ -9,8 +9,8 @@
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
+#include "system/fs.h"
 #include "system/led.h"
-#include "system/sd.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
@@ -115,9 +115,9 @@ static void wl_init_task(void *arg) {
 
     core0_stall_init();
 
-    if (sd_init()) {
+    if (fs_init()) {
         err_led_set();
-        printf("SD init fail!\n");
+        printf("FATFS init fail!\n");
     }
 
     config_init();

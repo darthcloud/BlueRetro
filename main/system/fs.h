@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SD_H_
-#define _SD_H_
+#ifndef _FS_H_
+#define _FS_H_
 
-int32_t sd_init(void);
+int32_t fs_init(void);
 
-#endif /* _SD_H_ */
+#endif /* _FS_H_ */

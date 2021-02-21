@@ -9,7 +9,7 @@
 #include "adapter.h"
 #include "config.h"
 
-#define CONFIG_FILE "/sd/config.bin"
+#define CONFIG_FILE "/fs/config.bin"
 
 struct config config;
 
@@ -46,7 +46,7 @@ static int32_t config_load_from_file(struct config *data) {
     int32_t ret = -1;
 
     if (stat(CONFIG_FILE, &st) != 0) {
-        printf("%s: No config on SD. Creating...\n", __FUNCTION__);
+        printf("%s: No config on FATFS. Creating...\n", __FUNCTION__);
         config_init_struct(data);
         ret = config_store_on_file(data);
     }
