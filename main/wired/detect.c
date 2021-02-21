@@ -38,9 +38,11 @@ static const uint8_t system_id_high[][4] = {
     {SNES, PCFX, PS2, SATURN},
 };
 
+#if 0
 static const uint8_t output_list[] = {
     3, 5, 18, 23, 26, 27
 };
+#endif
 
 static void IRAM_ATTR detect_intr(void* arg) {
     const uint32_t low_io = GPIO.acpu_int;
@@ -123,7 +125,9 @@ void detect_deinit(void) {
         gpio_reset_pin(detect_pin_high[i]);
     }
     gpio_reset_pin(ALT_SYS_PIN);
+#if 0
     for (uint32_t i = 0; i < ARRAY_SIZE(output_list); i++) {
         gpio_reset_pin(output_list[i]);
     }
+#endif
 }
