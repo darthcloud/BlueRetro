@@ -1,6 +1,7 @@
 [mapping:main]
 archive: libmain.a
 entries:
+    main (noflash)
     atomic (noflash)
     gpio (noflash)
     intr (noflash)

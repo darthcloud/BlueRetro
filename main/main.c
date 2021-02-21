@@ -6,6 +6,7 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "system/bare_metal_app_cpu.h"
 #include "drivers/sd.h"
 #include "drivers/led.h"
 #include "adapter/adapter.h"
@@ -70,9 +71,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* EXP_BOARD */
 };
 
-static void wired_init_task(void *arg) {
-    adapter_init();
-
+static void wired_init_task(void) {
 #if 1
     detect_init();
     while (wired_adapter.system_id <= WIRED_AUTO) {
@@ -80,7 +79,7 @@ static void wired_init_task(void *arg) {
             && config.global_cfg.system_cfg != WIRED_AUTO) {
             break;
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        ets_delay_us(1000);
     }
     detect_deinit();
 #else
@@ -88,16 +87,16 @@ static void wired_init_task(void *arg) {
 #endif
 
     if (wired_adapter.system_id >= 0) {
-        printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
+        ets_printf("# Detected system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
     while (config.magic != CONFIG_MAGIC) {
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        ets_delay_us(1000);
     }
 
     if (config.global_cfg.system_cfg < WIRED_MAX && config.global_cfg.system_cfg != WIRED_AUTO) {
         wired_adapter.system_id = config.global_cfg.system_cfg;
-        printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
+        ets_printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -107,7 +106,6 @@ static void wired_init_task(void *arg) {
     if (wired_adapter.system_id < WIRED_MAX && wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
     }
-    vTaskDelete(NULL);
 }
 
 static void wl_init_task(void *arg) {
@@ -129,7 +127,9 @@ static void wl_init_task(void *arg) {
 
 void app_main()
 {
+    adapter_init();
+
     xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2048, NULL, 10, NULL, 0);
-    xTaskCreatePinnedToCore(wired_init_task, "wired_init_task", 2048, NULL, 10, NULL, 1);
+    start_app_cpu(wired_init_task);
 }
 
