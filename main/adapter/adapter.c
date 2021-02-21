@@ -7,10 +7,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <freertos/FreeRTOS.h>
-#include <freertos/ringbuf.h>
 #include <xtensa/hal.h>
 #include <esp_timer.h>
 #include "sdkconfig.h"
+#include "queue_bss.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "config.h"
@@ -318,7 +318,7 @@ static void adapter_fb_stop_cb(void* arg) {
     uint8_t dev_id = (uint8_t)(uintptr_t)arg;
 
     /* Send 1 byte, system that require callback stop shall look for that */
-    xRingbufferSend(wired_adapter.input_q_hdl, &dev_id, 1, 0);
+    queue_bss_enqueue(wired_adapter.input_q_hdl, &dev_id, 1);
 }
 
 uint8_t btn_id_to_axis(uint8_t btn_id) {
@@ -395,7 +395,7 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
     return 1;
 }
 
-void adapter_init_buffer(uint8_t wired_id) {
+void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     if (wired_adapter.system_id != WIRED_NONE && buffer_init_func[wired_adapter.system_id]) {
         buffer_init_func[wired_adapter.system_id](config.out_cfg[wired_id].dev_mode, &wired_adapter.data[wired_id]);
     }
@@ -477,18 +477,15 @@ uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt
 }
 
 void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len) {
-    UBaseType_t ret;
-    ret = xRingbufferSendFromISR(wired_adapter.input_q_hdl, data, len, NULL);
-    if (ret != pdTRUE) {
-        ets_printf("# %s input_q full!\n", __FUNCTION__);
-    }
+    /* Best efford only on fb */
+    queue_bss_enqueue(wired_adapter.input_q_hdl, data, len);
 }
 
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_NONE;
 
-    wired_adapter.input_q_hdl = xRingbufferCreate(64, RINGBUF_TYPE_NOSPLIT);
+    wired_adapter.input_q_hdl = queue_bss_init(16, 16);
     if (wired_adapter.input_q_hdl == NULL) {
-        printf("# %s: Failed to create ring buffer\n", __FUNCTION__);
+        ets_printf("# %s: Failed to create fb queue\n", __FUNCTION__);
     }
 }
