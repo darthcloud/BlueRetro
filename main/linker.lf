@@ -1,0 +1,4 @@
+[mapping:main]
+archive: libmain.a
+entries:
+    atomic (noflash)

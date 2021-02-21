@@ -50,5 +50,6 @@ idf_component_register(SRCS "main.c"
                                  "bluetooth"
                                  "drivers"
                                  "wired"
-                                 "zephyr")
+                                 "zephyr"
+                    LDFRAGMENTS linker.lf)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)
