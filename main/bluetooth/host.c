@@ -21,8 +21,6 @@
 #include "tools/util.h"
 #include "debug.h"
 
-//#define BT_DBG /* Run bt_host_dbg function after HID channels are setup */
-
 #define BT_TX 0
 #define BT_RX 1
 #define BT_DEV_MAX 7
@@ -320,7 +318,7 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     bt_h4_trace(data, len, BT_RX);
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
-#ifdef BT_DBG
+#ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     if (atomic_test_bit(&bt_flags, BT_HOST_DBG_MODE)) {
         bt_dbg(data, len);
     }
@@ -337,7 +335,7 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
             printf("# %s unsupported packet type: 0x%02X\n", __FUNCTION__, bt_hci_pkt->h4_hdr.type);
             break;
     }
-#ifdef BT_DBG
+#ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     }
 #endif
 
@@ -419,7 +417,7 @@ int32_t bt_host_init(void) {
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
-#ifdef BT_DBG
+#ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -501,7 +499,7 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
 }
 
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
-#ifdef BT_DBG
+#ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
     bt_dbg_init(device->type);
 #else
