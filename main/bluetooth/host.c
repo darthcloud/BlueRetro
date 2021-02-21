@@ -12,6 +12,7 @@
 #include <esp_bt.h>
 #include <nvs_flash.h>
 #include <driver/gpio.h>
+#include "queue_bss.h"
 #include "host.h"
 #include "hci.h"
 #include "l2cap.h"
@@ -194,19 +195,20 @@ static void bt_tx_task(void *param) {
 }
 
 static void bt_fb_task(void *param) {
-    size_t fb_len;
+    uint32_t *fb_len;
     uint8_t *fb_data;
 
     while(1) {
         /* Look for rumble/led feedback data */
-        fb_data = (uint8_t *)xRingbufferReceive(wired_adapter.input_q_hdl, &fb_len, portMAX_DELAY);
+        fb_data = (uint8_t *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
         if (fb_data) {
             struct bt_dev *device = &bt_dev[fb_data[0]];
-            if (adapter_bridge_fb(fb_data, fb_len, &bt_adapter.data[device->id])) {
+            if (adapter_bridge_fb(fb_data, *fb_len, &bt_adapter.data[device->id])) {
                 bt_hid_feedback(device, bt_adapter.data[device->id].output);
             }
-            vRingbufferReturnItem(wired_adapter.input_q_hdl, (void *)fb_data);
+            queue_bss_return(wired_adapter.input_q_hdl, fb_data, fb_len);
         }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
