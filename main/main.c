@@ -100,7 +100,7 @@ static void wired_init_task(void *arg) {
         printf("# Config override system : %d: %s\n", wired_adapter.system_id, sys_name[wired_adapter.system_id]);
     }
 
-    for (uint32_t i = 0; i < WIRED_MAX; i++) {
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         adapter_init_buffer(i);
     }
 
