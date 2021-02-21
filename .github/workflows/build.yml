@@ -38,7 +38,7 @@ jobs:
       working-directory: ./BlueRetro
       run: |
         . ../esp-idf/export.sh
-        idf.py build
+        for file in configs/*; do cp configs/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact
@@ -48,5 +48,5 @@ jobs:
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
-          BlueRetro/build/BlueRetro.bin
+          BlueRetro/build/BlueRetro*.bin
         if-no-files-found: error
