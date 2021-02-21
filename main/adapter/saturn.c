@@ -298,6 +298,11 @@ static void saturn_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wir
 static void saturn_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     uint16_t buttons = *(uint16_t *)wired_data->output;
 
+    if (!atomic_test_bit(&wired_data->flags, WIRED_KBMON_INIT)) {
+        kbmon_init(ctrl_data->index, saturn_kb_id_to_scancode);
+        atomic_set_bit(&wired_data->flags, WIRED_KBMON_INIT);
+    }
+
     /* Use BlueRetro KB/Gamepad mapping here */
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & BIT(i)) {

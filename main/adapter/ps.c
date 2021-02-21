@@ -286,6 +286,11 @@ static void ps_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
 }
 
 static void ps_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    if (!atomic_test_bit(&wired_data->flags, WIRED_KBMON_INIT)) {
+        kbmon_init(ctrl_data->index, ps_kb_id_to_scancode);
+        kbmon_set_typematic(ctrl_data->index, 1, 500000, 90000);
+        atomic_set_bit(&wired_data->flags, WIRED_KBMON_INIT);
+    }
     kbmon_update(ctrl_data->index, ctrl_data);
 }
 

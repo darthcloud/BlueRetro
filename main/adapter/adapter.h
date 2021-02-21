@@ -255,6 +255,7 @@ enum {
     WIRED_SAVE_MEM,
     WIRED_WAITING_FOR_RELEASE,
     WIRED_GPIO_INIT,
+    WIRED_KBMON_INIT,
 };
 
 /* Dev mode */

@@ -13,7 +13,6 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
-#include "adapter/saturn.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "sega_io.h"
@@ -891,7 +890,6 @@ void sega_io_init(void)
                             break;
                         case DEV_KB:
                             mt_dev_type[i][j] = DEV_SATURN_KB;
-                            kbmon_init(j + i * 2, saturn_kb_id_to_scancode);
                             break;
                         case DEV_MOUSE:
                             mt_dev_type[i][j] = DEV_SEGA_MOUSE;
@@ -909,7 +907,6 @@ void sega_io_init(void)
                         break;
                     case DEV_KB:
                         dev_type[i] = DEV_SATURN_KB;
-                        kbmon_init(i, saturn_kb_id_to_scancode);
                         break;
                     case DEV_MOUSE:
                         dev_type[i] = DEV_SEGA_MOUSE;

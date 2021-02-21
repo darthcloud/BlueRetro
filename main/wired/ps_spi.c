@@ -18,7 +18,6 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
-#include "adapter/ps.h"
 #include "ps_spi.h"
 
 enum {
@@ -606,8 +605,6 @@ void ps_spi_init(void) {
                 case DEV_KB:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
                     ps_ctrl_ports[i].dev_id[0] = 0x96;
-                    kbmon_init(i, ps_kb_id_to_scancode);
-                    kbmon_set_typematic(i, 1, 500000, 90000);
                     break;
                 case DEV_MOUSE:
                     ps_ctrl_ports[i].dev_type = DEV_PSX_MOUSE;
