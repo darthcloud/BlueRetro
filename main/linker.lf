@@ -5,6 +5,7 @@ entries:
     gpio (noflash)
     intr (noflash)
     detect (noflash)
+    jvs (noflash)
     npiso (noflash)
     nsi (noflash)
     ps_spi (noflash)

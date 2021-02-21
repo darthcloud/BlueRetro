@@ -4,16 +4,18 @@
  */
 
 #include <string.h>
-#include <driver/periph_ctrl.h>
+#include <hal/clk_gate_ll.h>
 #include <soc/uart_periph.h>
-#include <driver/gpio.h>
 #include <hal/uart_ll.h>
 #include <esp32/rom/ets_sys.h>
+#include <esp32/rom/gpio.h>
 #include <esp32/clk.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "system/gpio.h"
+#include "system/intr.h"
 #include "jvs.h"
 
 //#define JVS_TRACE
@@ -92,7 +94,7 @@ static inline void jvs_write_txfifo(const uint8_t *buf, uint32_t len)
     WRITE_PERI_REG(UART_FIFO_AHB_REG(1), (sum % 256));
 }
 
-static void IRAM_ATTR jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_buf, uint32_t *tx_len) {
+static void jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_buf, uint32_t *tx_len) {
     uint8_t *end = rx_buf + rx_len;
     uint8_t *jvs = rx_buf;
     uint8_t len = 0;
@@ -228,7 +230,7 @@ static void IRAM_ATTR jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_b
     }
 }
 
-static void IRAM_ATTR uart_rx(void* arg) {
+static uint32_t uart_rx(uint32_t cause) {
     uint32_t intr_status = UART1.int_st.val;
 
     if (intr_status & UART_INTR_RXFIFO_TOUT) {
@@ -266,6 +268,7 @@ static void IRAM_ATTR uart_rx(void* arg) {
         GPIO.out_w1tc = JVS_RTS_MASK;
     }
     UART1.int_clr.val = intr_status;
+    return 0;
 }
 
 void jvs_init(void) {
@@ -280,27 +283,27 @@ void jvs_init(void) {
         .pin_bit_mask = JVS_RTS_MASK,
     };
 
-    periph_module_enable(PERIPH_UART1_MODULE);
+    periph_ll_enable_clk_clear_rst(PERIPH_UART1_MODULE);
 
     /* JVS_SENSE is output */
-    gpio_config(&jvs_sense_conf);
+    gpio_config_iram(&jvs_sense_conf);
     GPIO.out_w1ts = JVS_SENSE_MASK;
 
     /* JVS_RTS is output */
-    gpio_config(&jvs_rts_conf);
+    gpio_config_iram(&jvs_rts_conf);
     GPIO.out_w1tc = JVS_RTS_MASK;
 
     /* JVS_TX is output */
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[JVS_TX_PIN], PIN_FUNC_GPIO);
-    gpio_set_direction(JVS_TX_PIN, GPIO_MODE_INPUT_OUTPUT);
-    gpio_set_level(JVS_TX_PIN, 1);
-    gpio_matrix_out(JVS_TX_PIN, uart_periph_signal[UART_DEV].tx_sig, false, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[JVS_TX_PIN], PIN_FUNC_GPIO);
+    gpio_set_direction_iram(JVS_TX_PIN, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_level_iram(JVS_TX_PIN, 1);
+    gpio_matrix_out(JVS_TX_PIN, U1TXD_OUT_IDX, false, false);
 
     /* JVS_RX is input */
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[JVS_RX_PIN], PIN_FUNC_GPIO);
-    gpio_set_pull_mode(JVS_RX_PIN, GPIO_PULLUP_ONLY);
-    gpio_set_direction(JVS_RX_PIN, GPIO_MODE_INPUT);
-    gpio_matrix_in(JVS_RX_PIN, uart_periph_signal[UART_DEV].rx_sig, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[JVS_RX_PIN], PIN_FUNC_GPIO);
+    gpio_set_pull_mode_iram(JVS_RX_PIN, GPIO_PULLUP_ONLY);
+    gpio_set_direction_iram(JVS_RX_PIN, GPIO_MODE_INPUT);
+    gpio_matrix_in(JVS_RX_PIN, U1RXD_IN_IDX, false);
 
     //Configure UART
     UART1.int_ena.val &= (~0x7ffff);
@@ -331,5 +334,5 @@ void jvs_init(void) {
     uart_ll_rxfifo_rst(&UART1);
     uart_ll_txfifo_rst(&UART1);
 
-    esp_intr_alloc(ETS_UART1_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3, uart_rx, NULL, NULL);
+    intexc_alloc_iram(ETS_UART1_INTR_SOURCE, 19, uart_rx);
 }
