@@ -200,10 +200,13 @@ static void wl_init_task(void *arg) {
 
     config_init();
 
+#ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {
         err_led_set();
         printf("Bluetooth init fail!\n");
     }
+#endif
+
     vTaskDelete(NULL);
 }
 
