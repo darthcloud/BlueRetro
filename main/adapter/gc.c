@@ -24,13 +24,13 @@ enum {
     GC_L,
 };
 
-static const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       2,       3,       4,      5
 };
 
-static const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
@@ -103,7 +103,7 @@ static const uint8_t gc_kb_scancode[KBM_MAX] = {
     0x55, 0x5A, 0x00,
 };
 
-void gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {

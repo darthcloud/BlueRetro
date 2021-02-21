@@ -39,13 +39,13 @@ enum {
     DC_KB_RWIN,
 };
 
-static const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     7,       6,       5,       4,       0,      1
 };
 
-static const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     2,       3,       1,       0,       5,      4
@@ -56,7 +56,7 @@ static const uint8_t dc_kb_keycode_idx[] =
     1, 0, 7, 6, 5, 4
 };
 
-static const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -66,7 +66,7 @@ static const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
-static const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
     {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
@@ -166,7 +166,7 @@ static const uint8_t dc_kb_scancode[KBM_MAX] = {
     0x00, 0x00, 0x00,
 };
 
-void dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {

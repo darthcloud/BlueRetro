@@ -30,13 +30,13 @@ enum {
     JVS_3,
 };
 
-static const uint8_t jvs_axes_idx[JVS_AXES_MAX] =
+static DRAM_ATTR const uint8_t jvs_axes_idx[JVS_AXES_MAX] =
 {
 /*  AXIS_LX, AXIS_LY  */
     0,       1,
 };
 
-static const struct ctrl_meta jvs_axes_meta[JVS_AXES_MAX] =
+static DRAM_ATTR const struct ctrl_meta jvs_axes_meta[JVS_AXES_MAX] =
 {
     {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
     {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
@@ -62,7 +62,7 @@ static const uint32_t jvs_btns_mask[32] = {
     BIT(JVS_6), BIT(JVS_8), 0, BIT(JVS_10),
 };
 
-void jvs_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR jvs_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct jvs_map *map = (struct jvs_map *)wired_data->output;
 
     map->coins = 0x0000;

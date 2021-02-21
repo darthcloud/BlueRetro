@@ -149,7 +149,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* EXP_BOARD */
 };
 
-static buffer_init_t buffer_init_func[WIRED_MAX] = {
+static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, //para_auto_init_buffer, /* WIRED_AUTO */
     para_1p_init_buffer, /* PARALLEL_1P */
     para_2p_init_buffer, /* PARALLEL_2P */

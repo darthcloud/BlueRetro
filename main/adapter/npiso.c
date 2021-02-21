@@ -40,7 +40,7 @@ static const uint32_t npiso_btns_mask[32] = {
     BIT(NPISO_R), 0, 0, 0,
 };
 
-void npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct npiso_map *map = (struct npiso_map *)wired_data->output;
 
     map->buttons = 0xFFFF;

@@ -67,13 +67,13 @@ enum {
     GENESIS_MODE,
 };
 
-static const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       1,       0,     1
 };
 
-static const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
     {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
@@ -341,7 +341,7 @@ static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     /* Hackish but wtv */
     struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
     struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;

@@ -29,19 +29,19 @@ enum {
     PS_S,
 };
 
-static const uint8_t ps_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t ps_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     2,       3,       0,       1,       14,     15
 };
 
-static const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       1,       0,     1
 };
 
-static const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -51,7 +51,7 @@ static const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
-static const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 128},
     {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 128, .polarity = 1},
@@ -141,7 +141,7 @@ static const uint8_t ps_kb_scancode[KBM_MAX] = {
     0x59, 0x17, 0x00,
 };
 
-void ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {

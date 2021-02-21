@@ -26,19 +26,19 @@ enum {
     SATURN_R,
 };
 
-static const uint8_t saturn_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t saturn_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       0,       3,      2
 };
 
-static const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       1,       0,       1,       0,     1
 };
 
-static const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
@@ -48,7 +48,7 @@ static const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
 
-static const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
     {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
@@ -142,7 +142,7 @@ static const uint8_t saturn_kb_scancode[KBM_MAX] = {
     0x59, 0x17, 0x00,
 };
 
-void saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {

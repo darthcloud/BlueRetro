@@ -36,7 +36,7 @@ static const uint32_t para_1p_btns_mask[32] = {
     0, 0, 0, 0,
 };
 
-void para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct para_1p_map *map = (struct para_1p_map *)wired_data->output;
 
     map->buttons = 0xFFFDFFFF;

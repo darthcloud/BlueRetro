@@ -63,7 +63,7 @@ static const uint32_t para_2p_btns_mask[2][32] = {
     },
 };
 
-void para_2p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+void IRAM_ATTR para_2p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct para_2p_map *map1 = (struct para_2p_map *)wired_adapter.data[0].output;
     struct para_2p_map *map2 = (struct para_2p_map *)wired_adapter.data[1].output;
 
