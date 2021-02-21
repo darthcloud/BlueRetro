@@ -8,8 +8,8 @@
 #include <freertos/task.h>
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
-#include "drivers/sd.h"
-#include "drivers/led.h"
+#include "system/led.h"
+#include "system/sd.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
