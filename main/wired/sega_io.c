@@ -4,15 +4,12 @@
  */
 
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <esp32/dport_access.h>
-#include <esp_task_wdt.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
+#include "system/core0_stall.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "sega_io.h"
@@ -380,7 +377,7 @@ static void set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) 
     twh_tx(port, buffer, data - buffer, 0);
 }
 
-static void sega_genesis_task(void *arg) {
+static void sega_genesis_task(void) {
     uint32_t timeout, cur_in, prev_in, change, lock = 0;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p1_out1 = GPIO.out1.val | ~P1_OUT1_MASK;
@@ -403,7 +400,7 @@ p1_poll_start:
             GPIO.out = map1[1] & p2_out0;                                /* P1 Cycle0 low */
             GPIO.out1.val = map1[4] & p2_out1;
             if (!lock) {
-                DPORT_STALL_OTHER_CPU_START();
+                core0_stall_start();
                 ++lock;
             }
             p1_out0 = GPIO.out | ~P1_OUT0_MASK;
@@ -411,7 +408,7 @@ p1_poll_start:
             if (dev_type[0] == DEV_GENESIS_MULTITAP) {
                 GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
                 if (lock) {
-                    DPORT_STALL_OTHER_CPU_END();
+                    core0_stall_end();
                     lock = 0;
                 }
                 set_gen_multitap(0, mt_first_port[0], MT_GEN_PORT_MAX);
@@ -426,7 +423,7 @@ p1_poll_start:
             else if (dev_type[0] == DEV_SEGA_MOUSE) {
                 GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
                 if (lock) {
-                    DPORT_STALL_OTHER_CPU_END();
+                    core0_stall_end();
                     lock = 0;
                 }
                 set_sega_mouse(0, mt_first_port[0]);
@@ -454,7 +451,7 @@ p1_reverse_poll:
             GPIO.out = map1[0] & p2_out0;                                /* P1 Cycle0 high */
             GPIO.out1.val = map1[3] & p2_out1;
             if (!lock) {
-                DPORT_STALL_OTHER_CPU_START();
+                core0_stall_start();
                 ++lock;
             }
             p1_out0 = GPIO.out | ~P1_OUT0_MASK;
@@ -566,7 +563,7 @@ p2_poll_start:
             GPIO.out = p1_out0 & map2[1];                                /* P2 Cycle0 low */
             GPIO.out1.val = p1_out1 & map2[4];
             if (!lock) {
-                DPORT_STALL_OTHER_CPU_START();
+                core0_stall_start();
                 ++lock;
             }
             p2_out0 = GPIO.out | ~P2_OUT0_MASK;
@@ -574,7 +571,7 @@ p2_poll_start:
             if (dev_type[1] == DEV_GENESIS_MULTITAP) {
                 GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
                 if (lock) {
-                    DPORT_STALL_OTHER_CPU_END();
+                    core0_stall_end();
                     lock = 0;
                 }
                 set_gen_multitap(1, mt_first_port[1], MT_GEN_PORT_MAX);
@@ -589,7 +586,7 @@ p2_poll_start:
             else if (dev_type[1] == DEV_SEGA_MOUSE) {
                 GPIO.out1_w1ts.val = BIT(TP_CTRL_PIN - 32);
                 if (lock) {
-                    DPORT_STALL_OTHER_CPU_END();
+                    core0_stall_end();
                     lock = 0;
                 }
                 set_sega_mouse(1, mt_first_port[1]);
@@ -617,7 +614,7 @@ p2_reverse_poll:
             GPIO.out = p1_out0 & map2[0];                                /* P2 Cycle0 high */
             GPIO.out1.val = p1_out1 & map2[3];
             if (!lock) {
-                DPORT_STALL_OTHER_CPU_START();
+                core0_stall_start();
                 ++lock;
             }
             p2_out0 = GPIO.out | ~P2_OUT0_MASK;
@@ -723,13 +720,13 @@ p2_reverse_poll:
         }
 next_poll:
         if (lock) {
-            DPORT_STALL_OTHER_CPU_END();
+            core0_stall_end();
             lock = 0;
         }
     }
 }
 
-static void sega_saturn_task(void *arg) {
+static void sega_saturn_task(void) {
     uint32_t timeout, cur_in, prev_in, change;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p2_out0 = GPIO.out | ~P2_OUT0_MASK;
@@ -823,7 +820,7 @@ next_poll:
     }
 }
 
-static void ea_genesis_task(void *arg) {
+static void ea_genesis_task(void) {
     uint32_t cur_in0, prev_in0, change0 = 0, cur_in1, prev_in1, change1 = 1, id = 0;
 
     cur_in0 = GPIO.in;
@@ -854,8 +851,7 @@ static void ea_genesis_task(void *arg) {
     }
 }
 
-void sega_io_init(void)
-{
+void sega_io_init(void) {
     gpio_config_t io_conf = {0};
     uint8_t port_cnt = 0;
 
@@ -1083,21 +1079,15 @@ void sega_io_init(void)
         }
     }
 
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if (idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_delete(idle_1));
-    }
-#endif
     if (wired_adapter.system_id == GENESIS) {
         if (dev_type[0] == DEV_EA_MULTITAP) {
-            xTaskCreatePinnedToCore(ea_genesis_task, "ea_genesis_task", 2048, NULL, 10, NULL, 1);
+            ea_genesis_task();
         }
         else {
-            xTaskCreatePinnedToCore(sega_genesis_task, "sega_genesis_task", 2048, NULL, 10, NULL, 1);
+            sega_genesis_task();
         }
     }
     else {
-        xTaskCreatePinnedToCore(sega_saturn_task, "sega_saturn_task", 2048, NULL, 10, NULL, 1);
+        sega_saturn_task();
     }
 }
