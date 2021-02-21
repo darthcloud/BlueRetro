@@ -21,7 +21,6 @@
 #include "tools/util.h"
 #include "debug.h"
 
-//#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */
 //#define BT_DBG /* Run bt_host_dbg function after HID channels are setup */
 
 #define BT_TX 0
@@ -55,9 +54,9 @@ static uint32_t frag_offset = 0;
 static uint8_t frag_buf[1024];
 static esp_timer_handle_t disconn_sw_timer_hdl;
 
-#ifdef H4_TRACE
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
-#endif /* H4_TRACE */
+#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 static int32_t bt_host_load_bdaddr_from_file(void);
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
@@ -71,7 +70,7 @@ static esp_vhci_host_callback_t vhci_host_cb = {
     bt_host_rx_pkt
 };
 
-#ifdef H4_TRACE
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
     uint8_t col;
     uint16_t byte, line;
@@ -95,7 +94,7 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
         printf("\n");
     }
 }
-#endif /* H4_TRACE */
+#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
 static void bt_host_disconn_sw_callback(void *arg) {
     printf("# %s\n", __FUNCTION__);
@@ -182,9 +181,9 @@ static void bt_tx_task(void *param) {
                     vTaskDelay(packet[1] / portTICK_PERIOD_MS);
                 }
                 else {
-#ifdef H4_TRACE
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
                     bt_h4_trace(packet, packet_len, BT_TX);
-#endif /* H4_TRACE */
+#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
                     atomic_clear_bit(&bt_flags, BT_CTRL_READY);
                     esp_vhci_host_send_packet(packet, packet_len);
                 }
@@ -317,9 +316,9 @@ static void bt_host_tx_pkt_ready(void) {
  */
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     struct bt_hci_pkt *bt_hci_pkt = (struct bt_hci_pkt *)data;
-#ifdef H4_TRACE
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
     bt_h4_trace(data, len, BT_RX);
-#endif /* H4_TRACE */
+#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
 #ifdef BT_DBG
     if (atomic_test_bit(&bt_flags, BT_HOST_DBG_MODE)) {
