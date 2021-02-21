@@ -5,7 +5,7 @@
 
 #include "system/gpio.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 
 static const uint8_t output_list[] = {
     3, 5, 16, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33

@@ -18,7 +18,7 @@
 #include "l2cap.h"
 #include "sdp.h"
 #include "att.h"
-#include "util.h"
+#include "tools/util.h"
 #include "debug.h"
 
 //#define H4_TRACE /* Display packet dump that can be parsed by wireshark/text2pcap */

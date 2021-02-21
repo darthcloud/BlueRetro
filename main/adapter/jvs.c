@@ -6,7 +6,7 @@
 #include <string.h>
 #include "zephyr/types.h"
 #include "zephyr/atomic.h"
-#include "util.h"
+#include "tools/util.h"
 #include "jvs.h"
 
 #define JVS_AXES_MAX 2

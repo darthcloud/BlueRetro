@@ -9,7 +9,7 @@
 #include "hci.h"
 #include "att.h"
 #include "hidp_wii.h"
-#include "util.h"
+#include "tools/util.h"
 
 #define BT_INQUIRY_MAX 10
 

@@ -14,7 +14,7 @@
 #include "system/gpio.h"
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"

@@ -8,7 +8,7 @@
 #include <esp_timer.h>
 #include "queue_bss.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "kb_monitor.h"
 
 struct kb_monitor {

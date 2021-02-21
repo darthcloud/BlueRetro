@@ -8,7 +8,7 @@
 #include <math.h>
 #include "zephyr/types.h"
 #include "zephyr/usb_hid.h"
-#include "util.h"
+#include "tools/util.h"
 #include "hid_generic.h"
 
 struct hid_report_meta {

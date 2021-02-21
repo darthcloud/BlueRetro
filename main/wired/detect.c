@@ -6,7 +6,7 @@
 #include "system/intr.h"
 #include "system/gpio.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "adapter/adapter.h"
 #include "detect.h"
 

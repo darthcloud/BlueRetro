@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "wii.h"
 
 #define WIIU_AXES_MAX 4

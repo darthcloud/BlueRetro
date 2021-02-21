@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "sw.h"
 
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30

@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 #include "queue_bss.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "config.h"
 #include "adapter.h"
 #include "npiso.h"

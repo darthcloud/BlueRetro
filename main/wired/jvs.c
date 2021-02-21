@@ -11,7 +11,7 @@
 #include <esp32/rom/gpio.h>
 #include <esp32/clk.h>
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "system/gpio.h"

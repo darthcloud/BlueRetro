@@ -2,7 +2,7 @@
 #include <string.h>
 #include "config.h"
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "parallel_auto.h"
 #include "driver/gpio.h"
 

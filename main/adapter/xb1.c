@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "zephyr/types.h"
-#include "util.h"
+#include "tools/util.h"
 #include "xb1.h"
 
 /* xinput buttons */
