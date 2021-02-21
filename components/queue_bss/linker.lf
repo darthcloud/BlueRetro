@@ -1,0 +1,5 @@
+[mapping:queue_bss]
+archive: libqueue_bss.a
+entries:
+    * (noflash)
+

@@ -1,0 +1,3 @@
+[submodule "components/queue_bss/liblfds"]
+	path = components/queue_bss/liblfds
+	url = https://github.com/liblfds/liblfds7.1.1.git
