@@ -4,12 +4,12 @@
  */
 
 #include <string.h>
-#include <esp32/dport_access.h>
 #include <esp_timer.h>
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "system/core0_stall.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "maple.h"
@@ -150,7 +150,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     GPIO.out_w1ts = maple0 | maple1;
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_OUTPUT);
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_OUTPUT);
-    DPORT_STALL_OTHER_CPU_START();
+    core0_stall_start();
     GPIO.out_w1tc = maple0;
     wait_100ns();
     wait_100ns();
@@ -276,11 +276,9 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     wait_100ns();
     GPIO.out_w1ts = maple1;
 
+    core0_stall_end();
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_INPUT);
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_INPUT);
-    DPORT_STALL_OTHER_CPU_END();
-    /* Send start sequence */
-
 }
 
 static uint32_t maple_rx(uint32_t cause) {
@@ -298,7 +296,7 @@ static uint32_t maple_rx(uint32_t cause) {
     uint32_t maple1;
 
     if (maple0) {
-        DPORT_STALL_OTHER_CPU_START();
+        core0_stall_start();
         maple1 = maple0_to_maple1[__builtin_ffs(maple0) - 1];
         while (1) {
             for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit_cnt) {
@@ -330,8 +328,7 @@ static uint32_t maple_rx(uint32_t cause) {
             ++data;
         }
 maple_end:
-        DPORT_STALL_OTHER_CPU_END();
-
+        core0_stall_end();
         port = pin_to_port[(__builtin_ffs(maple0) - 1)];
         bad_frame = ((bit_cnt - 1) % 8);
 
