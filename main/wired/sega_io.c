@@ -4,21 +4,19 @@
  */
 
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <xtensa/hal.h>
 #include <esp32/dport_access.h>
-#include <esp_intr_alloc.h>
 #include <esp_task_wdt.h>
-#include "driver/gpio.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/saturn.h"
+#include "system/gpio.h"
+#include "system/intr.h"
+#include "sega_io.h"
 
 #define P1_TH_PIN 35
 #define P1_TR_PIN 27
@@ -130,7 +128,7 @@ static uint8_t buffer[6*6];
 static uint32_t *map1 = (uint32_t *)wired_adapter.data[0].output;
 static uint32_t *map2 = (uint32_t *)wired_adapter.data[1].output;
 
-static void IRAM_ATTR tx_nibble(uint8_t port, uint8_t data) {
+static void tx_nibble(uint8_t port, uint8_t data) {
     for (uint8_t i = SIO_R, mask = 0x8; mask; mask >>= 1, i++) {
         if (data & mask) {
             GPIO.out_w1ts = BIT(gpio_pin[port][i]);
@@ -141,7 +139,7 @@ static void IRAM_ATTR tx_nibble(uint8_t port, uint8_t data) {
     }
 }
 
-static void IRAM_ATTR set_sio(uint8_t port, uint8_t sio, uint8_t value) {
+static void set_sio(uint8_t port, uint8_t sio, uint8_t value) {
     uint8_t pin = gpio_pin[port][sio];
 
     if (pin < 32) {
@@ -163,7 +161,7 @@ static void IRAM_ATTR set_sio(uint8_t port, uint8_t sio, uint8_t value) {
 }
 
 /* Three-Wire Handshake */
-static void IRAM_ATTR twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay) {
+static void twh_tx(uint8_t port, uint8_t *data, uint32_t len, uint8_t ack_delay) {
     uint32_t timeout = 0;
     uint8_t tl_state = 0;
     /* TX data */
@@ -226,7 +224,7 @@ end:
 }
 
 /* Saturn analog pad digital mode */
-static void IRAM_ATTR set_analog_digital_pad(uint8_t port, uint8_t src_port) {
+static void set_analog_digital_pad(uint8_t port, uint8_t src_port) {
     buffer[0] = (ID2_SATURN_PAD << 4) | 2;
     memcpy(&buffer[1], wired_adapter.data[src_port].output, 2);
     buffer[3] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
@@ -235,7 +233,7 @@ static void IRAM_ATTR set_analog_digital_pad(uint8_t port, uint8_t src_port) {
 }
 
 /* Saturn analog pad */
-static void IRAM_ATTR set_analog_pad(uint8_t port, uint8_t src_port) {
+static void set_analog_pad(uint8_t port, uint8_t src_port) {
     buffer[0] = (ID2_SATURN_ANALOG_PAD << 4) | 6;
     memcpy(&buffer[1], wired_adapter.data[src_port].output, 6);
     buffer[7] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
@@ -244,7 +242,7 @@ static void IRAM_ATTR set_analog_pad(uint8_t port, uint8_t src_port) {
 }
 
 /* SEGA Mouse */
-static void IRAM_ATTR set_sega_mouse(uint8_t port, uint8_t src_port) {
+static void set_sega_mouse(uint8_t port, uint8_t src_port) {
     buffer[0] = 0xFF;
     if (wired_adapter.system_id == GENESIS) {
         memcpy(&buffer[1], &wired_adapter.data[src_port].output[24], 3);
@@ -264,7 +262,7 @@ static void IRAM_ATTR set_sega_mouse(uint8_t port, uint8_t src_port) {
 }
 
 /* Saturn keyboard */
-static void IRAM_ATTR set_saturn_keyboard(uint8_t port, uint8_t src_port) {
+static void set_saturn_keyboard(uint8_t port, uint8_t src_port) {
     uint32_t len;
     buffer[0] = (ID2_SATURN_KB << 4) | 4;
     memcpy(&buffer[1], wired_adapter.data[src_port].output, 2);
@@ -278,7 +276,7 @@ static void IRAM_ATTR set_saturn_keyboard(uint8_t port, uint8_t src_port) {
 }
 
 /* Saturn multitap */
-static void IRAM_ATTR set_saturn_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) {
+static void set_saturn_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) {
     uint8_t *data = buffer;
     uint32_t len;
     *data++ = (ID2_SATURN_MULTITAP << 4) | 1;
@@ -324,7 +322,7 @@ static void IRAM_ATTR set_saturn_multitap(uint8_t port, uint8_t first_port, uint
 }
 
 /* MegaDrive/Genesis multitap */
-static void IRAM_ATTR set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) {
+static void set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) {
     uint8_t *data = buffer;
     uint32_t odd = 0;
     *data++ = 0x00;
@@ -383,7 +381,7 @@ static void IRAM_ATTR set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t
     twh_tx(port, buffer, data - buffer, 0);
 }
 
-static void IRAM_ATTR sega_genesis_task(void *arg) {
+static void sega_genesis_task(void *arg) {
     uint32_t timeout, cur_in, prev_in, change, lock = 0;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p1_out1 = GPIO.out1.val | ~P1_OUT1_MASK;
@@ -732,7 +730,7 @@ next_poll:
     }
 }
 
-static void IRAM_ATTR sega_saturn_task(void *arg) {
+static void sega_saturn_task(void *arg) {
     uint32_t timeout, cur_in, prev_in, change;
     uint32_t p1_out0 = GPIO.out | ~P1_OUT0_MASK;
     uint32_t p2_out0 = GPIO.out | ~P2_OUT0_MASK;
@@ -826,7 +824,7 @@ next_poll:
     }
 }
 
-static void IRAM_ATTR ea_genesis_task(void *arg) {
+static void ea_genesis_task(void *arg) {
     uint32_t cur_in0, prev_in0, change0 = 0, cur_in1, prev_in1, change1 = 1, id = 0;
 
     cur_in0 = GPIO.in;
@@ -921,16 +919,16 @@ void sega_io_init(void)
         }
     }
     else {
-        io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+        io_conf.intr_type = GPIO_INTR_DISABLE;
         io_conf.mode = GPIO_MODE_OUTPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
         io_conf.pin_bit_mask = 1ULL << TP_CTRL_PIN;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
         io_conf.pin_bit_mask = 1ULL << EA_CTRL_PIN;
-        gpio_config(&io_conf);
-        gpio_set_level(TP_CTRL_PIN, 0);
-        gpio_set_level(EA_CTRL_PIN, 0);
+        gpio_config_iram(&io_conf);
+        gpio_set_level_iram(TP_CTRL_PIN, 0);
+        gpio_set_level_iram(EA_CTRL_PIN, 0);
 
         switch (config.global_cfg.multitap_cfg) {
             case MT_SLOT_1:
@@ -949,7 +947,7 @@ void sega_io_init(void)
             case MT_ALT:
                 dev_type[0] = DEV_EA_MULTITAP;
                 dev_type[1] = DEV_EA_MULTITAP;
-                gpio_set_level(EA_CTRL_PIN, 1);
+                gpio_set_level_iram(EA_CTRL_PIN, 1);
                 break;
             default:
                 mt_first_port[1] = 1;
@@ -991,21 +989,21 @@ void sega_io_init(void)
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         if (dev_type[i] == DEV_SATURN_ANALOG || dev_type[i] == DEV_SATURN_DIGITAL_TWH
             || dev_type[i] == DEV_SATURN_MULTITAP || dev_type[i] == DEV_SATURN_KB) {
-            io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
+            io_conf.intr_type = GPIO_INTR_NEGEDGE;
         }
         else {
-            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+            io_conf.intr_type = GPIO_INTR_DISABLE;
         }
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TH];
         io_conf.mode = GPIO_MODE_INPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
     }
 
     /* TR */
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+        io_conf.intr_type = GPIO_INTR_DISABLE;
         io_conf.pin_bit_mask = 1ULL << gpio_pin[i][SIO_TR];
         if (dev_type[i] == DEV_GENESIS_3BTNS || dev_type[i] == DEV_GENESIS_6BTNS || (i == 0 && dev_type[0] == DEV_EA_MULTITAP)) {
             io_conf.mode = GPIO_MODE_OUTPUT;
@@ -1015,7 +1013,7 @@ void sega_io_init(void)
         }
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
+        gpio_config_iram(&io_conf);
         if (dev_type[i] == DEV_GENESIS_3BTNS || dev_type[i] == DEV_GENESIS_6BTNS) {
             set_sio(i, SIO_TR, 1);
         }
@@ -1030,11 +1028,11 @@ void sega_io_init(void)
             else {
                 io_conf.mode = GPIO_MODE_OUTPUT;
             }
-            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+            io_conf.intr_type = GPIO_INTR_DISABLE;
             io_conf.pin_bit_mask = 1ULL << gpio_pin[i][j];
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-            gpio_config(&io_conf);
+            gpio_config_iram(&io_conf);
             set_sio(i, j, 1);
         }
     }
@@ -1084,7 +1082,7 @@ void sega_io_init(void)
                 }
                 break;
             default:
-                printf("%s Unsupported dev type: %d\n", __FUNCTION__, dev_type[i]);
+                ets_printf("Unsupported dev type: %d\n", dev_type[i]);
         }
     }
 

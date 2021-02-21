@@ -10,3 +10,4 @@ entries:
     npiso (noflash)
     nsi (noflash)
     ps_spi (noflash)
+    sega_io (noflash)
