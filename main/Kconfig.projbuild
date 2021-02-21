@@ -144,6 +144,16 @@ menu "BlueRetro"
             help
                 Select this to enable Generic HID report debug.
 
+        config BLUERETRO_ADAPTER_INPUT_DBG
+            bool "Enable adapter input debug"
+            help
+                Select this to enable adapter input debug.
+
+        config BLUERETRO_ADAPTER_INPUT_MAP_DBG
+            bool "Enable adapter input mapping debug"
+            help
+                Select this to enable adapter input mapping debug.
+
         config BLUERETRO_WIRED_TRACE
             bool "Enable wired trace"
             help

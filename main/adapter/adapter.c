@@ -401,18 +401,13 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
-//#define INPUT_DBG
-//#define INPUT_MAP_DBG
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
-    //uint32_t end, start = xthal_get_ccount();
-    //static uint32_t last = 0;
-    //uint32_t cur = xthal_get_ccount();
-#if 1
+
     if (bt_data->dev_id != BT_NONE && to_generic_func[bt_data->dev_type]) {
         to_generic_func[bt_data->dev_type](bt_data, &ctrl_input);
 
-#ifdef INPUT_DBG
+#ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
         printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s\n",
             BOLD, ctrl_input.axes[0].value, RESET, BOLD, ctrl_input.axes[1].value, RESET, BOLD, ctrl_input.axes[2].value, RESET, BOLD, ctrl_input.axes[3].value, RESET,
             BOLD, ctrl_input.axes[4].value, RESET, BOLD, ctrl_input.axes[5].value, RESET, BOLD, ctrl_input.btns[0].value, RESET, BOLD, ctrl_input.btns[1].value, RESET,
@@ -423,7 +418,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
 
-#ifdef INPUT_MAP_DBG
+#ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
             printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s\n",
                 BOLD, ctrl_output[0].axes[0].value, RESET, BOLD, ctrl_output[0].axes[1].value, RESET, BOLD, ctrl_output[0].axes[2].value, RESET, BOLD, ctrl_output[0].axes[3].value, RESET,
                 BOLD, ctrl_output[0].axes[4].value, RESET, BOLD, ctrl_output[0].axes[5].value, RESET, BOLD, ctrl_output[0].btns[0].value, RESET, BOLD, ctrl_output[0].btns[1].value, RESET,
@@ -439,11 +434,6 @@ void adapter_bridge(struct bt_data *bt_data) {
         }
 #endif
     }
-#endif
-    //end = xthal_get_ccount();
-    //printf("%dus\n", (end - start)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
-    //printf("%dus\n", (cur - last)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
-    //last = cur;
 }
 
 void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us) {
