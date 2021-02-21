@@ -9,5 +9,6 @@ entries:
     maple (noflash)
     npiso (noflash)
     nsi (noflash)
+    parallel (noflash)
     ps_spi (noflash)
     sega_io (noflash)
