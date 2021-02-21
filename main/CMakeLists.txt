@@ -35,8 +35,10 @@ idf_component_register(SRCS "main.c"
                             "bluetooth/hidp_sw.c"
                             "drivers/led.c"
                             "drivers/sd.c"
+                            "system/bare_metal_app_cpu.c"
                             "system/gpio.c"
                             "system/intr.c"
+                            "system/startup.c"
                             "wired/detect.c"
                             "wired/npiso.c"
                             "wired/sega_io.c"
@@ -51,3 +53,4 @@ idf_component_register(SRCS "main.c"
                     LDFRAGMENTS linker.lf)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "-DXT_INTEXC_HOOKS" APPEND)
+target_link_libraries(${COMPONENT_TARGET} "-u ld_include_my_startup_file")
