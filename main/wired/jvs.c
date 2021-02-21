@@ -19,8 +19,6 @@
 #include "system/intr.h"
 #include "jvs.h"
 
-//#define JVS_TRACE
-
 #define UART_DEV 1
 #define JVS_TX_PIN 22
 #define JVS_RX_PIN 21
@@ -241,7 +239,7 @@ static uint32_t uart_rx(uint32_t cause) {
         if (!jvs_read_rxfifo(rx_buf, read_len, &rx_len)) {
             ets_printf("BAD\n");
         }
-#ifdef JVS_TRACE
+#ifdef CONFIG_BLUERETRO_WIRED_TRACE
         if (rx_len) {
             for (uint32_t i = 0; i < rx_len; ++i) {
                 ets_printf("%02X", rx_buf[i]);

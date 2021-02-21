@@ -15,8 +15,6 @@
 #include "system/intr.h"
 #include "maple.h"
 
-//#define WIRED_TRACE
-
 #define ID_CTRL    0x00000001
 #define ID_VMU_MEM 0x00000002
 #define ID_VMU_LCD 0x00000004
@@ -79,7 +77,7 @@ struct maple_pkt {
 
 static const uint8_t gpio_pin[][2] = {
     {21, 22},
-#ifndef WIRED_TRACE
+#ifndef CONFIG_BLUERETRO_WIRED_TRACE
     { 3,  5},
     {18, 23},
     {26, 27},
@@ -100,7 +98,7 @@ static uint32_t maple0_to_maple1[] = {
     0x00, 0x00, BIT(27), 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-#ifndef WIRED_TRACE
+#ifndef CONFIG_BLUERETRO_WIRED_TRACE
 static const uint8_t ctrl_area_dir_name[] = {
     0x72, 0x44, 0x00, 0xFF, 0x63, 0x6D, 0x61, 0x65, 0x20, 0x74, 0x73, 0x61, 0x74, 0x6E, 0x6F, 0x43,
     0x6C, 0x6C, 0x6F, 0x72, 0x20, 0x20, 0x72, 0x65, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -288,7 +286,7 @@ static uint32_t maple_rx(uint32_t cause) {
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = pkt.data;
-#ifdef WIRED_TRACE
+#ifdef CONFIG_BLUERETRO_WIRED_TRACE
     uint32_t byte;
 #endif
     uint32_t port;
@@ -333,7 +331,7 @@ maple_end:
         port = pin_to_port[(__builtin_ffs(maple0) - 1)];
         bad_frame = ((bit_cnt - 1) % 8);
 
-#ifdef WIRED_TRACE
+#ifdef CONFIG_BLUERETRO_WIRED_TRACE
         pre_us = cur_us;
         cur_us = xthal_get_ccount();;
         ets_printf("+%07u: ", (cur_us - pre_us)/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
