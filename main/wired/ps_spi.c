@@ -5,9 +5,13 @@
 
 #include <string.h>
 #include <driver/periph_ctrl.h>
-#include <driver/gpio.h>
 #include <soc/spi_periph.h>
 #include <esp32/rom/ets_sys.h>
+#include <esp32/rom/gpio.h>
+#include "hal/clk_gate_ll.h"
+#include "driver/gpio.h"
+#include "system/intr.h"
+#include "system/gpio.h"
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "util.h"
@@ -33,6 +37,14 @@ enum {
 
 #define ESP_SPI2_HSPI 1
 #define ESP_SPI3_VSPI 2
+
+#define SPI2_HSPI_INTR_NUM 19
+#define SPI3_VSPI_INTR_NUM 20
+#define GPIO_INTR_NUM 21
+
+#define SPI2_HSPI_INTR_MASK (1 << SPI2_HSPI_INTR_NUM)
+#define SPI3_VSPI_INTR_MASK (1 << SPI3_VSPI_INTR_NUM)
+#define GPIO_INTR_MASK (1 << GPIO_INTR_NUM)
 
 /* Name relative to console */
 #define P1_DTR_PIN 34
@@ -60,6 +72,7 @@ enum {
 #define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
 
+uint8_t test[16] = {0x01, 0xA5};
 struct ps_ctrl_port {
     spi_dev_t *spi_hw;
     uint8_t id;
@@ -85,7 +98,7 @@ struct ps_ctrl_port {
 
 static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {0};
 
-static uint32_t IRAM_ATTR get_dtr_state(uint32_t port) {
+static uint32_t get_dtr_state(uint32_t port) {
     if (port == 0) {
         if (GPIO.in1.val & BIT(P1_DTR_PIN - 32)) {
             return 1;
@@ -99,32 +112,32 @@ static uint32_t IRAM_ATTR get_dtr_state(uint32_t port) {
     return 0;
 }
 
-static void IRAM_ATTR set_output_state(uint32_t port, uint32_t enable) {
+static void set_output_state(uint32_t port, uint32_t enable) {
     if (port == 0) {
         if (enable) {
-            gpio_set_direction(P1_DSR_PIN, GPIO_MODE_OUTPUT);
-            gpio_set_direction(P1_RXD_PIN, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(P1_RXD_PIN, spi_periph_signal[ESP_SPI2_HSPI].spiq_out, false, false);
+            gpio_set_direction_iram(P1_DSR_PIN, GPIO_MODE_OUTPUT);
+            gpio_set_direction_iram(P1_RXD_PIN, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(P1_RXD_PIN, HSPIQ_OUT_IDX, false, false);
         }
         else {
-            gpio_set_direction(P1_RXD_PIN, GPIO_MODE_INPUT);
-            gpio_set_direction(P1_DSR_PIN, GPIO_MODE_INPUT);
+            gpio_set_direction_iram(P1_RXD_PIN, GPIO_MODE_INPUT);
+            gpio_set_direction_iram(P1_DSR_PIN, GPIO_MODE_INPUT);
         }
     }
     else {
         if (enable) {
-            gpio_set_direction(P2_DSR_PIN, GPIO_MODE_OUTPUT);
-            gpio_set_direction(P2_RXD_PIN, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(P2_RXD_PIN, spi_periph_signal[ESP_SPI3_VSPI].spiq_out, false, false);
+            gpio_set_direction_iram(P2_DSR_PIN, GPIO_MODE_OUTPUT);
+            gpio_set_direction_iram(P2_RXD_PIN, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(P2_RXD_PIN, VSPIQ_OUT_IDX, false, false);
         }
         else {
-            gpio_set_direction(P2_RXD_PIN, GPIO_MODE_INPUT);
-            gpio_set_direction(P2_DSR_PIN, GPIO_MODE_INPUT);
+            gpio_set_direction_iram(P2_RXD_PIN, GPIO_MODE_INPUT);
+            gpio_set_direction_iram(P2_DSR_PIN, GPIO_MODE_INPUT);
         }
     }
 }
 
-static void IRAM_ATTR toggle_dsr(uint32_t port) {
+static void toggle_dsr(uint32_t port) {
     if (port == 0) {
         GPIO.out_w1tc = BIT(P1_DSR_PIN);
         ets_delay_us(2);
@@ -137,8 +150,9 @@ static void IRAM_ATTR toggle_dsr(uint32_t port) {
     }
 }
 
-static void IRAM_ATTR ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
-    if (port->dev_type != DEV_PSX_MOUSE && port->dev_type != DEV_PSX_FLIGHT && port->dev_type != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
+static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
+    if (port->dev_type != DEV_PSX_MOUSE && port->dev_type != DEV_PSX_FLIGHT
+            && port->dev_type != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
         if (wired_adapter.data[id + port->mt_first_port].output[18]) {
             if (!port->analog_btn[id]) {
                 port->analog_btn[id] = 1;
@@ -160,7 +174,7 @@ static void IRAM_ATTR ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) 
     }
 }
 
-static void IRAM_ATTR ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *req) {
+static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *req) {
     switch (cmd) {
         case 0x42:
         {
@@ -244,7 +258,7 @@ static void IRAM_ATTR ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uin
     }
 }
 
-static void IRAM_ATTR ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *rsp) {
+static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *rsp) {
     *rsp++ = 0x5A;
     switch (cmd) {
         case 0x40:
@@ -364,7 +378,7 @@ static void IRAM_ATTR ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uin
     }
 }
 
-static void IRAM_ATTR ps_cmd_const_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *rsp) {
+static void ps_cmd_const_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, uint8_t *rsp) {
     switch (cmd) {
         case 0x46:
         {
@@ -389,7 +403,7 @@ static void IRAM_ATTR ps_cmd_const_rsp_hdlr(struct ps_ctrl_port *port, uint8_t i
     }
 }
 
-static void IRAM_ATTR packet_end(void* arg) {
+static void packet_end(void *arg) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
     uint32_t port_int[2] = {0};
@@ -434,7 +448,7 @@ static void IRAM_ATTR packet_end(void* arg) {
     if (low_io) GPIO.status_w1tc = low_io;
 }
 
-static void IRAM_ATTR spi_isr(void* arg) {
+static void spi_isr(void* arg) {
     struct ps_ctrl_port *port = (struct ps_ctrl_port *)arg;
     if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state && port->idx > 10) {
         ets_delay_us(0);
@@ -513,6 +527,19 @@ early_end:
     port->spi_hw->cmd.usr = 1;
 }
 
+static uint32_t isr_dispatch(uint32_t cause) {
+    if (cause & SPI2_HSPI_INTR_MASK) {
+        spi_isr((void *)&ps_ctrl_ports[0]);
+    }
+    if (cause & SPI3_VSPI_INTR_MASK) {
+        spi_isr((void *)&ps_ctrl_ports[1]);
+    }
+    if (cause & GPIO_INTR_MASK) {
+        packet_end(NULL);
+    }
+    return 0;
+}
+
 void ps_spi_init(void) {
     gpio_config_t io_conf = {0};
 
@@ -520,7 +547,6 @@ void ps_spi_init(void) {
     ps_ctrl_ports[1].id = 1;
     ps_ctrl_ports[0].spi_hw = &SPI2;
     ps_ctrl_ports[1].spi_hw = &SPI3;
-
 
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
         memset(ps_ctrl_ports[i].dev_id, 0x41, sizeof(ps_ctrl_ports[0].dev_id));
@@ -597,49 +623,48 @@ void ps_spi_init(void) {
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     io_conf.pin_bit_mask = 1ULL << P1_DTR_PIN;
-    gpio_config(&io_conf);
+    gpio_config_iram(&io_conf);
     io_conf.pin_bit_mask = 1ULL << P2_DTR_PIN;
-    gpio_config(&io_conf);
-    gpio_matrix_in(P1_DTR_PIN, spi_periph_signal[ESP_SPI2_HSPI].spics_in, false);
-    gpio_matrix_in(P2_DTR_PIN, spi_periph_signal[ESP_SPI3_VSPI].spics_in, false);
+    gpio_config_iram(&io_conf);
+    gpio_matrix_in(P1_DTR_PIN, HSPICS0_IN_IDX, false);
+    gpio_matrix_in(P2_DTR_PIN, VSPICS0_IN_IDX, false);
 
     /* DSR */
-    gpio_set_level(P1_DSR_PIN, 1);
-    gpio_set_direction(P1_DSR_PIN, GPIO_MODE_INPUT);
-    gpio_set_level(P2_DSR_PIN, 1);
-    gpio_set_direction(P2_DSR_PIN, GPIO_MODE_INPUT);
+    gpio_set_level_iram(P1_DSR_PIN, 1);
+    gpio_set_direction_iram(P1_DSR_PIN, GPIO_MODE_INPUT);
+    gpio_set_level_iram(P2_DSR_PIN, 1);
+    gpio_set_direction_iram(P2_DSR_PIN, GPIO_MODE_INPUT);
 
     /* RXD */
-    gpio_set_level(P1_RXD_PIN, 1);
-    gpio_set_direction(P1_RXD_PIN, GPIO_MODE_INPUT);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P1_RXD_PIN], PIN_FUNC_GPIO);
-    gpio_set_level(P2_RXD_PIN, 1);
-    gpio_set_direction(P2_RXD_PIN, GPIO_MODE_INPUT);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P2_RXD_PIN], PIN_FUNC_GPIO);
+    gpio_set_level_iram(P1_RXD_PIN, 1);
+    gpio_set_direction_iram(P1_RXD_PIN, GPIO_MODE_INPUT);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P1_RXD_PIN], PIN_FUNC_GPIO);
+    gpio_set_level_iram(P2_RXD_PIN, 1);
+    gpio_set_direction_iram(P2_RXD_PIN, GPIO_MODE_INPUT);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P2_RXD_PIN], PIN_FUNC_GPIO);
 
     /* TXD */
-    gpio_set_pull_mode(P1_TXD_PIN, GPIO_PULLUP_ONLY);
-    gpio_set_direction(P1_TXD_PIN, GPIO_MODE_INPUT);
-    gpio_matrix_in(P1_TXD_PIN, spi_periph_signal[ESP_SPI2_HSPI].spid_in, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P1_TXD_PIN], PIN_FUNC_GPIO);
-    gpio_set_pull_mode(P2_TXD_PIN, GPIO_PULLUP_ONLY);
-    gpio_set_direction(P2_TXD_PIN, GPIO_MODE_INPUT);
-    gpio_matrix_in(P2_TXD_PIN, spi_periph_signal[ESP_SPI3_VSPI].spid_in, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P2_TXD_PIN], PIN_FUNC_GPIO);
+    gpio_set_pull_mode_iram(P1_TXD_PIN, GPIO_PULLUP_ONLY);
+    gpio_set_direction_iram(P1_TXD_PIN, GPIO_MODE_INPUT);
+    gpio_matrix_in(P1_TXD_PIN, HSPID_IN_IDX, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P1_TXD_PIN], PIN_FUNC_GPIO);
+    gpio_set_pull_mode_iram(P2_TXD_PIN, GPIO_PULLUP_ONLY);
+    gpio_set_direction_iram(P2_TXD_PIN, GPIO_MODE_INPUT);
+    gpio_matrix_in(P2_TXD_PIN, VSPID_IN_IDX, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P2_TXD_PIN], PIN_FUNC_GPIO);
 
     /* SCK */
-    gpio_set_pull_mode(P1_SCK_PIN, GPIO_PULLUP_ONLY);
-    gpio_set_direction(P1_SCK_PIN, GPIO_MODE_INPUT);
-    gpio_matrix_in(P1_SCK_PIN, spi_periph_signal[ESP_SPI2_HSPI].spiclk_in, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P1_SCK_PIN], PIN_FUNC_GPIO);
-    gpio_set_pull_mode(P2_SCK_PIN, GPIO_PULLUP_ONLY);
-    gpio_set_direction(P2_SCK_PIN, GPIO_MODE_INPUT);
-    gpio_matrix_in(P2_SCK_PIN, spi_periph_signal[ESP_SPI3_VSPI].spiclk_in, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[P2_SCK_PIN], PIN_FUNC_GPIO);
+    gpio_set_pull_mode_iram(P1_SCK_PIN, GPIO_PULLUP_ONLY);
+    gpio_set_direction_iram(P1_SCK_PIN, GPIO_MODE_INPUT);
+    gpio_matrix_in(P1_SCK_PIN, HSPICLK_IN_IDX, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P1_SCK_PIN], PIN_FUNC_GPIO);
+    gpio_set_pull_mode_iram(P2_SCK_PIN, GPIO_PULLUP_ONLY);
+    gpio_set_direction_iram(P2_SCK_PIN, GPIO_MODE_INPUT);
+    gpio_matrix_in(P2_SCK_PIN, VSPICLK_IN_IDX, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[P2_SCK_PIN], PIN_FUNC_GPIO);
 
-
-    periph_module_enable(PERIPH_HSPI_MODULE);
-    periph_module_enable(PERIPH_VSPI_MODULE);
+    periph_ll_enable_clk_clear_rst(PERIPH_HSPI_MODULE);
+    periph_ll_enable_clk_clear_rst(PERIPH_VSPI_MODULE);
 
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
         spi_dev_t *spi_hw = ps_ctrl_ports[i].spi_hw;
@@ -693,7 +718,7 @@ void ps_spi_init(void) {
         spi_hw->cmd.usr = 1;
     }
 
-    esp_intr_alloc(spi_periph_signal[ESP_SPI2_HSPI].irq, 0, spi_isr, (void *)&ps_ctrl_ports[0], NULL);
-    esp_intr_alloc(spi_periph_signal[ESP_SPI3_VSPI].irq, 0, spi_isr, (void *)&ps_ctrl_ports[1], NULL);
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, 0, packet_end, NULL, NULL);
+    intexc_alloc_iram(ETS_SPI2_INTR_SOURCE, SPI2_HSPI_INTR_NUM, isr_dispatch);
+    intexc_alloc_iram(ETS_SPI3_INTR_SOURCE, SPI3_VSPI_INTR_NUM, isr_dispatch);
+    intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, isr_dispatch);
 }
