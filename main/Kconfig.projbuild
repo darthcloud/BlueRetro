@@ -139,6 +139,11 @@ menu "BlueRetro"
             help
                 Select this to enable Bluetooth H4 tracing.
 
+        config BLUERETRO_GENERIC_HID_DEBUG
+            bool "Enable Generic HID report debug"
+            help
+                Select this to enable Generic HID report debug.
+
         config BLUERETRO_WIRED_TRACE
             bool "Enable wired trace"
             help

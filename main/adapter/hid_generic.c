@@ -467,9 +467,8 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     }
 }
 
-//#define HID_DEBUG
 void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-#ifdef HID_DEBUG
+#ifdef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     struct hid_report *report = &bt_data->reports[bt_data->report_type];
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         int32_t len = report->usages[i].bit_size;
@@ -479,19 +478,19 @@ void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         uint32_t bit_shift = offset % 8;
         uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
         if (report->usages[i].bit_size <= 4) {
-            printf("%02X%02X: %s%X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 8) {
-            printf("%02X%02X: %s%02X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%02X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 12) {
-            printf("%02X%02X: %s%03X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%03X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 16) {
-            printf("%02X%02X: %s%04X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%04X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 32) {
-            printf("%02X%02X: %s%08X%s, ", report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%08X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
     }
     printf("\n");
