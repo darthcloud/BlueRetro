@@ -6,4 +6,5 @@ entries:
     intr (noflash)
     detect (noflash)
     npiso (noflash)
+    nsi (noflash)
     ps_spi (noflash)

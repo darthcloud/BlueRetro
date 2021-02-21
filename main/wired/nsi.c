@@ -4,17 +4,16 @@
  */
 
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <driver/gpio.h>
+#include <hal/clk_gate_ll.h>
 #include <driver/rmt.h>
-#include <driver/periph_ctrl.h>
-#include <esp_task_wdt.h>
+#include <hal/rmt_ll.h>
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "system/gpio.h"
+#include "system/intr.h"
 #include "nsi.h"
 
 #define BIT_ZERO 0x80020006
@@ -89,7 +88,7 @@ static uint8_t buf[128] = {0};
 static uint32_t poll_after_mem_wr = 0;
 static uint8_t last_rumble[4] = {0};
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
+static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
     volatile uint32_t *item_ptr = &rmt_items[item].val;
@@ -113,7 +112,7 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_crc(uint32_t item, const uint8_t *d
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *xor, uint32_t stop_bit) {
+static uint16_t nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *xor, uint32_t stop_bit) {
     uint32_t bit_len = item + len * 8;
     volatile uint32_t *item_ptr = &rmt_items[item].val;
 
@@ -135,7 +134,7 @@ static uint16_t IRAM_ATTR nsi_bytes_to_items_xor(uint32_t item, const uint8_t *d
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
+static uint16_t nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
     uint32_t bit_len = item + len * 8;
     volatile uint32_t *item_ptr = &rmt_items[item].val;
 
@@ -154,7 +153,7 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes(uint32_t item, uint8_t *data, uint3
     return item;
 }
 
-static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t len, uint8_t *crc) {
+static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t len, uint8_t *crc) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
     volatile uint32_t *item_ptr = &rmt_items[item].val;
@@ -173,7 +172,7 @@ static uint16_t IRAM_ATTR nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, u
     return item;
 }
 
-static void IRAM_ATTR n64_isr(void *arg) {
+static uint32_t n64_isr(uint32_t cause) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -347,9 +346,10 @@ static void IRAM_ATTR n64_isr(void *arg) {
         }
     }
     RMT.int_clr.val = intr_st;
+    return 0;
 }
 
-static void IRAM_ATTR gc_isr(void *arg) {
+static uint32_t gc_isr(uint32_t cause) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -452,12 +452,13 @@ static void IRAM_ATTR gc_isr(void *arg) {
         }
     }
     RMT.int_clr.val = intr_st;
+    return 0;
 }
 
 void nsi_init(void) {
     uint32_t system = (wired_adapter.system_id == N64) ? 0 : 1;
 
-    periph_module_enable(PERIPH_RMT_MODULE);
+    periph_ll_enable_clk_clear_rst(PERIPH_RMT_MODULE);
 
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
 
@@ -479,18 +480,22 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_thres = 0; /* No minimum length */
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_pin[i]], PIN_FUNC_GPIO);
-        gpio_set_direction(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[gpio_pin[i]], PIN_FUNC_GPIO);
+        gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
         gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
         gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
 
-        rmt_set_tx_intr_en(rmt_ch[i][system], 1);
-        rmt_set_rx_intr_en(rmt_ch[i][system], 1);
-        rmt_set_err_intr_en(rmt_ch[i][system], 1);
+        rmt_ll_enable_tx_end_interrupt(&RMT, rmt_ch[i][system], 1);
+        rmt_ll_enable_rx_end_interrupt(&RMT, rmt_ch[i][system], 1);
+        rmt_ll_enable_rx_err_interrupt(&RMT, rmt_ch[i][system], 1);
 
-        rmt_rx_start(rmt_ch[i][system], 1);
+        rmt_ll_rx_enable(&RMT, rmt_ch[i][system], 0);
+        rmt_ll_rx_reset_pointer(&RMT, rmt_ch[i][system]);
+        rmt_ll_clear_rx_end_interrupt(&RMT, rmt_ch[i][system]);
+        rmt_ll_enable_rx_end_interrupt(&RMT, rmt_ch[i][system], 1);
+        rmt_ll_rx_enable(&RMT, rmt_ch[i][system], 1);
     }
 
-    rmt_isr_register(wired_adapter.system_id == N64 ? n64_isr : gc_isr, NULL, ESP_INTR_FLAG_LEVEL3, NULL);
+    intexc_alloc_iram(ETS_RMT_INTR_SOURCE, 19, wired_adapter.system_id == N64 ? n64_isr : gc_isr);
 }
 
