@@ -25,8 +25,8 @@ jobs:
     - name: Checkout main repo
       working-directory: ./BlueRetro
       run: |
-        git fetch --force ${{ github.event.repository.git_url }} "+refs/heads/*:refs/remotes/origin/*"
-        git fetch --force ${{ github.event.repository.git_url }} "+refs/pull/*:refs/remotes/origin/pr/*"
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.event.repository.full_name }}.git "+refs/heads/*:refs/remotes/origin/*"
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.event.repository.full_name }}.git "+refs/pull/*:refs/remotes/origin/pr/*"
         git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
         git submodule update --init --recursive
     - name: Install ESP-IDF
