@@ -53,6 +53,7 @@ dkms.conf
 
 # BlueRetro addition
 .python-version
+sdkconfig
 sdkconfig.old
 *.h4
 *.zip
