@@ -55,6 +55,7 @@ dkms.conf
 .python-version
 sdkconfig
 sdkconfig.old
+version.txt
 *.h4
 *.zip
 build/
