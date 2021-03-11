@@ -137,7 +137,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                         meta->hid_axes_idx[AXIS_RX] = i;
                         meta->hid_axes_meta[AXIS_RX].neutral = 0;
                         meta->hid_axes_meta[AXIS_RX].abs_max = pow(2, report->usages[i].bit_size) / 2;
-                        meta->hid_axes_meta[AXIS_RY].relative = 1;
+                        meta->hid_axes_meta[AXIS_RX].relative = 1;
                         break;
                     case USAGE_GEN_DESKTOP_Y:
                         meta->hid_mask[0] |= BIT(MOUSE_Y_DOWN) | BIT(MOUSE_Y_UP);
@@ -155,7 +155,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                         meta->hid_axes_meta[AXIS_LY].neutral = 0;
                         meta->hid_axes_meta[AXIS_LY].abs_max = pow(2, report->usages[i].bit_size) / 2;
                         meta->hid_axes_meta[AXIS_LY].polarity = 1;
-                        meta->hid_axes_meta[AXIS_RY].relative = 1;
+                        meta->hid_axes_meta[AXIS_LY].relative = 1;
                         break;
                 }
                 break;

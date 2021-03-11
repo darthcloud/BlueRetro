@@ -316,6 +316,7 @@ struct ctrl_meta {
 
 struct ctrl {
     int32_t value;
+    int32_t relative;
     const struct ctrl_meta *meta;
 };
 

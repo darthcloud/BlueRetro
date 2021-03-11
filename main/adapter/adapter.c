@@ -214,6 +214,8 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
         if (sign_check >= 0) {
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
+                /* Keep track of source axis type */
+                out->axes[dst_axis_idx].relative = ctrl_input.axes[src_axis_idx].meta->relative;
                 /* Dst is an axis */
                 int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input.axes[src_axis_idx].meta->abs_max) + ctrl_input.axes[src_axis_idx].meta->deadzone;
                 /* Check if axis over deadzone */
