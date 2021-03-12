@@ -19,9 +19,81 @@
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "hal/gpio_ll.h"
+#include "soc/rtc_io_periph.h"
 #include "gpio.h"
 
 #define GPIO_PIN_COUNT (40)
+
+typedef struct {
+    uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
+    uint32_t pullup;    /*!< Mask of pullup enable */
+    uint32_t pulldown;  /*!< Mask of pulldown enable */
+} rtc_io_desc_lite_t;
+
+const int rtc_io_num_map_iram[SOC_GPIO_PIN_COUNT] = {
+    RTCIO_GPIO0_CHANNEL,    //GPIO0
+    -1,//GPIO1
+    RTCIO_GPIO2_CHANNEL,    //GPIO2
+    -1,//GPIO3
+    RTCIO_GPIO4_CHANNEL,    //GPIO4
+    -1,//GPIO5
+    -1,//GPIO6
+    -1,//GPIO7
+    -1,//GPIO8
+    -1,//GPIO9
+    -1,//GPIO10
+    -1,//GPIO11
+    RTCIO_GPIO12_CHANNEL,   //GPIO12
+    RTCIO_GPIO13_CHANNEL,   //GPIO13
+    RTCIO_GPIO14_CHANNEL,   //GPIO14
+    RTCIO_GPIO15_CHANNEL,   //GPIO15
+    -1,//GPIO16
+    -1,//GPIO17
+    -1,//GPIO18
+    -1,//GPIO19
+    -1,//GPIO20
+    -1,//GPIO21
+    -1,//GPIO22
+    -1,//GPIO23
+    -1,//GPIO24
+    RTCIO_GPIO25_CHANNEL,   //GPIO25
+    RTCIO_GPIO26_CHANNEL,   //GPIO26
+    RTCIO_GPIO27_CHANNEL,   //GPIO27
+    -1,//GPIO28
+    -1,//GPIO29
+    -1,//GPIO30
+    -1,//GPIO31
+    RTCIO_GPIO32_CHANNEL,   //GPIO32
+    RTCIO_GPIO33_CHANNEL,   //GPIO33
+    RTCIO_GPIO34_CHANNEL,   //GPIO34
+    RTCIO_GPIO35_CHANNEL,   //GPIO35
+    RTCIO_GPIO36_CHANNEL,   //GPIO36
+    RTCIO_GPIO37_CHANNEL,   //GPIO37
+    RTCIO_GPIO38_CHANNEL,   //GPIO38
+    RTCIO_GPIO39_CHANNEL,   //GPIO39
+};
+
+const rtc_io_desc_lite_t rtc_io_desc_iram[SOC_RTCIO_PIN_COUNT] = {
+    /*REG                     Pullup                   Pulldown */
+    {RTC_IO_SENSOR_PADS_REG,  0,                       0,                       }, //36
+    {RTC_IO_SENSOR_PADS_REG,  0,                       0,                       }, //37
+    {RTC_IO_SENSOR_PADS_REG,  0,                       0,                       }, //38
+    {RTC_IO_SENSOR_PADS_REG,  0,                       0,                       }, //39
+    {RTC_IO_ADC_PAD_REG,      0,                       0,                       }, //34
+    {RTC_IO_ADC_PAD_REG,      0,                       0,                       }, //35
+    {RTC_IO_PAD_DAC1_REG,     RTC_IO_PDAC1_RUE_M,      RTC_IO_PDAC1_RDE_M,      }, //25
+    {RTC_IO_PAD_DAC2_REG,     RTC_IO_PDAC2_RUE_M,      RTC_IO_PDAC2_RDE_M,      }, //26
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_RUE_M,       RTC_IO_X32N_RDE_M,       }, //33
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE_M,       RTC_IO_X32P_RDE_M,       }, //32
+    {RTC_IO_TOUCH_PAD0_REG,   RTC_IO_TOUCH_PAD0_RUE_M, RTC_IO_TOUCH_PAD0_RDE_M, }, // 4
+    {RTC_IO_TOUCH_PAD1_REG,   RTC_IO_TOUCH_PAD1_RUE_M, RTC_IO_TOUCH_PAD1_RDE_M, }, // 0
+    {RTC_IO_TOUCH_PAD2_REG,   RTC_IO_TOUCH_PAD2_RUE_M, RTC_IO_TOUCH_PAD2_RDE_M, }, // 2
+    {RTC_IO_TOUCH_PAD3_REG,   RTC_IO_TOUCH_PAD3_RUE_M, RTC_IO_TOUCH_PAD3_RDE_M, }, //15
+    {RTC_IO_TOUCH_PAD4_REG,   RTC_IO_TOUCH_PAD4_RUE_M, RTC_IO_TOUCH_PAD4_RDE_M, }, //13
+    {RTC_IO_TOUCH_PAD5_REG,   RTC_IO_TOUCH_PAD5_RUE_M, RTC_IO_TOUCH_PAD5_RDE_M, }, //12
+    {RTC_IO_TOUCH_PAD6_REG,   RTC_IO_TOUCH_PAD6_RUE_M, RTC_IO_TOUCH_PAD6_RDE_M, }, //14
+    {RTC_IO_TOUCH_PAD7_REG,   RTC_IO_TOUCH_PAD7_RUE_M, RTC_IO_TOUCH_PAD7_RDE_M, }, //27
+};
 
 const uint32_t GPIO_PIN_MUX_REG_IRAM[SOC_GPIO_PIN_COUNT] = {
     IO_MUX_GPIO0_REG,
@@ -66,6 +138,87 @@ const uint32_t GPIO_PIN_MUX_REG_IRAM[SOC_GPIO_PIN_COUNT] = {
     IO_MUX_GPIO39_REG,
 };
 
+static inline bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
+{
+    return (gpio_num < GPIO_PIN_COUNT && rtc_io_num_map_iram[gpio_num] >= 0);
+}
+
+static inline void rtcio_ll_pullup_enable(int rtcio_num)
+{
+    if (rtc_io_desc_iram[rtcio_num].pullup) {
+        SET_PERI_REG_MASK(rtc_io_desc_iram[rtcio_num].reg, rtc_io_desc_iram[rtcio_num].pullup);
+    }
+}
+
+static inline void rtcio_ll_pullup_disable(int rtcio_num)
+{
+    if (rtc_io_desc_iram[rtcio_num].pullup) {
+        CLEAR_PERI_REG_MASK(rtc_io_desc_iram[rtcio_num].reg, rtc_io_desc_iram[rtcio_num].pullup);
+    }
+}
+
+static inline void rtcio_ll_pulldown_enable(int rtcio_num)
+{
+    if (rtc_io_desc_iram[rtcio_num].pulldown) {
+        SET_PERI_REG_MASK(rtc_io_desc_iram[rtcio_num].reg, rtc_io_desc_iram[rtcio_num].pulldown);
+    }
+}
+
+static inline void rtcio_ll_pulldown_disable(int rtcio_num)
+{
+    if (rtc_io_desc_iram[rtcio_num].pulldown) {
+        CLEAR_PERI_REG_MASK(rtc_io_desc_iram[rtcio_num].reg, rtc_io_desc_iram[rtcio_num].pulldown);
+    }
+}
+
+static int32_t gpio_pullup_en_iram(gpio_num_t gpio_num)
+{
+    if (!rtc_gpio_is_valid_gpio(gpio_num)) {
+        uint32_t io_reg = GPIO_PIN_MUX_REG_IRAM[gpio_num];
+        REG_SET_BIT(io_reg, FUN_PU);
+    } else {
+        rtcio_ll_pullup_enable(rtc_io_num_map_iram[gpio_num]);
+    }
+
+    return ESP_OK;
+}
+
+static int32_t gpio_pullup_dis_iram(gpio_num_t gpio_num)
+{
+    if (!rtc_gpio_is_valid_gpio(gpio_num)) {
+        uint32_t io_reg = GPIO_PIN_MUX_REG_IRAM[gpio_num];
+        REG_CLR_BIT(io_reg, FUN_PU);
+    } else {
+        rtcio_ll_pullup_disable(rtc_io_num_map_iram[gpio_num]);
+    }
+
+    return ESP_OK;
+}
+
+static int32_t gpio_pulldown_en_iram(gpio_num_t gpio_num)
+{
+    if (!rtc_gpio_is_valid_gpio(gpio_num)) {
+        uint32_t io_reg = GPIO_PIN_MUX_REG_IRAM[gpio_num];
+        REG_SET_BIT(io_reg, FUN_PD);
+    } else {
+        rtcio_ll_pulldown_enable(rtc_io_num_map_iram[gpio_num]);
+    }
+
+    return ESP_OK;
+}
+
+static int32_t gpio_pulldown_dis_iram(gpio_num_t gpio_num)
+{
+    if (!rtc_gpio_is_valid_gpio(gpio_num)) {
+        uint32_t io_reg = GPIO_PIN_MUX_REG_IRAM[gpio_num];
+        REG_CLR_BIT(io_reg, FUN_PD);
+    } else {
+        rtcio_ll_pulldown_disable(rtc_io_num_map_iram[gpio_num]);
+    }
+
+    return ESP_OK;
+}
+
 int32_t gpio_set_level_iram(gpio_num_t gpio_num, uint32_t level)
 {
     gpio_ll_set_level(&GPIO, gpio_num, level);
@@ -74,28 +227,27 @@ int32_t gpio_set_level_iram(gpio_num_t gpio_num, uint32_t level)
 
 int32_t gpio_set_pull_mode_iram(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 {
-    uint32_t io_reg = GPIO_PIN_MUX_REG_IRAM[gpio_num];
-    esp_err_t ret = ESP_OK;
+    int32_t ret = ESP_OK;
 
     switch (pull) {
         case GPIO_PULLUP_ONLY:
-            REG_CLR_BIT(io_reg, FUN_PD);
-            REG_SET_BIT(io_reg, FUN_PU);
+            gpio_pulldown_dis_iram(gpio_num);
+            gpio_pullup_en_iram(gpio_num);
             break;
 
         case GPIO_PULLDOWN_ONLY:
-            REG_SET_BIT(io_reg, FUN_PD);
-            REG_CLR_BIT(io_reg, FUN_PU);
+            gpio_pulldown_en_iram(gpio_num);
+            gpio_pullup_dis_iram(gpio_num);
             break;
 
         case GPIO_PULLUP_PULLDOWN:
-            REG_SET_BIT(io_reg, FUN_PD);
-            REG_SET_BIT(io_reg, FUN_PU);
+            gpio_pulldown_en_iram(gpio_num);
+            gpio_pullup_en_iram(gpio_num);
             break;
 
         case GPIO_FLOATING:
-            REG_CLR_BIT(io_reg, FUN_PD);
-            REG_CLR_BIT(io_reg, FUN_PU);
+            gpio_pulldown_dis_iram(gpio_num);
+            gpio_pullup_dis_iram(gpio_num);
             break;
 
         default:
@@ -184,16 +336,16 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
 
             if (pGPIOConfig->pull_up_en) {
                 pu_en = 1;
-                REG_SET_BIT(io_reg, FUN_PU);
+                gpio_pullup_en_iram(io_num);
             } else {
-                REG_CLR_BIT(io_reg, FUN_PU);
+                gpio_pullup_dis_iram(io_num);
             }
 
             if (pGPIOConfig->pull_down_en) {
                 pd_en = 1;
-                REG_SET_BIT(io_reg, FUN_PD);
+                gpio_pulldown_en_iram(io_num);
             } else {
-                REG_CLR_BIT(io_reg, FUN_PD);
+                gpio_pulldown_dis_iram(io_num);
             }
 
             ets_printf("GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d\n",
