@@ -35,6 +35,10 @@
 #define P2_D0_MASK (1U << P2_D0_PIN)
 #define P2_D1_MASK (1U << P2_D1_PIN)
 
+#define MOUSE_SPEED_MIN 0xFF
+#define MOUSE_SPEED_MED 0xEF
+#define MOUSE_SPEED_MAX 0xDF
+
 enum {
     NPISO_CLK = 0,
     NPISO_SEL,
@@ -89,6 +93,9 @@ static struct counters cnts = {0};
 static uint8_t *cnt0 = &cnts.cnt[0];
 static uint8_t *cnt1 = &cnts.cnt[1];
 static uint32_t idx0, idx1;
+static uint8_t mouse_speed[NPISO_PORT_MAX] = {MOUSE_SPEED_MIN, MOUSE_SPEED_MIN};
+static uint8_t mouse_update[NPISO_PORT_MAX] = {0};
+static uint8_t mouse_axes[NPISO_PORT_MAX][2] = {0};
 
 static inline void set_data(uint8_t port, uint8_t data_id, uint8_t value) {
     uint32_t mask = gpio_mask[port][NPISO_D0 + data_id];
@@ -101,6 +108,62 @@ static inline void set_data(uint8_t port, uint8_t data_id, uint8_t value) {
     }
 }
 
+static inline void load_mouse_axis(uint8_t port, uint8_t index) {
+    uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
+    int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 4);
+    int32_t val = 0;
+
+    if (relative[index]) {
+        val = atomic_clear(&raw_axes[index]);
+    }
+    else {
+        val = raw_axes[index];
+    }
+
+    if (val > 127) {
+        mouse_axes[port][index] = 0x80;
+    }
+    else if (val < -128) {
+        mouse_axes[port][index] = 0x00;
+    }
+    else {
+        if (val < 0) {
+            mouse_axes[port][index] = ~((uint8_t)abs(val) | 0x80);
+        }
+        else {
+            mouse_axes[port][index] = ~((uint8_t)val);
+        }
+    }
+}
+
+static inline void load_trackball_axes(uint8_t port) {
+    uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
+    int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 4);
+    int32_t val = 0;
+    uint8_t shift[2] = {4, 0};
+
+    mouse_axes[port][0] = 0;
+
+    for (uint32_t i = 0; i < 2; i++) {
+        if (relative[i]) {
+            val = atomic_clear(&raw_axes[i]);
+        }
+        else {
+            val = raw_axes[i];
+        }
+
+        if (val > 7) {
+            mouse_axes[port][0] |= (7 & 0xF) << shift[i];
+        }
+        else if (val < -8) {
+            mouse_axes[port][0] |= (((uint8_t)-8) & 0xF) << shift[i];
+        }
+        else {
+            mouse_axes[port][0] |= ((uint8_t)val & 0xF) << shift[i];
+        }
+    }
+}
+
 static uint32_t npiso_isr(uint32_t cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
@@ -109,6 +172,9 @@ static uint32_t npiso_isr(uint32_t cause) {
     if (high_io & NPISO_LATCH_MASK) {
         for (uint32_t i = 0; i < NPISO_PORT_MAX; i++) {
             switch (dev_type[i]) {
+                case DEV_FC_TRACKBALL:
+                    set_data(i, 1, wired_adapter.data[i].output[0] & 0x80);
+                    break;
                 case DEV_FC_MULTITAP_ALT:
                     set_data(i, 1, wired_adapter.data[i + 2].output[0] & 0x80);
                 __attribute__ ((fallthrough));
@@ -137,6 +203,28 @@ static uint32_t npiso_isr(uint32_t cause) {
                     }
                     else {
                         set_data(i, 0, wired_adapter.data[i].output[0] & mask[i]);
+                    }
+                    break;
+                case DEV_FC_TRACKBALL:
+                    while (!(GPIO.in & clk_mask)); /* Wait rising edge */
+                    switch (idx[i]) {
+                        case 0:
+                            set_data(i, 1, wired_adapter.data[i].output[0] & mask[i]);
+
+                            /* Prepare YX axis for next byte on free time */
+                            if (mask[i] == 0x01) {
+                                load_trackball_axes(i);
+                            }
+                            break;
+                        case 1:
+                            set_data(i, 1, mouse_axes[i][0] & mask[i]);
+                            break;
+                        case 2:
+                            set_data(i, 1, wired_adapter.data[i].output[1] & mask[i]);
+                            break;
+                        default:
+                            set_data(i, 1, 0);
+                            break;
                     }
                     break;
                 case DEV_FC_NES_MULTITAP:
@@ -174,6 +262,50 @@ static uint32_t npiso_isr(uint32_t cause) {
                     }
                     else {
                         set_data(i, 0, wired_adapter.data[i].output[idx[i]] & mask[i]);
+                    }
+                    break;
+                case DEV_SFC_SNES_MOUSE:
+                    if (GPIO.in1.val & NPISO_LATCH_MASK) {
+                        mouse_update[i] = 1;
+                    }
+                    else {
+                        while (!(GPIO.in & clk_mask)); /* Wait rising edge */
+                        switch (idx[i]) {
+                            case 0:
+                                set_data(i, 0, wired_adapter.data[i].output[idx[i]] & mask[i]);
+
+                                /* Prepare speed for next byte on free time */
+                                if (mouse_update[i]) {
+                                    mouse_speed[i] -= 0x10;
+                                    if (mouse_speed[i] < MOUSE_SPEED_MAX) {
+                                        mouse_speed[i] = MOUSE_SPEED_MIN;
+                                    }
+                                    mouse_update[i] = 0;
+                                }
+                                break;
+                            case 1:
+                                set_data(i, 0, (wired_adapter.data[i].output[idx[i]] & mask[i]) & mouse_speed[i]);
+
+                                /* Prepare Y axis for next byte on free time */
+                                if (mask[i] == 0x01) {
+                                    load_mouse_axis(i, 0);
+                                }
+                                break;
+                            case 2:
+                                set_data(i, 0, mouse_axes[i][0] & mask[i]);
+
+                                /* Prepare X axis for next byte on free time */
+                                if (mask[i] == 0x01) {
+                                    load_mouse_axis(i, 1);
+                                }
+                                break;
+                            case 3:
+                                set_data(i, 0, mouse_axes[i][1] & mask[i]);
+                                break;
+                            default:
+                                set_data(i, 0, 0);
+                                break;
+                        }
                     }
                     break;
             }
