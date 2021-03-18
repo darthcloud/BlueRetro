@@ -45,12 +45,6 @@ static DRAM_ATTR const uint8_t dc_axes_idx[ADAPTER_MAX_AXES] =
     7,       6,       5,       4,       0,      1
 };
 
-static DRAM_ATTR const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
-{
-/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-    2,       3,       1,       0,       5,      4
-};
-
 static const uint8_t dc_kb_keycode_idx[] =
 {
     1, 0, 7, 6, 5, 4
@@ -89,7 +83,8 @@ struct dc_map {
 struct dc_mouse_map {
     uint8_t reserved[3];
     uint8_t buttons;
-    uint16_t axes[8];
+    uint8_t relative[4];
+    int32_t raw_axes[4];
 } __packed;
 
 struct dc_kb_map {
@@ -177,23 +172,24 @@ void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         {
             struct dc_mouse_map *map = (struct dc_mouse_map *)wired_data->output;
 
+            for (uint32_t i = 0; i < ARRAY_SIZE(map->raw_axes); i++) {
+                map->raw_axes[i] = 0;
+                map->relative[i] = 1;
+            }
             map->reserved[0] = 0x00;
             map->reserved[1] = 0x00;
             map->reserved[2] = 0x00;
             map->buttons = 0xFF;
-            for (uint32_t i = 0; i < ARRAY_SIZE(map->axes); i++) {
-                map->axes[i] = sys_cpu_to_be16(dc_mouse_axes_meta[0].neutral);
-            }
             break;
         }
         default:
         {
             struct dc_map *map = (struct dc_map *)wired_data->output;
 
-            map->buttons = 0xFFFF;
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 map->axes[dc_axes_idx[i]] = dc_axes_meta[i].neutral;
             }
+            map->buttons = 0xFFFF;
             break;
         }
     }
@@ -261,6 +257,7 @@ static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
 
 static void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_mouse_map map_tmp;
+    int32_t *raw_axes = (int32_t *)(wired_data->output + 8);
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -275,30 +272,20 @@ static void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
         }
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+    for (uint32_t i = 0; i < 4; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & dc_mouse_desc[0])) {
-            int32_t tmp_val = ctrl_data->axes[i].value;
-
-            if (ctrl_data->axes[i].meta->relative) {
-                tmp_val += sys_be16_to_cpu(map_tmp.axes[dc_mouse_axes_idx[i]]);
+            if (ctrl_data->axes[i].relative) {
+                map_tmp.relative[i] = 1;
+                atomic_add(&raw_axes[i], ctrl_data->axes[i].value);
             }
             else {
-                map_tmp.axes[dc_mouse_axes_idx[i]] = 0;
-            }
-
-            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
-                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0x3FF);
-            }
-            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
-                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0);
-            }
-            else {
-                map_tmp.axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(sys_be16_to_cpu(map_tmp.axes[dc_mouse_axes_idx[i]]) + (uint16_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral));
+                map_tmp.relative[i] = 0;
+                raw_axes[i] = ctrl_data->axes[i].value;
             }
         }
     }
 
-    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 16);
 }
 
 static void dc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

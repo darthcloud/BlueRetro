@@ -132,6 +132,13 @@ static const uint8_t brand[] = {
     0x45, 0x53, 0x20, 0x6D, 0x45, 0x20, 0x41, 0x47, 0x52, 0x45, 0x54, 0x4E, 0x53, 0x49, 0x52, 0x50,
     0x4C, 0x2C, 0x53, 0x45, 0x20, 0x2E, 0x44, 0x54, 0x20, 0x20, 0x20, 0x20,
 };
+
+static const uint8_t dc_mouse_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    2,       3,       1,       0,       5,      4
+};
+
 #else
 static uint32_t cur_us = 0, pre_us = 0;
 #endif
@@ -139,6 +146,31 @@ static uint32_t cur_us = 0, pre_us = 0;
 static struct maple_pkt pkt;
 static uint32_t rumble_max = 0x00020013;
 static uint32_t rumble_val = 0x10E0073B;
+
+static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
+    uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 4);
+    int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 8);
+    int32_t val = 0;
+
+    for (uint32_t i = 0; i < 4; i++) {
+        if (relative[i]) {
+            val = atomic_clear(&raw_axes[i]);
+        }
+        else {
+            val = raw_axes[i];
+        }
+
+        if (val > 511) {
+            axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0x3FF);
+        }
+        else if (val < -512) {
+            axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16(0);
+        }
+        else {
+            axes[dc_mouse_axes_idx[i]] = sys_cpu_to_be16((uint16_t)(val + 0x200));
+        }
+    }
+}
 
 static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint8_t len) {
     uint8_t *crc = data + (len - 1);
@@ -424,12 +456,9 @@ maple_end:
                                 pkt.len = 6;
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_MOUSE;
-                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 5);
+                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 1);
+                                load_mouse_axes(port, (uint16_t *)&pkt.data32[2]);
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
-                                ((uint32_t *)wired_adapter.data[port].output)[1] = 0x00020002;
-                                ((uint32_t *)wired_adapter.data[port].output)[2] = 0x00020002;
-                                ((uint32_t *)wired_adapter.data[port].output)[3] = 0x00020002;
-                                ((uint32_t *)wired_adapter.data[port].output)[4] = 0x00020002;
                                 ++wired_adapter.data[port].frame_cnt;
                                 break;
                             default:
