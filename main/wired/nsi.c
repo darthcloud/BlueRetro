@@ -88,6 +88,31 @@ static uint8_t buf[128] = {0};
 static uint32_t poll_after_mem_wr = 0;
 static uint8_t last_rumble[4] = {0};
 
+static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
+    uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
+    int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 4);
+    int32_t val = 0;
+
+    for (uint32_t i = 0; i < 2; i++) {
+        if (relative[i]) {
+            val = atomic_clear(&raw_axes[i]);
+        }
+        else {
+            val = raw_axes[i];
+        }
+
+        if (val > 127) {
+            axes[i] = 127;
+        }
+        else if (val < -128) {
+            axes[i] = -128;
+        }
+        else {
+            axes[i] = (uint8_t)val;
+        }
+    }
+}
+
 static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
@@ -236,9 +261,8 @@ static uint32_t n64_isr(uint32_t cause) {
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
                                 break;
                             case 0x01:
-                                    memcpy(buf, wired_adapter.data[channel].output, 4);
-                                    wired_adapter.data[channel].output[2] = 0;
-                                    wired_adapter.data[channel].output[3] = 0;
+                                    memcpy(buf, wired_adapter.data[channel].output, 2);
+                                    load_mouse_axes(channel, &buf[2]);
                                     nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
                                     RMT.conf_ch[channel].conf1.tx_start = 1;
 
