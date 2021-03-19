@@ -67,6 +67,12 @@ struct ps_map {
     uint8_t analog_btn;
 } __packed;
 
+struct ps_mouse_map {
+    uint16_t buttons;
+    uint8_t relative[2];
+    int32_t raw_axes[2];
+} __packed;
+
 static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps_btns_mask[32] = {
@@ -150,13 +156,12 @@ void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         }
         case DEV_MOUSE:
         {
-            struct ps_map *map = (struct ps_map *)wired_data->output;
+            struct ps_mouse_map *map = (struct ps_mouse_map *)wired_data->output;
 
-            memset((void *)map, 0, sizeof(*map));
             map->buttons = 0xFCFF;
-            map->analog_btn = 0x00;
-            for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-                map->axes[ps_axes_idx[i]] = ps_axes_meta[i].neutral;
+            for (uint32_t i = 0; i < 2; i++) {
+                map->raw_axes[i] = 0;
+                map->relative[i] = 1;
             }
             break;
         }
@@ -251,7 +256,8 @@ static void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
 }
 
 static void ps_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
-    struct ps_map map_tmp;
+    struct ps_mouse_map map_tmp;
+    int32_t *raw_axes = (int32_t *)(wired_data->output + 4);
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -266,23 +272,20 @@ static void ps_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
         }
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+    for (uint32_t i = 2; i < 4; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & ps_mouse_desc[0])) {
-            int32_t tmp_val = ctrl_data->axes[i].value + (int8_t)map_tmp.axes[ps_mouse_axes_idx[i]];
-
-            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
-                map_tmp.axes[ps_mouse_axes_idx[i]] = 127;
-            }
-            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
-                map_tmp.axes[ps_mouse_axes_idx[i]] = -128;
+            if (ctrl_data->axes[i].relative) {
+                map_tmp.relative[ps_mouse_axes_idx[i]] = 1;
+                atomic_add(&raw_axes[ps_mouse_axes_idx[i]], ctrl_data->axes[i].value);
             }
             else {
-                map_tmp.axes[ps_mouse_axes_idx[i]] += (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
+                map_tmp.relative[ps_mouse_axes_idx[i]] = 0;
+                raw_axes[ps_mouse_axes_idx[i]] = ctrl_data->axes[i].value;
             }
         }
     }
 
-    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
 static void ps_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

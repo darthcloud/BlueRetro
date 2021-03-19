@@ -98,6 +98,31 @@ struct ps_ctrl_port {
 
 static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {0};
 
+static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
+    uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
+    int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 4);
+    int32_t val = 0;
+
+    for (uint32_t i = 0; i < 2; i++) {
+        if (relative[i]) {
+            val = atomic_clear(&raw_axes[i]);
+        }
+        else {
+            val = raw_axes[i];
+        }
+
+        if (val > 127) {
+            axes[i] = 127;
+        }
+        else if (val < -128) {
+            axes[i] = -128;
+        }
+        else {
+            axes[i] = (uint8_t)val;
+        }
+    }
+}
+
 static uint32_t get_dtr_state(uint32_t port) {
     if (port == 0) {
         if (GPIO.in1.val & BIT(P1_DTR_PIN - 32)) {
@@ -294,17 +319,21 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
             if (size < 6) {
                 size = 6;
             }
-            if (port->dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
-                uint32_t len = 0;
-                memset(rsp, 0x00, size);
-                kbmon_get_code(id + port->mt_first_port, rsp, &len);
-            }
-            else {
-                memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
-            }
-            if (port->dev_type == DEV_PSX_MOUSE) {
-                wired_adapter.data[id + port->mt_first_port].output[2] = 0x00;
-                wired_adapter.data[id + port->mt_first_port].output[3] = 0x00;
+            switch (port->dev_type) {
+                case DEV_PSX_PS_2_KB_MOUSE_ADAPTER:
+                {
+                    uint32_t len = 0;
+                    memset(rsp, 0x00, size);
+                    kbmon_get_code(id + port->mt_first_port, rsp, &len);
+                    break;
+                }
+                case DEV_PSX_MOUSE:
+                    memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, 2);
+                    load_mouse_axes(id + port->mt_first_port, &rsp[2]);
+                    break;
+                default:
+                    memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
+                    break;
             }
             break;
         }
