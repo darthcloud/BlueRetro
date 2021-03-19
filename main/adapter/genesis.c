@@ -90,7 +90,9 @@ struct sega_mouse_map {
         uint8_t twh_buttons;
         uint8_t flags;
     };
-    uint8_t axes[2];
+    uint8_t align[1];
+    uint8_t relative[2];
+    int32_t raw_axes[2];
 } __packed;
 
 static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
@@ -200,6 +202,7 @@ static const uint32_t genesis_twh_btns_mask[32] = {
 
 static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct sega_mouse_map map_tmp;
+    int32_t *raw_axes = (int32_t *)(wired_data->output + 28);
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -214,46 +217,20 @@ static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired
         }
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+    for (uint32_t i = 2; i < 4; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & sega_mouse_desc[0])) {
-            uint8_t sign_mask;
-            int32_t tmp_val;
-
-            if (i & 0x01) {
-                sign_mask = 0x20;
+            if (ctrl_data->axes[i].relative) {
+                map_tmp.relative[sega_mouse_axes_idx[i]] = 1;
+                atomic_add(&raw_axes[sega_mouse_axes_idx[i]], ctrl_data->axes[i].value);
             }
             else {
-                sign_mask = 0x10;
-            }
-
-            if (map_tmp.flags & sign_mask) {
-                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]] | 0xFFFFFFF0);
-            }
-            else {
-                tmp_val = ctrl_data->axes[i].value + (int32_t)(map_tmp.axes[sega_mouse_axes_idx[i]]);
-            }
-
-            if (tmp_val > ctrl_data->axes[i].meta->size_max) {
-                map_tmp.axes[sega_mouse_axes_idx[i]] = 0xFF;
-                map_tmp.flags &= ~sign_mask;
-            }
-            else if (tmp_val < ctrl_data->axes[i].meta->size_min) {
-                map_tmp.axes[sega_mouse_axes_idx[i]] = 0x00;
-                map_tmp.flags |= sign_mask;
-            }
-            else {
-                map_tmp.axes[sega_mouse_axes_idx[i]] = (uint8_t)tmp_val;
-                if (tmp_val < 0) {
-                    map_tmp.flags |= sign_mask;
-                }
-                else {
-                    map_tmp.flags &= ~sign_mask;
-                }
+                map_tmp.relative[sega_mouse_axes_idx[i]] = 0;
+                raw_axes[sega_mouse_axes_idx[i]] = ctrl_data->axes[i].value;
             }
         }
     }
 
-    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
 static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
@@ -405,9 +382,11 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
 
     if (dev_mode == DEV_MOUSE) {
         struct sega_mouse_map *map = (struct sega_mouse_map *)wired_data->output;
-        map->flags = 0x00;
-        map->axes[0] = 0x00;
-        map->axes[1] = 0x00;
+        map->twh_buttons = 0x00;
+        for (uint32_t i = 0; i < 2; i++) {
+            map->raw_axes[i] = 0;
+            map->relative[i] = 1;
+        }
     }
     else {
         struct genesis_map *map = (struct genesis_map *)wired_data->output;

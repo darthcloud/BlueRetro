@@ -125,6 +125,56 @@ static uint8_t buffer[6*6];
 static uint32_t *map1 = (uint32_t *)wired_adapter.data[0].output;
 static uint32_t *map2 = (uint32_t *)wired_adapter.data[1].output;
 
+static inline void load_mouse_axes(uint8_t port, uint8_t *flags, uint8_t *axes) {
+    uint8_t *relative = NULL;
+    int32_t *raw_axes = NULL;
+    int32_t val = 0;
+    uint8_t sign_mask = 0;
+
+    if (wired_adapter.system_id == GENESIS) {
+        relative = (uint8_t *)(wired_adapter.data[port].output + 26);
+        raw_axes = (int32_t *)(wired_adapter.data[port].output + 28);
+    }
+    else {
+        relative = (uint8_t *)(wired_adapter.data[port].output + 2);
+        raw_axes = (int32_t *)(wired_adapter.data[port].output + 4);
+    }
+
+    for (uint32_t i = 0; i < 2; i++) {
+        if (i & 0x01) {
+            sign_mask = 0x20;
+        }
+        else {
+            sign_mask = 0x10;
+        }
+
+        if (relative[i]) {
+            val = atomic_clear(&raw_axes[i]);
+        }
+        else {
+            val = raw_axes[i];
+        }
+
+        if (val > 255) {
+            axes[i] = 0xFF;
+            *flags &= ~sign_mask;
+        }
+        else if (val < -256) {
+            axes[i] = 0x00;
+            *flags |= sign_mask;
+        }
+        else {
+            axes[i] = (uint8_t)val;
+            if (val < 0) {
+                *flags |= sign_mask;
+            }
+            else {
+                *flags &= ~sign_mask;
+            }
+        }
+    }
+}
+
 static void tx_nibble(uint8_t port, uint8_t data) {
     for (uint8_t i = SIO_R, mask = 0x8; mask; mask >>= 1, i++) {
         if (data & mask) {
@@ -242,16 +292,12 @@ static void set_analog_pad(uint8_t port, uint8_t src_port) {
 static void set_sega_mouse(uint8_t port, uint8_t src_port) {
     buffer[0] = 0xFF;
     if (wired_adapter.system_id == GENESIS) {
-        memcpy(&buffer[1], &wired_adapter.data[src_port].output[24], 3);
-        wired_adapter.data[src_port].output[24] &= 0x0F;
-        wired_adapter.data[src_port].output[25] = 0x00;
-        wired_adapter.data[src_port].output[26] = 0x00;
+        memcpy(&buffer[1], &wired_adapter.data[src_port].output[24], 1);
+        load_mouse_axes(port, &buffer[1], &buffer[2]);
     }
     else {
-        memcpy(&buffer[1], wired_adapter.data[src_port].output, 3);
-        wired_adapter.data[src_port].output[0] &= 0x0F;
-        wired_adapter.data[src_port].output[1] = 0x00;
-        wired_adapter.data[src_port].output[2] = 0x00;
+        memcpy(&buffer[1], wired_adapter.data[src_port].output, 1);
+        load_mouse_axes(port, &buffer[1], &buffer[2]);
     }
     buffer[4] = ID0_MOUSE >> 4;
 
@@ -304,10 +350,8 @@ static void set_saturn_multitap(uint8_t port, uint8_t first_port, uint8_t nb_por
                 break;
             case DEV_SEGA_MOUSE:
                 *data++ = (ID2_LEGACY << 4) | 3;
-                memcpy(data, wired_adapter.data[j].output, 3);
-                wired_adapter.data[j].output[0] &= 0x0F;
-                wired_adapter.data[j].output[1] = 0x00;
-                wired_adapter.data[j].output[2] = 0x00;
+                memcpy(data, wired_adapter.data[j].output, 1);
+                load_mouse_axes(j, data, &data[1]);
                 data += 3;
                 break;
         }
@@ -353,21 +397,22 @@ static void set_gen_multitap(uint8_t port, uint8_t first_port, uint8_t nb_port) 
                 break;
             case DEV_SEGA_MOUSE:
                 if (odd) {
-                    *data++ &= (wired_adapter.data[j].output[24] >> 4) | 0xF0;
-                    *data = (wired_adapter.data[j].output[24] << 4) | 0xF;
-                    *data++ &= (wired_adapter.data[j].output[25] >> 4) | 0xF0;
-                    *data = (wired_adapter.data[j].output[25] << 4) | 0xF;
-                    *data++ &= (wired_adapter.data[j].output[26] >> 4) | 0xF0;
-                    *data = (wired_adapter.data[j].output[26] << 4) | 0xF;
+                    uint8_t tmp[3] = {0};
+                    tmp[0] = wired_adapter.data[j].output[24];
+                    load_mouse_axes(j, &tmp[0], &tmp[1]);
+
+                    *data++ &= (tmp[0] >> 4) | 0xF0;
+                    *data = (tmp[0] << 4) | 0xF;
+                    *data++ &= (tmp[1] >> 4) | 0xF0;
+                    *data = (tmp[1] << 4) | 0xF;
+                    *data++ &= (tmp[2] >> 4) | 0xF0;
+                    *data = (tmp[2] << 4) | 0xF;
                 }
                 else {
-                    *data++ = wired_adapter.data[j].output[24];
-                    *data++ = wired_adapter.data[j].output[25];
-                    *data++ = wired_adapter.data[j].output[26];
+                    *data = wired_adapter.data[j].output[24];
+                    load_mouse_axes(j, data, &data[1]);
+                    data += 3;
                 }
-                wired_adapter.data[j].output[24] &= 0x0F;
-                wired_adapter.data[j].output[25] = 0x00;
-                wired_adapter.data[j].output[26] = 0x00;
                 break;
         }
     }
