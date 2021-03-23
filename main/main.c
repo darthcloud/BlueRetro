@@ -21,6 +21,7 @@
 #include "wired/maple.h"
 #include "wired/jvs_uart.h"
 #include "wired/parallel.h"
+#include "wired/pcfx_spi.h"
 #include "wired/ps_spi.h"
 #include "wired/real_spi.h"
 #include "sdkconfig.h"
@@ -141,7 +142,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* JAGUAR */
     ps_spi_init, /* PSX */
     sega_io_init, /* SATURN */
-    NULL, /* PCFX */
+    pcfx_spi_init, /* PCFX */
     jvs_init, /* JVS */
     nsi_init, /* N64 */
     maple_init, /* DC */

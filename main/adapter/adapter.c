@@ -18,6 +18,7 @@
 #include "npiso.h"
 #include "genesis.h"
 #include "real.h"
+#include "pcfx.h"
 #include "ps.h"
 #include "saturn.h"
 #include "jvs.h"
@@ -92,7 +93,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* JAGUAR */
     ps_from_generic, /* PSX */
     saturn_from_generic, /* SATURN */
-    NULL, /* PCFX */
+    pcfx_from_generic, /* PCFX */
     jvs_from_generic, /* JVS */
     n64_from_generic, /* N64 */
     dc_from_generic, /* DC */
@@ -140,7 +141,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* JAGUAR */
     ps_meta_init, /* PSX */
     saturn_meta_init, /* SATURN */
-    NULL, /* PCFX */
+    pcfx_meta_init, /* PCFX */
     jvs_meta_init, /* JVS */
     n64_meta_init, /* N64 */
     dc_meta_init, /* DC */
@@ -164,7 +165,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* JAGUAR */
     ps_init_buffer, /* PSX */
     saturn_init_buffer, /* SATURN */
-    NULL, /* PCFX */
+    pcfx_init_buffer, /* PCFX */
     jvs_init_buffer, /* JVS */
     n64_init_buffer, /* N64 */
     dc_init_buffer, /* DC */
