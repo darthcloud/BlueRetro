@@ -17,7 +17,7 @@
 #include "system/delay.h"
 #include "system/gpio.h"
 #include "system/intr.h"
-#include "jvs.h"
+#include "jvs_uart.h"
 
 #define UART_DEV 1
 #define JVS_TX_PIN 22

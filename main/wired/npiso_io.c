@@ -10,7 +10,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
-#include "npiso.h"
+#include "npiso_io.h"
 
 #define NPISO_PORT_MAX 2
 #define NPISO_LATCH_PIN 32
