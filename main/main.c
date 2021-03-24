@@ -22,6 +22,7 @@
 #include "wired/jvs.h"
 #include "wired/parallel.h"
 #include "wired/ps_spi.h"
+#include "wired/real_spi.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_BLUERETRO_SYSTEM_PARALLEL_1P
@@ -136,7 +137,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     npiso_init, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
-    NULL, /* REAL_3DO */
+    real_spi_init, /* REAL_3DO */
     NULL, /* JAGUAR */
     ps_spi_init, /* PSX */
     sega_io_init, /* SATURN */

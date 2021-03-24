@@ -17,12 +17,13 @@
 #include "adapter.h"
 #include "npiso.h"
 #include "genesis.h"
+#include "real.h"
+#include "ps.h"
 #include "saturn.h"
 #include "jvs.h"
 #include "n64.h"
 #include "dc.h"
 #include "gc.h"
-#include "ps.h"
 #include "hid_generic.h"
 #include "ps3.h"
 #include "wii.h"
@@ -87,7 +88,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     npiso_from_generic, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
-    NULL, /* REAL_3DO */
+    real_from_generic, /* REAL_3DO */
     NULL, /* JAGUAR */
     ps_from_generic, /* PSX */
     saturn_from_generic, /* SATURN */
@@ -135,7 +136,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     npiso_meta_init, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
-    NULL, /* REAL_3DO */
+    real_meta_init, /* REAL_3DO */
     NULL, /* JAGUAR */
     ps_meta_init, /* PSX */
     saturn_meta_init, /* SATURN */
@@ -159,7 +160,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     npiso_init_buffer, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
-    NULL, /* REAL_3DO */
+    real_init_buffer, /* REAL_3DO */
     NULL, /* JAGUAR */
     ps_init_buffer, /* PSX */
     saturn_init_buffer, /* SATURN */
