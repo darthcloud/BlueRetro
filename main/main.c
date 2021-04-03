@@ -16,6 +16,7 @@
 #include "bluetooth/host.h"
 #include "wired/detect.h"
 #include "wired/npiso_io.h"
+#include "wired/cdi_uart.h"
 #include "wired/sega_io.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
@@ -136,7 +137,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* PCE */
     sega_io_init, /* GENESIS */
     npiso_init, /* SNES */
-    NULL, /* CDI */
+    cdi_uart_init, /* CDI */
     NULL, /* CD32 */
     real_spi_init, /* REAL_3DO */
     NULL, /* JAGUAR */

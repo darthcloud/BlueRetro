@@ -379,14 +379,13 @@ struct bt_data {
 } __packed;
 
 struct wired_data {
+    uint32_t index;
     void *fb_timer_hdl;
     /* Bi-directional */
     atomic_t flags;
     /* from wired driver */
     uint32_t frame_cnt;
     /* from adapter */
-    int32_t dev_mode;
-    int32_t acc_mode;
     uint8_t output[64];
 } __packed;
 

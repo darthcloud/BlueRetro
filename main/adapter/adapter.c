@@ -16,6 +16,7 @@
 #include "config.h"
 #include "adapter.h"
 #include "npiso.h"
+#include "cdi.h"
 #include "genesis.h"
 #include "real.h"
 #include "pcfx.h"
@@ -87,7 +88,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     NULL, /* PCE */
     genesis_from_generic, /* GENESIS */
     npiso_from_generic, /* SNES */
-    NULL, /* CDI */
+    cdi_from_generic, /* CDI */
     NULL, /* CD32 */
     real_from_generic, /* REAL_3DO */
     NULL, /* JAGUAR */
@@ -135,7 +136,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     NULL, /* PCE */
     genesis_meta_init, /* GENESIS */
     npiso_meta_init, /* SNES */
-    NULL, /* CDI */
+    cdi_meta_init, /* CDI */
     NULL, /* CD32 */
     real_meta_init, /* REAL_3DO */
     NULL, /* JAGUAR */
@@ -159,7 +160,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* PCE */
     genesis_init_buffer, /* GENESIS */
     npiso_init_buffer, /* SNES */
-    NULL, /* CDI */
+    cdi_init_buffer, /* CDI */
     NULL, /* CD32 */
     real_init_buffer, /* REAL_3DO */
     NULL, /* JAGUAR */
@@ -401,6 +402,7 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
 
 void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     if (wired_adapter.system_id != WIRED_NONE && buffer_init_func[wired_adapter.system_id]) {
+        wired_adapter.data[wired_id].index = wired_id;
         buffer_init_func[wired_adapter.system_id](config.out_cfg[wired_id].dev_mode, &wired_adapter.data[wired_id]);
     }
 }

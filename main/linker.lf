@@ -9,6 +9,7 @@ entries:
     intr (noflash)
     delay (noflash)
     detect (noflash)
+    cdi_uart (noflash)
     jvs_uart (noflash)
     maple (noflash)
     npiso_io (noflash)
