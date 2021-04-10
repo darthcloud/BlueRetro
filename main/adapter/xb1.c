@@ -137,7 +137,7 @@ static const uint32_t xb1_adaptive_btns_mask[32] = {
     0, 0, 0, 0,
 };
 
-void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -190,6 +190,11 @@ void xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ctrl_data->btns[0].value |= BIT(PAD_MT);
         }
     }
+    else {
+        return -1;
+    }
+
+    return 0;
 }
 
 void xb1_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {

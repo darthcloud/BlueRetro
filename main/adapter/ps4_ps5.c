@@ -189,7 +189,7 @@ static void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     }
 }
 
-void ps4_ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t ps4_ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     switch (bt_data->report_id) {
         case 0x01:
             hid_to_generic(bt_data, ctrl_data);
@@ -202,8 +202,10 @@ void ps4_ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
             break;
         default:
             printf("# Unknown report type: %02X\n", bt_data->report_type);
-            break;
+            return -1;
     }
+
+    return 0;
 }
 
 void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {

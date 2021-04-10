@@ -467,7 +467,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     }
 }
 
-void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 #ifdef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     struct hid_report *report = &bt_data->reports[bt_data->report_type];
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
@@ -505,11 +505,11 @@ void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         case PAD:
             hid_pad_to_generic(bt_data, ctrl_data);
             break;
-        case EXTRA:
-            break;
         default:
-            printf("# Unknown report type: %02X\n", bt_data->report_type);
-            break;
+            printf("# Unsupported report type: %02X\n", bt_data->report_type);
+            return -1;
     }
 #endif
+
+    return 0;
 }

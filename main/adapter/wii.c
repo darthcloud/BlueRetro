@@ -189,7 +189,7 @@ static const uint32_t wiiu_btns_mask[32] = {
     BIT(WIIU_ZR), BIT(WIIU_R), 0, BIT(WIIU_RJ),
 };
 
-void wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     uint16_t *buttons = (uint16_t *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -202,9 +202,11 @@ void wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
+
+    return 0;
 }
 
-void wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiin_map *map = (struct wiin_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -235,9 +237,11 @@ void wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].meta = &wiin_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
+
+    return 0;
 }
 
-void wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiic_map *map = (struct wiic_map *)bt_data->input;
     uint8_t axes[6];
 
@@ -276,9 +280,11 @@ void wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].meta = &wiic_axes_meta[i];
         ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
+
+    return 0;
 }
 
-void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -304,6 +310,7 @@ void wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->axes_cal[i];
     }
 
+    return 0;
 }
 
 void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {

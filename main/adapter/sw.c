@@ -77,7 +77,7 @@ static const uint32_t sw_btns_mask[32] = {
     BIT(SW_ZR), BIT(SW_R), BIT(SW_SR), BIT(SW_RJ),
 };
 
-void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct sw_map *map = (struct sw_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -105,6 +105,8 @@ void sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
         ctrl_data->axes[i].meta = &sw_axes_meta[i];
         ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral + bt_data->axes_cal[i];
     }
+
+    return 0;
 }
 
 void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
