@@ -142,9 +142,11 @@ static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data) {
             printf("# %s: failed to open file for reading\n", __FUNCTION__);
         }
         else {
-            fread((void *)data, sizeof(*data), 1, file);
+            uint32_t count = fread((void *)data, sizeof(*data), 1, file);
             fclose(file);
-            ret = 0;
+            if (count == 1) {
+                ret = 0;
+            }
         }
     }
     return ret;
