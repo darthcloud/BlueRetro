@@ -206,10 +206,10 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
             if (port->dev_id[id] != 0x41 && config.out_cfg[id].acc_mode == ACC_RUMBLE) {
                 uint8_t rumble_data[2] = {0};
                 req++;
-                if (port->rumble_r_state) {
+                if (port->rumble_r_state[id]) {
                     rumble_data[1] = (req[port->rumble_r_idx[id]]) ? 1 : 0;
                 }
-                if (!rumble_data[1] && port->rumble_l_state) {
+                if (!rumble_data[1] && port->rumble_l_state[id]) {
                     rumble_data[1] = (req[port->rumble_l_idx[id]]) ? 1 : 0;
                 }
                 if (port->last_rumble[id] != rumble_data[1]) {
