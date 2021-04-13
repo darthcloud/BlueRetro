@@ -384,11 +384,13 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
 
     /* HID buttons order is from most important to the less in HID spec. */
     /* That don't really help us so we just assign them to unused buttons. */
-    for (uint32_t mask = (1U << 16), btn = 0, i = 16; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
-        if (!(meta->hid_mask[0] & mask)) {
-            meta->hid_mask[0] |= mask;
-            meta->hid_btns_mask[i] = BIT(btn);
-            btn++;
+    if (meta->hid_btn_idx > -1) {
+        for (uint32_t mask = (1U << 16), btn = 0, i = 16; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
+            if (!(meta->hid_mask[0] & mask)) {
+                meta->hid_mask[0] |= mask;
+                meta->hid_btns_mask[i] = BIT(btn);
+                btn++;
+            }
         }
     }
 }
