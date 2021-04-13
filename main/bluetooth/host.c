@@ -520,7 +520,7 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         bt_adapter.data[device->id].report_id = report_id;
         bt_adapter.data[device->id].dev_id = device->id;
         bt_adapter.data[device->id].dev_type = device->type;
-        memcpy(bt_adapter.data[device->id].input, data, len);
+        memcpy(bt_adapter.data[device->id].input, data, (len > sizeof(bt_adapter.data[0].input)) ? sizeof(bt_adapter.data[0].input) : len);
         adapter_bridge(&bt_adapter.data[device->id]);
     }
     bt_adapter.data[device->id].report_cnt++;
