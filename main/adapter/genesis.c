@@ -294,22 +294,12 @@ static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 for (uint32_t j = 0; j < 3; j++) {
-                    if ((genesis_btns_mask[ctrl_data->index][j][i] & 0xF0000000) == 0xF0000000) {
-                        map_tmp.buttons_high[j] &= ~(genesis_btns_mask[0][j][i] & 0x000000FF);
-                    }
-                    else {
-                        map_tmp.buttons[j] &= ~genesis_btns_mask[0][j][i];
-                    }
+                    map_tmp.buttons[j] &= ~genesis_btns_mask[0][j][i];
                 }
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
-                    if ((genesis_btns_mask[ctrl_data->index][j][i] & 0xF0000000) == 0xF0000000) {
-                        map_tmp.buttons_high[j] |= genesis_btns_mask[0][j][i] & 0x000000FF;
-                    }
-                    else {
-                        map_tmp.buttons[j] |= genesis_btns_mask[0][j][i];
-                    }
+                    map_tmp.buttons[j] |= genesis_btns_mask[0][j][i];
                 }
             }
         }
