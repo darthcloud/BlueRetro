@@ -32,7 +32,7 @@
 #define N64_SLOT_OCCUPIED 0x01
 
 enum {
-    RMT_MEM_CHANGE
+    RMT_MEM_CHANGE = 0,
 };
 
 static const uint8_t gpio_pin[4] = {
