@@ -207,6 +207,10 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t src_axis_idx = btn_id_to_axis(src);
     uint32_t dst_axis_idx = btn_id_to_axis(dst);
 
+    if (src_axis_idx == AXIS_NONE || dst_axis_idx == AXIS_NONE) {
+        return 0;
+    }
+
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input.axes[src_axis_idx].value);
@@ -326,7 +330,7 @@ static void adapter_fb_stop_cb(void* arg) {
     queue_bss_enqueue(wired_adapter.input_q_hdl, &dev_id, 1);
 }
 
-uint8_t btn_id_to_axis(uint8_t btn_id) {
+int32_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
         case PAD_LX_RIGHT:
