@@ -1067,7 +1067,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     printf("# dev: %d error: 0x%02X\n", device->id, remote_features->status);
                 }
                 else {
-                    if (remote_features->features[8] & 0x80) {
+                    if (remote_features->features[7] & 0x80) {
                         bt_hci_cmd_read_remote_ext_features(&device->acl_handle);
                     }
                     if (remote_features->features[0] & 0x04) {
