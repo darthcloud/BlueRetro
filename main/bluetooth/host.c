@@ -117,12 +117,14 @@ static int32_t bt_host_load_bdaddr_from_file(void) {
         }
         else {
             uint8_t test_mac[6];
-            fread((void *)test_mac, sizeof(test_mac), 1, file);
+            uint32_t count = fread((void *)test_mac, sizeof(test_mac), 1, file);
             fclose(file);
-            test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
-            esp_base_mac_addr_set(test_mac);
-            printf("# %s: Using BDADDR.BIN MAC\n", __FUNCTION__);
-            ret = 0;
+            if (count == 1) {
+                test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
+                esp_base_mac_addr_set(test_mac);
+                printf("# %s: Using BDADDR.BIN MAC\n", __FUNCTION__);
+                ret = 0;
+            }
         }
     }
     return ret;
