@@ -56,9 +56,11 @@ static int32_t config_load_from_file(struct config *data) {
             printf("%s: failed to open file for reading\n", __FUNCTION__);
         }
         else {
-            fread((void *)data, sizeof(*data), 1, file);
+            uint32_t count = fread((void *)data, sizeof(*data), 1, file);
             fclose(file);
-            ret = 0;
+            if (count == 1) {
+                ret = 0;
+            }
         }
     }
     if (data->magic != CONFIG_MAGIC) { /* TODO use CRC32 */
