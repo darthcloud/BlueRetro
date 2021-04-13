@@ -278,13 +278,19 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask
             if (dst_mask & out->desc[dst_btn_idx]) {
                 /* Dst is an axis */
                 uint32_t axis_id = btn_id_to_axis(dst);
-                float fvalue = out->axes[axis_id].meta->abs_max
-                            * btn_sign(out->axes[axis_id].meta->polarity, dst)
-                            * (((float)map_cfg->perc_max)/100);
-                int32_t value = (int32_t)fvalue;
 
-                if (abs(value) > abs(out->axes[axis_id].value)) {
-                    out->axes[axis_id].value = value;
+                if (axis_id == AXIS_NONE) {
+                    return 0;
+                }
+                else {
+                    float fvalue = out->axes[axis_id].meta->abs_max
+                                * btn_sign(out->axes[axis_id].meta->polarity, dst)
+                                * (((float)map_cfg->perc_max)/100);
+                    int32_t value = (int32_t)fvalue;
+
+                    if (abs(value) > abs(out->axes[axis_id].value)) {
+                        out->axes[axis_id].value = value;
+                    }
                 }
             }
             else {
