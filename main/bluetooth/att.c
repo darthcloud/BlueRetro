@@ -511,6 +511,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_write_req *wr_req = (struct bt_att_write_req *)bt_hci_acl_pkt->att_data;
             uint16_t *data = (uint16_t *)wr_req->value;
+            uint32_t data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
             printf("# BT_ATT_OP_WRITE_REQ\n");
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
@@ -525,7 +526,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.in_cfg[ctrl_cfg_id], wr_req->value, sizeof(config.in_cfg[0]));
+                    memcpy((void *)&config.in_cfg[ctrl_cfg_id], wr_req->value, data_len);
                     config_update();
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
