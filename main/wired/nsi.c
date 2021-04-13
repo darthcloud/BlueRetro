@@ -317,12 +317,12 @@ static uint32_t n64_isr(uint32_t cause) {
                                     }
                                 }
                                 else {
-                                    if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
+                                    //if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                                         item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, empty, 32, &crc, STOP_BIT_2US);
-                                    }
-                                    else {
+                                    //}
+                                    //else {
                                         //item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
-                                    }
+                                    //}
                                 }
                                 buf[0] = crc ^ 0xFF;
                                 nsi_bytes_to_items_crc(item, buf, 1, &crc, STOP_BIT_2US);
