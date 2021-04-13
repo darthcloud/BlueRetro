@@ -246,12 +246,12 @@ enum {
 
 /* BT flags */
 enum {
-    BT_INIT,
+    BT_INIT = 0,
 };
 
 /* Wired flags */
 enum {
-    WIRED_NEW_DATA,
+    WIRED_NEW_DATA = 0,
     WIRED_SAVE_MEM,
     WIRED_WAITING_FOR_RELEASE,
     WIRED_WAITING_FOR_RELEASE2,
