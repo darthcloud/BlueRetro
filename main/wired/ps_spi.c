@@ -324,7 +324,7 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 {
                     uint32_t len = 0;
                     memset(rsp, 0x00, size);
-                    kbmon_get_code(id + port->mt_first_port, rsp, &len);
+                    (void)kbmon_get_code(id + port->mt_first_port, rsp, &len);
                     break;
                 }
                 case DEV_PSX_MOUSE:
