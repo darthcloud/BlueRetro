@@ -288,14 +288,12 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
-            uint32_t cp_len, target_len = bt_adapter.data[device->id].sdp_len + sys_be16_to_cpu(att_rsp->att_list_len);
+            uint32_t free_len = sizeof(bt_adapter.data[device->id].sdp_data) - bt_adapter.data[device->id].sdp_len;
+            uint32_t cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
 
-            if (target_len > sizeof(bt_adapter.data[device->id].sdp_data)) {
-                cp_len = sizeof(bt_adapter.data[device->id].sdp_data) - bt_adapter.data[device->id].sdp_len;
+            if (cp_len > free_len) {
+                cp_len = free_len;
                 printf("# %s SDP data > buffer will be trunc to %d, cp_len %d\n", __FUNCTION__, sizeof(bt_adapter.data[device->id].sdp_data), cp_len);
-            }
-            else {
-                cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
             }
 
             switch (device->sdp_state) {
