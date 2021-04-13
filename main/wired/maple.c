@@ -457,7 +457,7 @@ maple_end:
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_MOUSE;
                                 memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 1);
-                                load_mouse_axes(port, (uint16_t *)&pkt.data32[2]);
+                                load_mouse_axes(port, (uint16_t *)&pkt.data[12]);
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 ++wired_adapter.data[port].frame_cnt;
                                 break;
