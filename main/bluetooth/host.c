@@ -30,7 +30,7 @@
 
 enum {
     /* BT CTRL flags */
-    BT_CTRL_READY,
+    BT_CTRL_READY= 0,
     BT_HOST_DISCONN_SW_INHIBIT,
     BT_HOST_DBG_MODE,
 };
