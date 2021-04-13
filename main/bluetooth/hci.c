@@ -268,7 +268,7 @@ static void bt_hci_cmd_disconnect(void *handle) {
     printf("# %s\n", __FUNCTION__);
 
     disconnect->handle = *(uint16_t *)handle;
-    disconnect->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+    //disconnect->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
     disconnect->reason = BT_HCI_ERR_REMOTE_POWER_OFF;
 
     bt_hci_cmd(BT_HCI_OP_DISCONNECT, sizeof(*disconnect));
