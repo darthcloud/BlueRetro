@@ -13,6 +13,7 @@
 #include "system/intr.h"
 #include "system/gpio.h"
 #include "system/delay.h"
+#include "system/led.h"
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
@@ -20,6 +21,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "ps_spi.h"
+#include "sdkconfig.h"
 
 enum {
     DEV_NONE = 0,
@@ -190,9 +192,19 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                 port->rumble_l_state[id] = 0;
                 if (port->dev_id[id] == 0x41) {
                     port->dev_id[id] = 0x73;
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+                    if (id == 0) {
+                        d1m_led_set();
+                    }
+#endif
                 }
                 else {
                     port->dev_id[id] = 0x41;
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+                    if (id == 0) {
+                        d1m_led_clear();
+                    }
+#endif
                 }
             }
         }
@@ -240,9 +252,19 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 port->rumble_l_state[id] = 0;
                 if (req[1] == 0x01) {
                     port->pend_dev_id[id] = 0x73;
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+                    if (id == 0) {
+                        d1m_led_set();
+                    }
+#endif
                 }
                 else {
                     port->pend_dev_id[id] = 0x41;
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+                    if (id == 0) {
+                        d1m_led_clear();
+                    }
+#endif
                 }
             }
             break;
@@ -571,6 +593,10 @@ static uint32_t isr_dispatch(uint32_t cause) {
 
 void ps_spi_init(void) {
     gpio_config_t io_conf = {0};
+
+#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
+    d1m_led_clear();
+#endif
 
     ps_ctrl_ports[0].id = 0;
     ps_ctrl_ports[1].id = 1;

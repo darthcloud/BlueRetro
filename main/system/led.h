@@ -8,5 +8,7 @@
 
 void err_led_set(void);
 void err_led_clear(void);
+void d1m_led_set(void);
+void d1m_led_clear(void);
 
 #endif /* _LED_H_ */

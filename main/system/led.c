@@ -3,34 +3,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-#include <driver/gpio.h>
+#include "system/gpio.h"
 #include "led.h"
 
-#define LED_PIN 17
+#define D1M_LED_PIN 2
+#define ERR_LED_PIN 17
 
-void err_led_set(void) {
+static void led_z(uint64_t pin) {
     gpio_config_t io_conf = {0};
 
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.pin_bit_mask = BIT(LED_PIN);
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << pin;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 
-    gpio_config(&io_conf);
+    gpio_config_iram(&io_conf);
 }
 
-void err_led_clear(void) {
+static void led_low(uint64_t pin) {
     gpio_config_t io_conf = {0};
 
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.pin_bit_mask = BIT(LED_PIN);
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << pin;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 
-    gpio_set_level(LED_PIN, 0);
-    gpio_config(&io_conf);
-    gpio_set_level(LED_PIN, 0);
+    gpio_set_level_iram(pin, 0);
+    gpio_config_iram(&io_conf);
+    gpio_set_level_iram(pin, 0);
+}
+
+void err_led_set(void) {
+    led_z(ERR_LED_PIN);
+}
+
+void err_led_clear(void) {
+    led_low(ERR_LED_PIN);
+}
+
+void d1m_led_set(void) {
+    led_low(D1M_LED_PIN);
+}
+
+void d1m_led_clear(void) {
+    led_z(D1M_LED_PIN);
 }
