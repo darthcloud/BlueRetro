@@ -248,6 +248,10 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 hid_stack[hid_stack_idx].usage_page = 0xFF;
                 desc += 2;
                 break;
+            case 0x07: /* USAGE_PAGE32 */
+                hid_stack[hid_stack_idx].usage_page = 0xFF;
+                desc += 4;
+                break;
             case HID_LI_USAGE: /* 0x09 */
             case HID_LI_USAGE_MIN(1): /* 0x19 */
                 if (!hid_usage_is_collection(hid_stack[hid_stack_idx].usage_page, *desc)) {
