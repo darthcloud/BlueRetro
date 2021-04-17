@@ -43,10 +43,10 @@ static DRAM_ATTR const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x90},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x90, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x90},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x90, .polarity = 1},
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
     {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
 };
