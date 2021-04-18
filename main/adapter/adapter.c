@@ -18,6 +18,7 @@
 #include "npiso.h"
 #include "cdi.h"
 #include "genesis.h"
+#include "pce.h"
 #include "real.h"
 #include "pcfx.h"
 #include "ps.h"
@@ -85,7 +86,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     para_1p_from_generic, /* PARALLEL_1P */
     para_2p_from_generic, /* PARALLEL_2P */
     npiso_from_generic, /* NES */
-    NULL, /* PCE */
+    pce_from_generic, /* PCE */
     genesis_from_generic, /* GENESIS */
     npiso_from_generic, /* SNES */
     cdi_from_generic, /* CDI */
@@ -133,7 +134,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     para_1p_meta_init, /* PARALLEL_1P */
     para_2p_meta_init, /* PARALLEL_2P */
     npiso_meta_init, /* NES */
-    NULL, /* PCE */
+    pce_meta_init, /* PCE */
     genesis_meta_init, /* GENESIS */
     npiso_meta_init, /* SNES */
     cdi_meta_init, /* CDI */
@@ -157,7 +158,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     para_1p_init_buffer, /* PARALLEL_1P */
     para_2p_init_buffer, /* PARALLEL_2P */
     npiso_init_buffer, /* NES */
-    NULL, /* PCE */
+    pce_init_buffer, /* PCE */
     genesis_init_buffer, /* GENESIS */
     npiso_init_buffer, /* SNES */
     cdi_init_buffer, /* CDI */

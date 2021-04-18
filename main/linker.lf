@@ -20,3 +20,4 @@ entries:
     ps_spi (noflash)
     real_spi (noflash)
     sega_io (noflash)
+    pce_io (noflash)

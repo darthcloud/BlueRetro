@@ -18,6 +18,7 @@
 #include "wired/npiso_io.h"
 #include "wired/cdi_uart.h"
 #include "wired/sega_io.h"
+#include "wired/pce_io.h"
 #include "wired/nsi.h"
 #include "wired/maple.h"
 #include "wired/jvs_uart.h"
@@ -134,7 +135,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     parallel_io_init, /* PARALLEL_1P */
     parallel_io_init, /* PARALLEL_2P */
     npiso_init, /* NES */
-    NULL, /* PCE */
+    pce_io_init, /* PCE */
     sega_io_init, /* GENESIS */
     npiso_init, /* SNES */
     cdi_uart_init, /* CDI */
