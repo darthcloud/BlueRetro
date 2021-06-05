@@ -26,6 +26,7 @@
 #include "wired/pcfx_spi.h"
 #include "wired/ps_spi.h"
 #include "wired/real_spi.h"
+#include "wired/jag_io.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_BLUERETRO_SYSTEM_PARALLEL_1P
@@ -141,7 +142,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     cdi_uart_init, /* CDI */
     NULL, /* CD32 */
     real_spi_init, /* REAL_3DO */
-    NULL, /* JAGUAR */
+    jag_io_init, /* JAGUAR */
     ps_spi_init, /* PSX */
     sega_io_init, /* SATURN */
     pcfx_spi_init, /* PCFX */

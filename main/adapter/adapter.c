@@ -20,6 +20,7 @@
 #include "genesis.h"
 #include "pce.h"
 #include "real.h"
+#include "jag.h"
 #include "pcfx.h"
 #include "ps.h"
 #include "saturn.h"
@@ -92,7 +93,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     cdi_from_generic, /* CDI */
     NULL, /* CD32 */
     real_from_generic, /* REAL_3DO */
-    NULL, /* JAGUAR */
+    jag_from_generic, /* JAGUAR */
     ps_from_generic, /* PSX */
     saturn_from_generic, /* SATURN */
     pcfx_from_generic, /* PCFX */
@@ -140,7 +141,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     cdi_meta_init, /* CDI */
     NULL, /* CD32 */
     real_meta_init, /* REAL_3DO */
-    NULL, /* JAGUAR */
+    jag_meta_init, /* JAGUAR */
     ps_meta_init, /* PSX */
     saturn_meta_init, /* SATURN */
     pcfx_meta_init, /* PCFX */
@@ -164,7 +165,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     cdi_init_buffer, /* CDI */
     NULL, /* CD32 */
     real_init_buffer, /* REAL_3DO */
-    NULL, /* JAGUAR */
+    jag_init_buffer, /* JAGUAR */
     ps_init_buffer, /* PSX */
     saturn_init_buffer, /* SATURN */
     pcfx_init_buffer, /* PCFX */
