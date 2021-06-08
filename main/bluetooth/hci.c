@@ -10,6 +10,7 @@
 #include "att.h"
 #include "hidp_wii.h"
 #include "tools/util.h"
+#include "system/led.h"
 
 #define BT_INQUIRY_MAX 10
 
@@ -231,6 +232,7 @@ static void bt_hci_cmd_inquiry_cancel(void *cp) {
 static void bt_hci_cmd_periodic_inquiry(void *cp) {
     struct bt_hci_cp_periodic_inquiry *periodic_inquiry = (struct bt_hci_cp_periodic_inquiry *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
+    err_led_pulse();
 
     periodic_inquiry->max_period_length = 0x0A;
     periodic_inquiry->min_period_length = 0x08;
@@ -245,6 +247,7 @@ static void bt_hci_cmd_periodic_inquiry(void *cp) {
 
 static void bt_hci_cmd_exit_periodic_inquiry(void *cp) {
     printf("# %s\n", __FUNCTION__);
+    err_led_clear();
 
     bt_hci_cmd(BT_HCI_OP_EXIT_PERIODIC_INQUIRY, 0);
 }

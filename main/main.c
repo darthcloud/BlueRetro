@@ -194,7 +194,7 @@ static void wired_init_task(void) {
 }
 
 static void wl_init_task(void *arg) {
-    err_led_clear();
+    err_led_init();
 
     core0_stall_init();
 
