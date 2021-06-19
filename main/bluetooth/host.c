@@ -20,6 +20,7 @@
 #include "att.h"
 #include "tools/util.h"
 #include "debug.h"
+#include "system/btn.h"
 
 #define BT_TX 0
 #define BT_RX 1
@@ -31,7 +32,6 @@
 enum {
     /* BT CTRL flags */
     BT_CTRL_READY= 0,
-    BT_HOST_DISCONN_SW_INHIBIT,
     BT_HOST_DBG_MODE,
 };
 
@@ -50,7 +50,6 @@ static atomic_t bt_flags = 0;
 static uint32_t frag_size = 0;
 static uint32_t frag_offset = 0;
 static uint8_t frag_buf[1024];
-static esp_timer_handle_t disconn_sw_timer_hdl;
 
 #ifdef CONFIG_BLUERETRO_BT_H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
@@ -94,13 +93,13 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
 }
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
-static void bt_host_disconn_sw_callback(void *arg) {
-    printf("# %s\n", __FUNCTION__);
-
-    esp_timer_delete(disconn_sw_timer_hdl);
-    disconn_sw_timer_hdl = NULL;
-
-    atomic_clear_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT);
+static void bt_host_disconnect_all(void) {
+    printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
+    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
+            bt_hci_disconnect(&bt_dev[i]);
+        }
+    }
 }
 
 static int32_t bt_host_load_bdaddr_from_file(void) {
@@ -215,26 +214,6 @@ static void bt_fb_task(void *param) {
 
 static void bt_host_task(void *param) {
     while(1) {
-        /* Disconnect all devices on BOOT switch press */
-        if (!gpio_get_level(0) && !atomic_test_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT)) {
-            const esp_timer_create_args_t disconn_sw_timer_args = {
-                .callback = &bt_host_disconn_sw_callback,
-                .arg = NULL,
-                .name = "disconn_sw_timer"
-            };
-
-            atomic_set_bit(&bt_flags, BT_HOST_DISCONN_SW_INHIBIT);
-            printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
-            for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
-                if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
-                    bt_hci_disconnect(&bt_dev[i]);
-                }
-            }
-
-            /* Inhibit SW press for 2 seconds */
-            esp_timer_create(&disconn_sw_timer_args, (esp_timer_handle_t *)&disconn_sw_timer_hdl);
-            esp_timer_start_once(disconn_sw_timer_hdl, 2000000);
-        }
         /* Per device housekeeping */
         for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
             if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
@@ -404,7 +383,6 @@ void bt_host_q_wait_pkt(uint32_t ms) {
 }
 
 int32_t bt_host_init(void) {
-    gpio_config_t io_conf = {0};
     /* Initialize NVS — it is used to store PHY calibration data */
     int32_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -413,15 +391,8 @@ int32_t bt_host_init(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    /* INIT BOOT SW */
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.pin_bit_mask = BIT(0);
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config(&io_conf);
-
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
+    gpio_config_t io_conf = {0};
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -462,6 +433,8 @@ int32_t bt_host_init(void) {
     xTaskCreatePinnedToCore(&bt_tx_task, "bt_tx_task", 2048, NULL, 11, NULL, 0);
 
     bt_hci_init();
+    boot_btn_set_callback(bt_host_disconnect_all, BOOT_BTN_DEFAULT_EVT);
+    boot_btn_init();
 
     return ret;
 }

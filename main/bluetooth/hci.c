@@ -10,6 +10,7 @@
 #include "att.h"
 #include "hidp_wii.h"
 #include "tools/util.h"
+#include "system/btn.h"
 #include "system/led.h"
 
 #define BT_INQUIRY_MAX 10
@@ -233,6 +234,7 @@ static void bt_hci_cmd_periodic_inquiry(void *cp) {
     struct bt_hci_cp_periodic_inquiry *periodic_inquiry = (struct bt_hci_cp_periodic_inquiry *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
     err_led_pulse();
+    boot_btn_hold_state(1);
 
     periodic_inquiry->max_period_length = 0x0A;
     periodic_inquiry->min_period_length = 0x08;
@@ -248,6 +250,7 @@ static void bt_hci_cmd_periodic_inquiry(void *cp) {
 static void bt_hci_cmd_exit_periodic_inquiry(void *cp) {
     printf("# %s\n", __FUNCTION__);
     err_led_clear();
+    boot_btn_hold_state(0);
 
     bt_hci_cmd(BT_HCI_OP_EXIT_PERIODIC_INQUIRY, 0);
 }
@@ -840,9 +843,19 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     }
 }
 
+static void bt_hci_start_inquiry(void) {
+    bt_hci_cmd_periodic_inquiry(NULL);
+}
+
+static void bt_hci_stop_inquiry(void) {
+    bt_hci_cmd_exit_periodic_inquiry(NULL);
+}
+
 void bt_hci_init(void) {
     bt_config_state = 0;
     bt_hci_q_conf(0);
+    boot_btn_set_callback(bt_hci_start_inquiry, BOOT_BTN_HOLD_EVT);
+    boot_btn_set_callback(bt_hci_stop_inquiry, BOOT_BTN_HOLD_CANCEL_EVT);
 }
 
 void bt_hci_disconnect(struct bt_dev *device) {
