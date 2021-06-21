@@ -12,6 +12,7 @@
 #include "adapter/config.h"
 
 #define ATT_MAX_LEN 512
+#define BR_API_VER 1
 
 enum {
     GATT_GRP_HDL = 0x0001,
@@ -40,6 +41,8 @@ enum {
     BR_IN_CFG_CTRL_CHRC_HDL,
     BR_IN_CFG_DATA_ATT_HDL,
     BR_IN_CFG_DATA_CHRC_HDL,
+    BR_API_VER_ATT_HDL,
+    BR_API_VER_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -291,6 +294,11 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
             memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[ctrl_cfg_id] + sum_offset, len);
         }
     }
+    else {
+        printf("# API version: %d\n", BR_API_VER);
+        len = 1;
+        bt_hci_pkt_tmp.att_data[0] = BR_API_VER;
+    }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
 }
@@ -339,9 +347,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     else {
         rd_grp_rsp->len = 20;
 
-        if (start <= BR_GRP_HDL && end >= BR_IN_CFG_DATA_CHRC_HDL) {
+        if (start <= BR_GRP_HDL && end >= BR_API_VER_CHRC_HDL) {
             gatt_data->start_handle = BR_GRP_HDL;
-            gatt_data->end_handle = BR_IN_CFG_DATA_CHRC_HDL;
+            gatt_data->end_handle = BR_API_VER_CHRC_HDL;
             memcpy(gatt_data->value, br_grp_base_uuid, sizeof(br_grp_base_uuid));
             len += rd_grp_rsp->len;
         }
@@ -429,7 +437,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
                 }
                 /* BLUERETRO */
-                else if (start >= BATT_CHRC_HDL && start < BR_IN_CFG_DATA_CHRC_HDL && end >= BR_IN_CFG_DATA_CHRC_HDL) {
+                else if (start >= BATT_CHRC_HDL && start < BR_API_VER_CHRC_HDL && end >= BR_API_VER_CHRC_HDL) {
                     bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle, start);
                 }
                 else {
@@ -468,6 +476,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
+                case BR_API_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
                     break;
                 default:
@@ -487,7 +496,8 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL)/2, rd_blob_req->offset);
+                case BR_API_VER_CHRC_HDL:
+                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, rd_blob_req->offset);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_BLOB_REQ, rd_blob_req->handle, BT_ATT_ERR_INVALID_HANDLE);
