@@ -284,6 +284,12 @@ enum {
     MT_ALT,
 };
 
+/* Inquiry mode */
+enum {
+    INQ_AUTO = 0,
+    INQ_MANUAL,
+};
+
 /* Scaling mode */
 enum {
     LINEAR = 0,
