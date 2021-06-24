@@ -21,13 +21,11 @@
 #include "tools/util.h"
 #include "debug.h"
 #include "system/btn.h"
+#include "system/fs.h"
 
 #define BT_TX 0
 #define BT_RX 1
 #define BT_DEV_MAX 7
-
-#define LINK_KEYS_FILE "/fs/linkkeys.bin"
-#define BDADDR_FILE "/fs/bdaddr.bin"
 
 enum {
     /* BT CTRL flags */

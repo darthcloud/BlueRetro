@@ -8,10 +8,12 @@
 #include <freertos/task.h>
 #include "zephyr/atomic.h"
 #include "driver/gpio.h"
+#include "system/fs.h"
 #include "btn.h"
 
 #define BOOT_BTN_PIN 0
 #define HOLD_EVT_THRESHOLD 300
+#define RESET_EVT_THRESHOLD 1000
 
 /* Button flags */
 enum {
@@ -50,6 +52,12 @@ static void boot_btn_task(void *param) {
             }
 
             while (!gpio_get_level(BOOT_BTN_PIN)) {
+                if (hold_cnt++ > RESET_EVT_THRESHOLD) {
+                    fs_reset();
+                    printf("BlueRetro factory reset\n");
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    esp_restart();
+                }
                 vTaskDelay(10 / portTICK_PERIOD_MS);
             }
 

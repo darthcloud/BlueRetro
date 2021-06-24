@@ -10,8 +10,7 @@
 #include "tools/util.h"
 #include "adapter.h"
 #include "config.h"
-
-#define CONFIG_FILE "/fs/config.bin"
+#include "system/fs.h"
 
 struct config config;
 static uint32_t config_version_magic[] = {

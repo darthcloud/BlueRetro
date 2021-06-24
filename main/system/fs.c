@@ -99,3 +99,8 @@ int32_t fs_init(void) {
 #endif
 #endif
 }
+
+void fs_reset(void) {
+    (void)remove(LINK_KEYS_FILE);
+    (void)remove(CONFIG_FILE);
+}
