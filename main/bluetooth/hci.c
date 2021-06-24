@@ -12,6 +12,7 @@
 #include "tools/util.h"
 #include "system/btn.h"
 #include "system/led.h"
+#include "adapter/config.h"
 
 #define BT_INQUIRY_MAX 10
 
@@ -916,7 +917,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                     else {
                         bt_host_reset_dev(device);
-                        if (bt_host_get_active_dev(&device) == BT_NONE) {
+                        if (config.global_cfg.inquiry_mode == INQ_AUTO && bt_host_get_active_dev(&device) == BT_NONE) {
                             bt_hci_cmd_periodic_inquiry(NULL);
                         }
                     }
@@ -965,7 +966,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 printf("# DISCONN from dev: %d\n", device->id);
                 bt_host_reset_dev(device);
                 if (bt_host_get_active_dev(&device) == BT_NONE) {
-                    bt_hci_cmd_periodic_inquiry(NULL);
+                    if (config.global_cfg.inquiry_mode == INQ_AUTO) {
+                        bt_hci_cmd_periodic_inquiry(NULL);
+                    }
                     bt_hci_cmd_le_set_adv_enable(NULL);
                 }
             }
@@ -1024,7 +1027,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                     else {
                         bt_host_reset_dev(device);
-                        if (bt_host_get_active_dev(&device) == BT_NONE) {
+                        if (config.global_cfg.inquiry_mode == INQ_AUTO && bt_host_get_active_dev(&device) == BT_NONE) {
                             bt_hci_cmd_periodic_inquiry(NULL);
                         }
                     }
@@ -1210,9 +1213,14 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_LE_SET_ADV_PARAM:
                     case BT_HCI_OP_LE_SET_ADV_DATA:
                     case BT_HCI_OP_LE_SET_SCAN_RSP_DATA:
-                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
                         bt_hci_pkt_retry = 0;
                         bt_hci_q_conf(1);
+                        break;
+                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
+                        if (config.global_cfg.inquiry_mode == INQ_AUTO) {
+                            bt_hci_pkt_retry = 0;
+                            bt_hci_q_conf(1);
+                        }
                         break;
                 }
             }

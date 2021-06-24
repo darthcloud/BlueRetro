@@ -89,6 +89,7 @@ void err_led_init(void) {
     ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0, 0);
 
     xTaskCreatePinnedToCore(&err_led_task, "err_led_task", 1024, NULL, 5, &err_led_task_hdl, 0);
+    err_led_clear();
 }
 
 void err_led_set(void) {
