@@ -6,6 +6,7 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <esp_ota_ops.h>
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
@@ -194,12 +195,17 @@ static void wired_init_task(void) {
 }
 
 static void wl_init_task(void *arg) {
+    uint32_t err = 0;
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    esp_ota_get_state_partition(running, &ota_state);
     err_led_init();
 
     core0_stall_init();
 
     if (fs_init()) {
         err_led_set();
+        err = 1;
         printf("FATFS init fail!\n");
     }
 
@@ -208,10 +214,21 @@ static void wl_init_task(void *arg) {
 #ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {
         err_led_set();
+        err = 1;
         printf("Bluetooth init fail!\n");
     }
 #endif
 
+    if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+        if (err) {
+            printf("Boot error on pending img, rollback to the previous version.");
+            esp_ota_mark_app_invalid_rollback_and_reboot();
+        }
+        else {
+            printf("Pending img valid!");
+            esp_ota_mark_app_valid_cancel_rollback();
+        }
+    }
     vTaskDelete(NULL);
 }
 

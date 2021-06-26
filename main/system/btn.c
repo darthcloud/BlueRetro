@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <esp_partition.h>
 #include "zephyr/atomic.h"
 #include "driver/gpio.h"
 #include "system/fs.h"
@@ -53,6 +54,12 @@ static void boot_btn_task(void *param) {
 
             while (!gpio_get_level(BOOT_BTN_PIN)) {
                 if (hold_cnt++ > RESET_EVT_THRESHOLD) {
+                    const esp_partition_t* partition = esp_partition_find_first(
+                            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, "otadata");
+                    if (partition) {
+                        esp_partition_erase_range(partition, 0, partition->size);
+                    }
+
                     fs_reset();
                     printf("BlueRetro factory reset\n");
                     vTaskDelay(1000 / portTICK_PERIOD_MS);

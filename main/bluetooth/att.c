@@ -4,6 +4,9 @@
  */
 
 #include <stdio.h>
+#include <esp_ota_ops.h>
+#include <esp_system.h>
+#include <esp_timer.h>
 #include "host.h"
 #include "att.h"
 #include "zephyr/uuid.h"
@@ -13,6 +16,9 @@
 
 #define ATT_MAX_LEN 512
 #define BR_API_VER 1
+#define OTA_START 0xA5
+#define OTA_ABORT 0xDE
+#define OTA_END 0x5A
 
 enum {
     GATT_GRP_HDL = 0x0001,
@@ -43,17 +49,28 @@ enum {
     BR_IN_CFG_DATA_CHRC_HDL,
     BR_API_VER_ATT_HDL,
     BR_API_VER_CHRC_HDL,
+    BR_OTA_FW_CTRL_ATT_HDL,
+    BR_OTA_FW_CTRL_CHRC_HDL,
+    BR_OTA_FW_DATA_ATT_HDL,
+    BR_OTA_FW_DATA_CHRC_HDL,
+    LAST_HDL = BR_OTA_FW_DATA_CHRC_HDL,
     MAX_HDL,
 };
 
 static uint8_t br_grp_base_uuid[] = {0x00, 0x9a, 0x79, 0x76, 0xa1, 0x2f, 0x4b, 0x31, 0xb0, 0xfa, 0x80, 0x51, 0x56, 0x0f, 0x83, 0x56};
 
+static esp_ota_handle_t ota_hdl = 0;
+static const esp_partition_t *update_partition = NULL;
 static uint16_t max_mtu = 23;
 static uint16_t mtu = 23;
 static uint8_t power = 0;
-static uint16_t out_ctrl_cfg_id = 0;
-static uint16_t ctrl_offset = 0;
-static uint16_t ctrl_cfg_id = 0;
+static uint16_t out_cfg_id = 0;
+static uint16_t in_cfg_offset = 0;
+static uint16_t in_cfg_id = 0;
+
+static void bt_att_restart(void *arg) {
+    esp_restart();
+}
 
 static void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
     uint16_t packet_len = (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
@@ -206,8 +223,20 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
     else {
         rd_type_rsp->data->handle = start;
     }
-    *data = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE;
-    data++;
+
+    switch (rd_type_rsp->data->handle + 1) {
+        case BR_API_VER_CHRC_HDL:
+            *data++ = BT_GATT_CHRC_READ;
+            break;
+        case BR_OTA_FW_CTRL_CHRC_HDL:
+        case BR_OTA_FW_DATA_CHRC_HDL:
+            *data++ = BT_GATT_CHRC_WRITE;
+            break;
+        default:
+            *data++ = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE;
+            break;
+    }
+
     *(uint16_t *)data = rd_type_rsp->data->handle + 1;
     data += 2;
     memcpy(data, br_grp_base_uuid, sizeof(br_grp_base_uuid));
@@ -270,12 +299,12 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
                 len = mtu - 1;
             }
 
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[out_ctrl_cfg_id] + offset, len);
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[out_cfg_id] + offset, len);
         }
     }
     else if (config_id == 4) {
-        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[ctrl_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
-        uint32_t sum_offset = ctrl_offset + offset;
+        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[in_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
+        uint32_t sum_offset = in_cfg_offset + offset;
         printf("# Input config %d\n", cfg_len);
         if (sum_offset > cfg_len || offset > ATT_MAX_LEN) {
             len = 0;
@@ -291,7 +320,7 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
                 len = ATT_MAX_LEN - offset;
             }
 
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[ctrl_cfg_id] + sum_offset, len);
+            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[in_cfg_id] + sum_offset, len);
         }
     }
     else {
@@ -347,9 +376,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     else {
         rd_grp_rsp->len = 20;
 
-        if (start <= BR_GRP_HDL && end >= BR_API_VER_CHRC_HDL) {
+        if (start <= BR_GRP_HDL && end >= LAST_HDL) {
             gatt_data->start_handle = BR_GRP_HDL;
-            gatt_data->end_handle = BR_API_VER_CHRC_HDL;
+            gatt_data->end_handle = LAST_HDL;
             memcpy(gatt_data->value, br_grp_base_uuid, sizeof(br_grp_base_uuid));
             len += rd_grp_rsp->len;
         }
@@ -380,6 +409,7 @@ static void bt_att_cmd_exec_wr_rsp(uint16_t handle) {
 
 void bt_att_set_le_max_mtu(uint16_t le_max_mtu) {
     max_mtu = le_max_mtu;
+    printf("# %s %d\n", __FUNCTION__, max_mtu);
 }
 
 void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
@@ -394,6 +424,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
             else {
                 mtu = max_mtu;
             }
+            printf("# Set mtu %d\n", mtu);
             bt_att_cmd_mtu_rsp(device->acl_handle, mtu);
             break;
         }
@@ -437,7 +468,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_batt_char_read_type_rsp(device->acl_handle);
                 }
                 /* BLUERETRO */
-                else if (start >= BATT_CHRC_HDL && start < BR_API_VER_CHRC_HDL && end >= BR_API_VER_CHRC_HDL) {
+                else if (start >= BATT_CHRC_HDL && start < LAST_HDL && end >= LAST_HDL) {
                     bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle, start);
                 }
                 else {
@@ -521,8 +552,9 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_write_req *wr_req = (struct bt_att_write_req *)bt_hci_acl_pkt->att_data;
             uint16_t *data = (uint16_t *)wr_req->value;
-            uint32_t data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
-            printf("# BT_ATT_OP_WRITE_REQ\n");
+            uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
+            uint32_t data_len = att_len - sizeof(wr_req->handle);
+            printf("# BT_ATT_OP_WRITE_REQ len: %d\n", data_len);
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
                     printf("# BR_GLBL_CFG_CHRC_HDL %04X\n", wr_req->handle);
@@ -531,23 +563,72 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.out_cfg[out_ctrl_cfg_id], wr_req->value, sizeof(config.out_cfg[0]));
+                    memcpy((void *)&config.out_cfg[out_cfg_id], wr_req->value, sizeof(config.out_cfg[0]));
                     config_update();
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.in_cfg[ctrl_cfg_id], wr_req->value, data_len);
+                    memcpy((void *)&config.in_cfg[in_cfg_id] + in_cfg_offset, wr_req->value, data_len);
                     config_update();
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_CTRL_CHRC_HDL:
-                    out_ctrl_cfg_id = *data;
+                    out_cfg_id = *data;
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_CTRL_CHRC_HDL:
-                    ctrl_cfg_id = *data;
-                    data++;
-                    ctrl_offset = *data;
+                    in_cfg_id = *data++;
+                    in_cfg_offset = *data;
+                    bt_att_cmd_wr_rsp(device->acl_handle);
+                    break;
+                case BR_OTA_FW_CTRL_CHRC_HDL:
+                    switch (wr_req->value[0]) {
+                        case OTA_START:
+                            update_partition = esp_ota_get_next_update_partition(NULL);
+                            if (esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_hdl) == 0) {
+                                printf("# OTA FW Update started...\n");
+                            }
+                            else {
+                                esp_ota_abort(ota_hdl);
+                                ota_hdl = 0;
+                                printf("# OTA FW Update start fail\n");
+                            }
+                            break;
+                        case OTA_END:
+                            if (esp_ota_end(ota_hdl) == 0) {
+                                if (esp_ota_set_boot_partition(update_partition) == 0) {
+                                    ota_hdl = 0;
+                                    const esp_timer_create_args_t ota_restart_args = {
+                                        .callback = &bt_att_restart,
+                                        .arg = (void *)device,
+                                        .name = "ota_restart"
+                                    };
+                                    esp_timer_handle_t timer_hdl;
+
+                                    esp_timer_create(&ota_restart_args, &timer_hdl);
+                                    esp_timer_start_once(timer_hdl, 1000000);
+                                    printf("# OTA FW Update sucessfull! Restarting...\n");
+                                }
+                                else {
+                                    printf("# OTA FW Update set partition fail\n");
+                                }
+                            }
+                            else {
+                                printf("# OTA FW Update end fail\n");
+                            }
+                            break;
+                        default:
+                            if (ota_hdl) {
+                                esp_ota_abort(ota_hdl);
+                                ota_hdl = 0;
+                                printf("# OTA FW Update abort from WebUI\n");
+                            }
+                            break;
+                    }
+                    bt_att_cmd_wr_rsp(device->acl_handle);
+                    break;
+                case BR_OTA_FW_DATA_CHRC_HDL:
+                    esp_ota_write(ota_hdl, wr_req->value, data_len);
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 default:
@@ -559,12 +640,17 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         case BT_ATT_OP_PREPARE_WRITE_REQ:
         {
             struct bt_att_prepare_write_req *prep_wr_req = (struct bt_att_prepare_write_req *)bt_hci_acl_pkt->att_data;
-            uint32_t data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
-            printf("# BT_ATT_OP_PREPARE_WRITE_REQ %d %d\n", len, data_len);
+            uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
+            uint32_t data_len = att_len - (sizeof(prep_wr_req->handle) + sizeof(prep_wr_req->offset));
+            printf("# BT_ATT_OP_PREPARE_WRITE_REQ len: %d offset: %d\n", data_len, prep_wr_req->offset);
             switch (prep_wr_req->handle) {
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    memcpy((void *)&config.in_cfg[ctrl_cfg_id] + ctrl_offset + prep_wr_req->offset, prep_wr_req->value, data_len);
-                    bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, data_len);
+                    memcpy((void *)&config.in_cfg[in_cfg_id] + in_cfg_offset + prep_wr_req->offset, prep_wr_req->value, data_len);
+                    bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, att_len);
+                    break;
+                case BR_OTA_FW_DATA_CHRC_HDL:
+                    esp_ota_write(ota_hdl, prep_wr_req->value, data_len);
+                    bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, att_len);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_PREPARE_WRITE_REQ, prep_wr_req->handle, BT_ATT_ERR_INVALID_HANDLE);
@@ -576,7 +662,7 @@ void bt_att_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint3
         {
             struct bt_att_exec_write_req *exec_wr_req = (struct bt_att_exec_write_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_EXEC_WRITE_REQ\n");
-            if (exec_wr_req->flags == BT_ATT_FLAG_EXEC) {
+            if (!ota_hdl && exec_wr_req->flags == BT_ATT_FLAG_EXEC) {
                 config_update();
             }
             bt_att_cmd_exec_wr_rsp(device->acl_handle);
