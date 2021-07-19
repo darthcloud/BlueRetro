@@ -1,9 +1,8 @@
 # BlueRetro
 ![CI](https://github.com/darthcloud/BlueRetro/workflows/CI/badge.svg)
 
-BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game consoles. Lost or broken controllers? Reproduction too expensive? Need those rare and obscure accessories? Just use the Bluetooth devices you already got! The project is open source hardware & software under the CERN-OHL-P-2.0 & Apache-2.0 licenses respectively. It's built for the popular ESP32 chip. All processing for Bluetooth and HID input decoding is done on the first core which makes it easy for other projects to use the Bluetooth stack within their own project by using the 2nd core. Wii, Switch, PS3, PS4, PS5, Xbox One & generic HID Bluetooth devices are supported. Parallel 1P (NeoGeo, Supergun, JAMMA, etc), Parallel 2P (Atari 2600/7800, Master System, etc), NES, PCE / TG16, Mega Drive / Genesis, SNES, CD-i, 3DO, Jaguar, Saturn, PSX, PC-FX, JVS (Arcade), N64, Dreamcast, PS2 & GameCube are supported with simultaneous 4+ players using a single adapter.
-
-<p align="center"><img src="https://cdn.hackaday.io/images/5521711598645122765.jpg" width="600"/></p>
+<img align="right" src="https://cdn.hackaday.io/images/5521711598645122765.jpg" width="400"/>
+<p style='text-align: justify;'>BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game consoles. Lost or broken controllers? Reproduction too expensive? Need those rare and obscure accessories? Just use the Bluetooth devices you already got! The project is open source hardware & software under the CERN-OHL-P-2.0 & Apache-2.0 licenses respectively. It's built for the popular ESP32 chip. All processing for Bluetooth and HID input decoding is done on the first core which makes it easy for other projects to use the Bluetooth stack within their own project by using the 2nd core. Wii, Switch, PS3, PS4, PS5, Xbox One & generic HID Bluetooth devices are supported. Parallel 1P (NeoGeo, Supergun, JAMMA, etc), Parallel 2P (Atari 2600/7800, Master System, etc), NES, PCE / TG16, Mega Drive / Genesis, SNES, CD-i, 3DO, Jaguar, Saturn, PSX, PC-FX, JVS (Arcade), N64, Dreamcast, PS2 & GameCube are supported with simultaneous 4+ players using a single adapter.</p>
 
 ## DIY build instructions
 * [DIY ESP32 module flashing & wiring instructions](https://github.com/darthcloud/BlueRetro/wiki/BlueRetro-DIY-Build-Instructions)
@@ -23,7 +22,10 @@ BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game 
 * [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
 * [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
 
-<p align="center"><img src="https://cdn.hackaday.io/images/7104601597769319104.png" width="600"/></p>
+## Community Contribution
+* BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
+  https://www.thingiverse.com/thing:4835926 \
+  https://oshpark.com/shared_projects/aharS64j
 
 ## General documentation
 * [ESP32 RTOS + Bare Metal: Best of Both Worlds?](https://hackaday.io/project/170365/log/189836-esp32-rtos-bare-metal-best-of-both-worlds)
