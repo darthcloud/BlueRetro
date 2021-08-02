@@ -209,7 +209,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t src_axis_idx = btn_id_to_axis(src);
     uint32_t dst_axis_idx = btn_id_to_axis(dst);
 
-    if (src_axis_idx == AXIS_NONE || dst_axis_idx == AXIS_NONE) {
+    if (src_axis_idx == AXIS_NONE) {
         return 0;
     }
 
