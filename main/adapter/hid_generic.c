@@ -480,7 +480,7 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         uint32_t bit_shift = offset % 8;
         uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
         if (report->usages[i].bit_size <= 4) {
-            printf("R%d %02X%02X: %s%X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%d %02X%02X: %s%01X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 8) {
             printf("R%d %02X%02X: %s%02X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
