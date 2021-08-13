@@ -11,6 +11,7 @@
 #include <esp_random.h>
 #include "host.h"
 #include "hci.h"
+#include "att.h"
 #include "smp.h"
 #include "zephyr/smp.h"
 
@@ -145,6 +146,8 @@ static void bt_smp_key_distribution(struct bt_dev *device) {
         esp_fill_random(tmp, sizeof(tmp));
         bt_smp_signing_info(device->acl_handle, tmp);
     }
+
+    bt_att_hid_init(device);
 }
 
 static void bt_smp_cmd(uint16_t handle, uint8_t code, uint16_t len) {

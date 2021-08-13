@@ -1030,6 +1030,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
                         bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
+                        bt_att_hid_init(device);
                     }
                     else {
                         bt_smp_pairing_start(device);

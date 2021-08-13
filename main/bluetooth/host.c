@@ -312,7 +312,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
 
     if (device == NULL) {
         if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
-            bt_att_hdlr(&bt_dev_conf, pkt, pkt_len);
+            bt_att_cfg_hdlr(&bt_dev_conf, pkt, pkt_len);
         }
         else {
             printf("# %s dev NULL!\n", __FUNCTION__);
@@ -322,6 +322,9 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
 
     if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
         bt_l2cap_sig_hdlr(device, pkt);
+    }
+    else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
+        bt_att_hid_hdlr(device, pkt, pkt_len);
     }
     else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_SMP) {
         bt_smp_hdlr(device, pkt, pkt_len);
