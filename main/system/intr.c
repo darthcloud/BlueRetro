@@ -5,10 +5,48 @@
 
 #include <stdbool.h>
 #include "hal/cpu_ll.h"
-#include <xtensa/xtensa_api.h>
 #include "intr.h"
 
 #define INT_MUX_DISABLED_INTNO 6
+
+/*
+-------------------------------------------------------------------------------
+  Call this function to disable non iram located interrupts.
+    newmask       - mask containing the interrupts to disable.
+-------------------------------------------------------------------------------
+*/
+static inline uint32_t xt_int_disable_mask(uint32_t newmask)
+{
+    uint32_t oldint;
+    asm volatile (
+        "movi %0,0\n"
+        "xsr %0,INTENABLE\n"    //disable all ints first
+        "rsync\n"
+        "and a3,%0,%1\n"        //mask ints that need disabling
+        "wsr a3,INTENABLE\n"    //write back
+        "rsync\n"
+        :"=&r"(oldint):"r"(newmask):"a3");
+
+    return oldint;
+}
+
+/*
+-------------------------------------------------------------------------------
+  Call this function to enable non iram located interrupts.
+    newmask       - mask containing the interrupts to enable.
+-------------------------------------------------------------------------------
+*/
+static inline void xt_int_enable_mask(uint32_t newmask)
+{
+    asm volatile (
+        "movi a3,0\n"
+        "xsr a3,INTENABLE\n"
+        "rsync\n"
+        "or a3,a3,%0\n"
+        "wsr a3,INTENABLE\n"
+        "rsync\n"
+        ::"r"(newmask):"a3");
+}
 
 int32_t intexc_alloc_iram(uint32_t source, uint32_t intr_num, XT_INTEXC_HOOK handler) {
     uint32_t intr_level = 0;

@@ -39,21 +39,29 @@
 #include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
+#include "esp_secure_boot.h"
+#include "esp_sleep.h"
 
 /***********************************************/
 // Headers for other components init functions
 #include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
+
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
-#include "esp_flash_encrypt.h"
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_vfs_usb_serial_jtag.h"
+
+#include "brownout.h"
 
 #include "esp_rom_sys.h"
 
@@ -61,18 +69,16 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/spiram.h"
-#include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
-#include "esp32s2/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#include "esp32s3/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
-#include "esp32c3/brownout.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
 #endif
 /***********************************************/
 
@@ -95,6 +101,11 @@
 uint64_t g_startup_time = 0;
 #endif
 
+#if SOC_APB_BACKUP_DMA
+// APB DMA lock initialising API
+extern void esp_apb_backup_dma_lock_init(void);
+#endif
+
 // App entry point for core 0
 extern void esp_startup_start_app(void);
 
@@ -115,7 +126,7 @@ void esp_startup_start_app_other_cores(void) __attribute__((weak, alias("esp_sta
 
 static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
-sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
+const sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #if SOC_CPU_CORES_NUM > 1
     [1 ... SOC_CPU_CORES_NUM - 1] = start_cpu_other_cores
 #endif
@@ -142,8 +153,39 @@ static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char 
 
 static const char* TAG = "cpu_start";
 
+#ifndef BLUERETRO
+/**
+ * This function overwrites a the same function of libsupc++ (part of libstdc++).
+ * Consequently, libsupc++ will then follow our configured exception emergency pool size.
+ *
+ * It will be called even with -fno-exception for user code since the stdlib still uses exceptions.
+ */
+size_t __cxx_eh_arena_size_get(void)
+{
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+#else
+    return 0;
+#endif
+}
+#endif
+
+/**
+ * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
+ * so it emits an .init_array section instead.
+ * But the init_priority sections will be sorted for iteration in ascending order during startup.
+ * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
+ * Hence a different section is generated for the init_priority functions which is looped
+ * over in ascending direction instead of descending direction.
+ * The RISC-V-specific behavior is dependent on the linker script esp32c3.project.ld.in.
+ */
 static void do_global_ctors(void)
 {
+#if __riscv
+    extern void (*__init_priority_array_start)(void);
+    extern void (*__init_priority_array_end)(void);
+#endif
+
     extern void (*__init_array_start)(void);
     extern void (*__init_array_end)(void);
 
@@ -157,7 +199,16 @@ static void do_global_ctors(void)
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
     void (**p)(void);
+
+#if __riscv
+    for (p = &__init_priority_array_start; p < &__init_priority_array_end; ++p) {
+        ESP_EARLY_LOGD(TAG, "calling init function: %p", *p);
+        (*p)();
+    }
+#endif
+
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
+        ESP_EARLY_LOGD(TAG, "calling init function: %p", *p);
         (*p)();
     }
 }
@@ -227,7 +278,11 @@ static void do_core_init(void)
 #endif
     }
 
-#if CONFIG_ESP32_BROWNOUT_DET || CONFIG_ESP32S2_BROWNOUT_DET
+#if CONFIG_ESP32_BROWNOUT_DET   || \
+    CONFIG_ESP32S2_BROWNOUT_DET || \
+    CONFIG_ESP32S3_BROWNOUT_DET || \
+    CONFIG_ESP32C3_BROWNOUT_DET || \
+    CONFIG_ESP32H2_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
@@ -243,6 +298,10 @@ static void do_core_init(void)
     ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
     const char *default_stdio_dev = "/dev/cdcacm";
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
+#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
+    const char *default_stdio_dev = "/dev/usbserjtag";
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 #endif // CONFIG_VFS_SUPPORT_IO
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
@@ -254,11 +313,29 @@ static void do_core_init(void)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
 
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
+    esp_err_t err __attribute__((unused));
 
-    esp_err_t err;
+    err = esp_pthread_init();
+    assert(err == ESP_OK && "Failed to init pthread module!");
+
+    spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
+
+    esp_flash_app_init();
+    esp_err_t flash_ret = esp_flash_init_default_chip();
+    assert(flash_ret == ESP_OK);
+    (void)flash_ret;
+
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init_virtual_mode_in_flash(efuse_partition->address, efuse_partition->size);
+    }
+#endif
+#endif
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
@@ -274,29 +351,14 @@ static void do_core_init(void)
     esp_efuse_disable_basic_rom_console();
 #endif
 
-    // [refactor-todo] move this to secondary init
-#if CONFIG_APPTRACE_ENABLE
-    err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
-#endif
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_SYSVIEW_Conf();
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    esp_flash_encryption_init_checks();
 #endif
 
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
-    esp_dbg_stubs_init();
+#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
+    // Note: in some configs this may read flash, so placed after flash init
+    esp_secure_boot_init_checks();
 #endif
-
-    err = esp_pthread_init();
-    assert(err == ESP_OK && "Failed to init pthread module!");
-
-    spi_flash_init();
-    /* init default OS-aware flash access critical section */
-    spi_flash_guard_set(&g_flash_guard_default_ops);
-
-    esp_flash_app_init();
-    esp_err_t flash_ret = esp_flash_init_default_chip();
-    assert(flash_ret == ESP_OK);
 }
 
 static void do_secondary_init(void)
@@ -391,6 +453,26 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
+#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+#endif
+
+#if CONFIG_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
+#endif
+#if CONFIG_APPTRACE_SV_ENABLE
+    SEGGER_SYSVIEW_Conf();
+#endif
+
+#if CONFIG_ESP_DEBUG_STUBS_ENABLE
+    esp_dbg_stubs_init();
+#endif
+
 #if defined(CONFIG_PM_ENABLE)
     esp_pm_impl_init();
 #endif
@@ -399,16 +481,13 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_core_dump_init();
 #endif
 
+#if SOC_APB_BACKUP_DMA
+    esp_apb_backup_dma_lock_init();
+#endif
+
 #if CONFIG_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
-#endif
-
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
-    if (efuse_partition) {
-        esp_efuse_init(efuse_partition->address, efuse_partition->size);
-    }
 #endif
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
