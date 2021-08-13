@@ -18,6 +18,7 @@
 #include "l2cap.h"
 #include "sdp.h"
 #include "att.h"
+#include "smp.h"
 #include "tools/util.h"
 #include "debug.h"
 #include "system/btn.h"
@@ -321,6 +322,9 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
 
     if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_BR_SIG) {
         bt_l2cap_sig_hdlr(device, pkt);
+    }
+    else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_SMP) {
+        bt_smp_hdlr(device, pkt, pkt_len);
     }
     else if (pkt->l2cap_hdr.cid == device->sdp_tx_chan.scid ||
         pkt->l2cap_hdr.cid == device->sdp_rx_chan.scid) {

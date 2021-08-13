@@ -11,6 +11,7 @@
 #include "l2cap.h"
 #include "hci.h"
 #include "att.h"
+#include "smp.h"
 #include "hidp_wii.h"
 #include "tools/util.h"
 #include "system/btn.h"
@@ -1031,7 +1032,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
                     }
                     else {
-                        // TODO SMP
+                        bt_smp_pairing_start(device);
                     }
                     bt_hci_cmd_le_set_scan_enable(0);
                     bt_hci_cmd_le_set_scan_param_active();
