@@ -10,6 +10,7 @@
 #include "zephyr/hci.h"
 #include "zephyr/l2cap_internal.h"
 #include "zephyr/sdp_internal.h"
+#include "zephyr/smp.h"
 #include "zephyr/att_internal.h"
 #include "adapter/adapter.h"
 #include "hidp.h"
@@ -27,6 +28,7 @@ enum {
     BT_DEV_HID_INTR_READY,
     BT_DEV_SDP_DATA,
     BT_DEV_ROLE_SW_FAIL,
+    BT_DEV_IS_BLE,
 };
 
 struct l2cap_chan {
@@ -39,15 +41,35 @@ struct bt_dev {
     int32_t id;
     int32_t flags;
     uint32_t pkt_retry;
-    uint8_t remote_bdaddr[6];
+    union {
+        struct {
+            uint8_t reserve;
+            uint8_t remote_bdaddr[6];
+        };
+        bt_addr_le_t le_remote_bdaddr;
+    };
     int32_t type;
     uint16_t acl_handle;
-    uint32_t sdp_state;
     uint32_t hid_state;
-    struct l2cap_chan sdp_rx_chan;
-    struct l2cap_chan sdp_tx_chan;
-    struct l2cap_chan ctrl_chan;
-    struct l2cap_chan intr_chan;
+    union {
+        struct {
+            uint32_t sdp_state;
+            struct l2cap_chan sdp_rx_chan;
+            struct l2cap_chan sdp_tx_chan;
+            struct l2cap_chan ctrl_chan;
+            struct l2cap_chan intr_chan;
+        };
+        struct {
+            uint8_t rand[BT_SMP_MAX_ENC_KEY_SIZE];
+            uint8_t rrand[BT_SMP_MAX_ENC_KEY_SIZE];
+            uint8_t ltk[BT_SMP_MAX_ENC_KEY_SIZE];
+            uint8_t preq[7];
+            uint8_t pres[7];
+            uint8_t rdist;
+            uint8_t ldist;
+            uint16_t mtu;
+        };
+    };
 };
 
 struct bt_hci_pkt {
@@ -64,6 +86,10 @@ struct bt_hci_pkt {
                 struct {
                     struct bt_l2cap_sig_hdr sig_hdr;
                     uint8_t sig_data[1011];
+                };
+                struct {
+                    struct bt_smp_hdr smp_hdr;
+                    uint8_t smp_data[1014];
                 };
                 struct {
                     struct bt_att_hdr att_hdr;
