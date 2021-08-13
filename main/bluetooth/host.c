@@ -326,6 +326,9 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_ATT) {
         bt_att_hid_hdlr(device, pkt, pkt_len);
     }
+    else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_LE_SIG) {
+        bt_l2cap_le_sig_hdlr(device, pkt, pkt_len);
+    }
     else if (pkt->l2cap_hdr.cid == BT_L2CAP_CID_SMP) {
         bt_smp_hdlr(device, pkt, pkt_len);
     }
