@@ -8,6 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SMP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_SMP_H_
 
 struct bt_smp_hdr {
 	uint8_t  code;
@@ -38,7 +40,11 @@ struct bt_smp_hdr {
 #define BT_SMP_OOB_NOT_PRESENT			0x00
 #define BT_SMP_OOB_PRESENT			0x01
 
+#ifdef BLUERETRO
+#define BT_SMP_MIN_ENC_KEY_SIZE			16
+#else
 #define BT_SMP_MIN_ENC_KEY_SIZE			CONFIG_BT_SMP_MIN_ENC_KEY_SIZE
+#endif /* BLUERETRO */
 #define BT_SMP_MAX_ENC_KEY_SIZE			16
 
 #define BT_SMP_DIST_ENC_KEY			0x01
@@ -130,6 +136,7 @@ struct bt_smp_keypress_notif {
 
 #define BT_SMP_NUM_CMDS                         0x0f
 
+#ifndef BLUERETRO
 int bt_smp_start_security(struct bt_conn *conn);
 bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv,
 			uint8_t *ltk);
@@ -174,3 +181,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
 /** Generate IRK from Identity Root (IR) */
 int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
+
+#endif /* BLUERETRO */
+
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SMP_H_ */
