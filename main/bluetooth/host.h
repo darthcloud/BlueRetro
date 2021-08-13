@@ -125,6 +125,10 @@ int32_t bt_host_init(void);
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len);
 int32_t bt_host_load_link_key(struct bt_hci_cp_link_key_reply *link_key_reply);
 int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notify);
+int32_t bt_host_load_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info, struct bt_smp_master_ident *master_ident);
+int32_t bt_host_store_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info);
+int32_t bt_host_store_le_ident(bt_addr_le_t *le_bdaddr, struct bt_smp_master_ident *master_ident);
+int32_t bt_host_get_next_accept_le_bdaddr(bt_addr_le_t *le_bdaddr);
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len);
 
 #endif /* _BT_HOST_H_ */

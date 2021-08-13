@@ -38,9 +38,19 @@ struct bt_host_link_keys {
     struct bt_hci_evt_link_key_notify link_keys[16];
 } __packed;
 
+struct bt_host_le_link_keys {
+    uint32_t index;
+    struct {
+        bt_addr_le_t le_bdaddr;
+        struct bt_smp_encrypt_info ltk;
+        struct bt_smp_master_ident ident;
+    } keys[16];
+} __packed;
+
 struct bt_hci_pkt bt_hci_pkt_tmp;
 
 static struct bt_host_link_keys bt_host_link_keys = {0};
+static struct bt_host_le_link_keys bt_host_le_link_keys = {0};
 static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev_conf = {0};
 static struct bt_dev bt_dev[BT_DEV_MAX] = {0};
@@ -55,6 +65,8 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 static int32_t bt_host_load_bdaddr_from_file(void);
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
+static int32_t bt_host_load_le_keys_from_file(struct bt_host_le_link_keys *data);
+static int32_t bt_host_store_le_keys_on_file(struct bt_host_le_link_keys *data);
 static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 static void bt_host_tx_pkt_ready(void);
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len);
@@ -155,6 +167,45 @@ static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data) {
     int32_t ret = -1;
 
     FILE *file = fopen(LINK_KEYS_FILE, "wb");
+    if (file == NULL) {
+        printf("# %s: failed to open file for writing\n", __FUNCTION__);
+    }
+    else {
+        fwrite((void *)data, sizeof(*data), 1, file);
+        fclose(file);
+        ret = 0;
+    }
+    return ret;
+}
+
+static int32_t bt_host_load_le_keys_from_file(struct bt_host_le_link_keys *data) {
+    struct stat st;
+    int32_t ret = -1;
+
+    if (stat(LE_LINK_KEYS_FILE, &st) != 0) {
+        printf("# %s: No link keys on SD. Creating...\n", __FUNCTION__);
+        ret = bt_host_store_le_keys_on_file(data);
+    }
+    else {
+        FILE *file = fopen(LE_LINK_KEYS_FILE, "rb");
+        if (file == NULL) {
+            printf("# %s: failed to open file for reading\n", __FUNCTION__);
+        }
+        else {
+            uint32_t count = fread((void *)data, sizeof(*data), 1, file);
+            fclose(file);
+            if (count == 1) {
+                ret = 0;
+            }
+        }
+    }
+    return ret;
+}
+
+static int32_t bt_host_store_le_keys_on_file(struct bt_host_le_link_keys *data) {
+    int32_t ret = -1;
+
+    FILE *file = fopen(LE_LINK_KEYS_FILE, "wb");
     if (file == NULL) {
         printf("# %s: failed to open file for writing\n", __FUNCTION__);
     }
@@ -425,6 +476,7 @@ int32_t bt_host_init(void) {
     }
 
     bt_host_load_keys_from_file(&bt_host_link_keys);
+    bt_host_load_le_keys_from_file(&bt_host_le_link_keys);
 
     xTaskCreatePinnedToCore(&bt_host_task, "bt_host_task", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(&bt_fb_task, "bt_fb_task", 2048, NULL, 10, NULL, 0);
@@ -474,6 +526,67 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
     }
     ret = bt_host_store_keys_on_file(&bt_host_link_keys);
     return ret;
+}
+
+int32_t bt_host_load_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info, struct bt_smp_master_ident *master_ident) {
+    int32_t ret = -1;
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_le_link_keys.keys); i++) {
+        if (memcmp((void *)le_bdaddr, (void *)&bt_host_le_link_keys.keys[i].le_bdaddr, sizeof(*le_bdaddr)) == 0) {
+            memcpy((void *)encrypt_info, &bt_host_le_link_keys.keys[i].ltk, sizeof(*encrypt_info));
+            memcpy((void *)master_ident, &bt_host_le_link_keys.keys[i].ident, sizeof(*master_ident));
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+int32_t bt_host_store_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info) {
+    int32_t ret = -1;
+    uint32_t index = bt_host_le_link_keys.index;
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_le_link_keys.keys); i++) {
+        if (memcmp((void *)le_bdaddr, (void *)&bt_host_le_link_keys.keys[i].le_bdaddr, sizeof(*le_bdaddr)) == 0) {
+            index = i;
+        }
+    }
+    memcpy((void *)&bt_host_le_link_keys.keys[index].ltk, (void *)encrypt_info, sizeof(bt_host_le_link_keys.keys[0].ltk));
+    memcpy((void *)&bt_host_le_link_keys.keys[index].le_bdaddr, (void *)le_bdaddr, sizeof(bt_host_le_link_keys.keys[0].le_bdaddr));
+    if (index == bt_host_le_link_keys.index) {
+        bt_host_le_link_keys.index++;
+        bt_host_le_link_keys.index &= 0xF;
+    }
+    ret = bt_host_store_le_keys_on_file(&bt_host_le_link_keys);
+    return ret;
+}
+
+int32_t bt_host_store_le_ident(bt_addr_le_t *le_bdaddr, struct bt_smp_master_ident *master_ident) {
+    int32_t ret = -1;
+    uint32_t index = bt_host_le_link_keys.index;
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_le_link_keys.keys); i++) {
+        if (memcmp((void *)le_bdaddr, (void *)&bt_host_le_link_keys.keys[i].le_bdaddr, sizeof(*le_bdaddr)) == 0) {
+            index = i;
+        }
+    }
+    memcpy((void *)&bt_host_le_link_keys.keys[index].ident, (void *)master_ident, sizeof(bt_host_le_link_keys.keys[0].ident));
+    memcpy((void *)&bt_host_le_link_keys.keys[index].le_bdaddr, (void *)le_bdaddr, sizeof(bt_host_le_link_keys.keys[0].le_bdaddr));
+    if (index == bt_host_le_link_keys.index) {
+        bt_host_le_link_keys.index++;
+        bt_host_le_link_keys.index &= 0xF;
+    }
+    ret = bt_host_store_le_keys_on_file(&bt_host_le_link_keys);
+    return ret;
+}
+
+int32_t bt_host_get_next_accept_le_bdaddr(bt_addr_le_t *le_bdaddr) {
+    static uint32_t index = 0;
+    while (index < ARRAY_SIZE(bt_host_le_link_keys.keys)) {
+        if (bt_addr_le_cmp(&bt_host_le_link_keys.keys[index].le_bdaddr, BT_ADDR_LE_ANY) != 0) {
+            bt_addr_le_copy(le_bdaddr, &bt_host_le_link_keys.keys[index].le_bdaddr);
+            index++;
+            return 0;
+        }
+        index++;
+    }
+    return -1;
 }
 
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
