@@ -420,8 +420,8 @@ int32_t bt_host_init(void) {
 
     txq_hdl = xRingbufferCreate(256*8, RINGBUF_TYPE_NOSPLIT);
     if (txq_hdl == NULL) {
-        printf("# Failed to create ring buffer\n");
-        return ret;
+        printf("# Failed to create txq ring buffer\n");
+        return -1;
     }
 
     bt_host_load_keys_from_file(&bt_host_link_keys);
@@ -430,7 +430,10 @@ int32_t bt_host_init(void) {
     xTaskCreatePinnedToCore(&bt_fb_task, "bt_fb_task", 2048, NULL, 10, NULL, 0);
     xTaskCreatePinnedToCore(&bt_tx_task, "bt_tx_task", 2048, NULL, 11, NULL, 0);
 
-    bt_hci_init();
+    if (bt_hci_init()) {
+        printf("# HCI init fail.\n");
+        return -1;
+    }
     boot_btn_set_callback(bt_host_disconnect_all, BOOT_BTN_DEFAULT_EVT);
     boot_btn_init();
 
