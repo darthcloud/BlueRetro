@@ -15,6 +15,7 @@
 
 #define RESET   "\033[0m"
 #define BOLD   "\033[1m\033[37m"
+#define GREEN  "\033[1;32m"
 
 #define BT_MAX_DEV   7 /* BT limitation */
 #define WIRED_MAX_DEV 12 /* Saturn limit */
