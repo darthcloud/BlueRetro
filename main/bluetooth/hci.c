@@ -4,6 +4,9 @@
  */
 
 #include <stdio.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/ringbuf.h>
 #include "host.h"
 #include "l2cap.h"
 #include "hci.h"
@@ -13,6 +16,7 @@
 #include "system/btn.h"
 #include "system/led.h"
 #include "adapter/config.h"
+#include "zephyr/uuid.h"
 
 #define BT_INQUIRY_MAX 10
 
@@ -26,6 +30,11 @@ struct bt_name_type {
 struct bt_hci_cmd_cp {
     bt_cmd_func_t cmd;
     void *cp;
+};
+
+struct bt_hci_le_cb {
+    struct bt_dev *device;
+    bt_hci_le_cb_t callback;
 };
 
 static const char bt_default_pin[][5] = {
@@ -68,6 +77,7 @@ static uint32_t bt_hci_pkt_retry = 0;
 static uint32_t bt_nb_inquiry = 0;
 static uint8_t local_bdaddr[6];
 static uint32_t bt_config_state = 0;
+static RingbufHandle_t randq_hdl, encryptq_hdl;
 
 static int32_t bt_hci_get_type_from_name(const uint8_t* name);
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
@@ -86,6 +96,7 @@ static void bt_hci_cmd_set_conn_encrypt(void *handle);
 static void bt_hci_cmd_remote_name_request(void *bdaddr);
 static void bt_hci_cmd_read_remote_features(void *handle);
 static void bt_hci_cmd_read_remote_ext_features(void *handle);
+//static void bt_hci_cmd_read_remote_version_info(uint16_t handle);
 static void bt_hci_cmd_io_capability_reply(void *bdaddr);
 static void bt_hci_cmd_user_confirm_reply(void *bdaddr);
 static void bt_hci_cmd_switch_role(void *cp);
@@ -133,9 +144,25 @@ static void bt_hci_cmd_le_set_adv_param(void *cp);
 static void bt_hci_cmd_le_set_adv_data(void *cp);
 static void bt_hci_cmd_le_set_scan_rsp_data(void *cp);
 static void bt_hci_cmd_le_set_adv_enable(void *cp);
-//static void bt_hci_cmd_le_set_scan_param(void *cp);
-//static void bt_hci_cmd_le_set_scan_enable(void *cp);
+static void bt_hci_cmd_le_set_scan_param_active(void);
+static void bt_hci_cmd_le_set_scan_param_passive(void);
+static void bt_hci_cmd_le_set_scan_enable(uint32_t enable);
+static void bt_hci_cmd_le_create_conn(void *bdaddr_le);
+static void bt_hci_cmd_le_read_wl_size(void *cp);
+static void bt_hci_cmd_le_clear_wl(void *cp);
+static void bt_hci_cmd_le_add_dev_to_wl(void *bdaddr_le);
+static void bt_hci_cmd_le_conn_update(struct hci_cp_le_conn_update *cp);
+//static void bt_hci_cmd_le_read_remote_features(uint16_t handle);
+static void bt_hci_cmd_le_encrypt(const uint8_t *key, uint8_t *plaintext);
+static void bt_hci_cmd_le_rand(void);
+static void bt_hci_cmd_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv, uint8_t *ltk);
+//static void bt_hci_cmd_le_set_ext_scan_param(void *cp);
+//static void bt_hci_cmd_le_set_ext_scan_enable(void *cp);
 static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt);
+static void bt_hci_start_inquiry(void);
+static void bt_hci_stop_inquiry(void);
+static void bt_hci_start_inquiry_cfg_check(void *cp);
+static void bt_hci_load_le_accept_list(void *cp);
 
 static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_reset, NULL},
@@ -159,6 +186,9 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_read_page_scan_activity, NULL},
     {bt_hci_cmd_read_page_scan_type, NULL},
     {bt_hci_cmd_write_le_host_supp, NULL},
+    {bt_hci_cmd_le_read_wl_size, NULL},
+    {bt_hci_cmd_le_clear_wl, NULL},
+    {bt_hci_load_le_accept_list, NULL},
     {bt_hci_cmd_delete_stored_link_key, NULL},
     {bt_hci_cmd_write_class_of_device, NULL},
     {bt_hci_cmd_write_local_name, NULL},
@@ -178,7 +208,7 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_le_set_adv_data, NULL},
     {bt_hci_cmd_le_set_scan_rsp_data, NULL},
     {bt_hci_cmd_le_set_adv_enable, NULL},
-    {bt_hci_cmd_periodic_inquiry, NULL},
+    {bt_hci_start_inquiry_cfg_check, NULL},
 };
 
 static int32_t bt_hci_get_type_from_name(const uint8_t* name) {
@@ -234,8 +264,6 @@ static void bt_hci_cmd_inquiry_cancel(void *cp) {
 static void bt_hci_cmd_periodic_inquiry(void *cp) {
     struct bt_hci_cp_periodic_inquiry *periodic_inquiry = (struct bt_hci_cp_periodic_inquiry *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
-    err_led_pulse();
-    boot_btn_hold_state(1);
 
     periodic_inquiry->max_period_length = 0x0A;
     periodic_inquiry->min_period_length = 0x08;
@@ -250,8 +278,6 @@ static void bt_hci_cmd_periodic_inquiry(void *cp) {
 
 static void bt_hci_cmd_exit_periodic_inquiry(void *cp) {
     printf("# %s\n", __FUNCTION__);
-    err_led_clear();
-    boot_btn_hold_state(0);
 
     bt_hci_cmd(BT_HCI_OP_EXIT_PERIODIC_INQUIRY, 0);
 }
@@ -378,6 +404,17 @@ static void bt_hci_cmd_read_remote_ext_features(void *handle) {
 
     bt_hci_cmd(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(*read_remote_ext_features));
 }
+
+#if 0
+static void bt_hci_cmd_read_remote_version_info(uint16_t handle) {
+    struct bt_hci_cp_read_remote_version_info *read_remote_version_info = (struct bt_hci_cp_read_remote_version_info *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    read_remote_version_info->handle = handle;
+
+    bt_hci_cmd(BT_HCI_OP_READ_REMOTE_VERSION_INFO, sizeof(*read_remote_version_info));
+}
+#endif
 
 static void bt_hci_cmd_io_capability_reply(void *bdaddr) {
     struct bt_hci_cp_io_capability_reply *io_capability_reply = (struct bt_hci_cp_io_capability_reply *)&bt_hci_pkt_tmp.cp;
@@ -798,35 +835,163 @@ static void bt_hci_cmd_le_set_adv_disable(void *cp) {
     bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, sizeof(*le_set_adv_enable));
 }
 
-#if 0
-static void bt_hci_cmd_le_set_scan_param(void *cp) {
+static void bt_hci_cmd_le_set_scan_param_active(void) {
     struct bt_hci_cp_le_set_scan_param *le_set_scan_param = (struct bt_hci_cp_le_set_scan_param *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
-    le_set_scan_param->scan_type = 0x01;
-    le_set_scan_param->interval = 6553;
-    le_set_scan_param->window = 1638;
+    le_set_scan_param->scan_type = BT_HCI_LE_SCAN_ACTIVE;
+    le_set_scan_param->interval = 36;
+    le_set_scan_param->window = 18;
     le_set_scan_param->addr_type = 0x00;
     le_set_scan_param->filter_policy = 0x00;
 
     bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(*le_set_scan_param));
 }
 
-static void bt_hci_cmd_le_set_scan_enable(void *cp) {
+static void bt_hci_cmd_le_set_scan_param_passive(void) {
+    struct bt_hci_cp_le_set_scan_param *le_set_scan_param = (struct bt_hci_cp_le_set_scan_param *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_scan_param->scan_type = BT_HCI_LE_SCAN_PASSIVE;
+    le_set_scan_param->interval = 1024;
+    le_set_scan_param->window = 18;
+    le_set_scan_param->addr_type = 0x00;
+    le_set_scan_param->filter_policy = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(*le_set_scan_param));
+}
+
+static void bt_hci_cmd_le_set_scan_enable(uint32_t enable) {
     struct bt_hci_cp_le_set_scan_enable *le_set_scan_enable = (struct bt_hci_cp_le_set_scan_enable *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
-    le_set_scan_enable->enable = 0x01;
+    le_set_scan_enable->enable = enable;
     le_set_scan_enable->filter_dup = 0x01;
 
     bt_hci_cmd(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*le_set_scan_enable));
+}
+
+static void bt_hci_cmd_le_create_conn(void *bdaddr_le) {
+    struct bt_hci_cp_le_create_conn *le_create_conn = (struct bt_hci_cp_le_create_conn *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&le_create_conn->peer_addr, bdaddr_le, sizeof(le_create_conn->peer_addr));
+
+    le_create_conn->scan_interval = 18;
+    le_create_conn->scan_window = 18;
+    le_create_conn->filter_policy = 0x00;
+    le_create_conn->own_addr_type = 0x00;
+    le_create_conn->conn_interval_min = 6;
+    le_create_conn->conn_interval_max = 12;
+    le_create_conn->conn_latency = 0;
+    le_create_conn->supervision_timeout = 300;
+    le_create_conn->min_ce_len = 0;
+    le_create_conn->max_ce_len = 0;
+
+    bt_hci_cmd(BT_HCI_OP_LE_CREATE_CONN, sizeof(*le_create_conn));
+}
+
+static void bt_hci_cmd_le_read_wl_size(void *cp) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_LE_READ_WL_SIZE, 0);
+}
+
+static void bt_hci_cmd_le_clear_wl(void *cp) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_LE_CLEAR_WL, 0);
+}
+
+static void bt_hci_cmd_le_add_dev_to_wl(void *bdaddr_le) {
+    struct bt_hci_cp_le_add_dev_to_wl *le_add_dev_to_wl = (struct bt_hci_cp_le_add_dev_to_wl *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&le_add_dev_to_wl->addr, bdaddr_le, sizeof(le_add_dev_to_wl->addr));
+
+    bt_hci_cmd(BT_HCI_OP_LE_ADD_DEV_TO_WL, sizeof(*le_add_dev_to_wl));
+}
+
+static void bt_hci_cmd_le_conn_update(struct hci_cp_le_conn_update *cp) {
+    struct hci_cp_le_conn_update *le_conn_update = (struct hci_cp_le_conn_update *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((uint8_t *)le_conn_update, (uint8_t *)cp, sizeof(*le_conn_update));
+
+    bt_hci_cmd(BT_HCI_OP_LE_CONN_UPDATE, sizeof(*le_conn_update));
+}
+
+#if 0
+static void bt_hci_cmd_le_read_remote_features(uint16_t handle) {
+    struct bt_hci_cp_le_read_remote_features *le_read_remote_features =
+        (struct bt_hci_cp_le_read_remote_features *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_read_remote_features->handle = handle;
+
+    bt_hci_cmd(BT_HCI_OP_LE_READ_REMOTE_FEATURES, sizeof(*le_read_remote_features));
+}
+#endif
+
+static void bt_hci_cmd_le_encrypt(const uint8_t *key, uint8_t *plaintext) {
+    struct bt_hci_cp_le_encrypt *le_encrypt = (struct bt_hci_cp_le_encrypt *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)&le_encrypt->key, key, sizeof(le_encrypt->key));
+    memcpy((void *)&le_encrypt->plaintext, plaintext, sizeof(le_encrypt->plaintext));
+
+    bt_hci_cmd(BT_HCI_OP_LE_ENCRYPT, sizeof(*le_encrypt));
+}
+
+static void bt_hci_cmd_le_rand(void) {
+    printf("# %s\n", __FUNCTION__);
+
+    bt_hci_cmd(BT_HCI_OP_LE_RAND, 0);
+}
+
+static void bt_hci_cmd_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv, uint8_t *ltk) {
+    struct bt_hci_cp_le_start_encryption *le_start_encryption = (struct bt_hci_cp_le_start_encryption *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_start_encryption->handle = handle;
+    le_start_encryption->rand = rand;
+    le_start_encryption->ediv = ediv;
+    memcpy((void *)&le_start_encryption->ltk, ltk, sizeof(le_start_encryption->ltk));
+
+    bt_hci_cmd(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*le_start_encryption));
+}
+
+#if 0
+static void bt_hci_cmd_le_set_ext_scan_param(void *cp) {
+    struct bt_hci_cp_le_set_ext_scan_param *le_set_ext_scan_param = (struct bt_hci_cp_le_set_ext_scan_param *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_ext_scan_param->own_addr_type = 0x01;
+    le_set_ext_scan_param->filter_policy = 0x00;
+    le_set_ext_scan_param->phys = BT_HCI_LE_EXT_SCAN_PHY_1M;
+    le_set_ext_scan_param->p[0].type = 0x01;
+    le_set_ext_scan_param->p[0].interval = 6553;
+    le_set_ext_scan_param->p[0].window = 1638;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, sizeof(*le_set_ext_scan_param) - sizeof(le_set_ext_scan_param->p) + sizeof(*le_set_ext_scan_param->p));
+}
+
+static void bt_hci_cmd_le_set_ext_scan_enable(void *cp) {
+    struct bt_hci_cp_le_set_ext_scan_enable *le_set_ext_scan_enable = (struct bt_hci_cp_le_set_ext_scan_enable *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    le_set_ext_scan_enable->enable = (uint32_t)cp;
+    le_set_ext_scan_enable->filter_dup = 0x01;
+    le_set_ext_scan_enable->duration = 0x00;
+    le_set_ext_scan_enable->period = 0x00;
+
+    bt_hci_cmd(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(*le_set_ext_scan_enable));
 }
 #endif
 
 static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     struct bt_hci_evt_le_meta_event *le_meta_event = (struct bt_hci_evt_le_meta_event *)bt_hci_evt_pkt->evt_data;
     struct bt_dev *device = NULL;
-    bt_host_get_dev_conf(&device);
 
     switch (le_meta_event->subevent) {
         case BT_HCI_EVT_LE_CONN_COMPLETE:
@@ -834,10 +999,139 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
         {
             struct bt_hci_evt_le_conn_complete *le_conn_complete =
                 (struct bt_hci_evt_le_conn_complete *)(bt_hci_evt_pkt->evt_data + sizeof(struct bt_hci_evt_le_meta_event));
+            printf("# BT_HCI_EVT_LE_CONN_COMPLETE\n");
+            bt_host_get_dev_from_bdaddr(le_conn_complete->peer_addr.a.val, &device);
+            if (device) {
+                if (le_conn_complete->status) {
+                    device->pkt_retry++;
+                    printf("# dev: %d error: 0x%02X\n", device->id, le_conn_complete->status);
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && device->pkt_retry < BT_MAX_RETRY) {
+                        bt_hci_cmd_le_create_conn((void *)&le_conn_complete->peer_addr);
+                    }
+                    else {
+                        bt_host_reset_dev(device);
+                        if (config.global_cfg.inquiry_mode == INQ_AUTO && bt_host_get_active_dev(&device) == BT_NONE) {
+                            bt_hci_start_inquiry();;
+                        }
+                        else {
+                            bt_hci_cmd_le_set_scan_enable(0);
+                            bt_hci_cmd_le_set_scan_param_passive();
+                            bt_hci_cmd_le_set_scan_enable(1);
+                        }
+                    }
+                }
+                else {
+                    struct bt_smp_encrypt_info encrypt_info = {0};
+                    struct bt_smp_master_ident master_ident = {0};
+                    device->acl_handle = le_conn_complete->handle;
+                    device->pkt_retry = 0;
+                    printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
+                    if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
+                        bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
+                    }
+                    else {
+                        // TODO SMP
+                    }
+                    bt_hci_cmd_le_set_scan_enable(0);
+                    bt_hci_cmd_le_set_scan_param_active();
+                    bt_hci_cmd_le_set_scan_enable(1);
+                }
+            }
+            else {
+                bt_host_get_dev_conf(&device);
 
-            if (!le_conn_complete->status && !atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
-                atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
-                device->acl_handle = le_conn_complete->handle;
+                if (!le_conn_complete->status && !atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
+                    atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                    device->acl_handle = le_conn_complete->handle;
+                }
+                else {
+                    printf("# dev NULL!\n");
+                }
+            }
+            break;
+        }
+        case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+        {
+            struct bt_hci_evt_le_advertising_report *le_adv_report =
+                (struct bt_hci_evt_le_advertising_report *)(bt_hci_evt_pkt->evt_data + sizeof(struct bt_hci_evt_le_meta_event));
+                uint8_t *data = le_adv_report->adv_info[0].data;
+                uint8_t *end = data + le_adv_report->adv_info[0].length;
+                uint8_t len, type;
+                uint16_t value;
+
+                printf("# BT_HCI_EVT_LE_ADVERTISING_REPORT\n");
+
+                if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_DIRECT_IND) {
+                    goto connect;
+                }
+
+                /* Filter HID device */
+                while (data < end) {
+                    len = *data++;
+                    type = *data;
+                    switch (type) {
+                        case BT_DATA_UUID16_SOME:
+                        case BT_DATA_UUID16_ALL:
+                            value = *(uint16_t *)&data[1];
+                            if (value == BT_UUID_HIDS) {
+                                goto connect;
+                            }
+                            else {
+                                goto skip;
+                            }
+                            break;
+                        case BT_DATA_GAP_APPEARANCE:
+                            /* HID category */
+                            value = *(uint16_t *)&data[1] & 0xFFC0;
+                            if (value == 0x03C0) {
+                                goto connect;
+                            }
+                            else {
+                                goto skip;
+                            }
+                            break;
+                    }
+                    data += len;
+                }
+                goto skip;
+connect:
+                bt_host_get_dev_from_bdaddr(le_adv_report->adv_info[0].addr.a.val, &device);
+                if (device == NULL) {
+                    int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                    if (device) {
+                        if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_DIRECT_IND) {
+                            atomic_set_bit(&device->flags, BT_DEV_PAGE);
+                        }
+                        memcpy((uint8_t *)&device->le_remote_bdaddr, (uint8_t *)&le_adv_report->adv_info[0].addr, sizeof(device->le_remote_bdaddr));
+                        device->id = bt_dev_id;
+                        device->type = HID_GENERIC;
+                        bt_l2cap_init_dev_scid(device);
+                        atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                        bt_hci_cmd_le_set_scan_enable(0);
+                        bt_hci_cmd_le_set_adv_disable(NULL);
+                        bt_hci_cmd_le_create_conn((void *)&le_adv_report->adv_info[0].addr);
+                        printf("# LE ADV dev: %d type: %d bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type, device->le_remote_bdaddr.type,
+                            device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                            device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+                    }
+                }
+skip:
+            break;
+        }
+        case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
+        {
+            struct bt_hci_evt_le_remote_feat_complete *le_remote_feat =
+                (struct bt_hci_evt_le_remote_feat_complete *)(bt_hci_evt_pkt->evt_data + sizeof(struct bt_hci_evt_le_meta_event));
+            printf("# BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE\n");
+            bt_host_get_dev_from_handle(le_remote_feat->handle, &device);
+            if (device) {
+                if (le_remote_feat->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, le_remote_feat->status);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
             }
             break;
         }
@@ -845,24 +1139,142 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
 }
 
 static void bt_hci_start_inquiry(void) {
+    err_led_pulse();
+    boot_btn_hold_state(1);
+    bt_hci_cmd_le_set_scan_enable(0);
+    bt_hci_cmd_le_set_scan_param_active();
+    bt_hci_cmd_le_set_scan_enable(1);
     bt_hci_cmd_periodic_inquiry(NULL);
 }
 
 static void bt_hci_stop_inquiry(void) {
     bt_hci_cmd_exit_periodic_inquiry(NULL);
+    bt_hci_cmd_le_set_scan_enable(0);
+    bt_hci_cmd_le_set_scan_param_passive();
+    bt_hci_cmd_le_set_scan_enable(1);
+    boot_btn_hold_state(0);
+    err_led_clear();
 }
 
-void bt_hci_init(void) {
+static void bt_hci_start_inquiry_cfg_check(void *cp) {
+    if (config.global_cfg.inquiry_mode == INQ_AUTO) {
+        bt_hci_start_inquiry();
+    }
+    else {
+        bt_hci_cmd_le_set_scan_enable(0);
+        bt_hci_cmd_le_set_scan_param_passive();
+        bt_hci_cmd_le_set_scan_enable(1);
+    }
+}
+
+static void bt_hci_load_le_accept_list(void *cp) {
+    bt_addr_le_t le_bdaddr;
+    if (bt_host_get_next_accept_le_bdaddr(&le_bdaddr) == 0) {
+        bt_hci_cmd_le_add_dev_to_wl(&le_bdaddr);
+    }
+    else {
+        bt_hci_pkt_retry = 0;
+        bt_hci_q_conf(1);
+    }
+}
+
+static int32_t bt_hci_get_random_context(struct bt_dev **device, bt_hci_le_cb_t *cb) {
+    uint32_t len;
+    struct bt_hci_le_cb *tmp = (struct bt_hci_le_cb *)xRingbufferReceive(randq_hdl, &len, 0);
+    if (tmp) {
+        *device = tmp->device;
+        *cb = tmp->callback;
+        vRingbufferReturnItem(randq_hdl, (void *)tmp);
+        return 0;
+    }
+    return -1;
+}
+
+static int32_t bt_hci_get_encrypt_context(struct bt_dev **device, bt_hci_le_cb_t *cb) {
+    uint32_t len;
+    struct bt_hci_le_cb *tmp = (struct bt_hci_le_cb *)xRingbufferReceive(encryptq_hdl, &len, 0);
+    if (tmp) {
+        *device = tmp->device;
+        *cb = tmp->callback;
+        vRingbufferReturnItem(encryptq_hdl, (void *)tmp);
+        return 0;
+    }
+    return -1;
+}
+
+int32_t bt_hci_init(void) {
+    randq_hdl = xRingbufferCreate(sizeof(struct bt_hci_le_cb) * 8, RINGBUF_TYPE_NOSPLIT);
+    if (randq_hdl == NULL) {
+        printf("# Failed to create randq ring buffer\n");
+        return -1;
+    }
+
+    encryptq_hdl = xRingbufferCreate(sizeof(struct bt_hci_le_cb) * 8, RINGBUF_TYPE_NOSPLIT);
+    if (encryptq_hdl == NULL) {
+        printf("# Failed to create randq ring buffer\n");
+        return -1;
+    }
+
     bt_config_state = 0;
     bt_hci_q_conf(0);
     boot_btn_set_callback(bt_hci_start_inquiry, BOOT_BTN_HOLD_EVT);
     boot_btn_set_callback(bt_hci_stop_inquiry, BOOT_BTN_HOLD_CANCEL_EVT);
+
+    return 0;
 }
 
 void bt_hci_disconnect(struct bt_dev *device) {
     if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
         bt_hci_cmd_disconnect(&device->acl_handle);
     }
+}
+
+void bt_hci_get_le_local_addr(bt_addr_le_t *le_local) {
+    memcpy(le_local->a.val, local_bdaddr, sizeof(le_local->a.val));
+    le_local->type = 0x00;
+}
+
+int32_t bt_hci_get_random(struct bt_dev *device, bt_hci_le_cb_t cb) {
+    struct bt_hci_le_cb le_cb = {
+        .device = device,
+        .callback = cb,
+    };
+    UBaseType_t ret = xRingbufferSend(randq_hdl, (void *)&le_cb, sizeof(le_cb), 0);
+    if (ret != pdTRUE) {
+        printf("# %s randq full!\n", __FUNCTION__);
+        return -1;
+    }
+
+    bt_hci_cmd_le_rand();
+    return 0;
+}
+
+int32_t bt_hci_get_encrypt(struct bt_dev *device, bt_hci_le_cb_t cb, const uint8_t *key, uint8_t *plaintext) {
+    struct bt_hci_le_cb le_cb = {
+        .device = device,
+        .callback = cb,
+    };
+    UBaseType_t ret = xRingbufferSend(encryptq_hdl, (void *)&le_cb, sizeof(le_cb), 0);
+    if (ret != pdTRUE) {
+        printf("# %s encryptq full!\n", __FUNCTION__);
+        return -1;
+    }
+
+    /* We hope here that the BT ctrl process encrypt req FIFO */
+    bt_hci_cmd_le_encrypt(key, plaintext);
+    return 0;
+}
+
+void bt_hci_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv, uint8_t *ltk) {
+    bt_hci_cmd_le_start_encryption(handle, rand, ediv, ltk);
+}
+
+void bt_hci_add_to_accept_list(bt_addr_le_t *le_bdaddr) {
+    bt_hci_cmd_le_add_dev_to_wl(le_bdaddr);
+}
+
+void bt_hci_le_conn_update(struct hci_cp_le_conn_update *cp) {
+    bt_hci_cmd_le_conn_update(cp);
 }
 
 void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
@@ -873,7 +1285,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_INQUIRY_COMPLETE\n");
             bt_nb_inquiry++;
             if (bt_host_get_active_dev(&device) > -1 && bt_nb_inquiry > BT_INQUIRY_MAX) {
-                bt_hci_cmd_exit_periodic_inquiry(NULL);
+                bt_hci_stop_inquiry();
             }
             break;
         case BT_HCI_EVT_INQUIRY_RESULT:
@@ -918,7 +1330,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     else {
                         bt_host_reset_dev(device);
                         if (config.global_cfg.inquiry_mode == INQ_AUTO && bt_host_get_active_dev(&device) == BT_NONE) {
-                            bt_hci_cmd_periodic_inquiry(NULL);
+                            bt_hci_start_inquiry();
                         }
                     }
                 }
@@ -967,7 +1379,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 bt_host_reset_dev(device);
                 if (bt_host_get_active_dev(&device) == BT_NONE) {
                     if (config.global_cfg.inquiry_mode == INQ_AUTO) {
-                        bt_hci_cmd_periodic_inquiry(NULL);
+                        bt_hci_start_inquiry();
                     }
                     bt_hci_cmd_le_set_adv_enable(NULL);
                 }
@@ -1028,7 +1440,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     else {
                         bt_host_reset_dev(device);
                         if (config.global_cfg.inquiry_mode == INQ_AUTO && bt_host_get_active_dev(&device) == BT_NONE) {
-                            bt_hci_cmd_periodic_inquiry(NULL);
+                            bt_hci_start_inquiry();
                         }
                     }
                 }
@@ -1100,6 +1512,21 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             break;
         }
+        case BT_HCI_EVT_REMOTE_VERSION_INFO:
+        {
+            struct bt_hci_evt_remote_version_info *remote_version_info = (struct bt_hci_evt_remote_version_info *)bt_hci_evt_pkt->evt_data;
+            printf("# BT_HCI_EVT_REMOTE_VERSION_INFO\n");
+            bt_host_get_dev_from_handle(remote_version_info->handle, &device);
+            if (device) {
+                if (remote_version_info->status) {
+                    printf("# dev: %d error: 0x%02X\n", device->id, remote_version_info->status);
+                }
+            }
+            else {
+                printf("# dev NULL!\n");
+            }
+            break;
+        }
         case BT_HCI_EVT_CMD_COMPLETE:
         {
             struct bt_hci_evt_cmd_complete *cmd_complete = (struct bt_hci_evt_cmd_complete *)bt_hci_evt_pkt->evt_data;
@@ -1130,6 +1557,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
                     case BT_HCI_OP_LE_READ_BUFFER_SIZE:
                     case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_LE_READ_WL_SIZE:
+                    case BT_HCI_OP_LE_CLEAR_WL:
+                    case BT_HCI_OP_LE_ADD_DEV_TO_WL:
                     case BT_HCI_OP_DELETE_STORED_LINK_KEY:
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
                     case BT_HCI_OP_WRITE_LOCAL_NAME:
@@ -1143,6 +1573,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                     case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
                     case BT_HCI_OP_LE_SET_SCAN_PARAM:
+                    case BT_HCI_OP_LE_SET_SCAN_ENABLE:
                     case BT_HCI_OP_LE_SET_ADV_PARAM:
                     case BT_HCI_OP_LE_SET_ADV_DATA:
                     case BT_HCI_OP_LE_SET_SCAN_RSP_DATA:
@@ -1166,6 +1597,26 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_att_set_le_max_mtu(le_read_buffer_size->le_max_len - sizeof(struct bt_l2cap_hdr));
                         bt_hci_pkt_retry = 0;
                         bt_hci_q_conf(1);
+                        break;
+                    }
+                    case BT_HCI_OP_LE_READ_WL_SIZE:
+                    {
+                        //struct bt_hci_rp_le_read_wl_size *le_read_wl_size = (struct bt_hci_rp_le_read_wl_size *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        //TODO use value
+                        bt_hci_pkt_retry = 0;
+                        bt_hci_q_conf(1);
+                        break;
+                    }
+                    case BT_HCI_OP_LE_ADD_DEV_TO_WL:
+                    {
+                        bt_addr_le_t le_bdaddr;
+                        if (bt_host_get_next_accept_le_bdaddr(&le_bdaddr) == 0) {
+                            bt_hci_cmd_le_add_dev_to_wl(&le_bdaddr);
+                        }
+                        else {
+                            bt_hci_pkt_retry = 0;
+                            bt_hci_q_conf(1);
+                        }
                         break;
                     }
                     case BT_HCI_OP_READ_BD_ADDR:
@@ -1197,6 +1648,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_READ_PAGE_SCAN_ACTIVITY:
                     case BT_HCI_OP_READ_PAGE_SCAN_TYPE:
                     case BT_HCI_OP_LE_WRITE_LE_HOST_SUPP:
+                    case BT_HCI_OP_LE_CLEAR_WL:
                     case BT_HCI_OP_DELETE_STORED_LINK_KEY:
                     case BT_HCI_OP_WRITE_CLASS_OF_DEVICE:
                     case BT_HCI_OP_WRITE_LOCAL_NAME:
@@ -1210,18 +1662,36 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     case BT_HCI_OP_WRITE_SCAN_ENABLE:
                     case BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY:
                     case BT_HCI_OP_LE_SET_SCAN_PARAM:
+                    case BT_HCI_OP_LE_SET_SCAN_ENABLE:
                     case BT_HCI_OP_LE_SET_ADV_PARAM:
                     case BT_HCI_OP_LE_SET_ADV_DATA:
                     case BT_HCI_OP_LE_SET_SCAN_RSP_DATA:
+                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
                         bt_hci_pkt_retry = 0;
                         bt_hci_q_conf(1);
                         break;
-                    case BT_HCI_OP_LE_SET_ADV_ENABLE:
-                        if (config.global_cfg.inquiry_mode == INQ_AUTO) {
-                            bt_hci_pkt_retry = 0;
-                            bt_hci_q_conf(1);
+                    case BT_HCI_OP_LE_RAND:
+                    {
+                        struct bt_hci_rp_le_rand *le_rand =
+                            (struct bt_hci_rp_le_rand *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        bt_hci_le_cb_t callback = NULL;
+                        bt_hci_get_random_context(&device, &callback);
+                        if (callback) {
+                            callback(device, le_rand->rand, sizeof(le_rand->rand));
                         }
                         break;
+                    }
+                    case BT_HCI_OP_LE_ENCRYPT:
+                    {
+                        struct bt_hci_rp_le_encrypt *le_encrypt =
+                            (struct bt_hci_rp_le_encrypt *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
+                        bt_hci_le_cb_t callback = NULL;
+                        bt_hci_get_encrypt_context(&device, &callback);
+                        if (callback) {
+                            callback(device, le_encrypt->enc_data, sizeof(le_encrypt->enc_data));
+                        }
+                        break;
+                    }
                 }
             }
             break;
