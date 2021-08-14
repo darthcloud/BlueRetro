@@ -11,6 +11,25 @@
 #include "tools/util.h"
 #include "hid_generic.h"
 
+/* dinput buttons */
+enum {
+    HID_A = 0,
+    HID_B,
+    HID_C,
+    HID_X,
+    HID_Y,
+    HID_Z,
+    HID_LB,
+    HID_RB,
+    HID_L,
+    HID_R,
+    HID_SELECT,
+    HID_START,
+    HID_MENU,
+    HID_LJ,
+    HID_RJ,
+};
+
 struct hid_report_meta {
     int8_t hid_btn_idx;
     int8_t hid_axes_idx[ADAPTER_MAX_AXES];
@@ -52,6 +71,17 @@ static const uint32_t hid_kb_key_to_generic[] = {
     KB_LEFT, KB_DOWN, KB_UP, KB_NUMLOCK, KB_KP_DIV, KB_KP_MULTI, KB_KP_MINUS, KB_KP_PLUS,
     KB_KP_ENTER, KB_KP_1, KB_KP_2, KB_KP_3, KB_KP_4, KB_KP_5, KB_KP_6, KB_KP_7,
     KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT,
+};
+
+static const uint32_t hid_pad_default_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(HID_X), BIT(HID_B), BIT(HID_A), BIT(HID_Y),
+    BIT(HID_START), BIT(HID_SELECT), BIT(HID_MENU), 0,
+    BIT(HID_L), BIT(HID_LB), 0, BIT(HID_LJ),
+    BIT(HID_R), BIT(HID_RB), 0, BIT(HID_RJ),
 };
 
 static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report) {
@@ -383,15 +413,34 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
     }
 
     /* HID buttons order is from most important to the less in HID spec. */
-    /* That don't really help us so we just assign them to unused buttons. */
     if (meta->hid_btn_idx > -1) {
+        uint32_t hid_mask = (1 << report->usages[meta->hid_btn_idx].bit_size) - 1;
+
+        /* Use a good default for most modern controller */
+        for (uint32_t i = 16; i < ARRAY_SIZE(generic_btns_mask); i++) {
+            if (hid_pad_default_btns_mask[i] && !(meta->hid_mask[0] & BIT(i))) {
+                meta->hid_mask[0] |= BIT(i);
+                meta->hid_btns_mask[i] = hid_pad_default_btns_mask[i];
+                hid_mask &= ~hid_pad_default_btns_mask[i];
+            }
+        }
+
+        /* fillup what is left */
         for (uint32_t mask = (1U << 16), btn = 0, i = 16; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
+            while (!(hid_mask & BIT(btn))) {
+                btn++;
+                if (btn >= report->usages[meta->hid_btn_idx].bit_size) {
+                    goto fillup_end;
+                }
+            }
             if (!(meta->hid_mask[0] & mask)) {
                 meta->hid_mask[0] |= mask;
                 meta->hid_btns_mask[i] = BIT(btn);
                 btn++;
             }
         }
+fillup_end:
+        ;
     }
 }
 
