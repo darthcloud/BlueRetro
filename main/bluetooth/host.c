@@ -604,7 +604,7 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
     atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
     bt_dbg_init(device->type);
 #else
-    if (device->type == HID_GENERIC) {
+    if (device->type == BT_HID_GENERIC) {
         uint32_t i = 0;
         for (; i < REPORT_MAX; i++) {
             if (bt_adapter.data[device->id].reports[i].id == report_id) {
@@ -621,6 +621,7 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         bt_adapter.data[device->id].report_id = report_id;
         bt_adapter.data[device->id].dev_id = device->id;
         bt_adapter.data[device->id].dev_type = device->type;
+        bt_adapter.data[device->id].dev_subtype = device->subtype;
         memcpy(bt_adapter.data[device->id].input, data, (len > sizeof(bt_adapter.data[0].input)) ? sizeof(bt_adapter.data[0].input) : len);
         adapter_bridge(&bt_adapter.data[device->id]);
     }

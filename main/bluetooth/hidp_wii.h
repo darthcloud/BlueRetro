@@ -144,7 +144,6 @@ struct bt_hidp_wii_core_acc_ir_i {
     uint8_t ir[18];
 } __packed;
 
-int32_t bt_dev_is_wii(int8_t type);
 void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report);
 void bt_hid_wii_init(struct bt_dev *device);
 void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);

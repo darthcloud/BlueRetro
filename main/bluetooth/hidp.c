@@ -7,8 +7,8 @@
 #include "hidp_generic.h"
 #include "hidp_ps3.h"
 #include "hidp_wii.h"
-#include "hidp_ps4_ps5.h"
-#include "hidp_xb1.h"
+#include "hidp_ps.h"
+#include "hidp_xbox.h"
 #include "hidp_sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
@@ -19,46 +19,31 @@ const uint8_t bt_hid_led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
 };
 
-static const bt_hid_init_t bt_hid_init_list[BT_MAX] = {
-    NULL, /* HID_GENERIC */
-    bt_hid_ps3_init, /* PS3_DS3 */
-    bt_hid_wii_init, /* WII_CORE */
-    bt_hid_wii_init, /* WII_NUNCHUCK */
-    bt_hid_wii_init, /* WII_CLASSIC */
-    bt_hid_wii_init, /* WIIU_PRO */
-    bt_hid_ps4_ps5_init, /* PS4_DS4 */
-    bt_hid_xb1_init, /* XB1_S */
-    bt_hid_xb1_init, /* XB1_ADAPTIVE */
-    bt_hid_sw_init, /* SW */
-    bt_hid_ps4_ps5_init, /* PS5_DS */
+static const bt_hid_init_t bt_hid_init_list[BT_TYPE_MAX] = {
+    NULL, /* BT_HID_GENERIC */
+    bt_hid_ps3_init, /* BT_PS3 */
+    bt_hid_wii_init, /* BT_WII */
+    bt_hid_xbox_init, /* BT_XBOX */
+    bt_hid_ps_init, /* BT_PS */
+    bt_hid_sw_init, /* BT_SW */
 };
 
-static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_MAX] = {
-    bt_hid_generic_hdlr, /* HID_GENERIC */
-    bt_hid_ps3_hdlr, /* PS3_DS3 */
-    bt_hid_wii_hdlr, /* WII_CORE */
-    bt_hid_wii_hdlr, /* WII_NUNCHUCK */
-    bt_hid_wii_hdlr, /* WII_CLASSIC */
-    bt_hid_wii_hdlr, /* WIIU_PRO */
-    bt_hid_ps4_ps5_hdlr, /* PS4_DS4 */
-    bt_hid_xb1_hdlr, /* XB1_S */
-    bt_hid_xb1_hdlr, /* XB1_ADAPTIVE */
-    bt_hid_sw_hdlr, /* SW */
-    bt_hid_ps4_ps5_hdlr, /* PS5_DS */
+static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_TYPE_MAX] = {
+    bt_hid_generic_hdlr, /* BT_HID_GENERIC */
+    bt_hid_ps3_hdlr, /* BT_PS3 */
+    bt_hid_wii_hdlr, /* BT_WII */
+    bt_hid_xbox_hdlr, /* BT_XBOX */
+    bt_hid_ps_hdlr, /* BT_PS */
+    bt_hid_sw_hdlr, /* BT_SW */
 };
 
-static const bt_hid_cmd_t bt_hid_feedback_list[BT_MAX] = {
-    NULL, /* HID_GENERIC */
-    bt_hid_cmd_ps3_set_conf, /* PS3_DS3 */
-    bt_hid_cmd_wii_set_feedback, /* WII_CORE */
-    bt_hid_cmd_wii_set_feedback, /* WII_NUNCHUCK */
-    bt_hid_cmd_wii_set_feedback, /* WII_CLASSIC */
-    bt_hid_cmd_wii_set_feedback, /* WIIU_PRO */
-    bt_hid_cmd_ps4_set_conf, /* PS4_DS4 */
-    bt_hid_cmd_xb1_rumble, /* XB1_S */
-    bt_hid_cmd_xb1_rumble, /* XB1_ADAPTIVE */
-    bt_hid_cmd_sw_set_conf, /* SW */
-    bt_hid_cmd_ps5_set_conf, /* PS5_DS */
+static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
+    NULL, /* BT_HID_GENERIC */
+    bt_hid_cmd_ps3_set_conf, /* BT_PS3 */
+    bt_hid_cmd_wii_set_feedback, /* BT_WII */
+    bt_hid_cmd_xbox_rumble, /* BT_XBOX */
+    bt_hid_cmd_ps_set_conf, /* BT_PS */
+    bt_hid_cmd_sw_set_conf, /* BT_SW */
 };
 
 void bt_hid_init(struct bt_dev *device) {

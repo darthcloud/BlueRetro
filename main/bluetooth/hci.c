@@ -25,7 +25,8 @@ typedef void (*bt_cmd_func_t)(void *param);
 
 struct bt_name_type {
     char name[249];
-    int8_t type;
+    int32_t type;
+    uint32_t subtype;
     atomic_t hid_flags;
 };
 
@@ -46,16 +47,16 @@ static const char bt_default_pin[][5] = {
 };
 
 static const struct bt_name_type bt_name_type[] = {
-    {"PLAYSTATION(R)3", PS3_DS3, 0},
-    {"Nintendo RVL-CNT-01-UC", WIIU_PRO, 0}, /* Must be before WII_CORE */
-    {"Nintendo RVL-CNT-01", WII_CORE, 0},
-    {"Wireless Controller", PS4_DS4, 0},
-    {"Xbox Wireless Controller", XB1_S, 0},
-    {"Xbox Adaptive Controller", XB1_ADAPTIVE, 0},
-    {"Pro Controller", SW, 0},
-    {"Joy-Con", SW, 0},
-    {"8Bitdo SF30", HID_GENERIC, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
-    {"Lic Pro Controller", SW, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
+    {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
+    {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
+    {"Nintendo RVL-CNT-01", BT_WII, BT_SUBTYPE_DEFAULT, 0},
+    {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
+    {"Xbox Wireless Controller", BT_XBOX, BT_SUBTYPE_DEFAULT, 0},
+    {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
+    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
+    {"Joy-Con", BT_SW, BT_SW_JOYCON, 0},
+    {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
+    {"Lic Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
@@ -1100,7 +1101,7 @@ connect:
                         }
                         memcpy((uint8_t *)&device->le_remote_bdaddr, (uint8_t *)&le_adv_report->adv_info[0].addr, sizeof(device->le_remote_bdaddr));
                         device->id = bt_dev_id;
-                        device->type = HID_GENERIC;
+                        device->type = BT_HID_GENERIC;
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_le_set_scan_enable(0);
@@ -1277,6 +1278,7 @@ void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name)
         if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
             struct bt_data *bt_data = &bt_adapter.data[device->id];
             device->type = bt_name_type[i].type;
+            device->subtype = bt_name_type[i].subtype;
             bt_data->flags = bt_name_type[i].hid_flags;
         }
     }
@@ -1307,7 +1309,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     if (device) {
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1, sizeof(device->remote_bdaddr));
                         device->id = bt_dev_id;
-                        device->type = HID_GENERIC;
+                        device->type = BT_HID_GENERIC;
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
@@ -1362,7 +1364,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 if (device) {
                     memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
                     device->id = bt_dev_id;
-                    device->type = HID_GENERIC;;
+                    device->type = BT_HID_GENERIC;;
                     bt_l2cap_init_dev_scid(device);
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
@@ -1451,10 +1453,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
-                    if (device->type == HID_GENERIC || device->type == SW) {
+                    if (device->type == BT_HID_GENERIC || device->type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }
-                    if (device->type == PS3_DS3 || device->type == WIIU_PRO) {
+                    if (device->type == BT_PS3 || device->subtype == BT_WIIU_PRO) {
                         struct bt_hci_cp_switch_role switch_role = {
                             .role = 0x01,
                         };
@@ -1462,12 +1464,12 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_hci_cmd_switch_role(&switch_role);
                     }
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                        if (device->type == PS4_DS4) {
+                        if (device->type == BT_PS) {
                             bt_host_q_wait_pkt(20);
                         }
                         bt_hci_cmd_auth_requested(&device->acl_handle);
                     }
-                    printf("# dev: %d type: %d %s\n", device->id, device->type, remote_name_req_complete->name);
+                    printf("# dev: %d type: %d:%d %s\n", device->id, device->type, device->subtype, remote_name_req_complete->name);
                 }
             }
             else {
@@ -1732,7 +1734,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_PIN_CODE_REQ\n");
             bt_host_get_dev_from_bdaddr(pin_code_req->bdaddr.val, &device);
             memcpy((void *)&pin_code_reply.bdaddr, device->remote_bdaddr, sizeof(pin_code_reply.bdaddr));
-            if (bt_dev_is_wii(device->type)) {
+            if (device->type == BT_WII) {
                 memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
                 pin_code_reply.pin_len = sizeof(local_bdaddr);
             }

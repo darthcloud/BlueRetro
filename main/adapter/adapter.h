@@ -22,21 +22,29 @@
 #define ADAPTER_MAX_AXES 6
 #define REPORT_MAX_USAGE 16
 
-/* BT device ID */
+/* BT device type ID */
 enum {
     BT_NONE = -1,
-    HID_GENERIC,
-    PS3_DS3,
-    WII_CORE,
-    WII_NUNCHUCK,
-    WII_CLASSIC,
-    WIIU_PRO,
-    PS4_DS4,
-    XB1_S,
-    XB1_ADAPTIVE,
-    SW,
-    PS5_DS,
-    BT_MAX,
+    BT_HID_GENERIC,
+    BT_PS3,
+    BT_WII,
+    BT_XBOX,
+    BT_PS,
+    BT_SW,
+    BT_TYPE_MAX,
+};
+
+/* BT device subtype ID */
+enum {
+    BT_SUBTYPE_DEFAULT = 0,
+    BT_WII_NUNCHUCK,
+    BT_WII_CLASSIC,
+    BT_WIIU_PRO,
+    BT_PS5_DS,
+    BT_XBOX_DINPUT,
+    BT_XBOX_ADAPTIVE,
+    BT_SW_JOYCON,
+    BT_SUBTYPE_MAX,
 };
 
 /* Wired system ID */
@@ -383,6 +391,7 @@ struct bt_data {
     /* from wireless */
     int32_t dev_id;
     int32_t dev_type;
+    uint32_t dev_subtype;
     uint32_t report_id;
     uint32_t report_cnt;
     int32_t report_type;

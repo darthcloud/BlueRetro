@@ -6,7 +6,7 @@
 #include <string.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
-#include "xb1.h"
+#include "xbox.h"
 
 /* xinput buttons */
 enum {
@@ -137,7 +137,7 @@ static const uint32_t xb1_adaptive_btns_mask[32] = {
     0, 0, 0, 0,
 };
 
-int32_t xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -147,7 +147,7 @@ int32_t xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
     if (bt_data->report_id == 0x01) {
         const uint32_t *btns_mask;
 
-        if (bt_data->dev_type == XB1_ADAPTIVE) {
+        if (bt_data->dev_subtype == BT_XBOX_ADAPTIVE) {
             ctrl_data->mask = (uint32_t *)xb1_adaptive_mask;
             btns_mask = xb1_dinput_btns_mask;
 
@@ -197,7 +197,7 @@ int32_t xb1_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
     return 0;
 }
 
-void xb1_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+void xbox_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct xb1_rumble *rumble = (struct xb1_rumble *)bt_data->output;
 
     if (fb_data->state) {

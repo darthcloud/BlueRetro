@@ -49,6 +49,7 @@ struct bt_dev {
         bt_addr_le_t le_remote_bdaddr;
     };
     int32_t type;
+    uint32_t subtype;
     uint16_t acl_handle;
     uint32_t hid_state;
     union {

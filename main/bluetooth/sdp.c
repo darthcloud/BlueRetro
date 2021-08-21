@@ -273,7 +273,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_attr_rsp, sizeof(xb1_svc_attr_rsp));
             break;
         case BT_SDP_SVC_SEARCH_ATTR_REQ:
-            if (device->type == XB1_S) {
+            if (device->type == BT_XBOX && device->subtype == BT_SUBTYPE_DEFAULT) {
                 /* Need to test if empty answer work for xb1 */
                 bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid,
                     sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_search_attr_rsp, sizeof(xb1_svc_search_attr_rsp));

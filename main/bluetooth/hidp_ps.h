@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BT_HIDP_PS4_PS5_H_
-#define _BT_HIDP_PS4_PS5_H_
+#ifndef _BT_HIDP_PS_H_
+#define _BT_HIDP_PS_H_
 
 #include "hidp.h"
 
@@ -50,9 +50,8 @@ struct bt_hidp_ps5_set_conf {
 
 extern const uint32_t bt_ps4_ps5_led_dev_id_map[];
 
-void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report);
-void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report);
-void bt_hid_ps4_ps5_init(struct bt_dev *device);
-void bt_hid_ps4_ps5_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+void bt_hid_cmd_ps_set_conf(struct bt_dev *device, void *report);
+void bt_hid_ps_init(struct bt_dev *device);
+void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
 
-#endif /* _BT_HIDP_PS4_PS5_H_ */
+#endif /* _BT_HIDP_PS_H_ */

@@ -7,7 +7,7 @@
 #include <esp32/rom/crc.h>
 #include <esp_timer.h>
 #include "host.h"
-#include "hidp_ps4_ps5.h"
+#include "hidp_ps.h"
 
 const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
     0xFF0000, /* Blue */
@@ -22,7 +22,9 @@ const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
 
 static void *ps5_timer_hdl;
 
-void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
+static void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report);
+
+static void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
     struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_hci_pkt_tmp.hidp_data;
 
     bt_hci_pkt_tmp.hidp_hdr.hdr = BT_HIDP_DATA_OUT;
@@ -62,7 +64,7 @@ static void bt_hid_ps5_init_callback(void *arg) {
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
 }
 
-void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
+static void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
     struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_hci_pkt_tmp.hidp_data;
 
     /* Hack for PS5 rumble, BlueRetro design dont't allow to Q 2 frames */
@@ -81,7 +83,18 @@ void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_PS5_SET_CONF, sizeof(*set_conf));
 }
 
-void bt_hid_ps4_ps5_init(struct bt_dev *device) {
+void bt_hid_cmd_ps_set_conf(struct bt_dev *device, void *report) {
+    switch (device->subtype) {
+        case BT_PS5_DS:
+            bt_hid_cmd_ps5_set_conf(device, report);
+            break;
+        default:
+            bt_hid_cmd_ps4_set_conf(device, report);
+            break;
+    }
+}
+
+void bt_hid_ps_init(struct bt_dev *device) {
     const esp_timer_create_args_t ps5_timer_args = {
         .callback = &bt_hid_ps5_init_callback,
         .arg = (void *)device,
@@ -100,7 +113,7 @@ void bt_hid_ps4_ps5_init(struct bt_dev *device) {
     bt_hid_cmd_ps4_set_conf(device, (void *)&ps4_set_conf);
 }
 
-void bt_hid_ps4_ps5_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
@@ -116,7 +129,7 @@ void bt_hid_ps4_ps5_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pk
                 }
                 case BT_HIDP_PS5_STATUS:
                 {
-                    device->type = PS5_DS;
+                    device->subtype = BT_PS5_DS;
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps4_status));
                     break;
                 }

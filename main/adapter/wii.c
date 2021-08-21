@@ -189,7 +189,7 @@ static const uint32_t wiiu_btns_mask[32] = {
     BIT(WIIU_ZR), BIT(WIIU_R), 0, BIT(WIIU_RJ),
 };
 
-int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiimote_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     uint16_t *buttons = (uint16_t *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -206,7 +206,7 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
     return 0;
 }
 
-int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiin_map *map = (struct wiin_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -241,7 +241,7 @@ int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
     return 0;
 }
 
-int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiic_map *map = (struct wiic_map *)bt_data->input;
     uint8_t axes[6];
 
@@ -284,7 +284,7 @@ int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
     return 0;
 }
 
-int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -311,6 +311,19 @@ int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
     }
 
     return 0;
+}
+
+int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    switch (bt_data->dev_subtype) {
+        case BT_WII_NUNCHUCK:
+            return wiin_to_generic(bt_data, ctrl_data);
+        case BT_WII_CLASSIC:
+            return wiic_to_generic(bt_data, ctrl_data);
+        case BT_WIIU_PRO:
+            return wiiu_to_generic(bt_data, ctrl_data);
+        default:
+            return wiimote_to_generic(bt_data, ctrl_data);
+    }
 }
 
 void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {

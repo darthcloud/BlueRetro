@@ -9,7 +9,7 @@
 
 struct bt_wii_ext_type {
     uint8_t ext_type[6];
-    int8_t type;
+    uint32_t subtype;
 };
 
 static const struct bt_hidp_wii_rep_mode wii_rep_conf = {
@@ -38,36 +38,24 @@ static const struct bt_hidp_wii_rd_mem wii_ext_type = {
 };
 
 static const struct bt_wii_ext_type bt_wii_ext_type[] = {
-    {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, WII_NUNCHUCK},
-    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC},
-    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, WII_CLASSIC}, /* Classic Pro */
-    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, WIIU_PRO},
+    {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, BT_WII_NUNCHUCK},
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, BT_WII_CLASSIC},
+    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, BT_WII_CLASSIC}, /* Classic Pro */
+    {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, BT_WIIU_PRO},
 };
 
-static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type);
+static uint32_t bt_get_subtype_from_wii_ext(const uint8_t* ext_type);
 static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report);
 static void bt_hid_cmd_wii_read(struct bt_dev *device, void *report);
 static void bt_hid_cmd_wii_write(struct bt_dev *device, void *report);
 
-static int32_t bt_get_type_from_wii_ext(const uint8_t* ext_type) {
+static uint32_t bt_get_subtype_from_wii_ext(const uint8_t* ext_type) {
     for (uint32_t i = 0; i < sizeof(bt_wii_ext_type)/sizeof(*bt_wii_ext_type); i++) {
         if (memcmp(ext_type, bt_wii_ext_type[i].ext_type, sizeof(bt_wii_ext_type[0].ext_type)) == 0) {
-            return bt_wii_ext_type[i].type;
+            return bt_wii_ext_type[i].subtype;
         }
     }
-    return BT_NONE;
-}
-
-int32_t bt_dev_is_wii(int8_t type) {
-    switch (type) {
-        case WII_CORE:
-        case WII_NUNCHUCK:
-        case WII_CLASSIC:
-        case WIIU_PRO:
-            return 1;
-        default:
-            return 0;
-    }
+    return BT_SUBTYPE_DEFAULT;
 }
 
 static void bt_hid_cmd_wii_set_rep_mode(struct bt_dev *device, void *report) {
@@ -122,8 +110,8 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 {
                     struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
-                    if (device->type != WIIU_PRO) {
-                        device->type = WII_CORE;
+                    if (device->subtype != BT_WIIU_PRO) {
+                        device->subtype = BT_SUBTYPE_DEFAULT;
                         if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
                             bt_hid_cmd_wii_write(device, (void *)&wii_ext_init0);
                         }
@@ -136,12 +124,12 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 case BT_HIDP_WII_RD_DATA:
                 {
                     struct bt_hidp_wii_rd_data *rd_data = (struct bt_hidp_wii_rd_data *)bt_hci_acl_pkt->hidp_data;
-                    int8_t type = bt_get_type_from_wii_ext(rd_data->data);
+                    uint32_t subtype = bt_get_subtype_from_wii_ext(rd_data->data);
                     printf("# BT_HIDP_WII_RD_DATA\n");
-                    if (type > BT_NONE) {
-                        device->type = type;
+                    if (subtype > BT_SUBTYPE_DEFAULT) {
+                        device->subtype = subtype;
                     }
-                    printf("# dev: %d wii ext: %d\n", device->id, device->type);
+                    printf("# dev: %d wii ext: %d\n", device->id, device->subtype);
                     bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                     break;
                 }
