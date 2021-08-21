@@ -10,6 +10,7 @@ entries:
     led (noflash)
     delay (noflash)
     detect (noflash)
+    wired_comm (noflash)
     cdi_uart (noflash)
     jvs_uart (noflash)
     maple (noflash)
