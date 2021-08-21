@@ -22,7 +22,7 @@ enum {
     XB1_RJ,
 };
 
-/* dinput buttons */
+/* adaptive dinput buttons */
 enum {
     XB1_DI_A = 0,
     XB1_DI_B,
@@ -36,6 +36,21 @@ enum {
     XB1_DI_VIEW = 16,
 };
 
+/* XS buttons */
+enum {
+    XBOX_XS_A = 0,
+    XBOX_XS_B,
+    XBOX_XS_X = 3,
+    XBOX_XS_Y,
+    XBOX_XS_LB = 6,
+    XBOX_XS_RB,
+    XBOX_XS_VIEW = 10,
+    XBOX_XS_MENU,
+    XBOX_XS_XBOX,
+    XBOX_XS_LJ,
+    XBOX_XS_RJ,
+    XBOX_XS_SHARE = 16,
+};
 /* report 2 */
 enum {
     XB1_XBOX = 0,
@@ -102,6 +117,7 @@ static const struct xb1_rumble xb1_rumble_off = {
 
 static const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t xbox_xs_mask[4] = {0xBBFF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_adaptive_mask[4] = {0xBB3FFFFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_btns_mask[32] = {
@@ -137,6 +153,17 @@ static const uint32_t xb1_adaptive_btns_mask[32] = {
     0, 0, 0, 0,
 };
 
+static const uint32_t xbox_xs_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(XBOX_XS_X), BIT(XBOX_XS_B), BIT(XBOX_XS_A), BIT(XBOX_XS_Y),
+    BIT(XBOX_XS_MENU), BIT(XBOX_XS_VIEW), BIT(XBOX_XS_XBOX), BIT(XBOX_XS_SHARE),
+    0, BIT(XBOX_XS_LB), 0, BIT(XBOX_XS_LJ),
+    0, BIT(XBOX_XS_RB), 0, BIT(XBOX_XS_RJ),
+};
+
 int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->input;
 
@@ -156,6 +183,10 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
                     ctrl_data->btns[0].value |= generic_btns_mask[i];
                 }
             }
+        }
+        else if (bt_data->dev_subtype == BT_XBOX_XS) {
+            ctrl_data->mask = (uint32_t *)xbox_xs_mask;
+            btns_mask = xbox_xs_btns_mask;
         }
         else {
             ctrl_data->mask = (uint32_t *)xb1_mask;

@@ -5,14 +5,20 @@
 
 #include <stdio.h>
 #include "bluetooth/host.h"
+#include "bluetooth/att.h"
 #include "xbox.h"
 
 void bt_hid_cmd_xbox_rumble(struct bt_dev *device, void *report) {
-    struct bt_hidp_xb1_rumble *rumble = (struct bt_hidp_xb1_rumble *)bt_hci_pkt_tmp.hidp_data;
+    if (atomic_test_bit(&device->flags, BT_DEV_IS_BLE)) {
+        bt_att_write_hid_report(device, BT_HIDP_XB1_RUMBLE, report, sizeof(struct bt_hidp_xb1_rumble));
+    }
+    else {
+        struct bt_hidp_xb1_rumble *rumble = (struct bt_hidp_xb1_rumble *)bt_hci_pkt_tmp.hidp_data;
 
-    memcpy((void *)rumble, report, sizeof(*rumble));
+        memcpy((void *)rumble, report, sizeof(*rumble));
 
-    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_XB1_RUMBLE, sizeof(*rumble));
+        bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_XB1_RUMBLE, sizeof(*rumble));
+    }
 }
 
 void bt_hid_xbox_init(struct bt_dev *device) {

@@ -120,6 +120,15 @@ static int32_t bt_att_is_report_required(struct bt_att_hid_report *att_hid, stru
     return 0;
 }
 
+static uint16_t bt_att_get_report_handle(struct bt_att_hid *hid_data, uint8_t report_id) {
+    for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
+        if (hid_data->reports[i].id == report_id) {
+            return hid_data->reports[i].report_hdl;
+        }
+    }
+    return 0;
+}
+
 static void bt_att_restart(void *arg) {
     esp_restart();
 }
@@ -801,6 +810,14 @@ void bt_att_hid_init(struct bt_dev *device) {
     struct bt_att_hid *hid_data = &att_hid[device->id];
     memset((uint8_t *)hid_data, 0, sizeof(*hid_data));
     bt_att_cmd_mtu_req(device->acl_handle, max_mtu);
+}
+
+void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
+    uint16_t att_handle = bt_att_get_report_handle(&att_hid[device->id], report_id);
+
+    if (att_handle) {
+        bt_att_cmd_write_req(device->acl_handle, att_handle, data, len);
+    }
 }
 
 void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {

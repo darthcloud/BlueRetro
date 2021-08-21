@@ -41,7 +41,7 @@ enum {
     BT_WII_CLASSIC,
     BT_WIIU_PRO,
     BT_PS5_DS,
-    BT_XBOX_DINPUT,
+    BT_XBOX_XS,
     BT_XBOX_ADAPTIVE,
     BT_SW_JOYCON,
     BT_SUBTYPE_MAX,

@@ -56,6 +56,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"Joy-Con", BT_SW, BT_SW_JOYCON, 0},
     {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
     {"Lic Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
+    {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
