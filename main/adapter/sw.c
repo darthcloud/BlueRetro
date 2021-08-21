@@ -6,6 +6,7 @@
 #include <string.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "mapping_quirks.h"
 #include "sw.h"
 
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30
@@ -77,29 +78,45 @@ static const uint32_t sw_btns_mask[32] = {
     BIT(SW_ZR), BIT(SW_R), BIT(SW_SR), BIT(SW_RJ),
 };
 
+void sw_pad_init(struct bt_data *bt_data) {
+    struct sw_map *map = (struct sw_map *)bt_data->input;
+
+    memcpy(bt_data->raw_src_mappings[PAD].mask, sw_mask,
+        sizeof(bt_data->raw_src_mappings[PAD].mask));
+    memcpy(bt_data->raw_src_mappings[PAD].desc, sw_desc,
+        sizeof(bt_data->raw_src_mappings[PAD].desc));
+    memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_btns_mask,
+        sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+
+    mapping_quirks_apply(bt_data);
+
+    for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
+        bt_data->axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
+    }
+
+    atomic_set_bit(&bt_data->flags, BT_INIT);
+}
+
 int32_t sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct sw_map *map = (struct sw_map *)bt_data->input;
 
+    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+        sw_pad_init(bt_data);
+    }
+
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
-    ctrl_data->mask = (uint32_t *)sw_mask;
-    ctrl_data->desc = (uint32_t *)sw_desc;
+    ctrl_data->mask = (uint32_t *)bt_data->raw_src_mappings[PAD].mask;
+    ctrl_data->desc = (uint32_t *)bt_data->raw_src_mappings[PAD].desc;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (map->buttons & sw_btns_mask[i]) {
+        if (map->buttons & bt_data->raw_src_mappings[PAD].btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
 
     /* Convert hat to regular btns */
     ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
-
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
-            bt_data->axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
-        }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
-    }
 
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &sw_axes_meta[i];

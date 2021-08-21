@@ -26,6 +26,7 @@ typedef void (*bt_cmd_func_t)(void *param);
 struct bt_name_type {
     char name[249];
     int8_t type;
+    atomic_t hid_flags;
 };
 
 struct bt_hci_cmd_cp {
@@ -45,14 +46,16 @@ static const char bt_default_pin[][5] = {
 };
 
 static const struct bt_name_type bt_name_type[] = {
-    {"PLAYSTATION(R)3", PS3_DS3},
-    {"Nintendo RVL-CNT-01-UC", WIIU_PRO}, /* Must be before WII_CORE */
-    {"Nintendo RVL-CNT-01", WII_CORE},
-    {"Wireless Controller", PS4_DS4},
-    {"Xbox Wireless Controller", XB1_S},
-    {"Xbox Adaptive Controller", XB1_ADAPTIVE},
-    {"Pro Controller", SW},
-    {"Joy-Con", SW},
+    {"PLAYSTATION(R)3", PS3_DS3, 0},
+    {"Nintendo RVL-CNT-01-UC", WIIU_PRO, 0}, /* Must be before WII_CORE */
+    {"Nintendo RVL-CNT-01", WII_CORE, 0},
+    {"Wireless Controller", PS4_DS4, 0},
+    {"Xbox Wireless Controller", XB1_S, 0},
+    {"Xbox Adaptive Controller", XB1_ADAPTIVE, 0},
+    {"Pro Controller", SW, 0},
+    {"Joy-Con", SW, 0},
+    {"8Bitdo SF30", HID_GENERIC, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
+    {"Lic Pro Controller", SW, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
@@ -80,7 +83,6 @@ static uint8_t local_bdaddr[6];
 static uint32_t bt_config_state = 0;
 static RingbufHandle_t randq_hdl, encryptq_hdl;
 
-static int32_t bt_hci_get_type_from_name(const uint8_t* name);
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
 //static void bt_hci_cmd_inquiry(void *cp);
 //static void bt_hci_cmd_inquiry_cancel(void *cp);
@@ -211,15 +213,6 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_le_set_adv_enable, NULL},
     {bt_hci_start_inquiry_cfg_check, NULL},
 };
-
-static int32_t bt_hci_get_type_from_name(const uint8_t* name) {
-    for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
-        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
-            return bt_name_type[i].type;
-        }
-    }
-    return -1;
-}
 
 static void bt_hci_q_conf(uint32_t next) {
     if (next) {
@@ -1279,6 +1272,16 @@ void bt_hci_le_conn_update(struct hci_cp_le_conn_update *cp) {
     bt_hci_cmd_le_conn_update(cp);
 }
 
+void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name) {
+    for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
+        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
+            struct bt_data *bt_data = &bt_adapter.data[device->id];
+            device->type = bt_name_type[i].type;
+            bt_data->flags = bt_name_type[i].hid_flags;
+        }
+    }
+}
+
 void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     struct bt_dev *device = NULL;
 
@@ -1447,10 +1450,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
-                    int8_t type = bt_hci_get_type_from_name(remote_name_req_complete->name);
-                    if (type > BT_NONE) {
-                        device->type = bt_hci_get_type_from_name(remote_name_req_complete->name);
-                    }
+                    bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
                     if (device->type == HID_GENERIC || device->type == SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }

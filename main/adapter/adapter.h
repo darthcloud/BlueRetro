@@ -248,6 +248,8 @@ enum {
 /* BT flags */
 enum {
     BT_INIT = 0,
+    BT_QUIRK_FACE_BTNS_INVERT,
+    BT_QUIRK_FACE_BTNS_ROTATE_RIGHT,
 };
 
 /* Wired flags */
@@ -367,6 +369,12 @@ struct hid_report {
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
 
+struct raw_src_mapping {
+    uint32_t mask[4];
+    uint32_t desc[4];
+    uint32_t btns_mask[32];
+};
+
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
@@ -378,6 +386,7 @@ struct bt_data {
     uint32_t report_id;
     uint32_t report_cnt;
     int32_t report_type;
+    struct raw_src_mapping raw_src_mappings[REPORT_MAX];
     struct hid_report reports[REPORT_MAX];
     uint8_t input[128];
     int32_t axes_cal[ADAPTER_MAX_AXES];

@@ -8,6 +8,7 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include "host.h"
+#include "hci.h"
 #include "att.h"
 #include "zephyr/uuid.h"
 #include "zephyr/att.h"
@@ -937,12 +938,13 @@ find_info_rsp_end:
             switch (device->hid_state) {
                 case BT_ATT_HID_DEVICE_NAME:
                 {
-                    char device_name[32] = {0};
+                    uint8_t device_name[32] = {0};
 
                     if (rsp_len > 31) {
                         rsp_len = 31;
                     }
                     memcpy(device_name, read_type_rsp->data[0].value, rsp_len);
+                    bt_hci_set_type_flags_from_name(device, device_name);
                     printf("# dev: %d type: %d %s\n", device->id, device->type, device_name);
 
                     device->hid_state = BT_ATT_HID_DISCOVERY;
