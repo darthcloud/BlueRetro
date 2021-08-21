@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <esp32/rom/crc.h>
 #include <esp_timer.h>
-#include "host.h"
-#include "hidp_ps.h"
+#include "bluetooth/host.h"
+#include "ps.h"
 
 const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
     0xFF0000, /* Blue */

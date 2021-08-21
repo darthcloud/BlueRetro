@@ -7,7 +7,7 @@
 #include <string.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
-#include "bluetooth/hidp_ps.h"
+#include "bluetooth/hidp/ps.h"
 #include "ps.h"
 
 enum {

@@ -5,8 +5,8 @@
 
 #include <stdio.h>
 #include <esp_timer.h>
-#include "host.h"
-#include "hidp_ps3.h"
+#include "bluetooth/host.h"
+#include "ps3.h"
 
 static const uint8_t bt_init_magic[] = {
     0x42, 0x03, 0x00, 0x00

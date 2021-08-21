@@ -4,8 +4,8 @@
  */
 
 #include <stdio.h>
-#include "host.h"
-#include "hidp_wii.h"
+#include "bluetooth/host.h"
+#include "wii.h"
 
 struct bt_wii_ext_type {
     uint8_t ext_type[6];

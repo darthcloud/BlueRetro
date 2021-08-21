@@ -12,7 +12,6 @@
 #include "hci.h"
 #include "att.h"
 #include "smp.h"
-#include "hidp_wii.h"
 #include "tools/util.h"
 #include "system/btn.h"
 #include "system/led.h"

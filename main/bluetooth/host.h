@@ -13,7 +13,7 @@
 #include "zephyr/smp.h"
 #include "zephyr/att_internal.h"
 #include "adapter/adapter.h"
-#include "hidp.h"
+#include "hidp/hidp.h"
 
 #define BT_MAX_RETRY 3
 

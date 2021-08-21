@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "host.h"
-#include "hidp_generic.h"
-#include "hidp_ps3.h"
-#include "hidp_wii.h"
-#include "hidp_ps.h"
-#include "hidp_xbox.h"
-#include "hidp_sw.h"
+#include "bluetooth/host.h"
+#include "generic.h"
+#include "ps3.h"
+#include "wii.h"
+#include "ps.h"
+#include "xbox.h"
+#include "sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
 typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);

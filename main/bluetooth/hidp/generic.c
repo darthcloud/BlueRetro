@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "host.h"
-#include "hidp_generic.h"
+#include "bluetooth/host.h"
+#include "generic.h"
 
 void bt_hid_generic_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
     switch (bt_hci_acl_pkt->sig_hdr.code) {

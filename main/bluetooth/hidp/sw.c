@@ -4,8 +4,8 @@
  */
 
 #include <stdio.h>
-#include "host.h"
-#include "hidp_sw.h"
+#include "bluetooth/host.h"
+#include "sw.h"
 
 static uint8_t sw_tid = 0;
 
