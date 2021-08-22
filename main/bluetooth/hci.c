@@ -18,7 +18,7 @@
 #include "adapter/config.h"
 #include "zephyr/uuid.h"
 
-#define BT_INQUIRY_MAX 10
+#define BT_INQUIRY_MAX 1
 
 typedef void (*bt_cmd_func_t)(void *param);
 
@@ -1018,6 +1018,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 else {
                     struct bt_smp_encrypt_info encrypt_info = {0};
                     struct bt_smp_master_ident master_ident = {0};
+                    bt_nb_inquiry = 0;
                     device->acl_handle = le_conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
@@ -1342,6 +1343,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
+                    bt_nb_inquiry = 0;
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
