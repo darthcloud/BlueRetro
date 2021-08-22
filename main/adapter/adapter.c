@@ -314,6 +314,12 @@ void adapter_bridge(struct bt_data *bt_data) {
             (b & BIT(PAD_RJ)) ? GREEN : RESET, RESET);
 #endif
         printf("\n");
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
+        if (ctrl_input.btns[0].value & BIT(PAD_RB_DOWN)) {
+            uint8_t tmp = 0;
+            adapter_q_fb(&tmp, 1);
+        }
+#endif
 #else
         if (wired_adapter.system_id != WIRED_NONE) {
             wired_meta_init(ctrl_output);
@@ -382,14 +388,19 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
 
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
     uint32_t ret = 0;
+#ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     if (wired_adapter.system_id != WIRED_NONE) {
         wired_fb_to_generic(config.out_cfg[bt_data->dev_id].dev_mode, fb_data, fb_len, &fb_input);
-
+#else
+        fb_input.state ^= 0x01;
+#endif
         if (bt_data->dev_type != BT_NONE) {
             wireless_fb_from_generic(&fb_input, bt_data);
             ret = 1;
         }
+#ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     }
+#endif
     return ret;
 }
 
