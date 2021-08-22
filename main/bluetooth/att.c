@@ -56,7 +56,9 @@ enum {
     BR_OTA_FW_CTRL_CHRC_HDL,
     BR_OTA_FW_DATA_ATT_HDL,
     BR_OTA_FW_DATA_CHRC_HDL,
-    LAST_HDL = BR_OTA_FW_DATA_CHRC_HDL,
+    BR_FW_VER_ATT_HDL,
+    BR_FW_VER_CHRC_HDL,
+    LAST_HDL = BR_FW_VER_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -359,6 +361,7 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
 
     switch (rd_type_rsp->data->handle + 1) {
         case BR_API_VER_CHRC_HDL:
+        case BR_FW_VER_CHRC_HDL:
             *data++ = BT_GATT_CHRC_READ;
             break;
         case BR_OTA_FW_CTRL_CHRC_HDL:
@@ -471,6 +474,16 @@ static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
     *(uint16_t *)bt_hci_pkt_tmp.att_data = 0x0000;
 
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
+}
+
+static void bt_att_cmd_app_ver_rsp(uint16_t handle) {
+    const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+
+    memcpy(bt_hci_pkt_tmp.att_data, app_desc->version, 23);
+    bt_hci_pkt_tmp.att_data[23] = 0;
+    printf("# %s %s\n", __FUNCTION__, bt_hci_pkt_tmp.att_data);
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 23);
 }
 
 static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t end) {
@@ -642,6 +655,9 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_IN_CFG_DATA_CHRC_HDL:
                 case BR_API_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
+                    break;
+                case BR_FW_VER_CHRC_HDL:
+                    bt_att_cmd_app_ver_rsp(device->acl_handle);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
