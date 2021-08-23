@@ -55,7 +55,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
     {"Joy-Con", BT_SW, BT_SW_JOYCON, 0},
     {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
-    {"Lic Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
+    {"Lic Pro Controller", BT_SW, BT_SW_POWERA, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
     {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
 };
 
@@ -1455,6 +1455,9 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
+                    if (device->subtype == BT_SW_POWERA) {
+                        bt_hci_stop_inquiry();
+                    }
                     if (device->type == BT_HID_GENERIC || device->type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }

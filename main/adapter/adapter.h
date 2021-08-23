@@ -44,6 +44,7 @@ enum {
     BT_XBOX_XS,
     BT_XBOX_ADAPTIVE,
     BT_SW_JOYCON,
+    BT_SW_POWERA,
     BT_SUBTYPE_MAX,
 };
 
