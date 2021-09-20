@@ -85,6 +85,9 @@
 #include "esp_private/startup_internal.h"
 
 #ifdef BLUERETRO
+#include "esp_private/system_internal.h"
+#include "driver/rtc_cntl.h"
+#include "hal/brownout_hal.h"
 #include "bare_metal_app_cpu.h"
 #endif
 
@@ -251,6 +254,24 @@ static void IRAM_ATTR start_cpu_other_cores_default(void)
 }
 #endif
 
+#ifdef BLUERETRO
+static void rtc_brownout_isr_handler(void *arg)
+{
+    /* Normally RTC ISR clears the interrupt flag after the application-supplied
+     * handler returns. Since restart is called here, the flag needs to be
+     * cleared manually.
+     */
+    brownout_hal_intr_clear();
+    /* Stall the other CPU to make sure the code running there doesn't use UART
+     * at the same time as the following esp_rom_printf.
+     */
+    esp_cpu_stall(!cpu_hal_get_core_id());
+    esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
+    esp_rom_printf("\r\nBrownout detector was triggered\r\n\r\n");
+    esp_restart_noos();
+}
+#endif
+
 static void do_core_init(void)
 {
     /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
@@ -286,6 +307,11 @@ static void do_core_init(void)
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
+#ifdef BLUERETRO
+    rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M);
+
+    brownout_hal_intr_enable(true);
+#endif
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_IO
