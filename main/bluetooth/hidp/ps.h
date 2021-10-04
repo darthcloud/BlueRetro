@@ -42,7 +42,9 @@ struct bt_hidp_ps5_set_conf {
     uint8_t conf1;
     uint8_t r_rumble;
     uint8_t l_rumble;
-    uint8_t tbd1[40];
+    uint8_t tbd0[4];
+    uint8_t mic_led;
+    uint8_t tbd1[35];
     uint32_t leds;
     uint8_t tbd2[24];
     uint32_t crc;
