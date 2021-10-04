@@ -25,6 +25,7 @@ enum {
     PS4_R3,
     PS4_PS,
     PS4_TP,
+    PS5_MUTE,
 };
 
 static const uint8_t ps4_axes_idx[ADAPTER_MAX_AXES] =
@@ -92,7 +93,7 @@ static const uint32_t ps4_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, 0, 0, 0,
+    BIT(PS5_MUTE), 0, 0, 0,
     BIT(PS4_S), BIT(PS4_C), BIT(PS4_X), BIT(PS4_T),
     BIT(PS4_OPTIONS), BIT(PS4_SHARE), BIT(PS4_PS), BIT(PS4_TP),
     0, BIT(PS4_L1), 0, BIT(PS4_L3),
