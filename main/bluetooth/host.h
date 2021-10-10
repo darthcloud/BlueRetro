@@ -29,6 +29,7 @@ enum {
     BT_DEV_SDP_DATA,
     BT_DEV_ROLE_SW_FAIL,
     BT_DEV_IS_BLE,
+    BT_DEV_FB_DELAY,
 };
 
 struct l2cap_chan {
@@ -52,6 +53,7 @@ struct bt_dev {
     uint32_t subtype;
     uint16_t acl_handle;
     uint32_t hid_state;
+    void *timer_hdl;
     union {
         struct {
             uint32_t sdp_state;
