@@ -14,6 +14,7 @@
 #ifndef _BLE_MESH_UTIL_H_
 #define _BLE_MESH_UTIL_H_
 
+#include <stdio.h>
 #include <stddef.h>
 #ifndef BLUERETRO
 #include "mesh_types.h"
@@ -434,6 +435,23 @@ static inline void sys_mem_swap(void *buf, size_t length)
 
         ((u8_t *)buf)[i] = ((u8_t *)buf)[length - 1 - i];
         ((u8_t *)buf)[length - 1 - i] = tmp;
+    }
+}
+
+static inline void data_dump(uint8_t *data, uint16_t len) {
+    uint8_t col;
+    uint16_t byte, line;
+    uint16_t line_max = len/16;
+
+    if (len % 16)
+        line_max++;
+
+    for (byte = 0, line = 0; line < line_max; line++) {
+        printf("%06X", byte);
+        for (col = 0; col < 16 && byte < len; col++, byte++) {
+            printf(" %02X", data[byte]);
+        }
+        printf("\n");
     }
 }
 
