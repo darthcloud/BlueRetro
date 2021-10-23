@@ -47,16 +47,24 @@ static const char bt_default_pin[][5] = {
 
 static const struct bt_name_type bt_name_type[] = {
     {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
-    {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
-    {"Nintendo RVL-CNT-01", BT_WII, BT_SUBTYPE_DEFAULT, 0},
     {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
     {"Xbox Wireless Controller", BT_XBOX, BT_SUBTYPE_DEFAULT, 0},
     {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
-    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
-    {"Joy-Con", BT_SW, BT_SW_JOYCON, 0},
-    {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
-    {"Lic Pro Controller", BT_SW, BT_SW_POWERA, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
     {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
+    {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
+    {"Nintendo RVL-CNT-01", BT_WII, BT_SUBTYPE_DEFAULT, 0},
+    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
+    {"Lic Pro Controller", BT_SW, BT_SW_POWERA, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
+    {"Joy-Con (L)", BT_SW, BT_SW_LEFT_JOYCON, BIT(BT_QUIRK_SW_LEFT_JOYCON)},
+    {"Joy-Con (R)", BT_SW, BT_SW_RIGHT_JOYCON, BIT(BT_QUIRK_SW_RIGHT_JOYCON)},
+    {"HVC Controller", BT_SW, BT_SW_NES, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
+    {"NES Controller", BT_SW, BT_SW_NES, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
+    {"SHVC Controller", BT_SW, BT_SW_SNES, BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
+    {"SNES Controller", BT_SW, BT_SW_SNES, BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
+    {"N64 Controller", BT_SW, BT_SW_N64, 0},
+    {"Mega", BT_SW, BT_SW_MD_GEN, 0},
+    {"Gen", BT_SW, BT_SW_MD_GEN, 0},
+    {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
