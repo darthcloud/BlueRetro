@@ -447,7 +447,7 @@ static inline void data_dump(uint8_t *data, uint16_t len) {
         line_max++;
 
     for (byte = 0, line = 0; line < line_max; line++) {
-        printf("%06X", byte);
+        printf("# %06X", byte);
         for (col = 0; col < 16 && byte < len; col++, byte++) {
             printf(" %02X", data[byte]);
         }

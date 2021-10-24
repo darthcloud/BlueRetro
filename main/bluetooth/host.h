@@ -54,6 +54,7 @@ struct bt_dev {
     uint16_t acl_handle;
     uint32_t hid_state;
     void *timer_hdl;
+    uint8_t tid;
     union {
         struct {
             uint32_t sdp_state;
