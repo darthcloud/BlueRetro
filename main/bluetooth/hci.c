@@ -62,8 +62,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"SHVC Controller", BT_SW, BT_SW_SNES, BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
     {"SNES Controller", BT_SW, BT_SW_SNES, BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
     {"N64 Controller", BT_SW, BT_SW_N64, 0},
-    {"Mega", BT_SW, BT_SW_MD_GEN, 0},
-    {"Gen", BT_SW, BT_SW_MD_GEN, 0},
+    {"MD/Gen Control Pad", BT_SW, BT_SW_MD_GEN, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
     {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
 };
 
