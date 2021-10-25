@@ -117,6 +117,8 @@ static const uint32_t sw_mask[4] = {0xFFFF0FFF, 0x00000000, 0x00000000, 0x000000
 static const uint32_t sw_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw_jc_mask[4] = {0xFFFF0F0F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw_jc_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw_n64_mask[4] = {0x33D50FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw_n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw_legacy_mask[4] = {0xFFFF0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw_legacy_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 
@@ -140,6 +142,17 @@ static const uint32_t sw_native_btns_mask[32] = {
     BIT(SW_N_PLUS), BIT(SW_N_MINUS), BIT(SW_N_HOME), BIT(SW_N_CAPTURE),
     BIT(SW_N_ZL), BIT(SW_N_L), BIT(SW_N_L_SL) | BIT(SW_N_R_SL), BIT(SW_N_LJ),
     BIT(SW_N_ZR), BIT(SW_N_R), BIT(SW_N_L_SR) | BIT(SW_N_R_SR), BIT(SW_N_RJ),
+};
+
+static const uint32_t sw_n64_btns_mask[32] = {
+    0, 0, 0, 0,
+    BIT(SW_N_X), BIT(SW_N_MINUS), BIT(SW_N_ZR), BIT(SW_N_Y),
+    BIT(SW_N_LEFT), BIT(SW_N_RIGHT), BIT(SW_N_DOWN), BIT(SW_N_UP),
+    0, 0, 0, 0,
+    BIT(SW_N_B), 0, BIT(SW_N_A), 0,
+    BIT(SW_N_PLUS), 0, BIT(SW_N_HOME), BIT(SW_N_CAPTURE),
+    BIT(SW_N_ZL), BIT(SW_N_L), 0, 0,
+    BIT(SW_N_LJ), BIT(SW_N_R), 0, 0,
 };
 
 static void sw_native_pad_init(struct bt_data *bt_data) {
@@ -184,12 +197,15 @@ static void sw_native_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
     else if (bt_data->dev_subtype == BT_SW_N64) {
+        memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_n64_btns_mask,
+            sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+
         meta[0].polarity = 0;
         meta[1].polarity = 0;
         axes_idx = sw_axes_idx;
-        memcpy(bt_data->raw_src_mappings[PAD].mask, sw_jc_mask,
+        memcpy(bt_data->raw_src_mappings[PAD].mask, sw_n64_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
-        memcpy(bt_data->raw_src_mappings[PAD].desc, sw_jc_desc,
+        memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
     else {
