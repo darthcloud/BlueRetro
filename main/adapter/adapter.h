@@ -329,6 +329,15 @@ enum {
     SQUARE_HEX,
 };
 
+/* Feedback type */
+enum {
+    FB_TYPE_NONE = 0,
+    FB_TYPE_RUMBLE,
+    FB_TYPE_STATUS_LED,
+    FB_TYPE_PLAYER_LED,
+    FB_TYPE_MEM_WRITE,
+};
+
 struct ctrl_meta {
     int32_t neutral;
     int32_t deadzone;
@@ -357,16 +366,27 @@ struct generic_ctrl {
 };
 
 struct generic_fb {
-    uint32_t wired_id;
-    uint32_t state;
-    uint32_t cycles;
-    uint32_t start;
+    uint8_t wired_id;
+    uint8_t type;
+    union {
+        struct {
+            uint32_t state;
+            uint32_t cycles;
+            uint32_t start;
+        };
+    };
 };
 
-struct raw_fb {
+struct raw_fb_header {
     uint8_t wired_id;
-    uint8_t data[0];
-};
+    uint8_t type;
+    uint8_t data_len;
+} __packed;
+
+struct raw_fb {
+    struct raw_fb_header header;
+    uint8_t data[13];
+} __packed;
 
 struct hid_usage {
     uint8_t usage_page;
@@ -439,7 +459,7 @@ struct bt_adapter {
 
 typedef int32_t (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
 typedef void (*from_generic_t)(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
-typedef void (*fb_to_generic_t)(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data);
+typedef void (*fb_to_generic_t)(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data);
 typedef void (*fb_from_generic_t)(struct generic_fb *fb_data, struct bt_data *bt_data);
 typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
 typedef void (*buffer_init_t)(int32_t dev_mode, struct wired_data *wired_data);
@@ -456,8 +476,8 @@ void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);
 void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us);
 void adapter_fb_stop_timer_stop(uint8_t dev_id);
-uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data);
-void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len);
+uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data);
+void IRAM_ATTR adapter_q_fb(struct raw_fb *fb_data);
 void adapter_init(void);
 
 #endif /* _ADAPTER_H_ */

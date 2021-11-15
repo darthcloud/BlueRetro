@@ -345,36 +345,37 @@ void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
     }
 }
 
-void dc_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
-    fb_data->wired_id = raw_fb_data[0];
+void dc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
+    fb_data->wired_id = raw_fb_data->header.wired_id;
+    fb_data->type = raw_fb_data->header.type;
     fb_data->cycles = 0;
     fb_data->start = 0;
 
-    if (raw_fb_len == 1) {
+    if (raw_fb_data->header.data_len == 0) {
         fb_data->state = 0;
-        adapter_fb_stop_timer_stop(raw_fb_data[0]);
+        adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
     }
     else {
-        uint32_t dur_us = 1000 * ((*(uint16_t *)&raw_fb_data[1]) * 250 + 250);
-        uint8_t freq = raw_fb_data[6];
-        uint8_t mag0 = raw_fb_data[7] & 0x07;
-        uint8_t mag1 = (raw_fb_data[7] >> 4) & 0x07;
+        uint32_t dur_us = 1000 * ((*(uint16_t *)&raw_fb_data->data[0]) * 250 + 250);
+        uint8_t freq = raw_fb_data->data[5];
+        uint8_t mag0 = raw_fb_data->data[6] & 0x07;
+        uint8_t mag1 = (raw_fb_data->data[6] >> 4) & 0x07;
 
         if (mag0 || mag1) {
-            if (freq && ((raw_fb_data[7] & 0x88) || !(raw_fb_data[8] & 0x01))) {
-                if (raw_fb_data[5]) {
-                    dur_us = 1000000 * raw_fb_data[5] * MAX(mag0, mag1) / freq;
+            if (freq && ((raw_fb_data->data[6] & 0x88) || !(raw_fb_data->data[7] & 0x01))) {
+                if (raw_fb_data->data[4]) {
+                    dur_us = 1000000 * raw_fb_data->data[4] * MAX(mag0, mag1) / freq;
                 }
                 else {
                     dur_us = 1000000 / freq;
                 }
             }
             fb_data->state = 1;
-            adapter_fb_stop_timer_start(raw_fb_data[0], dur_us);
+            adapter_fb_stop_timer_start(raw_fb_data->header.wired_id, dur_us);
         }
         else {
             fb_data->state = 0;
-            adapter_fb_stop_timer_stop(raw_fb_data[0]);
+            adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
         }
     }
 }

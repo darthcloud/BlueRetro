@@ -135,8 +135,8 @@ void wired_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct
     }
 }
 
-void wired_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
+void wired_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
     if (fb_to_generic_func[wired_adapter.system_id]) {
-        fb_to_generic_func[wired_adapter.system_id](dev_mode, raw_fb_data, raw_fb_len, fb_data);
+        fb_to_generic_func[wired_adapter.system_id](dev_mode, raw_fb_data, fb_data);
     }
 }

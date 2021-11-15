@@ -554,9 +554,14 @@ maple_end:
                                 if (!bad_frame) {
                                     rumble_val = pkt.data32[1];
                                     if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                                        pkt.data[3] = port;
-                                        *(uint32_t *)&pkt.data[4] = rumble_max;
-                                        adapter_q_fb(pkt.data + 3, 9);
+                                        struct raw_fb fb_data = {0};
+
+                                        fb_data.header.wired_id = port;
+                                        fb_data.header.type = FB_TYPE_RUMBLE;
+                                        fb_data.header.data_len = sizeof(uint32_t) * 2;
+                                        *(uint32_t *)&fb_data.data[0] = rumble_max;
+                                        *(uint32_t *)&fb_data.data[4] = *(uint32_t *)&pkt.data[8];
+                                        adapter_q_fb(&fb_data);
                                     }
                                 }
                                 break;

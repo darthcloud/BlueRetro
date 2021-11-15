@@ -209,9 +209,10 @@ void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wi
     }
 }
 
-void gc_fb_to_generic(int32_t dev_mode, uint8_t *raw_fb_data, uint32_t raw_fb_len, struct generic_fb *fb_data) {
-    fb_data->wired_id = raw_fb_data[0];
-    fb_data->state = raw_fb_data[1];
+void gc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
+    fb_data->wired_id = raw_fb_data->header.wired_id;
+    fb_data->type = raw_fb_data->header.type;
+    fb_data->state = raw_fb_data->data[0];
     fb_data->cycles = 0;
     fb_data->start = 0;
 }

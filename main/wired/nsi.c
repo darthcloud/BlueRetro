@@ -338,9 +338,14 @@ static uint32_t n64_isr(uint32_t cause) {
                                 nsi_items_to_bytes(item, buf + 2, 32);
                                 if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                                     if (buf[0] == 0xC0 && last_rumble[channel] != buf[2]) {
+                                        struct raw_fb fb_data = {0};
+
                                         last_rumble[channel] = buf[2];
-                                        buf[1] = channel;
-                                        adapter_q_fb(buf + 1, 2);
+                                        fb_data.header.wired_id = channel;
+                                        fb_data.header.type = FB_TYPE_RUMBLE;
+                                        fb_data.header.data_len = 1;
+                                        fb_data.data[0] = buf[2];
+                                        adapter_q_fb(&fb_data);
                                     }
                                 }
                                 else {
@@ -438,12 +443,15 @@ static uint32_t gc_isr(uint32_t cause) {
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
                                 if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
-                                    uint8_t rumble_data[2];
-                                    rumble_data[1] = buf[1] & 0x01;
-                                    if (last_rumble[port] != rumble_data[1]) {
-                                        last_rumble[port] = rumble_data[1];
-                                        rumble_data[0] = port;
-                                        adapter_q_fb(rumble_data, 2);
+                                    struct raw_fb fb_data = {0};
+
+                                    fb_data.data[0] = buf[1] & 0x01;
+                                    if (last_rumble[port] != fb_data.data[0]) {
+                                        last_rumble[port] = fb_data.data[0];
+                                        fb_data.header.wired_id = port;
+                                        fb_data.header.type = FB_TYPE_RUMBLE;
+                                        fb_data.header.data_len = 1;
+                                        adapter_q_fb(&fb_data);
                                     }
                                 }
 

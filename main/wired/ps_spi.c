@@ -216,18 +216,20 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
         case 0x42:
         {
             if (port->dev_id[id] != 0x41 && config.out_cfg[id].acc_mode == ACC_RUMBLE) {
-                uint8_t rumble_data[2] = {0};
+                struct raw_fb fb_data = {0};
                 req++;
                 if (port->rumble_r_state[id]) {
-                    rumble_data[1] = (req[port->rumble_r_idx[id]]) ? 1 : 0;
+                    fb_data.data[0] = (req[port->rumble_r_idx[id]]) ? 1 : 0;
                 }
-                if (!rumble_data[1] && port->rumble_l_state[id]) {
-                    rumble_data[1] = (req[port->rumble_l_idx[id]]) ? 1 : 0;
+                if (!fb_data.data[0] && port->rumble_l_state[id]) {
+                    fb_data.data[0] = (req[port->rumble_l_idx[id]]) ? 1 : 0;
                 }
-                if (port->last_rumble[id] != rumble_data[1]) {
-                    port->last_rumble[id] = rumble_data[1];
-                    rumble_data[0] = id + port->mt_first_port;
-                    adapter_q_fb(rumble_data, 2);
+                if (port->last_rumble[id] != fb_data.data[0]) {
+                    port->last_rumble[id] = fb_data.data[0];
+                    fb_data.header.wired_id = id + port->mt_first_port;
+                    fb_data.header.type = FB_TYPE_RUMBLE;
+                    fb_data.header.data_len = 1;
+                    adapter_q_fb(&fb_data);
                 }
             }
             break;

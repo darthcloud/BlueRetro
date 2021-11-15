@@ -188,10 +188,14 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
 }
 
 static void adapter_fb_stop_cb(void* arg) {
-    uint8_t dev_id = (uint8_t)(uintptr_t)arg;
+    struct raw_fb fb_data = {0};
 
-    /* Send 1 byte, system that require callback stop shall look for that */
-    queue_bss_enqueue(wired_adapter.input_q_hdl, &dev_id, 1);
+    fb_data.header.wired_id = (uint8_t)(uintptr_t)arg;
+    fb_data.header.type = FB_TYPE_RUMBLE;
+    fb_data.header.data_len = 0;
+
+    /* Send 0 byte data, system that require callback stop shall look for that */
+    adapter_q_fb(&fb_data);
 }
 
 int32_t btn_id_to_axis(uint8_t btn_id) {
@@ -386,11 +390,11 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
     wired_adapter.data[dev_id].fb_timer_hdl = NULL;
 }
 
-uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
+uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
     uint32_t ret = 0;
 #ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     if (wired_adapter.system_id != WIRED_AUTO) {
-        wired_fb_to_generic(config.out_cfg[bt_data->dev_id].dev_mode, fb_data, fb_len, &fb_input);
+        wired_fb_to_generic(config.out_cfg[bt_data->dev_id].dev_mode, fb_data, &fb_input);
 #else
         fb_input.state ^= 0x01;
 #endif
@@ -404,15 +408,15 @@ uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt
     return ret;
 }
 
-void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len) {
+void IRAM_ATTR adapter_q_fb(struct raw_fb *fb_data) {
     /* Best efford only on fb */
-    queue_bss_enqueue(wired_adapter.input_q_hdl, data, len);
+    queue_bss_enqueue(wired_adapter.input_q_hdl, (uint8_t *)fb_data, sizeof(*fb_data));
 }
 
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_AUTO;
 
-    wired_adapter.input_q_hdl = queue_bss_init(16, 16);
+    wired_adapter.input_q_hdl = queue_bss_init(16, sizeof(struct raw_fb));
     if (wired_adapter.input_q_hdl == NULL) {
         ets_printf("# %s: Failed to create fb queue\n", __FUNCTION__);
     }

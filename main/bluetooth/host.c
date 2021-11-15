@@ -246,17 +246,17 @@ static void bt_tx_task(void *param) {
 
 static void bt_fb_task(void *param) {
     uint32_t *fb_len;
-    uint8_t *fb_data;
+    struct raw_fb *fb_data = NULL;
 
     while(1) {
         /* Look for rumble/led feedback data */
-        fb_data = (uint8_t *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
+        fb_data = (struct raw_fb *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
         if (fb_data) {
-            struct bt_dev *device = &bt_dev[fb_data[0]];
-            if (adapter_bridge_fb(fb_data, *fb_len, &bt_adapter.data[device->id])) {
+            struct bt_dev *device = &bt_dev[fb_data->header.wired_id];
+            if (adapter_bridge_fb(fb_data, &bt_adapter.data[device->id])) {
                 bt_hid_feedback(device, bt_adapter.data[device->id].output);
             }
-            queue_bss_return(wired_adapter.input_q_hdl, fb_data, fb_len);
+            queue_bss_return(wired_adapter.input_q_hdl, (uint8_t *)fb_data, fb_len);
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
