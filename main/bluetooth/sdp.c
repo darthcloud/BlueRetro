@@ -259,6 +259,10 @@ void bt_sdp_parser(struct bt_data *bt_data) {
             hid_desc_len = bt_data->sdp_len - hid_offset;
         }
         hid_parser(bt_data, hid_desc, hid_desc_len);
+        if (bt_data->sdp_data) {
+            free(bt_data->sdp_data);
+            bt_data->sdp_data = NULL;
+        }
     }
 }
 
@@ -288,16 +292,23 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
-            uint32_t free_len = sizeof(bt_adapter.data[device->id].sdp_data) - bt_adapter.data[device->id].sdp_len;
+            uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->id].sdp_len;
             uint32_t cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
 
             if (cp_len > free_len) {
                 cp_len = free_len;
-                printf("# %s SDP data > buffer will be trunc to %d, cp_len %d\n", __FUNCTION__, sizeof(bt_adapter.data[device->id].sdp_data), cp_len);
+                printf("# %s SDP data > buffer will be trunc to %d, cp_len %d\n", __FUNCTION__, BT_SDP_DATA_SIZE, cp_len);
             }
 
             switch (device->sdp_state) {
                 case 0:
+                    if (bt_adapter.data[device->id].sdp_data == NULL) {
+                        bt_adapter.data[device->id].sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_adapter.data[device->id].sdp_data == NULL) {
+                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                            break;
+                        }
+                    }
                     memcpy(bt_adapter.data[device->id].sdp_data + bt_adapter.data[device->id].sdp_len, sdp_data, cp_len);
                     bt_adapter.data[device->id].sdp_len += cp_len;
                     if (*sdp_con_state) {

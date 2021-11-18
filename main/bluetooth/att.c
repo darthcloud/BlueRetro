@@ -995,6 +995,13 @@ find_info_rsp_end:
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
                 {
+                    if (bt_data->sdp_data == NULL) {
+                        bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_data->sdp_data == NULL) {
+                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                            break;
+                        }
+                    }
                     memcpy(bt_data->sdp_data + bt_data->sdp_len, read_rsp->value, att_len - 1);
                     bt_data->sdp_len += att_len - 1;
 
@@ -1003,6 +1010,10 @@ find_info_rsp_end:
                     }
                     else {
                         hid_parser(bt_data, bt_data->sdp_data, bt_data->sdp_len);
+                        if (bt_data->sdp_data) {
+                            free(bt_data->sdp_data);
+                            bt_data->sdp_data = NULL;
+                        }
                         if (hid_data->reports[hid_data->report_idx].ref_hdl) {
                             device->hid_state = BT_ATT_HID_REPORT_REF;
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
@@ -1046,6 +1057,13 @@ find_info_rsp_end:
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
+                    if (bt_data->sdp_data == NULL) {
+                        bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_data->sdp_data == NULL) {
+                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                            break;
+                        }
+                    }
                     memcpy(bt_data->sdp_data + bt_data->sdp_len, read_blob_rsp->value, att_len - 1);
                     bt_data->sdp_len += att_len - 1;
 
@@ -1054,6 +1072,10 @@ find_info_rsp_end:
                     }
                     else {
                         hid_parser(bt_data, bt_data->sdp_data, bt_data->sdp_len);
+                        if (bt_data->sdp_data) {
+                            free(bt_data->sdp_data);
+                            bt_data->sdp_data = NULL;
+                        }
                         if (hid_data->reports[hid_data->report_idx].ref_hdl) {
                             device->hid_state = BT_ATT_HID_REPORT_REF;
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
