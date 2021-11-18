@@ -23,3 +23,4 @@ entries:
     sega_io (noflash)
     pce_io (noflash)
     jag_io (noflash)
+    memory_card (noflash)

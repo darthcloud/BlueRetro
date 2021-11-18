@@ -23,6 +23,7 @@
 #include "debug.h"
 #include "system/btn.h"
 #include "system/fs.h"
+#include "adapter/memory_card.h"
 
 #define BT_TX 0
 #define BT_RX 1
@@ -252,9 +253,18 @@ static void bt_fb_task(void *param) {
         /* Look for rumble/led feedback data */
         fb_data = (struct raw_fb *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
         if (fb_data) {
-            struct bt_dev *device = &bt_dev[fb_data->header.wired_id];
-            if (adapter_bridge_fb(fb_data, &bt_adapter.data[device->id])) {
-                bt_hid_feedback(device, bt_adapter.data[device->id].output);
+            switch (fb_data->header.type) {
+                case FB_TYPE_MEM_WRITE:
+                    mc_storage_update();
+                    break;
+                default:
+                {
+                    struct bt_dev *device = &bt_dev[fb_data->header.wired_id];
+                    if (adapter_bridge_fb(fb_data, &bt_adapter.data[device->id])) {
+                        bt_hid_feedback(device, bt_adapter.data[device->id].output);
+                    }
+                    break;
+                }
             }
             queue_bss_return(wired_adapter.input_q_hdl, (uint8_t *)fb_data, fb_len);
         }

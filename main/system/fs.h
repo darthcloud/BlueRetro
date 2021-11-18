@@ -10,6 +10,7 @@
 #define LE_LINK_KEYS_FILE "/fs/le_linkkeys.bin"
 #define BDADDR_FILE "/fs/bdaddr.bin"
 #define CONFIG_FILE "/fs/config.bin"
+#define MEMORY_CARD_FILE "/fs/mc.bin"
 
 int32_t fs_init(void);
 void fs_reset(void);

@@ -104,4 +104,5 @@ void fs_reset(void) {
     (void)remove(LINK_KEYS_FILE);
     (void)remove(LE_LINK_KEYS_FILE);
     (void)remove(CONFIG_FILE);
+    (void)remove(MEMORY_CARD_FILE);
 }
