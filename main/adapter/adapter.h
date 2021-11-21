@@ -55,8 +55,7 @@ enum {
 
 /* Wired system ID */
 enum {
-    WIRED_NONE = -1,
-    WIRED_AUTO,
+    WIRED_AUTO = 0,
     PARALLEL_1P,
     PARALLEL_2P,
     NES,

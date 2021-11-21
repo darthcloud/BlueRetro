@@ -269,7 +269,7 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
 }
 
 void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
-    if (wired_adapter.system_id != WIRED_NONE) {
+    if (wired_adapter.system_id != WIRED_AUTO) {
         wired_adapter.data[wired_id].index = wired_id;
         wired_init_buffer(config.out_cfg[wired_id].dev_mode, &wired_adapter.data[wired_id]);
     }
@@ -321,7 +321,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         }
 #endif
 #else
-        if (wired_adapter.system_id != WIRED_NONE) {
+        if (wired_adapter.system_id != WIRED_AUTO) {
             wired_meta_init(ctrl_output);
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
@@ -389,7 +389,7 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
 uint32_t adapter_bridge_fb(uint8_t *fb_data, uint32_t fb_len, struct bt_data *bt_data) {
     uint32_t ret = 0;
 #ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
-    if (wired_adapter.system_id != WIRED_NONE) {
+    if (wired_adapter.system_id != WIRED_AUTO) {
         wired_fb_to_generic(config.out_cfg[bt_data->dev_id].dev_mode, fb_data, fb_len, &fb_input);
 #else
         fb_input.state ^= 0x01;
@@ -410,7 +410,7 @@ void IRAM_ATTR adapter_q_fb(uint8_t *data, uint32_t len) {
 }
 
 void adapter_init(void) {
-    wired_adapter.system_id = WIRED_NONE;
+    wired_adapter.system_id = WIRED_AUTO;
 
     wired_adapter.input_q_hdl = queue_bss_init(16, 16);
     if (wired_adapter.input_q_hdl == NULL) {
