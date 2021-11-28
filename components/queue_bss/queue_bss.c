@@ -96,7 +96,7 @@ int32_t queue_bss_enqueue(queue_bss_handle_t qhdl, uint8_t *item, uint32_t item_
     }
 
     if (!lfds711_queue_bss_dequeue(&q->item_free_state, (void **)&qitem_len, (void **)&qitem)) {
-        ets_printf("queue_bss: No free slot\n");
+        //ets_printf("queue_bss: No free slot\n");
         return -1;
     }
     memcpy(qitem, item, item_len);
