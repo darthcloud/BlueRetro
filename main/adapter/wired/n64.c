@@ -61,7 +61,7 @@ struct n64_kb_map {
     uint8_t bitfield;
 } __packed;
 
-static const uint32_t n64_mask[4] = {0x331F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_mask[4] = {0x33DF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
@@ -196,6 +196,44 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
             }
             else if (map_mask & n64_btns_mask[i]) {
                 map_tmp.buttons &= ~n64_btns_mask[i];
+            }
+        }
+    }
+
+    /* Memory / Rumble toggle */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                /* Change config directly but do not update file */
+                if (config.out_cfg[ctrl_data->index].acc_mode == ACC_MEM) {
+                    config.out_cfg[ctrl_data->index].acc_mode = ACC_RUMBLE;
+                }
+                else {
+                    config.out_cfg[ctrl_data->index].acc_mode = ACC_MEM;
+                }
+            }
+        }
+    }
+
+    /* Bank rotation */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MQ]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MQ]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
+
+                config.global_cfg.banksel = (config.global_cfg.banksel + 1) & 0x3;
             }
         }
     }
