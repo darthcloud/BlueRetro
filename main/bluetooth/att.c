@@ -14,6 +14,7 @@
 #include "zephyr/att.h"
 #include "zephyr/gatt.h"
 #include "adapter/config.h"
+#include "adapter/memory_card.h"
 #include "adapter/hid_parser.h"
 
 #define ATT_MAX_LEN 512
@@ -58,7 +59,11 @@ enum {
     BR_OTA_FW_DATA_CHRC_HDL,
     BR_FW_VER_ATT_HDL,
     BR_FW_VER_CHRC_HDL,
-    LAST_HDL = BR_FW_VER_CHRC_HDL,
+    BR_MC_CTRL_ATT_HDL,
+    BR_MC_CTRL_CHRC_HDL,
+    BR_MC_DATA_ATT_HDL,
+    BR_MC_DATA_CHRC_HDL,
+    LAST_HDL = BR_MC_DATA_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -110,6 +115,7 @@ static uint16_t out_cfg_id = 0;
 static uint16_t in_cfg_offset = 0;
 static uint16_t in_cfg_id = 0;
 static struct bt_att_hid att_hid[7] = {0};
+static uint32_t mc_offset = 0;
 
 static int32_t bt_att_is_report_required(struct bt_att_hid_report *att_hid, struct bt_data *bt_data) {
     if (att_hid->type == 0x01) {
@@ -366,6 +372,7 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
             break;
         case BR_OTA_FW_CTRL_CHRC_HDL:
         case BR_OTA_FW_DATA_CHRC_HDL:
+        case BR_MC_CTRL_CHRC_HDL:
             *data++ = BT_GATT_CHRC_WRITE;
             break;
         default:
@@ -466,6 +473,24 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
     }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
+}
+
+static void bt_att_cmd_mc_rd_rsp(uint16_t handle, uint8_t blob) {
+    uint32_t len = 0;
+    uint32_t block = mc_offset / 4096 + 1;
+    printf("# %s\n", __FUNCTION__);
+
+    len = (block * 4096) - mc_offset;
+
+    if (len > (mtu - 1)) {
+        len = mtu - 1;
+    }
+
+    mc_read(mc_offset, bt_hci_pkt_tmp.att_data, len);
+
+    bt_att_cmd(handle, (blob) ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
+
+    mc_offset += len;
 }
 
 static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
@@ -659,6 +684,9 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_FW_VER_CHRC_HDL:
                     bt_att_cmd_app_ver_rsp(device->acl_handle);
                     break;
+                case BR_MC_DATA_CHRC_HDL:
+                    bt_att_cmd_mc_rd_rsp(device->acl_handle, 0);
+                    break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
                     break;
@@ -678,6 +706,9 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_IN_CFG_DATA_CHRC_HDL:
                 case BR_API_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, rd_blob_req->offset);
+                    break;
+                case BR_MC_DATA_CHRC_HDL:
+                    bt_att_cmd_mc_rd_rsp(device->acl_handle, 1);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_BLOB_REQ, rd_blob_req->handle, BT_ATT_ERR_INVALID_HANDLE);
@@ -780,6 +811,15 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     esp_ota_write(ota_hdl, wr_req->value, data_len);
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
+                case BR_MC_CTRL_CHRC_HDL:
+                    mc_offset = *(uint32_t *)wr_req->value;
+                    bt_att_cmd_wr_rsp(device->acl_handle);
+                    break;
+                case BR_MC_DATA_CHRC_HDL:
+                    mc_write(mc_offset, wr_req->value, data_len);
+                    mc_offset += data_len;
+                    bt_att_cmd_wr_rsp(device->acl_handle);
+                    break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_WRITE_REQ, wr_req->handle, BT_ATT_ERR_INVALID_HANDLE);
                     break;
@@ -799,6 +839,11 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     break;
                 case BR_OTA_FW_DATA_CHRC_HDL:
                     esp_ota_write(ota_hdl, prep_wr_req->value, data_len);
+                    bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, att_len);
+                    break;
+                case BR_MC_DATA_CHRC_HDL:
+                    mc_write(mc_offset, prep_wr_req->value, data_len);
+                    mc_offset += data_len;
                     bt_att_cmd_prep_wr_rsp(device->acl_handle, bt_hci_acl_pkt->att_data, att_len);
                     break;
                 default:
