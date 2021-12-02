@@ -67,7 +67,6 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 case BT_HIDP_SW_SUBCMD_ACK:
                 {
                     struct bt_hidp_sw_subcmd_ack *ack = (struct bt_hidp_sw_subcmd_ack *)bt_hci_acl_pkt->hidp_data;
-                    printf("# BT_HIDP_SW_SUBCMD_ACK\n");
                     switch(ack->subcmd) {
                         case BT_HIDP_SW_SUBCMD_SET_REP_MODE:
                         {
