@@ -17,7 +17,7 @@
 #include "adapter/hid_parser.h"
 
 #define ATT_MAX_LEN 512
-#define BR_API_VER 1
+#define BR_API_VER 2
 #define OTA_START 0xA5
 #define OTA_ABORT 0xDE
 #define OTA_END 0x5A

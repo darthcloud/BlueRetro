@@ -16,15 +16,18 @@ struct config config;
 static uint32_t config_version_magic[] = {
     CONFIG_MAGIC_V0,
     CONFIG_MAGIC_V1,
+    CONFIG_MAGIC_V2,
 };
 
 static void config_init_struct(struct config *data);
 static int32_t config_load_from_file(struct config *data);
 static int32_t config_store_on_file(struct config *data);
 static int32_t config_v0_update(struct config *data);
+static int32_t config_v1_update(struct config *data);
 
 static int32_t (*config_ver_update[])(struct config *data) = {
     config_v0_update,
+    config_v1_update,
     NULL,
 };
 
@@ -34,6 +37,40 @@ static int32_t config_v0_update(struct config *data) {
     data->magic = CONFIG_MAGIC;
     data->global_cfg.inquiry_mode = INQ_AUTO;
 
+    return config_store_on_file(data);
+}
+
+static int32_t config_v1_update(struct config *data) {
+    memmove((uint8_t *)data + 8, (uint8_t *)data + 7, 31 - 8);
+
+    data->magic = CONFIG_MAGIC;
+    data->global_cfg.banksel = 0;
+
+    FILE *file = fopen(CONFIG_FILE, "rb");
+    if (file == NULL) {
+        printf("%s: failed to open file for reading\n", __FUNCTION__);
+        goto fail;
+    }
+    else {
+        uint32_t count = 0;
+        for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+            fseek(file, 31 + (3 + 255 * 8) * i, SEEK_SET);
+            count += fread((uint8_t *)&data->in_cfg[i], sizeof(struct in_cfg), 1, file);
+            if (data->in_cfg[i].map_size > ADAPTER_MAPPING_MAX) {
+                data->in_cfg[i].map_size = ADAPTER_MAPPING_MAX;
+            }
+        }
+        fclose(file);
+
+        if (count != WIRED_MAX_DEV) {
+            goto fail;
+        }
+    }
+    return config_store_on_file(data);
+
+fail:
+    printf("%s: Update failed, reset config (Sorry!)\n", __FUNCTION__);
+    config_init_struct(data);
     return config_store_on_file(data);
 }
 
@@ -51,6 +88,7 @@ static void config_init_struct(struct config *data) {
     data->global_cfg.system_cfg = WIRED_AUTO;
     data->global_cfg.multitap_cfg = MT_NONE;
     data->global_cfg.inquiry_mode = INQ_AUTO;
+    data->global_cfg.banksel = 0;
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         data->out_cfg[i].dev_mode = DEV_PAD;

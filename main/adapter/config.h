@@ -10,9 +10,10 @@
 
 #define CONFIG_MAGIC_V0 0xA5A5A5A5
 #define CONFIG_MAGIC_V1 0xF380D824
-#define CONFIG_MAGIC CONFIG_MAGIC_V1
-#define CONFIG_VERSION 1
-#define ADAPTER_MAPPING_MAX 255
+#define CONFIG_MAGIC_V2 0x1782DB8A
+#define CONFIG_MAGIC CONFIG_MAGIC_V2
+#define CONFIG_VERSION 2
+#define ADAPTER_MAPPING_MAX 128
 
 struct map_cfg {
     uint8_t src_btn;
@@ -29,6 +30,7 @@ struct global_cfg {
     uint8_t system_cfg;
     uint8_t multitap_cfg;
     uint8_t inquiry_mode;
+    uint8_t banksel;
 } __packed;
 
 struct out_cfg {
