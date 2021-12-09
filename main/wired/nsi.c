@@ -12,6 +12,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/memory_card.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "nsi.h"
@@ -28,12 +29,10 @@
 #define N64_MOUSE 0x0002
 #define N64_CTRL 0x0005
 #define N64_KB 0x0200
-#define N64_SLOT_EMPTY 0x00
-#define N64_SLOT_OCCUPIED 0x01
 
-enum {
-    RMT_MEM_CHANGE = 0,
-};
+#define N64_SLOT_EMPTY 0x02
+#define N64_SLOT_OCCUPY 0x01
+#define N64_SLOT_CHANGE 0x03
 
 static const uint8_t gpio_pin[4] = {
     19, 5, 26, 27
@@ -80,13 +79,11 @@ static const uint8_t gc_neutral[] = {
     0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x20, 0x20, 0x00, 0x00
 };
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
-
-//uint8_t mempak[32 * 1024] = {0};
-
-static atomic_t rmt_flags = 0;
 static uint8_t buf[128] = {0};
-static uint32_t poll_after_mem_wr = 0;
 static uint8_t last_rumble[4] = {0};
+static uint8_t ctrl_acc_mode[4] = {0};
+static uint8_t ctrl_acc_update[4] = {0};
+static uint8_t ctrl_mem_banksel = 0;
 
 static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
@@ -224,6 +221,17 @@ static uint32_t n64_isr(uint32_t cause) {
                 RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                 item = nsi_items_to_bytes(channel * RMT_MEM_ITEM_NUM, buf, 1);
+
+                /* Check if need to flag a pak change */
+                if (config.global_cfg.banksel != ctrl_mem_banksel) {
+                    *(uint32_t *)ctrl_acc_update = 0x20202020;
+                    ctrl_mem_banksel = config.global_cfg.banksel;
+                }
+                else if (ctrl_acc_mode[channel] != config.out_cfg[channel].acc_mode) {
+                    ctrl_acc_update[channel] = 0x20;
+                    ctrl_acc_mode[channel] = config.out_cfg[channel].acc_mode;
+                }
+
                 switch (config.out_cfg[channel].dev_mode) {
                     case DEV_KB:
                         switch (buf[0]) {
@@ -283,7 +291,17 @@ static uint32_t n64_isr(uint32_t cause) {
                             case 0xFF:
                                 *(uint16_t *)buf = N64_CTRL;
                                 if (config.out_cfg[channel].acc_mode > ACC_NONE) {
-                                    buf[2] = N64_SLOT_OCCUPIED;
+                                    if (ctrl_acc_update[channel] > 1) {
+                                        buf[2] = N64_SLOT_EMPTY;
+                                        ctrl_acc_update[channel]--;
+                                    }
+                                    else if (ctrl_acc_update[channel] == 1) {
+                                        buf[2] = N64_SLOT_CHANGE;
+                                        ctrl_acc_update[channel] = 0;
+                                    }
+                                    else {
+                                        buf[2] = N64_SLOT_OCCUPY;
+                                    }
                                 }
                                 else {
                                     buf[2] = N64_SLOT_EMPTY;
@@ -298,12 +316,8 @@ static uint32_t n64_isr(uint32_t cause) {
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
                                 ++wired_adapter.data[channel].frame_cnt;
-                                ++poll_after_mem_wr;
-                                if (atomic_test_bit(&rmt_flags, RMT_MEM_CHANGE) && poll_after_mem_wr > 3) {
-                                    if (!atomic_test_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM)) {
-                                        atomic_set_bit(&wired_adapter.data[channel].flags, WIRED_SAVE_MEM);
-                                        atomic_clear_bit(&rmt_flags, RMT_MEM_CHANGE);
-                                    }
+                                if (ctrl_acc_update[channel] > 1) {
+                                    ctrl_acc_update[channel]--;
                                 }
                                 break;
                             case 0x02:
@@ -317,12 +331,20 @@ static uint32_t n64_isr(uint32_t cause) {
                                     }
                                 }
                                 else {
-                                    //if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
+                                    if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
                                         item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, empty, 32, &crc, STOP_BIT_2US);
-                                    //}
-                                    //else {
-                                        //item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, mempak + ((buf[0] << 8) | (buf[1] & 0xE0)), 32, &crc, STOP_BIT_2US);
-                                    //}
+                                    }
+                                    else {
+                                        uint32_t addr = (buf[0] << 8) | (buf[1] & 0xE0);
+
+                                        if (addr < 0x8000) {
+                                            addr += ((channel + ctrl_mem_banksel) & 0x3) * 32 * 1024;
+                                            item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, mc_get_ptr(addr), 32, &crc, STOP_BIT_2US);
+                                        }
+                                        else {
+                                            item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, empty, 32, &crc, STOP_BIT_2US);
+                                        }
+                                    }
                                 }
                                 buf[0] = crc ^ 0xFF;
                                 nsi_bytes_to_items_crc(item, buf, 1, &crc, STOP_BIT_2US);
@@ -348,10 +370,13 @@ static uint32_t n64_isr(uint32_t cause) {
                                         adapter_q_fb(&fb_data);
                                     }
                                 }
-                                else {
-                                    poll_after_mem_wr = 0;
-                                    atomic_set_bit(&rmt_flags, RMT_MEM_CHANGE);
-                                    //memcpy(mempak + ((buf[0] << 8) | (buf[1] & 0xE0)),  buf + 2, 32);
+                                else if (config.out_cfg[channel].acc_mode == ACC_MEM) {
+                                    uint32_t addr = (buf[0] << 8) | (buf[1] & 0xE0);
+
+                                    if (addr < 0x8000) {
+                                        addr += ((channel + ctrl_mem_banksel) & 0x3) * 32 * 1024;
+                                        mc_write(addr, buf + 2, 32);
+                                    }
                                 }
                                 break;
                             default:
