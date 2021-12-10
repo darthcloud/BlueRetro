@@ -235,14 +235,6 @@ static uint32_t n64_isr(uint32_t cause) {
                 switch (config.out_cfg[channel].dev_mode) {
                     case DEV_KB:
                         switch (buf[0]) {
-                            case 0x00:
-                            case 0xFF:
-                                *(uint16_t *)buf = N64_KB;
-                                buf[2] = N64_SLOT_EMPTY;
-
-                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
-                                RMT.conf_ch[channel].conf1.tx_start = 1;
-                                break;
                             case 0x13:
                                 memcpy(buf, wired_adapter.data[channel].output, 7);
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 7, &crc, STOP_BIT_2US);
@@ -250,24 +242,17 @@ static uint32_t n64_isr(uint32_t cause) {
                                 ++wired_adapter.data[channel].frame_cnt;
                                 break;
                             default:
-                                /* Bad frame go back RX */
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-                                RMT.conf_ch[channel].conf1.rx_en = 1;
-                                break;
-                        }
-                        break;
-                    case DEV_MOUSE:
-                        switch (buf[0]) {
-                            case 0x00:
-                            case 0xFF:
-                                *(uint16_t *)buf = N64_MOUSE;
+                                /* 0x00 & 0xFF cmds goes here, corrupt cmd too! This help avoid ctrl detection error */
+                                *(uint16_t *)buf = N64_KB;
                                 buf[2] = N64_SLOT_EMPTY;
 
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
                                 break;
+                        }
+                        break;
+                    case DEV_MOUSE:
+                        switch (buf[0]) {
                             case 0x01:
                                     memcpy(buf, wired_adapter.data[channel].output, 2);
                                     load_mouse_axes(channel, &buf[2]);
@@ -277,39 +262,17 @@ static uint32_t n64_isr(uint32_t cause) {
                                     ++wired_adapter.data[channel].frame_cnt;
                                 break;
                             default:
-                                /* Bad frame go back RX */
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-                                RMT.conf_ch[channel].conf1.rx_en = 1;
+                                /* 0x00 & 0xFF cmds goes here, corrupt cmd too! This help avoid ctrl detection error */
+                                *(uint16_t *)buf = N64_MOUSE;
+                                buf[2] = N64_SLOT_EMPTY;
+
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
                                 break;
                         }
                         break;
                     default:
                         switch (buf[0]) {
-                            case 0x00:
-                            case 0xFF:
-                                *(uint16_t *)buf = N64_CTRL;
-                                if (config.out_cfg[channel].acc_mode > ACC_NONE) {
-                                    if (ctrl_acc_update[channel] > 1) {
-                                        buf[2] = N64_SLOT_EMPTY;
-                                        ctrl_acc_update[channel]--;
-                                    }
-                                    else if (ctrl_acc_update[channel] == 1) {
-                                        buf[2] = N64_SLOT_CHANGE;
-                                        ctrl_acc_update[channel] = 0;
-                                    }
-                                    else {
-                                        buf[2] = N64_SLOT_OCCUPY;
-                                    }
-                                }
-                                else {
-                                    buf[2] = N64_SLOT_EMPTY;
-                                }
-
-                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
-                                RMT.conf_ch[channel].conf1.tx_start = 1;
-                                break;
                             case 0x01:
                                 memcpy(buf, wired_adapter.data[channel].output, 4);
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
@@ -380,11 +343,27 @@ static uint32_t n64_isr(uint32_t cause) {
                                 }
                                 break;
                             default:
-                                /* Bad frame go back RX */
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
-                                RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-                                RMT.conf_ch[channel].conf1.rx_en = 1;
+                                /* 0x00 & 0xFF cmds goes here, corrupt cmd too! This help avoid ctrl detection error */
+                                *(uint16_t *)buf = N64_CTRL;
+                                if (config.out_cfg[channel].acc_mode > ACC_NONE) {
+                                    if (ctrl_acc_update[channel] > 1) {
+                                        buf[2] = N64_SLOT_EMPTY;
+                                        ctrl_acc_update[channel]--;
+                                    }
+                                    else if (ctrl_acc_update[channel] == 1) {
+                                        buf[2] = N64_SLOT_CHANGE;
+                                        ctrl_acc_update[channel] = 0;
+                                    }
+                                    else {
+                                        buf[2] = N64_SLOT_OCCUPY;
+                                    }
+                                }
+                                else {
+                                    buf[2] = N64_SLOT_EMPTY;
+                                }
+
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 3, &crc, STOP_BIT_2US);
+                                RMT.conf_ch[channel].conf1.tx_start = 1;
                                 break;
                         }
                         break;
