@@ -142,8 +142,8 @@ static uint32_t get_dtr_state(uint32_t port) {
 static void set_output_state(uint32_t port, uint32_t enable) {
     if (port == 0) {
         if (enable) {
-            gpio_set_direction_iram(P1_DSR_PIN, GPIO_MODE_OUTPUT);
-            gpio_set_direction_iram(P1_RXD_PIN, GPIO_MODE_OUTPUT);
+            gpio_set_direction_iram(P1_DSR_PIN, GPIO_MODE_OUTPUT_OD);
+            gpio_set_direction_iram(P1_RXD_PIN, GPIO_MODE_OUTPUT_OD);
             gpio_matrix_out(P1_RXD_PIN, HSPIQ_OUT_IDX, false, false);
         }
         else {
@@ -153,8 +153,8 @@ static void set_output_state(uint32_t port, uint32_t enable) {
     }
     else {
         if (enable) {
-            gpio_set_direction_iram(P2_DSR_PIN, GPIO_MODE_OUTPUT);
-            gpio_set_direction_iram(P2_RXD_PIN, GPIO_MODE_OUTPUT);
+            gpio_set_direction_iram(P2_DSR_PIN, GPIO_MODE_OUTPUT_OD);
+            gpio_set_direction_iram(P2_RXD_PIN, GPIO_MODE_OUTPUT_OD);
             gpio_matrix_out(P2_RXD_PIN, VSPIQ_OUT_IDX, false, false);
         }
         else {
