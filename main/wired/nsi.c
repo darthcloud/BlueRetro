@@ -81,6 +81,7 @@ static const uint8_t gc_neutral[] = {
 static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
 static uint8_t buf[128] = {0};
 static uint8_t last_rumble[4] = {0};
+static uint8_t rumble_state[4] = {0};
 static uint8_t ctrl_acc_mode[4] = {0};
 static uint8_t ctrl_acc_update[4] = {0};
 static uint8_t ctrl_mem_banksel = 0;
@@ -286,7 +287,7 @@ static uint32_t n64_isr(uint32_t cause) {
                             case 0x02:
                                 item = nsi_items_to_bytes(item, buf, 2);
                                 if (buf[0] == 0x80 && buf[1] == 0x01) {
-                                    if (config.out_cfg[channel].acc_mode == ACC_RUMBLE) {
+                                    if (config.out_cfg[channel].acc_mode == ACC_RUMBLE && rumble_state[channel]) {
                                         item = nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, rumble_ident, 32, &crc, STOP_BIT_2US);
                                     }
                                     else {
@@ -331,6 +332,16 @@ static uint32_t n64_isr(uint32_t cause) {
                                         fb_data.header.data_len = 1;
                                         fb_data.data[0] = buf[2];
                                         adapter_q_fb(&fb_data);
+                                    }
+                                    else if (buf[0] == 0x80 && buf[1] == 0x01) {
+                                        switch (buf[2]) {
+                                            case 0xFE:
+                                                rumble_state[channel] = 0;
+                                                break;
+                                            case 0x80:
+                                                rumble_state[channel] = 1;
+                                                break;
+                                        }
                                     }
                                 }
                                 else if (config.out_cfg[channel].acc_mode == ACC_MEM) {
