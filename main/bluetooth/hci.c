@@ -1288,6 +1288,7 @@ void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name)
             device->type = bt_name_type[i].type;
             device->subtype = bt_name_type[i].subtype;
             bt_data->flags = bt_name_type[i].hid_flags;
+            break;
         }
     }
 }
