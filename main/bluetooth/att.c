@@ -897,6 +897,11 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     printf("# BT_ATT_OP_READ_GROUP_REQ\n");
                     bt_att_cmd_find_info_req(device->acl_handle, hid_data->start_hdl, hid_data->end_hdl);
                     break;
+                case BT_ATT_OP_FIND_INFO_REQ:
+                    printf("# BT_ATT_OP_FIND_INFO_REQ\n");
+                    device->hid_state = BT_ATT_HID_REPORT_MAP;
+                    bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                    break;
             }
             break;
         }
