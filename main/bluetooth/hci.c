@@ -1463,9 +1463,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 }
                 else {
                     bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
-                    if (device->type == BT_SW) {
-                        bt_hci_stop_inquiry();
-                    }
+                    bt_hci_stop_inquiry();
                     if (device->type == BT_HID_GENERIC || device->type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }
