@@ -47,6 +47,11 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
 };
 
 void bt_hid_init(struct bt_dev *device) {
+    if (bt_adapter.data[device->id].dev_type <= BT_HID_GENERIC
+            && device->type > BT_HID_GENERIC) {
+        bt_adapter.data[device->id].dev_type = device->type;
+        bt_adapter.data[device->id].dev_subtype = device->subtype;
+    }
     if (device->type > BT_NONE && bt_hid_init_list[device->type]) {
         bt_hid_init_list[device->type](device);
     }

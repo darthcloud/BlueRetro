@@ -11,7 +11,7 @@
 #define BT_HIDP_XB1_STATUS 0x01
 #define BT_HIDP_XB1_STATUS2 0x02
 struct bt_hidp_xb1_status {
-    uint8_t data[15];
+    uint8_t data[16];
 } __packed;
 
 struct bt_hidp_xb1_adaptive_status {

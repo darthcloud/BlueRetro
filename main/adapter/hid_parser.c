@@ -41,7 +41,7 @@ static const struct hid_fingerprint hid_fp[] = {
     },
     {
         .dev_type = BT_XBOX,
-        .dev_subtype = BT_SUBTYPE_DEFAULT,
+        .dev_subtype = BT_XBOX_XINPUT,
         .fp_len = 16,
         .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34, 0x01, 0x32, 0x01, 0x35, 0x01, 0x39, 0x09, 0x01},
     },

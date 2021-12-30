@@ -184,13 +184,17 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
                 }
             }
         }
+        else if (bt_data->dev_subtype == BT_XBOX_XINPUT) {
+            ctrl_data->mask = (uint32_t *)xb1_mask;
+            btns_mask = xb1_btns_mask;
+        }
         else if (bt_data->dev_subtype == BT_XBOX_XS) {
             ctrl_data->mask = (uint32_t *)xbox_xs_mask;
             btns_mask = xbox_xs_btns_mask;
         }
         else {
             ctrl_data->mask = (uint32_t *)xb1_mask;
-            btns_mask = xb1_btns_mask;
+            btns_mask = xb1_dinput_btns_mask;
         }
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
