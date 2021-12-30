@@ -544,6 +544,7 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         }
     }
     printf("\n");
+    return -1;
 #else
     switch (bt_data->report_type) {
         case KB:
