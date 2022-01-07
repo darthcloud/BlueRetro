@@ -164,6 +164,17 @@ static const uint32_t xbox_xs_btns_mask[32] = {
     0, BIT(XBOX_XS_RB), 0, BIT(XBOX_XS_RJ),
 };
 
+static const uint32_t gbros_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(XB1_X), BIT(XB1_B), BIT(XB1_A), BIT(XB1_Y),
+    BIT(XB1_MENU), 0, 0, 0,
+    0, 0, BIT(XB1_LB), BIT(XB1_LJ),
+    0, BIT(XB1_VIEW), BIT(XB1_RB), BIT(XB1_RJ),
+};
+
 int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->input;
 
@@ -191,6 +202,10 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
         else if (bt_data->dev_subtype == BT_XBOX_XS) {
             ctrl_data->mask = (uint32_t *)xbox_xs_mask;
             btns_mask = xbox_xs_btns_mask;
+        }
+        else if (bt_data->dev_subtype == BT_8BITDO_GBROS) {
+            ctrl_data->mask = (uint32_t *)xb1_mask;
+            btns_mask = gbros_btns_mask;
         }
         else {
             ctrl_data->mask = (uint32_t *)xb1_mask;
