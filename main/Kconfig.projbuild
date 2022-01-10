@@ -120,6 +120,11 @@ menu "BlueRetro"
             help
                 Select this to support only Wii ext.
 
+        config BLUERETRO_SYSTEM_VBOY
+            bool "VB"
+            help
+                Select this to support only VB.
+
         config BLUERETRO_SYSTEM_EXP_BOARD
             bool "Exp. Board"
             help

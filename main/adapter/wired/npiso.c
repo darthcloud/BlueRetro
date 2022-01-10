@@ -17,12 +17,14 @@ enum {
     NPISO_LD_UP,
     NPISO_START,
     NPISO_SELECT,
-    NPISO_Y,
-    NPISO_B,
-    NPISO_R = 12,
+    NPISO_Y, NPISO_VB_RD_LEFT = NPISO_Y,
+    NPISO_B, NPISO_VB_RD_DOWN = NPISO_B,
+    NPISO_VB_A = 10,
+    NPISO_VB_B,
+    NPISO_R,
     NPISO_L,
-    NPISO_X,
-    NPISO_A,
+    NPISO_X, NPISO_VB_RD_UP = NPISO_X,
+    NPISO_A, NPISO_VB_RD_RIGHT = NPISO_A,
 };
 
 static DRAM_ATTR const uint8_t npiso_mouse_axes_idx[ADAPTER_MAX_AXES] =
@@ -82,6 +84,19 @@ static const uint32_t npiso_btns_mask[32] = {
     BIT(NPISO_R), 0, 0, 0,
 };
 
+static const uint32_t npiso_vb_mask[4] = {0x33350FF0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_vb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_vb_btns_mask[32] = {
+    0, 0, 0, 0,
+    BIT(NPISO_VB_RD_LEFT), BIT(NPISO_VB_RD_RIGHT), BIT(NPISO_VB_RD_DOWN), BIT(NPISO_VB_RD_UP),
+    BIT(NPISO_LD_LEFT), BIT(NPISO_LD_RIGHT), BIT(NPISO_LD_DOWN), BIT(NPISO_LD_UP),
+    0, 0, 0, 0,
+    BIT(NPISO_VB_B), 0, BIT(NPISO_VB_A), 0,
+    BIT(NPISO_START), BIT(NPISO_SELECT), BIT(NPISO_START), BIT(NPISO_SELECT),
+    BIT(NPISO_L), BIT(NPISO_L), 0, 0,
+    BIT(NPISO_R), BIT(NPISO_R), 0, 0,
+};
+
 static const uint32_t npiso_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_mouse_btns_mask[32] = {
@@ -136,9 +151,16 @@ void IRAM_ATTR npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data
         }
         default:
         {
-            struct npiso_map *map = (struct npiso_map *)wired_data->output;
+            if (wired_adapter.system_id == VBOY) {
+                struct npiso_map *map = (struct npiso_map *)wired_data->output;
 
-            map->buttons = 0xFFFF;
+                map->buttons = 0xFDFF;
+            }
+            else {
+                struct npiso_map *map = (struct npiso_map *)wired_data->output;
+
+                map->buttons = 0xFFFF;
+            }
             break;
         }
     }
@@ -163,8 +185,14 @@ void npiso_meta_init(struct generic_ctrl *ctrl_data) {
                     }
                     break;
                 default:
-                    ctrl_data[i].mask = npiso_mask;
-                    ctrl_data[i].desc = npiso_desc;
+                    if (wired_adapter.system_id == VBOY) {
+                        ctrl_data[i].mask = npiso_vb_mask;
+                        ctrl_data[i].desc = npiso_vb_desc;
+                    }
+                    else {
+                        ctrl_data[i].mask = npiso_mask;
+                        ctrl_data[i].desc = npiso_desc;
+                    }
                     break;
             }
         }
@@ -173,16 +201,19 @@ void npiso_meta_init(struct generic_ctrl *ctrl_data) {
 
 void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct npiso_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
+    const uint32_t *btns_mask = (wired_adapter.system_id == VBOY) ? npiso_vb_btns_mask : npiso_btns_mask;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons &= ~npiso_btns_mask[i];
+                map_tmp.buttons &= ~btns_mask[i];
+                map_mask &= ~btns_mask[i];
             }
-            else {
-                map_tmp.buttons |= npiso_btns_mask[i];
+            else if (map_mask & btns_mask[i]) {
+                map_tmp.buttons |= btns_mask[i];
             }
         }
     }

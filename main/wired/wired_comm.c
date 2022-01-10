@@ -41,6 +41,7 @@ static const char *sys_name[WIRED_MAX] = {
     "PS2",
     "GC",
     "Wii-EXT",
+    "VB",
     "Exp Board",
 };
 
@@ -65,6 +66,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     ps_spi_init, /* PS2 */
     nsi_init, /* GC */
     NULL, /* WII_EXT */
+    npiso_init, /* VB */
     NULL, /* EXP_BOARD */
 };
 

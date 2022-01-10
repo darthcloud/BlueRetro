@@ -42,6 +42,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     ps_from_generic, /* PS2 */
     gc_from_generic, /* GC */
     NULL, /* WII_EXT */
+    npiso_from_generic, /* VB */
     NULL, /* EXP_BOARD */
 };
 
@@ -66,6 +67,7 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     ps_fb_to_generic, /* PS2 */
     gc_fb_to_generic, /* GC */
     NULL, /* WII_EXT */
+    NULL, /* VB */
     NULL, /* EXP_BOARD */
 };
 
@@ -90,6 +92,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     ps_meta_init, /* PS2 */
     gc_meta_init, /* GC */
     NULL, /* WII_EXT */
+    npiso_meta_init, /* VB */
     NULL, /* EXP_BOARD */
 };
 
@@ -114,6 +117,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     ps_init_buffer, /* PS2 */
     gc_init_buffer, /* GC */
     NULL, /* WII_EXT */
+    npiso_init_buffer, /* VB */
     NULL, /* EXP_BOARD */
 };
 

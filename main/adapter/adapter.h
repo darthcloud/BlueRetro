@@ -77,6 +77,7 @@ enum {
     PS2,
     GC,
     WII_EXT,
+    VBOY,
     EXP_BOARD,
     WIRED_MAX,
 };
