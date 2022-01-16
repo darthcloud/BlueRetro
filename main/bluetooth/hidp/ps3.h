@@ -32,6 +32,6 @@ struct bt_hidp_ps3_set_conf {
 
 void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report);
 void bt_hid_ps3_init(struct bt_dev *device);
-void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 
 #endif /* _BT_HIDP_PS3_H_ */

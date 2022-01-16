@@ -105,15 +105,16 @@ void bt_hid_ps3_init(struct bt_dev *device) {
     bt_hid_cmd_ps3_bt_init(device);
 }
 
-void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
+    uint32_t hidp_data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
+                                    + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_hidp_hdr));
+
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_PS3_STATUS:
-                {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps3_status));
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
-                }
             }
             break;
     }

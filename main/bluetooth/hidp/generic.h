@@ -8,6 +8,6 @@
 
 #include "hidp.h"
 
-void bt_hid_generic_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+void bt_hid_generic_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 
 #endif /* _BT_HIDP_GENERIC_H_ */

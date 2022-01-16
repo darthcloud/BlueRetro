@@ -431,7 +431,8 @@ struct bt_data {
     int32_t report_type;
     struct raw_src_mapping raw_src_mappings[REPORT_MAX];
     struct hid_report reports[REPORT_MAX];
-    uint8_t input[128];
+    uint8_t *input;
+    uint32_t input_len;
     int32_t axes_cal[ADAPTER_MAX_AXES];
     uint32_t sdp_len;
     uint8_t *sdp_data;

@@ -32,6 +32,6 @@ struct bt_hidp_xb1_rumble {
 
 void bt_hid_cmd_xbox_rumble(struct bt_dev *device, void *report);
 void bt_hid_xbox_init(struct bt_dev *device);
-void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 
 #endif /* _BT_HIDP_XBOX_H_ */

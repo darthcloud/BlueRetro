@@ -60,7 +60,10 @@ void bt_hid_sw_init(struct bt_dev *device) {
     bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
 }
 
-void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
+    uint32_t hidp_data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
+                                    + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_hidp_hdr));
+
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
@@ -203,23 +206,13 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     }
                     break;
                 }
+                //case BT_HIDP_SW_STATUS:
                 case BT_HIDP_SW_STATUS_NATIVE:
                 {
-                    //data_dump(bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status_native));
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status_native));
+                    //data_dump(bt_hci_acl_pkt->hidp_data, hidp_data_len);
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
                 }
-#if 0
-                case BT_HIDP_SW_STATUS:
-                {
-                    if (!(device->ids.subtype == BT_SUBTYPE_DEFAULT
-                        || device->ids.subtype == BT_SW_LEFT_JOYCON
-                        || device->ids.subtype == BT_SW_RIGHT_JOYCON)) {
-                        bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status));
-                    }
-                    break;
-                }
-#endif
             }
             break;
     }

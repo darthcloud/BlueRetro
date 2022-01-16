@@ -114,26 +114,20 @@ void bt_hid_ps_init(struct bt_dev *device) {
     bt_hid_cmd_ps4_set_conf(device, (void *)&ps4_set_conf);
 }
 
-void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
+    uint32_t hidp_data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
+                                    + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_hidp_hdr));
+
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
-                case BT_HIDP_HID_STATUS:
-                {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, 9);
-                    break;
-                }
-                case BT_HIDP_PS4_STATUS:
-                {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps4_status));
-                    break;
-                }
                 case BT_HIDP_PS5_STATUS:
-                {
                     device->ids.subtype = BT_PS5_DS;
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps4_status));
+                    /* Fallthrough */
+                case BT_HIDP_HID_STATUS:
+                case BT_HIDP_PS4_STATUS:
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
-                }
             }
             break;
     }

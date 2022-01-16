@@ -353,7 +353,7 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     }
     else if (pkt->l2cap_hdr.cid == device->ctrl_chan.scid ||
         pkt->l2cap_hdr.cid == device->intr_chan.scid) {
-        bt_hid_hdlr(device, pkt);
+        bt_hid_hdlr(device, pkt, pkt_len);
     }
 }
 
@@ -651,7 +651,8 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
     }
     if (atomic_test_bit(&bt_data->flags, BT_INIT) || bt_data->report_cnt > 1) {
         bt_data->report_id = report_id;
-        memcpy(bt_data->input, data, (len > sizeof(bt_data->input)) ? sizeof(bt_data->input) : len);
+        bt_data->input = data;
+        bt_data->input_len = len;
         adapter_bridge(bt_data);
     }
     bt_data->report_cnt++;

@@ -25,21 +25,17 @@ void bt_hid_xbox_init(struct bt_dev *device) {
     printf("# %s\n", __FUNCTION__);
 }
 
-void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
+    uint32_t hidp_data_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE
+                                    + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_hidp_hdr));
+
     switch (bt_hci_acl_pkt->sig_hdr.code) {
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_XB1_STATUS:
-                {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data,
-                        device->ids.subtype == BT_SUBTYPE_DEFAULT ? sizeof(struct bt_hidp_xb1_status) : sizeof(struct bt_hidp_xb1_adaptive_status));
-                    break;
-                }
                 case BT_HIDP_XB1_STATUS2:
-                {
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, 1);
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
-                }
             }
             break;
     }

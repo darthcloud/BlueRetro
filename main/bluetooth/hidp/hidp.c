@@ -12,7 +12,7 @@
 #include "sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
-typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 typedef void (*bt_hid_cmd_t)(struct bt_dev *device, void *report);
 
 const uint8_t bt_hid_led_dev_id_map[] = {
@@ -52,9 +52,9 @@ void bt_hid_init(struct bt_dev *device) {
     }
 }
 
-void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
+void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
     if (device->ids.type > BT_NONE && bt_hid_hdlr_list[device->ids.type]) {
-        bt_hid_hdlr_list[device->ids.type](device, bt_hci_acl_pkt);
+        bt_hid_hdlr_list[device->ids.type](device, bt_hci_acl_pkt, len);
     }
 }
 

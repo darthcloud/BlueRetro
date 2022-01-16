@@ -22,7 +22,7 @@ struct bt_hidp_hdr {
 extern const uint8_t bt_hid_led_dev_id_map[];
 
 void bt_hid_init(struct bt_dev *device);
-void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt);
+void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 void bt_hid_feedback(struct bt_dev *device, void *report);
 void bt_hid_cmd(uint16_t handle, uint16_t cid, uint8_t hidp_hdr, uint8_t protocol, uint16_t len);
 
