@@ -282,7 +282,7 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
 
-    if (bt_data->dev_id != BT_NONE) {
+    if (bt_data->pids->id != BT_NONE) {
         if (wireless_to_generic(bt_data, &ctrl_input)) {
             /* Unsupported report */
             return;
@@ -328,7 +328,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         if (wired_adapter.system_id != WIRED_AUTO) {
             wired_meta_init(ctrl_output);
 
-            out_mask = adapter_mapping(&config.in_cfg[bt_data->dev_id]);
+            out_mask = adapter_mapping(&config.in_cfg[bt_data->pids->id]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
             printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s",
@@ -394,11 +394,11 @@ uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
     uint32_t ret = 0;
 #ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     if (wired_adapter.system_id != WIRED_AUTO) {
-        wired_fb_to_generic(config.out_cfg[bt_data->dev_id].dev_mode, fb_data, &fb_input);
+        wired_fb_to_generic(config.out_cfg[bt_data->pids->id].dev_mode, fb_data, &fb_input);
 #else
         fb_input.state ^= 0x01;
 #endif
-        if (bt_data->dev_type != BT_NONE) {
+        if (bt_data->pids->type != BT_NONE) {
             wireless_fb_from_generic(&fb_input, bt_data);
             ret = 1;
         }

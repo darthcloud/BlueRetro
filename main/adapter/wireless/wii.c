@@ -314,7 +314,7 @@ static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
 }
 
 int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    switch (bt_data->dev_subtype) {
+    switch (bt_data->pids->subtype) {
         case BT_WII_NUNCHUCK:
             return wiin_to_generic(bt_data, ctrl_data);
         case BT_WII_CLASSIC:
@@ -328,9 +328,9 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
 
 void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     if (fb_data->state) {
-        bt_data->output[0] = (led_dev_id_map[bt_data->dev_id] << 4) | 0x01;
+        bt_data->output[0] = (led_dev_id_map[bt_data->pids->id] << 4) | 0x01;
     }
     else {
-        bt_data->output[0] = (led_dev_id_map[bt_data->dev_id] << 4);
+        bt_data->output[0] = (led_dev_id_map[bt_data->pids->id] << 4);
     }
 }

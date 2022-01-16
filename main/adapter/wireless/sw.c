@@ -157,19 +157,19 @@ static const uint32_t sw_n64_btns_mask[32] = {
 
 static void sw_native_pad_init(struct bt_data *bt_data) {
     struct bt_hid_sw_ctrl_calib *calib;
-    struct ctrl_meta *meta = sw_native_axes_meta[bt_data->dev_id];
+    struct ctrl_meta *meta = sw_native_axes_meta[bt_data->pids->id];
     const uint8_t *axes_idx = sw_axes_idx;
 
     memset((uint8_t *)meta, 0, sizeof(*meta));
 
-    bt_hid_sw_get_calib(bt_data->dev_id, &calib);
+    bt_hid_sw_get_calib(bt_data->pids->id, &calib);
 
     memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_native_btns_mask,
         sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
 
     mapping_quirks_apply(bt_data);
 
-    if (bt_data->dev_subtype == BT_SW_LEFT_JOYCON) {
+    if (bt_data->pids->subtype == BT_SW_LEFT_JOYCON) {
         meta[0].polarity = 1;
         meta[1].polarity = 0;
         axes_idx = sw_jc_axes_idx;
@@ -178,7 +178,7 @@ static void sw_native_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_jc_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
-    else if (bt_data->dev_subtype == BT_SW_RIGHT_JOYCON) {
+    else if (bt_data->pids->subtype == BT_SW_RIGHT_JOYCON) {
         meta[0].polarity = 0;
         meta[1].polarity = 1;
         axes_idx = sw_jc_axes_idx;
@@ -187,7 +187,7 @@ static void sw_native_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_jc_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
-    else if (bt_data->dev_subtype == BT_SUBTYPE_DEFAULT || bt_data->dev_subtype == BT_SW_POWERA) {
+    else if (bt_data->pids->subtype == BT_SUBTYPE_DEFAULT || bt_data->pids->subtype == BT_SW_POWERA) {
         meta[0].polarity = 0;
         meta[1].polarity = 0;
         axes_idx = sw_axes_idx;
@@ -196,7 +196,7 @@ static void sw_native_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
-    else if (bt_data->dev_subtype == BT_SW_N64) {
+    else if (bt_data->pids->subtype == BT_SW_N64) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_n64_btns_mask,
             sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
 
@@ -237,7 +237,7 @@ static void sw_native_pad_init(struct bt_data *bt_data) {
 
 static void sw_native_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct sw_native_map *map = (struct sw_native_map *)bt_data->input;
-    struct ctrl_meta *meta = sw_native_axes_meta[bt_data->dev_id];
+    struct ctrl_meta *meta = sw_native_axes_meta[bt_data->pids->id];
     uint16_t axes[4];
 
     if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
@@ -255,13 +255,13 @@ static void sw_native_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
         }
     }
 
-    if (bt_data->dev_subtype == BT_SW_LEFT_JOYCON) {
+    if (bt_data->pids->subtype == BT_SW_LEFT_JOYCON) {
         axes[1] = map->axes[0] | ((map->axes[1] & 0xF) << 8);
         axes[0] = (map->axes[1] >> 4) | (map->axes[2] << 4);
         axes[3] = map->axes[3] | ((map->axes[4] & 0xF) << 8);
         axes[2] = (map->axes[4] >> 4) | (map->axes[5] << 4);
     }
-    else if (bt_data->dev_subtype == BT_SW_RIGHT_JOYCON) {
+    else if (bt_data->pids->subtype == BT_SW_RIGHT_JOYCON) {
         axes[1] = map->axes[3] | ((map->axes[4] & 0xF) << 8);
         axes[0] = (map->axes[4] >> 4) | (map->axes[5] << 4);
         axes[3] = map->axes[0] | ((map->axes[1] & 0xF) << 8);
@@ -344,7 +344,7 @@ void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     memset((void *)conf, 0, sizeof(*conf));
 
     conf->subcmd = BT_HIDP_SW_SUBCMD_SET_LED;
-    conf->subcmd_data[0] = led_dev_id_map[bt_data->dev_id];
+    conf->subcmd_data[0] = led_dev_id_map[bt_data->pids->id];
 
     if (fb_data->state) {
         memcpy((void *)conf->rumble, (void *)sw_rumble_on, sizeof(sw_rumble_on));

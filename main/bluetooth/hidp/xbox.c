@@ -32,7 +32,7 @@ void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) 
                 case BT_HIDP_XB1_STATUS:
                 {
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data,
-                        device->subtype == BT_SUBTYPE_DEFAULT ? sizeof(struct bt_hidp_xb1_status) : sizeof(struct bt_hidp_xb1_adaptive_status));
+                        device->ids.subtype == BT_SUBTYPE_DEFAULT ? sizeof(struct bt_hidp_xb1_status) : sizeof(struct bt_hidp_xb1_adaptive_status));
                     break;
                 }
                 case BT_HIDP_XB1_STATUS2:

@@ -40,8 +40,8 @@ struct l2cap_chan {
 };
 
 struct bt_dev {
-    int32_t id;
     int32_t flags;
+    struct bt_ids ids;
     uint32_t pkt_retry;
     union {
         struct {
@@ -50,8 +50,6 @@ struct bt_dev {
         };
         bt_addr_le_t le_remote_bdaddr;
     };
-    int32_t type;
-    uint32_t subtype;
     uint16_t acl_handle;
     uint32_t hid_state;
     void *timer_hdl;

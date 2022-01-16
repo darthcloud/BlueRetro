@@ -413,15 +413,19 @@ struct raw_src_mapping {
     uint32_t btns_mask[32];
 };
 
+struct bt_ids {
+    int32_t id;
+    int32_t type;
+    uint32_t subtype;
+} __packed;
+
 struct bt_data {
     /* Bi-directional */
     atomic_t flags;
     /* from adapter */
     uint8_t output[128];
     /* from wireless */
-    int32_t dev_id;
-    int32_t dev_type;
-    uint32_t dev_subtype;
+    struct bt_ids *pids;
     uint32_t report_id;
     uint32_t report_cnt;
     int32_t report_type;

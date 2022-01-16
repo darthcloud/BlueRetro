@@ -108,7 +108,7 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
 }
 
 static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->dev_id].reports_meta[KB];
+    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[KB];
 
     if (!atomic_test_bit(&bt_data->reports[KB].flags, BT_INIT)) {
         hid_kb_init(meta, &bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
@@ -219,7 +219,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
 }
 
 static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->dev_id].reports_meta[MOUSE];
+    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[MOUSE];
 
     if (!atomic_test_bit(&bt_data->reports[MOUSE].flags, BT_INIT)) {
         hid_mouse_init(meta, &bt_data->reports[MOUSE], &bt_data->raw_src_mappings[MOUSE]);
@@ -443,7 +443,7 @@ fillup_end:
 }
 
 static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->dev_id].reports_meta[PAD];
+    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[PAD];
 
     if (!atomic_test_bit(&bt_data->reports[PAD].flags, BT_INIT)) {
         hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);

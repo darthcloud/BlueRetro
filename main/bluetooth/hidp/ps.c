@@ -55,7 +55,7 @@ static void bt_hid_ps5_init_callback(void *arg) {
         .conf0 = 0x02,
         .conf1 = 0xF6,
     };
-    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->id];
+    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->ids.id];
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
@@ -85,7 +85,7 @@ static void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_cmd_ps_set_conf(struct bt_dev *device, void *report) {
-    switch (device->subtype) {
+    switch (device->ids.subtype) {
         case BT_PS5_DS:
             bt_hid_cmd_ps5_set_conf(device, report);
             break;
@@ -105,7 +105,7 @@ void bt_hid_ps_init(struct bt_dev *device) {
         .conf0 = 0xc0,
         .conf1 = 0x07,
     };
-    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->id];
+    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.id];
 
     printf("# %s\n", __FUNCTION__);
 
@@ -130,7 +130,7 @@ void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 }
                 case BT_HIDP_PS5_STATUS:
                 {
-                    device->subtype = BT_PS5_DS;
+                    device->ids.subtype = BT_PS5_DS;
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_ps4_status));
                     break;
                 }

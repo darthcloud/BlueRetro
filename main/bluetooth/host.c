@@ -27,7 +27,6 @@
 
 #define BT_TX 0
 #define BT_RX 1
-#define BT_DEV_MAX 7
 
 enum {
     /* BT CTRL flags */
@@ -55,7 +54,7 @@ static struct bt_host_link_keys bt_host_link_keys = {0};
 static struct bt_host_le_link_keys bt_host_le_link_keys = {0};
 static RingbufHandle_t txq_hdl;
 static struct bt_dev bt_dev_conf = {0};
-static struct bt_dev bt_dev[BT_DEV_MAX] = {0};
+static struct bt_dev bt_dev[BT_MAX_DEV] = {0};
 static atomic_t bt_flags = 0;
 static uint32_t frag_size = 0;
 static uint32_t frag_offset = 0;
@@ -107,7 +106,7 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
 
 static void bt_host_disconnect_all(void) {
     printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
-    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             bt_hci_disconnect(&bt_dev[i]);
         }
@@ -260,8 +259,10 @@ static void bt_fb_task(void *param) {
                 default:
                 {
                     struct bt_dev *device = &bt_dev[fb_data->header.wired_id];
-                    if (adapter_bridge_fb(fb_data, &bt_adapter.data[device->id])) {
-                        bt_hid_feedback(device, bt_adapter.data[device->id].output);
+                    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+
+                    if (adapter_bridge_fb(fb_data, bt_data)) {
+                        bt_hid_feedback(device, bt_data->output);
                     }
                     break;
                 }
@@ -275,14 +276,18 @@ static void bt_fb_task(void *param) {
 static void bt_host_task(void *param) {
     while(1) {
         /* Per device housekeeping */
-        for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
-            if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
-                if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA)) {
-                    bt_sdp_parser(&bt_adapter.data[i]);
-                    if (bt_adapter.data[i].dev_type != bt_dev[i].type) {
-                        bt_dev[i].type = bt_adapter.data[i].dev_type;
-                        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_HID_INTR_READY)) {
-                            bt_hid_init(&bt_dev[i]);
+        for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+            struct bt_dev *device = &bt_dev[i];
+            struct bt_data *bt_data = &bt_adapter.data[i];
+
+            if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
+                if (atomic_test_bit(&device->flags, BT_DEV_SDP_DATA)) {
+                    int32_t old_type = device->ids.type;
+
+                    bt_sdp_parser(bt_data);
+                    if (old_type != device->ids.type) {
+                        if (atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                            bt_hid_init(device);
                         }
                     }
                     atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
@@ -395,7 +400,7 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
 }
 
 int32_t bt_host_get_new_dev(struct bt_dev **device) {
-    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (!atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             *device = &bt_dev[i];
             return i;
@@ -405,7 +410,7 @@ int32_t bt_host_get_new_dev(struct bt_dev **device) {
 }
 
 int32_t bt_host_get_active_dev(struct bt_dev **device) {
-    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
             *device = &bt_dev[i];
             return i;
@@ -415,7 +420,7 @@ int32_t bt_host_get_active_dev(struct bt_dev **device) {
 }
 
 int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device) {
-    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
             *device = &bt_dev[i];
             return i;
@@ -425,7 +430,7 @@ int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device) {
 }
 
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
-    for (uint32_t i = 0; i < BT_DEV_MAX; i++) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && bt_acl_handle(handle) == bt_dev[i].acl_handle) {
             *device = &bt_dev[i];
             return i;
@@ -440,9 +445,24 @@ int32_t bt_host_get_dev_conf(struct bt_dev **device) {
 }
 
 void bt_host_reset_dev(struct bt_dev *device) {
-    adapter_init_buffer(device->id);
-    memset((void *)&bt_adapter.data[device->id], 0, sizeof(bt_adapter.data[0]));
+    int32_t dev_id = 0;
+
+    for (; dev_id < BT_MAX_DEV; dev_id++) {
+        if (device == &bt_dev[dev_id]) {
+            goto reset_dev;
+        }
+    }
+    return;
+
+reset_dev:
+    adapter_init_buffer(dev_id);
+    memset((void *)&bt_adapter.data[dev_id], 0, sizeof(bt_adapter.data[0]));
     memset((void *)device, 0, sizeof(*device));
+
+    device->ids.id = dev_id;
+    device->ids.type = BT_NONE;
+    device->ids.subtype = BT_SUBTYPE_DEFAULT;
+    bt_adapter.data[dev_id].pids = &device->ids;
 }
 
 void bt_host_q_wait_pkt(uint32_t ms) {
@@ -610,16 +630,18 @@ int32_t bt_host_get_next_accept_le_bdaddr(bt_addr_le_t *le_bdaddr) {
 }
 
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
-    bt_dbg_init(device->type);
+    bt_dbg_init(device->ids.type);
 #else
-    if (device->type == BT_HID_GENERIC) {
+    if (device->ids.type == BT_HID_GENERIC) {
         uint32_t i = 0;
         for (; i < REPORT_MAX; i++) {
-            if (bt_adapter.data[device->id].reports[i].id == report_id) {
-                bt_adapter.data[device->id].report_type = i;
-                len = bt_adapter.data[device->id].reports[i].len;
+            if (bt_data->reports[i].id == report_id) {
+                bt_data->report_type = i;
+                len = bt_data->reports[i].len;
                 break;
             }
         }
@@ -627,12 +649,11 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
             return;
         }
     }
-    if (atomic_test_bit(&bt_adapter.data[device->id].flags, BT_INIT) || bt_adapter.data[device->id].report_cnt > 1) {
-        bt_adapter.data[device->id].report_id = report_id;
-        bt_adapter.data[device->id].dev_id = device->id;
-        memcpy(bt_adapter.data[device->id].input, data, (len > sizeof(bt_adapter.data[0].input)) ? sizeof(bt_adapter.data[0].input) : len);
-        adapter_bridge(&bt_adapter.data[device->id]);
+    if (atomic_test_bit(&bt_data->flags, BT_INIT) || bt_data->report_cnt > 1) {
+        bt_data->report_id = report_id;
+        memcpy(bt_data->input, data, (len > sizeof(bt_data->input)) ? sizeof(bt_data->input) : len);
+        adapter_bridge(bt_data);
     }
-    bt_adapter.data[device->id].report_cnt++;
+    bt_data->report_cnt++;
 #endif
 }

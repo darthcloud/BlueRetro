@@ -48,10 +48,10 @@ void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
 }
 
 void bt_hid_sw_init(struct bt_dev *device) {
-    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->id];
+    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
     struct bt_hidp_sw_conf sw_conf = {
         .subcmd = BT_HIDP_SW_SUBCMD_SET_LED,
-        .subcmd_data[0] = bt_hid_led_dev_id_map[device->id],
+        .subcmd_data[0] = bt_hid_led_dev_id_map[device->ids.id],
     };
     printf("# %s\n", __FUNCTION__);
 
@@ -78,13 +78,13 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                             switch (ack->addr) {
                                 case 0x603D:
                                 {
-                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->id];
+                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
                                     uint8_t *data = ack->data;
                                     uint8_t idx = 0;
 
                                     data_dump(ack->data, ack->len);
 
-                                    if (device->subtype == BT_SW_RIGHT_JOYCON) {
+                                    if (device->ids.subtype == BT_SW_RIGHT_JOYCON) {
                                         data += 9;
                                         idx++;
                                     }
@@ -92,7 +92,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                                         if (data[0] != 0xFF) {
                                             bt_hid_sw_set_calib(dev_calib, data, i, idx);
                                         }
-                                        if (device->subtype == BT_SUBTYPE_DEFAULT) {
+                                        if (device->ids.subtype == BT_SUBTYPE_DEFAULT) {
                                             data += 9;
                                         }
                                         else {
@@ -110,7 +110,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                                 }
                                 case 0x6086:
                                 {
-                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->id];
+                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
                                     uint8_t *data = ack->data;
                                     data_dump(ack->data, ack->len);
 
@@ -126,7 +126,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                                 }
                                 case 0x6098:
                                 {
-                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->id];
+                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
                                     uint8_t *data = ack->data;
                                     data_dump(ack->data, ack->len);
 
@@ -142,13 +142,13 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                                 }
                                 case 0x8010:
                                 {
-                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->id];
+                                    struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
                                     uint8_t *data = ack->data;
                                     uint8_t idx = 0;
 
                                     data_dump(ack->data, ack->len);
 
-                                    if (device->subtype == BT_SW_RIGHT_JOYCON) {
+                                    if (device->ids.subtype == BT_SW_RIGHT_JOYCON) {
                                         data += 11;
                                         idx++;
                                     }
@@ -156,7 +156,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                                         if (data[0] != 0xFF) {
                                             bt_hid_sw_set_calib(dev_calib, data + 2, i, idx);
                                         }
-                                        if (device->subtype == BT_SUBTYPE_DEFAULT) {
+                                        if (device->ids.subtype == BT_SUBTYPE_DEFAULT) {
                                             data += 11;
                                         }
                                         else {
@@ -212,9 +212,9 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 #if 0
                 case BT_HIDP_SW_STATUS:
                 {
-                    if (!(device->subtype == BT_SUBTYPE_DEFAULT
-                        || device->subtype == BT_SW_LEFT_JOYCON
-                        || device->subtype == BT_SW_RIGHT_JOYCON)) {
+                    if (!(device->ids.subtype == BT_SUBTYPE_DEFAULT
+                        || device->ids.subtype == BT_SW_LEFT_JOYCON
+                        || device->ids.subtype == BT_SW_RIGHT_JOYCON)) {
                         bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, sizeof(struct bt_hidp_sw_status));
                     }
                     break;

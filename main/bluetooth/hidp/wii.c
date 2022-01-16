@@ -95,7 +95,7 @@ void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_wii_init(struct bt_dev *device) {
-    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->id] << 4)};
+    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->ids.id] << 4)};
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
@@ -110,8 +110,8 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 {
                     struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
-                    if (device->subtype != BT_WIIU_PRO) {
-                        device->subtype = BT_SUBTYPE_DEFAULT;
+                    if (device->ids.subtype != BT_WIIU_PRO) {
+                        device->ids.subtype = BT_SUBTYPE_DEFAULT;
                         if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
                             bt_hid_cmd_wii_write(device, (void *)&wii_ext_init0);
                         }
@@ -127,9 +127,9 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     uint32_t subtype = bt_get_subtype_from_wii_ext(rd_data->data);
                     printf("# BT_HIDP_WII_RD_DATA\n");
                     if (subtype > BT_SUBTYPE_DEFAULT) {
-                        device->subtype = subtype;
+                        device->ids.subtype = subtype;
                     }
-                    printf("# dev: %d wii ext: %d\n", device->id, device->subtype);
+                    printf("# dev: %d wii ext: %d\n", device->ids.id, device->ids.subtype);
                     bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                     break;
                 }
@@ -138,7 +138,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_ACK\n");
                     if (ack->err) {
-                        printf("# dev: %d ack err: 0x%02X\n", device->id, ack->err);
+                        printf("# dev: %d ack err: 0x%02X\n", device->ids.id, ack->err);
                         if (device->hid_state) {
                             bt_hid_cmd_wii_write(device, (void *)&wii_ext_init1);
                         }

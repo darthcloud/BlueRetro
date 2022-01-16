@@ -868,13 +868,13 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 }
 
 void bt_att_hid_init(struct bt_dev *device) {
-    struct bt_att_hid *hid_data = &att_hid[device->id];
+    struct bt_att_hid *hid_data = &att_hid[device->ids.id];
     memset((uint8_t *)hid_data, 0, sizeof(*hid_data));
     bt_att_cmd_mtu_req(device->acl_handle, max_mtu);
 }
 
 void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
-    uint16_t att_handle = bt_att_get_report_handle(&att_hid[device->id], report_id);
+    uint16_t att_handle = bt_att_get_report_handle(&att_hid[device->ids.id], report_id);
 
     if (att_handle) {
         bt_att_cmd_write_req(device->acl_handle, att_handle, data, len);
@@ -882,8 +882,8 @@ void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *
 }
 
 void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
-    struct bt_data *bt_data = &bt_adapter.data[device->id];
-    struct bt_att_hid *hid_data = &att_hid[device->id];
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    struct bt_att_hid *hid_data = &att_hid[device->ids.id];
     uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr));
 
     switch (bt_hci_acl_pkt->att_hdr.code) {
@@ -1028,7 +1028,7 @@ find_info_rsp_end:
                     }
                     memcpy(device_name, read_type_rsp->data[0].value, rsp_len);
                     bt_hci_set_type_flags_from_name(device, device_name);
-                    printf("# dev: %d type: %d %s\n", device->id, device->type, device_name);
+                    printf("# dev: %d type: %d %s\n", device->ids.id, device->ids.type, device_name);
 
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
@@ -1048,7 +1048,7 @@ find_info_rsp_end:
                     if (bt_data->sdp_data == NULL) {
                         bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_data->sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
@@ -1069,7 +1069,7 @@ find_info_rsp_end:
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                         }
                         else {
-                            printf("# dev: %d No report found!!\n", device->id);
+                            printf("# dev: %d No report found!!\n", device->ids.id);
                         }
                     }
                     break;
@@ -1110,7 +1110,7 @@ find_info_rsp_end:
                     if (bt_data->sdp_data == NULL) {
                         bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_data->sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
@@ -1131,7 +1131,7 @@ find_info_rsp_end:
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                         }
                         else {
-                            printf("# dev: %d No report found!!\n", device->id);
+                            printf("# dev: %d No report found!!\n", device->ids.id);
                         }
                     }
                     break;

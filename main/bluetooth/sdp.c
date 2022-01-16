@@ -277,7 +277,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_attr_rsp, sizeof(xb1_svc_attr_rsp));
             break;
         case BT_SDP_SVC_SEARCH_ATTR_REQ:
-            if (device->type == BT_XBOX && device->subtype == BT_SUBTYPE_DEFAULT) {
+            if (device->ids.type == BT_XBOX && device->ids.subtype == BT_SUBTYPE_DEFAULT) {
                 /* Need to test if empty answer work for xb1 */
                 bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid,
                     sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_search_attr_rsp, sizeof(xb1_svc_search_attr_rsp));
@@ -292,7 +292,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
-            uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->id].sdp_len;
+            uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->ids.id].sdp_len;
             uint32_t cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
 
             if (cp_len > free_len) {
@@ -302,15 +302,15 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 
             switch (device->sdp_state) {
                 case 0:
-                    if (bt_adapter.data[device->id].sdp_data == NULL) {
-                        bt_adapter.data[device->id].sdp_data = malloc(BT_SDP_DATA_SIZE);
-                        if (bt_adapter.data[device->id].sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->id);
+                    if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
+                        bt_adapter.data[device->ids.id].sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
+                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
-                    memcpy(bt_adapter.data[device->id].sdp_data + bt_adapter.data[device->id].sdp_len, sdp_data, cp_len);
-                    bt_adapter.data[device->id].sdp_len += cp_len;
+                    memcpy(bt_adapter.data[device->ids.id].sdp_data + bt_adapter.data[device->ids.id].sdp_len, sdp_data, cp_len);
+                    bt_adapter.data[device->ids.id].sdp_len += cp_len;
                     if (*sdp_con_state) {
                         bt_sdp_cmd_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
                     }

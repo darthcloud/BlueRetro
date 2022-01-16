@@ -185,7 +185,7 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
     if (bt_data->report_id == 0x01) {
         const uint32_t *btns_mask;
 
-        if (bt_data->dev_subtype == BT_XBOX_ADAPTIVE) {
+        if (bt_data->pids->subtype == BT_XBOX_ADAPTIVE) {
             ctrl_data->mask = (uint32_t *)xb1_adaptive_mask;
             btns_mask = xb1_dinput_btns_mask;
 
@@ -195,15 +195,15 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
                 }
             }
         }
-        else if (bt_data->dev_subtype == BT_XBOX_XINPUT) {
+        else if (bt_data->pids->subtype == BT_XBOX_XINPUT) {
             ctrl_data->mask = (uint32_t *)xb1_mask;
             btns_mask = xb1_btns_mask;
         }
-        else if (bt_data->dev_subtype == BT_XBOX_XS) {
+        else if (bt_data->pids->subtype == BT_XBOX_XS) {
             ctrl_data->mask = (uint32_t *)xbox_xs_mask;
             btns_mask = xbox_xs_btns_mask;
         }
-        else if (bt_data->dev_subtype == BT_8BITDO_GBROS) {
+        else if (bt_data->pids->subtype == BT_8BITDO_GBROS) {
             ctrl_data->mask = (uint32_t *)xb1_mask;
             btns_mask = gbros_btns_mask;
         }

@@ -123,10 +123,10 @@ static void bt_l2cap_cmd_conn_param_rsp(uint16_t handle, uint8_t ident, uint16_t
 }
 
 void bt_l2cap_init_dev_scid(struct bt_dev *device) {
-    device->sdp_rx_chan.scid = device->id | BT_HOST_SDP_RX_CHAN;
-    device->sdp_tx_chan.scid = device->id | BT_HOST_SDP_TX_CHAN;
-    device->ctrl_chan.scid = device->id | BT_HOST_HID_CTRL_CHAN;
-    device->intr_chan.scid = device->id | BT_HOST_HID_INTR_CHAN;
+    device->sdp_rx_chan.scid = device->ids.id | BT_HOST_SDP_RX_CHAN;
+    device->sdp_tx_chan.scid = device->ids.id | BT_HOST_SDP_TX_CHAN;
+    device->ctrl_chan.scid = device->ids.id | BT_HOST_HID_CTRL_CHAN;
+    device->intr_chan.scid = device->ids.id | BT_HOST_HID_INTR_CHAN;
 }
 
 void bt_l2cap_cmd_ext_feat_mask_req(void *bt_dev) {
@@ -338,7 +338,7 @@ void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt)
             break;
         case BT_L2CAP_INFO_RSP:
             printf("# BT_L2CAP_INFO_RSP\n");
-            if (device->type <= BT_HID_GENERIC) {
+            if (device->ids.type <= BT_HID_GENERIC) {
                 bt_l2cap_cmd_sdp_conn_req(device);
             }
             break;

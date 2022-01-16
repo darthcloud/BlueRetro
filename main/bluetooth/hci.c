@@ -1006,7 +1006,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             if (device) {
                 if (le_conn_complete->status) {
                     device->pkt_retry++;
-                    printf("# dev: %d error: 0x%02X\n", device->id, le_conn_complete->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, le_conn_complete->status);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && device->pkt_retry < BT_MAX_RETRY) {
                         bt_hci_cmd_le_create_conn((void *)&le_conn_complete->peer_addr);
                     }
@@ -1028,7 +1028,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     bt_nb_inquiry = 0;
                     device->acl_handle = le_conn_complete->handle;
                     device->pkt_retry = 0;
-                    printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    printf("# dev: %d acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
                         bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
@@ -1102,20 +1102,20 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
 connect:
                 bt_host_get_dev_from_bdaddr(le_adv_report->adv_info[0].addr.a.val, &device);
                 if (device == NULL) {
-                    int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                    (void)bt_host_get_new_dev(&device);
                     if (device) {
+                        bt_host_reset_dev(device);
                         if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_DIRECT_IND) {
                             atomic_set_bit(&device->flags, BT_DEV_PAGE);
                         }
                         memcpy((uint8_t *)&device->le_remote_bdaddr, (uint8_t *)&le_adv_report->adv_info[0].addr, sizeof(device->le_remote_bdaddr));
-                        device->id = bt_dev_id;
-                        device->type = BT_HID_GENERIC;
+                        device->ids.type = BT_HID_GENERIC;
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_le_set_scan_enable(0);
                         bt_hci_cmd_le_set_adv_disable(NULL);
                         bt_hci_cmd_le_create_conn((void *)&le_adv_report->adv_info[0].addr);
-                        printf("# LE ADV dev: %d type: %d bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type, device->le_remote_bdaddr.type,
+                        printf("# LE ADV dev: %d type: %d bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type, device->le_remote_bdaddr.type,
                             device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                             device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                     }
@@ -1131,7 +1131,7 @@ skip:
             bt_host_get_dev_from_handle(le_remote_feat->handle, &device);
             if (device) {
                 if (le_remote_feat->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, le_remote_feat->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, le_remote_feat->status);
                 }
             }
             else {
@@ -1284,9 +1284,10 @@ void bt_hci_le_conn_update(struct hci_cp_le_conn_update *cp) {
 void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name) {
     for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
         if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
-            struct bt_data *bt_data = &bt_adapter.data[device->id];
-            device->type = bt_name_type[i].type;
-            device->subtype = bt_name_type[i].subtype;
+            struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+
+            device->ids.type = bt_name_type[i].type;
+            device->ids.subtype = bt_name_type[i].subtype;
             bt_data->flags = bt_name_type[i].hid_flags;
             break;
         }
@@ -1314,15 +1315,15 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             for (uint8_t i = 1; i <= inquiry_result->num_reports; i++) {
                 bt_host_get_dev_from_bdaddr((uint8_t *)inquiry_result + 1, &device);
                 if (device == NULL) {
-                    int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                    (void)bt_host_get_new_dev(&device);
                     if (device) {
+                        bt_host_reset_dev(device);
                         memcpy(device->remote_bdaddr, (uint8_t *)inquiry_result + 1, sizeof(device->remote_bdaddr));
-                        device->id = bt_dev_id;
-                        device->type = BT_HID_GENERIC;
+                        device->ids.type = BT_HID_GENERIC;
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
-                        printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                        printf("# Inquiry dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
                             device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                             device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                     }
@@ -1339,7 +1340,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             if (device) {
                 if (conn_complete->status) {
                     device->pkt_retry++;
-                    printf("# dev: %d error: 0x%02X\n", device->id, conn_complete->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, conn_complete->status);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE) && device->pkt_retry < BT_MAX_RETRY) {
                         bt_hci_cmd_connect(device->remote_bdaddr);
                     }
@@ -1354,7 +1355,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     bt_nb_inquiry = 0;
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
-                    printf("# dev: %d acl_handle: 0x%04X\n", device->id, device->acl_handle);
+                    printf("# dev: %d acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                 }
@@ -1370,16 +1371,16 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_CONN_REQUEST\n");
             bt_host_get_dev_from_bdaddr(conn_request->bdaddr.val, &device);
             if (device == NULL) {
-                int32_t bt_dev_id = bt_host_get_new_dev(&device);
+                (void)bt_host_get_new_dev(&device);
                 if (device) {
+                    bt_host_reset_dev(device);
                     memcpy(device->remote_bdaddr, (void *)&conn_request->bdaddr, sizeof(device->remote_bdaddr));
-                    device->id = bt_dev_id;
-                    device->type = BT_HID_GENERIC;;
+                    device->ids.type = BT_HID_GENERIC;;
                     bt_l2cap_init_dev_scid(device);
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
-                    printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->id, device->type,
+                    printf("# Page dev: %d type: %d bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
                         device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                         device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 }
@@ -1392,7 +1393,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_DISCONN_COMPLETE\n");
             bt_host_get_dev_from_handle(disconn_complete->handle, &device);
             if (device) {
-                printf("# DISCONN from dev: %d\n", device->id);
+                printf("# DISCONN from dev: %d\n", device->ids.id);
                 bt_host_reset_dev(device);
                 if (bt_host_get_active_dev(&device) == BT_NONE) {
                     if (config.global_cfg.inquiry_mode == INQ_AUTO) {
@@ -1425,10 +1426,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             bt_host_get_dev_from_handle(auth_complete->handle, &device);
             if (device) {
                 if (auth_complete->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, auth_complete->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, auth_complete->status);
                 }
                 else {
-                    printf("# dev: %d Pairing done\n", device->id);
+                    printf("# dev: %d Pairing done\n", device->ids.id);
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
                         if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
                             bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
@@ -1450,7 +1451,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             if (device) {
                 if (remote_name_req_complete->status) {
                     device->pkt_retry++;
-                    printf("# dev: %d error: 0x%02X\n", device->id, remote_name_req_complete->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, remote_name_req_complete->status);
                     if (device->pkt_retry < BT_MAX_RETRY) {
                         bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                     }
@@ -1464,10 +1465,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 else {
                     bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
                     bt_hci_stop_inquiry();
-                    if (device->type == BT_HID_GENERIC || device->type == BT_SW) {
+                    if (device->ids.type == BT_HID_GENERIC || device->ids.type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
                     }
-                    if (device->type == BT_PS3 || device->subtype == BT_WIIU_PRO) {
+                    if (device->ids.type == BT_PS3 || device->ids.subtype == BT_WIIU_PRO) {
                         struct bt_hci_cp_switch_role switch_role = {
                             .role = 0x01,
                         };
@@ -1475,12 +1476,12 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_hci_cmd_switch_role(&switch_role);
                     }
                     if (!atomic_test_bit(&device->flags, BT_DEV_PAGE)) {
-                        if (device->type == BT_PS) {
+                        if (device->ids.type == BT_PS) {
                             bt_host_q_wait_pkt(20);
                         }
                         bt_hci_cmd_auth_requested(&device->acl_handle);
                     }
-                    printf("# dev: %d type: %d:%d %s\n", device->id, device->type, device->subtype, remote_name_req_complete->name);
+                    printf("# dev: %d type: %d:%d %s\n", device->ids.id, device->ids.type, device->ids.subtype, remote_name_req_complete->name);
                 }
             }
             else {
@@ -1495,7 +1496,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             bt_host_get_dev_from_handle(encrypt_change->handle, &device);
             if (device) {
                 if (encrypt_change->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, encrypt_change->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, encrypt_change->status);
                 }
             }
             else {
@@ -1510,7 +1511,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             bt_host_get_dev_from_handle(remote_features->handle, &device);
             if (device) {
                 if (remote_features->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, remote_features->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, remote_features->status);
                 }
                 else {
                     if (remote_features->features[7] & 0x80) {
@@ -1534,7 +1535,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             bt_host_get_dev_from_handle(remote_version_info->handle, &device);
             if (device) {
                 if (remote_version_info->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, remote_version_info->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, remote_version_info->status);
                 }
             }
             else {
@@ -1745,7 +1746,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             printf("# BT_HCI_EVT_PIN_CODE_REQ\n");
             bt_host_get_dev_from_bdaddr(pin_code_req->bdaddr.val, &device);
             memcpy((void *)&pin_code_reply.bdaddr, device->remote_bdaddr, sizeof(pin_code_reply.bdaddr));
-            if (device->type == BT_WII) {
+            if (device->ids.type == BT_WII) {
                 memcpy(pin_code_reply.pin_code, local_bdaddr, sizeof(local_bdaddr));
                 pin_code_reply.pin_len = sizeof(local_bdaddr);
             }
@@ -1786,7 +1787,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             bt_host_get_dev_from_handle(remote_ext_features->handle, &device);
             if (device) {
                 if (remote_ext_features->status) {
-                    printf("# dev: %d error: 0x%02X\n", device->id, remote_ext_features->status);
+                    printf("# dev: %d error: 0x%02X\n", device->ids.id, remote_ext_features->status);
                 }
             }
             else {

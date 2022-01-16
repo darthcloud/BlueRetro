@@ -386,9 +386,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                     if (report_type != REPORT_NONE) {
                         hid_device_fingerprint(&wip_report, &dev_type, &dev_subtype);
                         memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
-                        if (bt_data->dev_type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-                            bt_data->dev_type = dev_type;
-                            bt_data->dev_subtype = dev_subtype;
+                        if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
+                            bt_data->pids->type = dev_type;
+                            bt_data->pids->subtype = dev_subtype;
                         }
                         printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
                     }
@@ -457,9 +457,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
         if (report_type != REPORT_NONE) {
             hid_device_fingerprint(&wip_report, &dev_type, &dev_subtype);
             memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
-            if (bt_data->dev_type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-                bt_data->dev_type = dev_type;
-                bt_data->dev_subtype = dev_subtype;
+            if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
+                bt_data->pids->type = dev_type;
+                bt_data->pids->subtype = dev_subtype;
             }
             printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
         }

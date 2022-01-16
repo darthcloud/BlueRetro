@@ -195,7 +195,7 @@ static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
     memset((void *)set_conf, 0, sizeof(*set_conf));
     set_conf->conf0 = 0xc4;
     set_conf->conf1 = 0x03;
-    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->dev_id];
+    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->pids->id];
 
     if (fb_data->state) {
         set_conf->r_rumble = 0x7F;
@@ -235,7 +235,7 @@ int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 }
 
 void ps_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    switch (bt_data->dev_subtype) {
+    switch (bt_data->pids->subtype) {
         case BT_PS5_DS:
             ps5_fb_from_generic(fb_data, bt_data);
             break;

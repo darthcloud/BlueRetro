@@ -118,7 +118,7 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
 void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->output;
     memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
-    set_conf->leds = (led_dev_id_map[bt_data->dev_id] << 1);
+    set_conf->leds = (led_dev_id_map[bt_data->pids->id] << 1);
 
     if (fb_data->state) {
         set_conf->r_rumble_pow = 0x01;
