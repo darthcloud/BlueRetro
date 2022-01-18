@@ -274,12 +274,13 @@ static void bt_fb_task(void *param) {
 }
 
 static void bt_host_task(void *param) {
-    while(1) {
+    while (1) {
         /* Per device housekeeping */
         for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
             struct bt_dev *device = &bt_dev[i];
             struct bt_data *bt_data = &bt_adapter.data[i];
 
+            /* Parse SDP data if available */
             if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
                 if (atomic_test_bit(&device->flags, BT_DEV_SDP_DATA)) {
                     int32_t old_type = device->ids.type;
@@ -290,7 +291,29 @@ static void bt_host_task(void *param) {
                             bt_hid_init(device);
                         }
                     }
-                    atomic_clear_bit(&bt_dev[i].flags, BT_DEV_SDP_DATA);
+                    atomic_clear_bit(&device->flags, BT_DEV_SDP_DATA);
+                }
+            }
+
+            /* Check if we stopped receiving reports */
+            if (atomic_test_bit(&device->flags, BT_DEV_REPORT_MON)) {
+                if (device->report_cnt == device->report_cnt_last) {
+                    device->report_stall_cnt++;
+                }
+                else {
+                    device->report_cnt_last = device->report_cnt;
+                    device->report_stall_cnt = 0;
+                }
+                if (device->report_stall_cnt > 5) {
+                    printf("# %s dev: %d report stalled\n", __FUNCTION__, device->ids.id);
+                    device->report_stall_cnt = 0;
+                    device->report_cnt = 0;
+
+                    switch (device->ids.type) {
+                        case BT_SW:
+                            bt_hci_exit_sniff_mode(device);
+                            break;
+                    }
                 }
             }
         }
@@ -649,12 +672,12 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
             return;
         }
     }
-    if (atomic_test_bit(&bt_data->flags, BT_INIT) || bt_data->report_cnt > 1) {
+    if (atomic_test_bit(&bt_data->flags, BT_INIT) || device->report_cnt > 1) {
         bt_data->report_id = report_id;
         bt_data->input = data;
         bt_data->input_len = len;
         adapter_bridge(bt_data);
     }
-    bt_data->report_cnt++;
+    device->report_cnt++;
 #endif
 }

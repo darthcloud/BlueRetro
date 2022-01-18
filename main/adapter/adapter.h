@@ -427,7 +427,6 @@ struct bt_data {
     /* from wireless */
     struct bt_ids *pids;
     uint32_t report_id;
-    uint32_t report_cnt;
     int32_t report_type;
     struct raw_src_mapping raw_src_mappings[REPORT_MAX];
     struct hid_report reports[REPORT_MAX];

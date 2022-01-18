@@ -110,6 +110,7 @@ static void bt_hci_cmd_read_remote_ext_features(void *handle);
 //static void bt_hci_cmd_read_remote_version_info(uint16_t handle);
 static void bt_hci_cmd_io_capability_reply(void *bdaddr);
 static void bt_hci_cmd_user_confirm_reply(void *bdaddr);
+static void bt_hci_cmd_exit_sniff_mode(void *handle);
 static void bt_hci_cmd_switch_role(void *cp);
 //static void bt_hci_cmd_read_link_policy(void *handle);
 //static void bt_hci_cmd_write_link_policy(void *cp);
@@ -437,6 +438,15 @@ static void bt_hci_cmd_user_confirm_reply(void *bdaddr) {
     memcpy((void *)&user_confirm_reply->bdaddr, bdaddr, sizeof(user_confirm_reply->bdaddr));
 
     bt_hci_cmd(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*user_confirm_reply));
+}
+
+static void bt_hci_cmd_exit_sniff_mode(void *handle) {
+    struct bt_hci_cp_exit_sniff_mode *exit_sniff_mode = (struct bt_hci_cp_exit_sniff_mode *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    exit_sniff_mode->handle = *(uint16_t *)handle;
+
+    bt_hci_cmd(BT_HCI_OP_EXIT_SNIFF_MODE, sizeof(*exit_sniff_mode));
 }
 
 static void bt_hci_cmd_switch_role(void *cp) {
@@ -1231,6 +1241,10 @@ void bt_hci_disconnect(struct bt_dev *device) {
     if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
         bt_hci_cmd_disconnect(&device->acl_handle);
     }
+}
+
+void bt_hci_exit_sniff_mode(struct bt_dev *device) {
+    bt_hci_cmd_exit_sniff_mode((void *)&device->acl_handle);
 }
 
 void bt_hci_get_le_local_addr(bt_addr_le_t *le_local) {

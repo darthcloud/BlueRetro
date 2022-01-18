@@ -163,12 +163,15 @@ void bt_l2cap_cmd_hid_ctrl_disconn_req(void *bt_dev) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;
     printf("# %s\n", __FUNCTION__);
     bt_l2cap_cmd_disconn_req(device->acl_handle, tx_ident++, device->ctrl_chan.dcid, device->ctrl_chan.scid);
+    atomic_clear_bit(&device->flags, BT_DEV_HID_CTRL_PENDING);
 }
 
 void bt_l2cap_cmd_hid_intr_disconn_req(void *bt_dev) {
     struct bt_dev *device = (struct bt_dev *)bt_dev;
     printf("# %s\n", __FUNCTION__);
     bt_l2cap_cmd_disconn_req(device->acl_handle, tx_ident++, device->intr_chan.dcid, device->intr_chan.scid);
+    atomic_clear_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
+    atomic_clear_bit(&device->flags, BT_DEV_HID_INTR_READY);
 }
 
 void bt_l2cap_sig_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {

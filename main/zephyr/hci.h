@@ -580,6 +580,11 @@ struct bt_hci_cp_io_capability_neg_reply {
 } __packed;
 
 #ifdef BLUERETRO
+#define BT_HCI_OP_EXIT_SNIFF_MODE               BT_OP(BT_OGF_LINK_POLICY, 0x0004)
+struct bt_hci_cp_exit_sniff_mode {
+	u16_t handle;
+} __packed;
+
 #define BT_HCI_OP_SWITCH_ROLE                   BT_OP(BT_OGF_LINK_POLICY, 0x000B)
 struct bt_hci_cp_switch_role {
 	bt_addr_t bdaddr;

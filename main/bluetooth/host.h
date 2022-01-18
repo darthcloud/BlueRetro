@@ -31,6 +31,7 @@ enum {
     BT_DEV_ROLE_SW_FAIL,
     BT_DEV_IS_BLE,
     BT_DEV_FB_DELAY,
+    BT_DEV_REPORT_MON,
 };
 
 struct l2cap_chan {
@@ -53,6 +54,9 @@ struct bt_dev {
     uint16_t acl_handle;
     uint32_t hid_state;
     void *timer_hdl;
+    uint32_t report_cnt;
+    uint32_t report_cnt_last;
+    uint8_t report_stall_cnt;
     uint8_t tid;
     union {
         struct {
