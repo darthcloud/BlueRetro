@@ -13,7 +13,6 @@
 
 ## Project documentation
 * [Demo on my Youtube channel](https://www.youtube.com/channel/UC9uPsTgDhUFKuS-9zxoLi9w/videos)
-* [Main hackaday.io page](https://hackaday.io/project/170365-blueretro)
 * [User manual](https://github.com/darthcloud/BlueRetro/wiki)
 * [Roadmap](https://docs.google.com/spreadsheets/d/e/2PACX-1vTR9HpZM9DBp986BL8aVeUu7-rP161CXUoBpRx1uX2eSsB6fmjHF_v4mPWj_SDjaliEh6Rq6c2BL1qk/pubhtml)
 * [Web-Bluetooth (BLE) configuration interface Documentation](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
@@ -26,6 +25,18 @@
 * BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
   https://www.thingiverse.com/thing:4835926 \
   https://oshpark.com/shared_projects/aharS64j
+* N64 BlueRetro Mount by [reventlow64](https://twitter.com/reventlow): 3d printed mount for ESP32-DevkitC for N64.\
+  https://www.prusaprinters.org/prints/90275-nintendo-64-blueretro-bluetooth-receiver-mount
+* BlueRetro Adapter Case by [Sigismond0](https://twitter.com/Sigismond0): 3d printed case for ESP32-DevkitC.\
+  https://www.prusaprinters.org/prints/116729-blueretro-bluetooth-controller-adapter-case
+
+## Commercial solution powered by BlueRetro FW
+* PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
+  https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
+* JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
+  https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
+* BlueRetro adaptador universal by [GamesCare](https://twitter.com/MichelinFabio): BlueRetro universal base & cable.\
+  https://gamescare.com.br/produto/blueretro-adaptador-universal/
 
 ## General documentation
 * [ESP32 RTOS + Bare Metal: Best of Both Worlds?](https://hackaday.io/project/170365/log/189836-esp32-rtos-bare-metal-best-of-both-worlds)
