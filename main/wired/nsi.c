@@ -4,7 +4,9 @@
  */
 
 #include <string.h>
+#include "soc/io_mux_reg.h"
 #include <hal/clk_gate_ll.h>
+#include "soc/rmt_struct.h"
 #include <driver/rmt.h>
 #include <hal/rmt_ll.h>
 #include "zephyr/atomic.h"
@@ -78,7 +80,7 @@ static const uint8_t gc_kb_ident[3] = {0x08, 0x20, 0x00};
 static const uint8_t gc_neutral[] = {
     0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x20, 0x20, 0x00, 0x00
 };
-static volatile rmt_item32_t *rmt_items = RMTMEM.chan[0].data32;
+static volatile rmt_item32_t *rmt_items = (volatile rmt_item32_t *)RMTMEM.chan[0].data32;
 static uint8_t buf[128] = {0};
 static uint8_t last_rumble[4] = {0};
 static uint8_t rumble_state[4] = {0};

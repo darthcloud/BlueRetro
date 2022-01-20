@@ -6,6 +6,7 @@
 #ifndef _INTR_H_
 #define _INTR_H_
 
+#include "soc/soc.h"
 #include "esp_attr.h"
 #include "freertos/xtensa_rtos.h"
 

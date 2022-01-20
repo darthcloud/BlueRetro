@@ -25,7 +25,7 @@
 
 
 #include <stdio.h>
-#include <soc/cpu.h>
+#include <hal/cpu_hal.h>
 #include <soc/dport_reg.h>
 #include <soc/soc_memory_layout.h>
 #include <esp_heap_caps.h>

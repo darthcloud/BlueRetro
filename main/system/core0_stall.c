@@ -16,7 +16,6 @@
 #include <string.h>
 #include "esp_intr_alloc.h"
 #include "esp32/rom/ets_sys.h"
-#include "soc/cpu.h"
 #include "soc/dport_reg.h"
 #include "xtensa/core-macros.h"
 #include "sdkconfig.h"

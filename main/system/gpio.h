@@ -15,6 +15,9 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
+#include "soc/gpio_sig_map.h"
+#include "esp32/rom/gpio.h"
+#include "soc/gpio_struct.h"
 #include <hal/gpio_types.h>
 
 extern const uint32_t GPIO_PIN_MUX_REG_IRAM[];

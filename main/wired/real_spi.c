@@ -4,7 +4,8 @@
  */
 
 #include <string.h>
-#include <driver/periph_ctrl.h>
+#include "soc/io_mux_reg.h"
+#include "esp_private/periph_ctrl.h"
 #include <soc/spi_periph.h>
 #include <esp32/rom/ets_sys.h>
 #include <esp32/rom/gpio.h>

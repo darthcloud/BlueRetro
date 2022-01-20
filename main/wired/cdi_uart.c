@@ -9,7 +9,7 @@
 #include <hal/uart_ll.h>
 #include <esp32/rom/ets_sys.h>
 #include <esp32/rom/gpio.h>
-#include <esp32/clk.h>
+#include "esp_private/esp_clk.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/adapter.h"

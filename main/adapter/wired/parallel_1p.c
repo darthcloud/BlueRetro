@@ -3,6 +3,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "parallel_1p.h"
+#include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
 #define P1_LD_UP 3

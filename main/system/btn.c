@@ -8,6 +8,7 @@
 #include <freertos/task.h>
 #include <esp_partition.h>
 #include "zephyr/atomic.h"
+#include "esp32/rom/gpio.h"
 #include "driver/gpio.h"
 #include "system/fs.h"
 #include "btn.h"

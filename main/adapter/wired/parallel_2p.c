@@ -3,6 +3,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "parallel_2p.h"
+#include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
 #define P1_TR_PIN 27
