@@ -6,6 +6,7 @@
 #ifndef _JAG_IO_H_
 #define _JAG_IO_H_
 
+void jag_io_force_update(void);
 void jag_io_init(void);
 
 #endif /* _JAG_IO_H_ */

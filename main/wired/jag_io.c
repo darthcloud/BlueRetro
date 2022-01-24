@@ -259,6 +259,14 @@ static void jag_ctrl_task(void) {
     }
 }
 
+void jag_io_force_update(void) {
+    uint32_t idx, cur_in1 = GPIO.in1.val;
+
+    idx = (((cur_in1 & 0x18) >> 1) | (cur_in1 & 0x3)) & 0xF;
+
+    GPIO.out = *map[bank[socket_idx[idx]]][idx];
+}
+
 void jag_io_init(void) {
     gpio_config_t io_conf = {0};
     uint8_t inputs[] = {P1_J0_PIN, P1_J1_PIN, P1_J2_PIN, P1_J3_PIN};

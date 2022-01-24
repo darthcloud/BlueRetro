@@ -4,6 +4,7 @@
 #include "tools/util.h"
 #include "jag.h"
 #include "driver/gpio.h"
+#include "wired/jag_io.h"
 
 #define P1_J0_PIN 32
 #define P1_J1_PIN 33
@@ -271,4 +272,5 @@ void jag_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
             jag_ctrl_from_generic(ctrl_data, wired_data);
             break;
     }
+    jag_io_force_update();
 }
