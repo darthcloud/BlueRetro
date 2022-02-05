@@ -32,9 +32,9 @@ static const uint32_t para_1p_btns_mask[32] = {
     BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
     0, 0, 0, 0,
     BIT(P1_C), BIT(P1_B), BIT(P1_A), BIT(P1_D),
-    BIT(P1_START - 32) | 0xF0000000, BIT(P1_SELECT), BIT(P1_CREDIT - 32) | 0xF0000000, 0,
+    BIT(P1_START - 32) | 0xF0000000, BIT(P1_SELECT), 0, 0,
     BIT(P1_6), 0, 0, 0,
-    0, 0, 0, 0,
+    BIT(P1_CREDIT - 32) | 0xF0000000, 0, 0, 0,
 };
 
 void IRAM_ATTR para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
