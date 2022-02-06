@@ -39,6 +39,9 @@
 #define MOUSE_SPEED_MED 0xEF
 #define MOUSE_SPEED_MAX 0xDF
 
+#define VTAP_PAL_PIN 16
+#define VTAP_MODE_PIN 27
+
 enum {
     NPISO_CLK = 0,
     NPISO_SEL,
@@ -611,6 +614,20 @@ void npiso_init(void)
             gpio_config_iram(&io_conf);
             set_data(i, j &  0x1, 1);
         }
+    }
+
+    /* Consolize VBOY VTAP buttons */
+    if (wired_adapter.system_id == VBOY) {
+        io_conf.intr_type = GPIO_INTR_DISABLE;
+        io_conf.pin_bit_mask = 1ULL << VTAP_PAL_PIN;
+        io_conf.mode = GPIO_MODE_OUTPUT_OD;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        gpio_config_iram(&io_conf);
+        gpio_set_level_iram(VTAP_PAL_PIN, 1);
+        io_conf.pin_bit_mask = 1ULL << VTAP_MODE_PIN;
+        gpio_config_iram(&io_conf);
+        gpio_set_level_iram(VTAP_MODE_PIN, 1);
     }
 
     if (dev_type[1] == DEV_SFC_SNES_MULTITAP) {

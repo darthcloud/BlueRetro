@@ -9,6 +9,11 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "npiso.h"
+#include "soc/gpio_struct.h"
+#include "driver/gpio.h"
+
+#define VTAP_PAL_PIN 16
+#define VTAP_MODE_PIN 27
 
 enum {
     NPISO_LD_RIGHT = 0,
@@ -84,7 +89,7 @@ static const uint32_t npiso_btns_mask[32] = {
     BIT(NPISO_R), 0, 0, 0,
 };
 
-static const uint32_t npiso_vb_mask[4] = {0x33350FF0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_vb_mask[4] = {0xBBF50FF0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_vb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_vb_btns_mask[32] = {
     0, 0, 0, 0,
@@ -199,7 +204,40 @@ void npiso_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void npiso_vtap_gpio(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Palette */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_LJ]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_LJ]) {
+            GPIO.out_w1tc = BIT(VTAP_PAL_PIN);
+        }
+        else {
+            GPIO.out_w1ts = BIT(VTAP_PAL_PIN);
+        }
+    }
+
+    /* Mode */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_RJ]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_RJ]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
+
+                if (GPIO.out & BIT(VTAP_MODE_PIN)) {
+                    GPIO.out_w1tc = BIT(VTAP_MODE_PIN);
+                }
+                else {
+                    GPIO.out_w1ts = BIT(VTAP_MODE_PIN);
+                }
+            }
+        }
+    }
+}
+
+static void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct npiso_map map_tmp;
     uint32_t map_mask = 0xFFFF;
     const uint32_t *btns_mask = (wired_adapter.system_id == VBOY) ? npiso_vb_btns_mask : npiso_btns_mask;
@@ -299,6 +337,9 @@ void npiso_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct
             break;
         default:
             npiso_ctrl_from_generic(ctrl_data, wired_data);
+            if (wired_adapter.system_id == VBOY) {
+                npiso_vtap_gpio(ctrl_data, wired_data);
+            }
             break;
     }
 }
