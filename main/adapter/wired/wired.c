@@ -43,7 +43,9 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     gc_from_generic, /* GC */
     NULL, /* WII_EXT */
     npiso_from_generic, /* VB */
-    NULL, /* EXP_BOARD */
+    para_1p_from_generic, /* PARALLEL_1P_OD */
+    para_2p_from_generic, /* PARALLEL_2P_OD */
+    para_1p_from_generic, /* SEA_BOARD */
 };
 
 static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
@@ -68,7 +70,9 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     gc_fb_to_generic, /* GC */
     NULL, /* WII_EXT */
     NULL, /* VB */
-    NULL, /* EXP_BOARD */
+    NULL, /* PARALLEL_1P_OD */
+    NULL, /* PARALLEL_2P_OD */
+    NULL, /* SEA_BOARD */
 };
 
 static meta_init_t meta_init_func[WIRED_MAX] = {
@@ -93,7 +97,9 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     gc_meta_init, /* GC */
     NULL, /* WII_EXT */
     npiso_meta_init, /* VB */
-    NULL, /* EXP_BOARD */
+    para_1p_meta_init, /* PARALLEL_1P_OD */
+    para_2p_meta_init, /* PARALLEL_2P_OD */
+    para_1p_meta_init, /* SEA_BOARD */
 };
 
 static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
@@ -118,7 +124,9 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     gc_init_buffer, /* GC */
     NULL, /* WII_EXT */
     npiso_init_buffer, /* VB */
-    NULL, /* EXP_BOARD */
+    para_1p_init_buffer, /* PARALLEL_1P_OD */
+    para_2p_init_buffer, /* PARALLEL_2P_OD */
+    para_1p_init_buffer, /* SEA_BOARD */
 };
 
 int32_t wired_meta_init(struct generic_ctrl *ctrl_data) {

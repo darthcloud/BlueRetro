@@ -78,7 +78,9 @@ enum {
     GC,
     WII_EXT,
     VBOY,
-    EXP_BOARD,
+    PARALLEL_1P_OD,
+    PARALLEL_2P_OD,
+    SEA_BOARD,
     WIRED_MAX,
 };
 

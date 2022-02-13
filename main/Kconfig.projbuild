@@ -31,14 +31,14 @@ menu "BlueRetro"
                 Select this to support all systems.
 
         config BLUERETRO_SYSTEM_PARALLEL_1P
-            bool "PARALLEL_1P"
+            bool "PARALLEL_1P_PP"
             help
-                Select this to support only PARALLEL_1P.
+                Select this to support only PARALLEL_1P push-pull.
 
         config BLUERETRO_SYSTEM_PARALLEL_2P
-            bool "PARALLEL_2P"
+            bool "PARALLEL_2P_PP"
             help
-                Select this to support only PARALLEL_2P.
+                Select this to support only PARALLEL_2P push-pull.
 
         config BLUERETRO_SYSTEM_NES
             bool "NES"
@@ -125,10 +125,20 @@ menu "BlueRetro"
             help
                 Select this to support only VB.
 
-        config BLUERETRO_SYSTEM_EXP_BOARD
-            bool "Exp. Board"
+        config BLUERETRO_SYSTEM_PARALLEL_1P_OD
+            bool "PARALLEL_1P_OD"
             help
-                Select this to support only Ext. Board.
+                Select this to support only PARALLEL_1P open drain.
+
+        config BLUERETRO_SYSTEM_PARALLEL_2P_OD
+            bool "PARALLEL_2P_OD"
+            help
+                Select this to support only PARALLEL_2P open drain.
+
+        config BLUERETRO_SYSTEM_SEA_BOARD
+            bool "SEA Board"
+            help
+                Select this to support only SEA Board.
 
     endchoice
 

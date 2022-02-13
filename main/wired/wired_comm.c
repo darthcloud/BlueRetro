@@ -22,8 +22,8 @@ typedef void (*wired_init_t)(void);
 
 static const char *sys_name[WIRED_MAX] = {
     "AUTO",
-    "PARALLEL_1P",
-    "PARALLEL_2P",
+    "PARALLEL_1P_PP",
+    "PARALLEL_2P_PP",
     "NES",
     "PCE",
     "MD-GENESIS",
@@ -42,7 +42,9 @@ static const char *sys_name[WIRED_MAX] = {
     "GC",
     "Wii-EXT",
     "VB",
-    "Exp Board",
+    "PARALLEL_1P_OD",
+    "PARALLEL_2P_OD",
+    "SEA Board",
 };
 
 static const wired_init_t wired_init[WIRED_MAX] = {
@@ -67,7 +69,9 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     nsi_init, /* GC */
     NULL, /* WII_EXT */
     npiso_init, /* VB */
-    NULL, /* EXP_BOARD */
+    parallel_io_init, /* PARALLEL_1P_OD */
+    parallel_io_init, /* PARALLEL_2P_OD */
+    parallel_io_init, /* SEA_BOARD */
 };
 
 void wired_comm_init(void) {
