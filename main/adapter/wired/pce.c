@@ -194,7 +194,7 @@ static void pce_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
 static void pce_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pce_map map_tmp;
     uint32_t map_mask[3];
-    const uint32_t (*btns_mask)[32] = (config.out_cfg[ctrl_data->index].dev_mode == DEV_PAD_ALT) ? pce_6btns_btns_mask : pce_btns_mask;
+    const uint32_t (*btns_mask)[32] = (config.out_cfg[0].dev_mode == DEV_PAD_ALT) ? pce_6btns_btns_mask : pce_btns_mask;
 
     memset(map_mask, 0xFF, sizeof(map_mask));
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -250,7 +250,7 @@ void pce_meta_init(struct generic_ctrl *ctrl_data) {
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
-            switch (config.out_cfg[i].dev_mode) {
+            switch (config.out_cfg[0].dev_mode) {
                 case DEV_MOUSE:
                     ctrl_data[i].mask = pce_mouse_mask;
                     ctrl_data[i].desc = pce_mouse_desc;
