@@ -3,12 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "adapter/adapter.h"
 #include "system/gpio.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 
 static const uint8_t output_list[] = {
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
+    2, 4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 33
+#else
     3, 5, 16, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33
+#endif
 };
 
 void parallel_io_init(void)
@@ -17,6 +22,9 @@ void parallel_io_init(void)
 
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
+    if (wired_adapter.system_id >= PARALLEL_1P_OD) {
+        io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    }
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
 

@@ -10,6 +10,7 @@
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
+#include "system/fpga_config.h"
 #include "system/fs.h"
 #include "system/led.h"
 #include "adapter/adapter.h"
@@ -72,6 +73,10 @@ static void wl_init_task(void *arg) {
         err = 1;
         printf("FATFS init fail!\n");
     }
+
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
+    fpga_config();
+#endif
 
     config_init();
 

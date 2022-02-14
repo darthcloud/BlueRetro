@@ -11,7 +11,11 @@
 #include "led.h"
 
 #define D1M_LED_PIN 2
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
+#define ERR_LED_PIN 32
+#else
 #define ERR_LED_PIN 17
+#endif
 #define ERR_LED_DUTY_MIN 50
 #define ERR_LED_DUTY_MAX 2000
 #define ERR_LED_FADE_TIME 500
