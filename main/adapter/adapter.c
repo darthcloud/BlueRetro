@@ -326,7 +326,10 @@ void adapter_bridge(struct bt_data *bt_data) {
 #endif
 #else
         if (wired_adapter.system_id != WIRED_AUTO) {
-            wired_meta_init(ctrl_output);
+            if (wired_meta_init(ctrl_output)) {
+                /* Unsupported system */
+                return;
+            }
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->pids->id]);
 

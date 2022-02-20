@@ -121,10 +121,12 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     NULL, /* EXP_BOARD */
 };
 
-void wired_meta_init(struct generic_ctrl *ctrl_data) {
+int32_t wired_meta_init(struct generic_ctrl *ctrl_data) {
     if (meta_init_func[wired_adapter.system_id]) {
         meta_init_func[wired_adapter.system_id](ctrl_data);
+        return 0;
     }
+    return -1;
 }
 
 void IRAM_ATTR wired_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
