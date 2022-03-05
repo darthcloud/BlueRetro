@@ -21,14 +21,14 @@
 #define P1_J1_MASK (1 << (P1_J1_PIN - 32))
 #define P1_J2_MASK (1 << (P1_J2_PIN - 32))
 #define P1_J3_MASK (1 << (P1_J3_PIN - 32))
-#define P1_J8_MASK (1 << P1_J8_PIN)
-#define P1_J9_MASK (1 << P1_J9_PIN)
-#define P1_J10_MASK (1 << P1_J10_PIN)
-#define P1_J11_MASK (1 << P1_J11_PIN)
-#define P1_B0_MASK (1 << P1_B0_PIN)
-#define P1_B1_MASK (1 << P1_B1_PIN)
+#define P1_J8_H_0_S_U_MASK (1 << P1_J8_PIN)
+#define P1_J9_9_8_7_D_MASK (1 << P1_J9_PIN)
+#define P1_J10_6_5_4_L_MASK (1 << P1_J10_PIN)
+#define P1_J11_3_2_1_R_MASK (1 << P1_J11_PIN)
+#define P1_B0_PAUSE_MASK (1 << P1_B0_PIN)
+#define P1_B1_OP_C_B_A_MASK (1 << P1_B1_PIN)
 
-#define NIBBLE_MASK (P1_J8_MASK | P1_J9_MASK | P1_J10_MASK | P1_J11_MASK)
+#define NIBBLE_MASK (P1_J8_H_0_S_U_MASK | P1_J9_9_8_7_D_MASK | P1_J10_6_5_4_L_MASK | P1_J11_3_2_1_R_MASK)
 
 struct jag_6d_axes_idx {
     uint8_t bank_lo;
@@ -62,29 +62,78 @@ struct jag_map {
     uint32_t buttons_s1[3][4];
 } __packed;
 
-static const uint32_t jag_mask[4] = {0xEEFF7F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jag_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t jag_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t jag_btns_mask[][32] = {
     /* Pause, A, Up, Down, Left, Right */
     {
         0, 0, 0, 0,
         0, 0, 0, 0,
-        P1_J10_MASK, P1_J11_MASK, P1_J9_MASK, P1_J8_MASK,
+        P1_J10_6_5_4_L_MASK, P1_J11_3_2_1_R_MASK, P1_J9_9_8_7_D_MASK, P1_J8_H_0_S_U_MASK,
+        0, 0, 0, 0,
+        0, P1_B1_OP_C_B_A_MASK, 0, 0,
+        0, P1_B0_PAUSE_MASK, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        0, P1_B0_MASK, 0, 0,
+    },
+    /* B, *, 7, 4, 1 */
+    {
+        0, 0, P1_J9_9_8_7_D_MASK, 0,
+        P1_J10_6_5_4_L_MASK, 0, 0, P1_J11_3_2_1_R_MASK,
         0, 0, 0, 0,
-        0, P1_B1_MASK, 0, 0,
+        0, 0, 0, 0,
+        0, 0, P1_B1_OP_C_B_A_MASK, 0,
+        0, 0, 0, 0,
+        P1_J10_6_5_4_L_MASK, P1_J9_9_8_7_D_MASK, 0, P1_J8_H_0_S_U_MASK,
+        0, 0, 0, 0,
+    },
+    /* C, 0, 8, 5, 2 */
+    {
+        P1_J9_9_8_7_D_MASK, 0, 0, P1_J10_6_5_4_L_MASK,
+        0, P1_J11_3_2_1_R_MASK, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_B1_OP_C_B_A_MASK, 0, 0, P1_J9_9_8_7_D_MASK,
+        0, 0, P1_J8_H_0_S_U_MASK, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    },
+    /* Options, #, 9, 6, 3 */
+    {
+        0, P1_J10_6_5_4_L_MASK, 0, 0,
+        0, 0, P1_J11_3_2_1_R_MASK, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_B1_OP_C_B_A_MASK, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_J10_6_5_4_L_MASK, P1_J9_9_8_7_D_MASK, 0, P1_J8_H_0_S_U_MASK,
+    },
+};
+
+static const uint32_t jag_6d_mask[4] = {0xFFFF7FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jag_6d_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jag_6d_btns_mask[][32] = {
+    /* Pause, A, Up, Down, Left, Right */
+    {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_J10_6_5_4_L_MASK, P1_J11_3_2_1_R_MASK, P1_J9_9_8_7_D_MASK, P1_J8_H_0_S_U_MASK,
+        0, 0, 0, 0,
+        0, P1_B1_OP_C_B_A_MASK, 0, 0,
+        0, P1_B0_PAUSE_MASK, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
     },
     /* B, *, 7, 4, 1 */
     {
         0, 0, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        P1_J8_MASK, 0, 0, 0,
-        P1_J11_MASK, P1_B1_MASK, 0, 0,
+        P1_J8_H_0_S_U_MASK, 0, 0, 0,
+        0, 0, P1_B1_OP_C_B_A_MASK, 0,
         0, 0, 0, 0,
-        0, 0, P1_J9_MASK, P1_J10_MASK,
+        0, P1_J10_6_5_4_L_MASK, P1_J11_3_2_1_R_MASK, P1_J9_9_8_7_D_MASK,
         0, 0, 0, 0,
     },
     /* C, 0, 8, 5, 2 */
@@ -92,9 +141,9 @@ static const uint32_t jag_btns_mask[][32] = {
         0, 0, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        0, P1_J8_MASK, 0, 0,
-        0, 0, P1_B1_MASK, P1_J11_MASK,
-        0, 0, P1_J10_MASK, P1_J9_MASK,
+        0, P1_J8_H_0_S_U_MASK, 0, 0,
+        P1_B1_OP_C_B_A_MASK, 0, 0, P1_J9_9_8_7_D_MASK,
+        0, 0, P1_J11_3_2_1_R_MASK, P1_J10_6_5_4_L_MASK,
         0, 0, 0, 0,
         0, 0, 0, 0,
     },
@@ -103,16 +152,14 @@ static const uint32_t jag_btns_mask[][32] = {
         0, 0, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        0, 0, P1_J8_MASK, 0,
+        0, 0, P1_J8_H_0_S_U_MASK, 0,
         0, 0, 0, 0,
-        P1_B1_MASK, 0, 0, 0,
-        0, P1_J11_MASK, 0, 0,
-        0, 0, P1_J9_MASK, P1_J10_MASK,
+        P1_B1_OP_C_B_A_MASK, 0, 0, 0,
+        0, 0, 0, 0,
+        0, P1_J10_6_5_4_L_MASK, P1_J11_3_2_1_R_MASK, P1_J9_9_8_7_D_MASK,
     },
 };
 
-static const uint32_t jag_6d_mask[4] = {0xFFFF7FFF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t jag_6d_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint8_t jag_6d_btns_idx[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -124,17 +171,17 @@ static const uint8_t jag_6d_btns_idx[32] = {
     0, 0x80, 0, 0,
 };
 static const uint32_t jag_6d_nibble_mask[4] = {
-    P1_J8_MASK, P1_J9_MASK, P1_J10_MASK, P1_J11_MASK
+    P1_J8_H_0_S_U_MASK, P1_J9_9_8_7_D_MASK, P1_J10_6_5_4_L_MASK, P1_J11_3_2_1_R_MASK
 };
 static DRAM_ATTR const uint32_t jag_6d_cbits[3][4] = {
-    {P1_B0_MASK, 0, P1_B0_MASK, 0},
-    {0, 0, P1_B0_MASK, 0},
-    {0, 0, P1_B0_MASK, 0},
+    {P1_B0_PAUSE_MASK, 0, P1_B0_PAUSE_MASK, 0},
+    {0, 0, P1_B0_PAUSE_MASK, 0},
+    {0, 0, P1_B0_PAUSE_MASK, 0},
 };
 static DRAM_ATTR const uint32_t jag_6d_bbits[3][4] = {
     {0, 0, 0, 0},
     {0, 0, 0, 0},
-    {P1_B1_MASK, 0, 0, 0},
+    {P1_B1_OP_C_B_A_MASK, 0, 0, 0},
 };
 
 
@@ -155,9 +202,9 @@ void IRAM_ATTR jag_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
             if (config.global_cfg.multitap_cfg == MT_SLOT_1) {
                 struct jag_map *map3 = (struct jag_map *)wired_adapter.data[3].output;
 
-                map3->buttons[1] = 0xFFFDFFFD & ~P1_B0_MASK;
+                map3->buttons[1] = 0xFFFDFFFD & ~P1_B0_PAUSE_MASK;
                 for (uint32_t i = 0; i < 3; i++) {
-                    map3->buttons_s1[i][1] &= ~P1_B0_MASK;
+                    map3->buttons_s1[i][1] &= ~P1_B0_PAUSE_MASK;
                 }
             }
             break;
@@ -186,7 +233,9 @@ void jag_meta_init(struct generic_ctrl *ctrl_data) {
 
 static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct jag_map map_tmp;
+    uint32_t map_mask[4];
 
+    memset(map_mask, 0xFF, sizeof(map_mask));
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
@@ -194,11 +243,14 @@ static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 for (uint32_t j = 0; j < 4; j++) {
                     map_tmp.buttons[j] &= ~jag_btns_mask[j][i];
+                    map_mask[j] &= ~jag_btns_mask[j][i];
                 }
             }
             else {
                 for (uint32_t j = 0; j < 4; j++) {
-                    map_tmp.buttons[j] |= jag_btns_mask[j][i];
+                    if (map_mask[j] & jag_btns_mask[j][i]) {
+                        map_tmp.buttons[j] |= jag_btns_mask[j][i];
+                    }
                 }
             }
         }
@@ -216,18 +268,18 @@ static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 for (uint32_t j = 0; j < 4; j++) {
-                    map_tmp.buttons[j] &= ~jag_btns_mask[j][i];
+                    map_tmp.buttons[j] &= ~jag_6d_btns_mask[j][i];
                 }
                 if (jag_6d_btns_idx[i]) {
-                    map_tmp.buttons_s1[(jag_6d_btns_idx[i] >> 4) & 0x3][jag_6d_btns_idx[i] & 0xF] &= ~P1_B1_MASK;
+                    map_tmp.buttons_s1[(jag_6d_btns_idx[i] >> 4) & 0x3][jag_6d_btns_idx[i] & 0xF] &= ~P1_B1_OP_C_B_A_MASK;
                 }
             }
             else {
                 for (uint32_t j = 0; j < 4; j++) {
-                    map_tmp.buttons[j] |= jag_btns_mask[j][i];
+                    map_tmp.buttons[j] |= jag_6d_btns_mask[j][i];
                 }
                 if (jag_6d_btns_idx[i]) {
-                    map_tmp.buttons_s1[(jag_6d_btns_idx[i] >> 4) & 0x3][jag_6d_btns_idx[i] & 0xF] |= P1_B1_MASK;
+                    map_tmp.buttons_s1[(jag_6d_btns_idx[i] >> 4) & 0x3][jag_6d_btns_idx[i] & 0xF] |= P1_B1_OP_C_B_A_MASK;
                 }
             }
         }
