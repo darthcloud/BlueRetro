@@ -19,6 +19,11 @@
 #define P1_D_SL_MASK (1 << P1_D_SL_PIN)
 #define P1_L_RN_MASK (1 << P1_L_RN_PIN)
 
+#define P1_III_MASK P1_U_I_MASK
+#define P1_IV_MASK P1_R_II_MASK
+#define P1_V_MASK P1_D_SL_MASK
+#define P1_VI_MASK P1_L_RN_MASK
+
 #define P1_OUT0_MASK (BIT(P1_U_I_PIN) | BIT(P1_R_II_PIN) | BIT(P1_D_SL_PIN) | BIT(P1_L_RN_PIN))
 
 #define PCE_OUT_DISABLE ~P1_OUT0_MASK
@@ -77,7 +82,7 @@ static const uint32_t pce_mouse_btns_mask[32] = {
     P1_R_II_MASK, 0, 0, 0,
 };
 
-static const uint32_t pce_mask[4] = {0x113F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_mask[4] = {0x00350F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_btns_mask[][32] = {
     /* URDL */
@@ -97,10 +102,10 @@ static const uint32_t pce_btns_mask[][32] = {
         0, 0, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        0, P1_R_II_MASK, 0, 0,
+        P1_R_II_MASK, 0, P1_U_I_MASK, 0,
         P1_L_RN_MASK, P1_D_SL_MASK, 0, 0,
         0, 0, 0, 0,
-        P1_U_I_MASK, 0, 0, 0,
+        0, 0, 0, 0,
     },
     /* 3456 */
     {
@@ -108,10 +113,48 @@ static const uint32_t pce_btns_mask[][32] = {
         0, 0, 0, 0,
         0, 0, 0, 0,
         0, 0, 0, 0,
-        P1_R_II_MASK, 0, P1_U_I_MASK, P1_D_SL_MASK,
         0, 0, 0, 0,
-        P1_L_RN_MASK, 0, 0, 0,
         0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    },
+};
+
+static const uint32_t pce_6btns_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_6btns_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_6btns_btns_mask[][32] = {
+    /* URDL */
+    {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_L_RN_MASK, P1_R_II_MASK, P1_D_SL_MASK, P1_U_I_MASK,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    },
+    /* 12SR */
+    {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, P1_U_I_MASK, P1_R_II_MASK, 0,
+        P1_L_RN_MASK, P1_D_SL_MASK, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    },
+    /* 3456 */
+    {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        P1_III_MASK, 0, 0, P1_V_MASK,
+        0, 0, 0, 0,
+        P1_IV_MASK, P1_IV_MASK, 0, 0,
+        P1_VI_MASK, P1_VI_MASK, 0, 0,
     },
 };
 
@@ -150,19 +193,25 @@ static void pce_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
 
 static void pce_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pce_map map_tmp;
+    uint32_t map_mask[3];
+    const uint32_t (*btns_mask)[32] = (config.out_cfg[ctrl_data->index].dev_mode == DEV_PAD_ALT) ? pce_6btns_btns_mask : pce_btns_mask;
 
+    memset(map_mask, 0xFF, sizeof(map_mask));
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 for (uint32_t j = 0; j < 3; j++) {
-                    map_tmp.buttons[j] &= ~pce_btns_mask[j][i];
+                    map_tmp.buttons[j] &= ~btns_mask[j][i];
+                    map_mask[j] &= ~btns_mask[j][i];
                 }
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
-                    map_tmp.buttons[j] |= pce_btns_mask[j][i];
+                    if (map_mask[j] & btns_mask[j][i]) {
+                        map_tmp.buttons[j] |= btns_mask[j][i];
+                    }
                 }
             }
         }
@@ -206,6 +255,10 @@ void pce_meta_init(struct generic_ctrl *ctrl_data) {
                     ctrl_data[i].mask = pce_mouse_mask;
                     ctrl_data[i].desc = pce_mouse_desc;
                     ctrl_data[i].axes[j].meta = &pce_mouse_axes_meta[j];
+                    break;
+                case DEV_PAD_ALT:
+                    ctrl_data[i].mask = pce_6btns_mask;
+                    ctrl_data[i].desc = pce_6btns_desc;
                     break;
                 default:
                     ctrl_data[i].mask = pce_mask;
