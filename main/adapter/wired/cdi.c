@@ -43,14 +43,14 @@ struct cdi_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t cdi_mask[4] = {0x0006000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t cdi_mask[4] = {0x0005000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t cdi_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t cdi_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, BIT(CDI_2), BIT(CDI_1), 0,
+    BIT(CDI_1), 0, BIT(CDI_2), 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
