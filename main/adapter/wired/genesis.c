@@ -87,10 +87,12 @@ struct sega_mouse_map {
     uint32_t buttons[3];
     uint32_t buttons_high[3];
     union {
-        uint8_t twh_buttons;
-        uint8_t flags;
+        uint16_t twh_buttons;
+        struct {
+            uint8_t flags;
+            uint8_t align[1];
+        };
     };
-    uint8_t align[1];
     uint8_t relative[2];
     int32_t raw_axes[2];
 } __packed;
@@ -114,7 +116,7 @@ struct genesis_map {
     uint16_t twh_buttons;
 } __packed;
 
-static const uint32_t genesis_mask[4] = {0x223F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t genesis_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t genesis_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t genesis_btns_mask[2][3][32] = {
     {
@@ -124,10 +126,10 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
             0, 0, 0, 0,
-            0, BIT(P1_B), 0, 0,
+            0, BIT(P1_C), BIT(P1_B), 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
-            0, BIT(P1_C), 0, 0,
+            0, 0, 0, 0,
         },
         /* TH LOW */
         {
@@ -135,7 +137,7 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             0, 0, BIT(P1_LD_DOWN), BIT(P1_LD_UP),
             0, 0, 0, 0,
-            0, 0, BIT(P1_A), 0,
+            BIT(P1_A), 0, 0, 0,
             BIT(P1_START), 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
@@ -146,10 +148,10 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
-            BIT(P1_X), 0, 0, BIT(P1_Y),
-            0, BIT(P1_MODE), 0, 0,
-            0, BIT(P1_Z), 0, 0,
-            0, 0, 0, 0,
+            0, 0, 0, BIT(P1_Y),
+            BIT(P1_MODE), 0, 0, 0,
+            BIT(P1_X), BIT(P1_X), 0, 0,
+            BIT(P1_Z), BIT(P1_Z), 0, 0,
         },
     },
     {
@@ -159,10 +161,10 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             BIT(P2_LD_LEFT), BIT(P2_LD_RIGHT), BIT(P2_LD_DOWN), BIT(P2_LD_UP),
             0, 0, 0, 0,
-            0, BIT(P2_B - 32) | 0xF0000000, 0, 0,
+            0, BIT(P2_C), BIT(P2_B - 32) | 0xF0000000, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
-            0, BIT(P2_C), 0, 0,
+            0, 0, 0, 0,
         },
         {
         /* TH LOW */
@@ -170,7 +172,7 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             0, 0, BIT(P2_LD_DOWN), BIT(P2_LD_UP),
             0, 0, 0, 0,
-            0, 0, BIT(P2_A - 32) | 0xF0000000, 0,
+            BIT(P2_A - 32) | 0xF0000000, 0, 0, 0,
             BIT(P2_START), 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
@@ -181,10 +183,10 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
             0, 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
-            BIT(P2_X), 0, 0, BIT(P2_Y),
-            0, BIT(P2_MODE), 0, 0,
-            0, BIT(P2_Z), 0, 0,
-            0, 0, 0, 0,
+            0, 0, 0, BIT(P2_Y),
+            BIT(P2_MODE), 0, 0, 0,
+            BIT(P2_X), BIT(P2_X), 0, 0,
+            BIT(P2_Z), BIT(P2_Z), 0, 0,
         },
     },
 };
@@ -194,10 +196,10 @@ static const uint32_t genesis_twh_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(GENESIS_LD_LEFT), BIT(GENESIS_LD_RIGHT), BIT(GENESIS_LD_DOWN), BIT(GENESIS_LD_UP),
     0, 0, 0, 0,
-    BIT(GENESIS_X), BIT(GENESIS_B), BIT(GENESIS_A), BIT(GENESIS_Y),
+    BIT(GENESIS_A), BIT(GENESIS_C), BIT(GENESIS_B), BIT(GENESIS_Y),
     BIT(GENESIS_START), BIT(GENESIS_MODE), 0, 0,
-    0, BIT(GENESIS_Z), 0, 0,
-    0, BIT(GENESIS_C), 0, 0,
+    BIT(GENESIS_X), BIT(GENESIS_X), 0, 0,
+    BIT(GENESIS_Z), BIT(GENESIS_Z), 0, 0,
 };
 
 static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
@@ -235,7 +237,11 @@ static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired
 
 static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
+    uint32_t map_mask[3];
+    uint32_t map_mask_high[3];
 
+    memset(map_mask, 0xFF, sizeof(map_mask));
+    memset(map_mask_high, 0xFF, sizeof(map_mask_high));
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
@@ -244,19 +250,25 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
                 for (uint32_t j = 0; j < 3; j++) {
                     if ((genesis_btns_mask[ctrl_data->index][j][i] & 0xF0000000) == 0xF0000000) {
                         map_tmp.buttons_high[j] &= ~(genesis_btns_mask[ctrl_data->index][j][i] & 0x000000FF);
+                        map_mask_high[j] &= ~(genesis_btns_mask[ctrl_data->index][j][i] & 0x000000FF);
                     }
                     else {
                         map_tmp.buttons[j] &= ~genesis_btns_mask[ctrl_data->index][j][i];
+                        map_mask[j] &= ~genesis_btns_mask[ctrl_data->index][j][i];
                     }
                 }
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
                     if ((genesis_btns_mask[ctrl_data->index][j][i] & 0xF0000000) == 0xF0000000) {
-                        map_tmp.buttons_high[j] |= genesis_btns_mask[ctrl_data->index][j][i] & 0x000000FF;
+                        if (map_mask_high[j] & genesis_btns_mask[ctrl_data->index][j][i] & 0x000000FF) {
+                            map_tmp.buttons_high[j] |= genesis_btns_mask[ctrl_data->index][j][i] & 0x000000FF;
+                        }
                     }
                     else {
-                        map_tmp.buttons[j] |= genesis_btns_mask[ctrl_data->index][j][i];
+                        if (map_mask[j] & genesis_btns_mask[ctrl_data->index][j][i]) {
+                            map_tmp.buttons[j] |= genesis_btns_mask[ctrl_data->index][j][i];
+                        }
                     }
                 }
             }
@@ -268,15 +280,17 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
 
 static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.twh_buttons &= ~ genesis_twh_btns_mask[i];
+                map_tmp.twh_buttons &= ~genesis_twh_btns_mask[i];
+                map_mask &= ~genesis_twh_btns_mask[i];
             }
-            else {
+            else if (map_mask & genesis_twh_btns_mask[i]) {
                 map_tmp.twh_buttons |=  genesis_twh_btns_mask[i];
             }
         }
@@ -287,7 +301,9 @@ static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wire
 
 static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
+    uint32_t map_mask[3];
 
+    memset(map_mask, 0xFF, sizeof(map_mask));
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
@@ -295,11 +311,14 @@ static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 for (uint32_t j = 0; j < 3; j++) {
                     map_tmp.buttons[j] &= ~genesis_btns_mask[0][j][i];
+                    map_mask[j] &= ~genesis_btns_mask[0][j][i];
                 }
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
-                    map_tmp.buttons[j] |= genesis_btns_mask[0][j][i];
+                    if (map_mask[j] & genesis_btns_mask[0][j][i]) {
+                        map_tmp.buttons[j] |= genesis_btns_mask[0][j][i];
+                    }
                 }
             }
         }
