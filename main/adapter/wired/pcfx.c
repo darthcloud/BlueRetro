@@ -61,17 +61,17 @@ struct pcfx_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t pcfx_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pcfx_mask[4] = {0xBB3F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pcfx_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pcfx_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PCFX_LD_LEFT), BIT(PCFX_LD_RIGHT), BIT(PCFX_LD_DOWN), BIT(PCFX_LD_UP),
     0, 0, 0, 0,
-    BIT(PCFX_IV), BIT(PCFX_II), BIT(PCFX_III), BIT(PCFX_V),
+    BIT(PCFX_III), BIT(PCFX_I), BIT(PCFX_II), BIT(PCFX_V),
     BIT(PCFX_RUN), BIT(PCFX_SELECT), 0, 0,
-    BIT(PCFX_VI), 0, 0, 0,
-    BIT(PCFX_I), 0, 0, 0,
+    BIT(PCFX_IV), BIT(PCFX_IV), 0, 0,
+    BIT(PCFX_VI), BIT(PCFX_VI), 0, 0,
 };
 
 static const uint32_t pcfx_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
@@ -135,6 +135,7 @@ void pcfx_meta_init(struct generic_ctrl *ctrl_data) {
 
 void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pcfx_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -142,16 +143,17 @@ void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= pcfx_btns_mask[i];
+                map_mask &= ~pcfx_btns_mask[i];
             }
-            else {
+            else if (map_mask & pcfx_btns_mask[i]) {
                 map_tmp.buttons &= ~pcfx_btns_mask[i];
             }
         }
     }
 
     /* Mode 1 */
-    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_LS]) {
-        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_LS]) {
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_LJ]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_LJ]) {
             if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
                 atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
             }
@@ -166,8 +168,8 @@ void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
     }
 
     /* Mode 2 */
-    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_RS]) {
-        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_RS]) {
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_RJ]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_RJ]) {
             if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2)) {
                 atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
             }
