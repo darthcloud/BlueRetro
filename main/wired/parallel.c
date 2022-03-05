@@ -10,7 +10,7 @@
 
 static const uint8_t output_list[] = {
 #ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
-    2, 4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 33
+    4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 33
 #else
     3, 5, 16, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33
 #endif
