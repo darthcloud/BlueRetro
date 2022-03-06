@@ -76,7 +76,7 @@ struct npiso_trackball_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t npiso_mask[4] = {0x113F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
@@ -85,8 +85,8 @@ static const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(NPISO_Y), BIT(NPISO_A), BIT(NPISO_B), BIT(NPISO_X),
     BIT(NPISO_START), BIT(NPISO_SELECT), 0, 0,
-    BIT(NPISO_L), 0, 0, 0,
-    BIT(NPISO_R), 0, 0, 0,
+    BIT(NPISO_L), BIT(NPISO_L), 0, 0,
+    BIT(NPISO_R), BIT(NPISO_R), 0, 0,
 };
 
 static const uint32_t npiso_vb_mask[4] = {0xBBF50FF0, 0x00000000, 0x00000000, 0x00000000};
