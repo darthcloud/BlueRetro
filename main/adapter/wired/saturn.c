@@ -79,17 +79,19 @@ struct sega_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t saturn_mask[4] = {0xBB1F0F0F, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t saturn_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_mask[4] = {0x331F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_3d_mask[4] = {0x331F0F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_3d_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t saturn_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(SATURN_LD_LEFT), BIT(SATURN_LD_RIGHT), BIT(SATURN_LD_DOWN), BIT(SATURN_LD_UP),
     0, 0, 0, 0,
-    BIT(SATURN_X), BIT(SATURN_B), BIT(SATURN_A), BIT(SATURN_Y),
+    BIT(SATURN_A), BIT(SATURN_C), BIT(SATURN_B), BIT(SATURN_Y),
     BIT(SATURN_START), 0, 0, 0,
-    0, BIT(SATURN_Z), 0, BIT(SATURN_L),
-    0, BIT(SATURN_C), 0, BIT(SATURN_R),
+    BIT(SATURN_L), BIT(SATURN_X), 0, 0,
+    BIT(SATURN_R), BIT(SATURN_Z), 0, 0,
 };
 
 static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
@@ -197,6 +199,11 @@ void saturn_meta_init(struct generic_ctrl *ctrl_data) {
                     ctrl_data[i].desc = sega_mouse_desc;
                     ctrl_data[i].axes[j].meta = &sega_mouse_axes_meta[j];
                     break;
+                case DEV_PAD_ALT:
+                    ctrl_data[i].mask = saturn_3d_mask;
+                    ctrl_data[i].desc = saturn_3d_desc;
+                    ctrl_data[i].axes[j].meta = &saturn_axes_meta[j];
+                    break;
                 default:
                     ctrl_data[i].mask = saturn_mask;
                     ctrl_data[i].desc = saturn_desc;
@@ -225,20 +232,35 @@ void saturn_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data 
         }
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        if (i == 2 || i == 3) {
-            continue;
+    if (config.out_cfg[ctrl_data->index].dev_mode == DEV_PAD_ALT) {
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            if (i == 2 || i == 3) {
+                continue;
+            }
+            if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & saturn_3d_desc[0])) {
+                if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
+                    map_tmp.axes[saturn_axes_idx[i]] = 255;
+                }
+                else if (ctrl_data->axes[i].value < ctrl_data->axes[i].meta->size_min) {
+                    map_tmp.axes[saturn_axes_idx[i]] = 0;
+                }
+                else {
+                    map_tmp.axes[saturn_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
+                }
+            }
         }
-        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & saturn_desc[0])) {
-            if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
-                map_tmp.axes[saturn_axes_idx[i]] = 255;
-            }
-            else if (ctrl_data->axes[i].value < ctrl_data->axes[i].meta->size_min) {
-                map_tmp.axes[saturn_axes_idx[i]] = 0;
-            }
-            else {
-                map_tmp.axes[saturn_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
-            }
+
+        if (map_tmp.axes[saturn_axes_idx[TRIG_L]] < 0x56) {
+            map_tmp.buttons &= ~BIT(SATURN_L);
+        }
+        else if (map_tmp.axes[saturn_axes_idx[TRIG_L]] > 0x8D) {
+            map_tmp.buttons |= BIT(SATURN_L);
+        }
+        if (map_tmp.axes[saturn_axes_idx[TRIG_R]] < 0x56) {
+            map_tmp.buttons &= ~BIT(SATURN_R);
+        }
+        else if (map_tmp.axes[saturn_axes_idx[TRIG_R]] > 0x8D) {
+            map_tmp.buttons |= BIT(SATURN_R);
         }
     }
 
