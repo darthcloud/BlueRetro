@@ -84,7 +84,7 @@ struct real_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t real_mask[4] = {0x11370F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t real_mask[4] = {0x33370F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_btns_mask[32] = {
     0, 0, 0, 0,
@@ -93,11 +93,11 @@ static const uint32_t real_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(REAL_A), BIT(REAL_C), BIT(REAL_B), 0,
     BIT(REAL_P), BIT(REAL_X), 0, 0,
-    BIT(REAL_L), 0, 0, 0,
-    BIT(REAL_R), 0, 0, 0,
+    BIT(REAL_L), BIT(REAL_L), 0, 0,
+    BIT(REAL_R), BIT(REAL_R), 0, 0,
 };
 
-static const uint32_t real_fs_mask[4] = {0x113F0FCF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t real_fs_mask[4] = {0x333F0FCF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_fs_desc[4] = {0x000000CF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_fs_btns_mask[32] = {
     0, 0, 0, 0,
@@ -106,8 +106,8 @@ static const uint32_t real_fs_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(REAL_FS_A), BIT(REAL_FS_C), BIT(REAL_FS_B), BIT(REAL_FS_T),
     BIT(REAL_FS_P), BIT(REAL_FS_X), 0, 0,
-    BIT(REAL_FS_L), 0, 0, 0,
-    BIT(REAL_FS_R), 0, 0, 0,
+    BIT(REAL_FS_L), BIT(REAL_FS_L), 0, 0,
+    BIT(REAL_FS_R), BIT(REAL_FS_R), 0, 0,
 };
 
 static const uint32_t real_mouse_mask[4] = {0x190000F0, 0x00000000, 0x00000000, 0x00000000};
@@ -188,6 +188,7 @@ void real_meta_init(struct generic_ctrl *ctrl_data) {
 
 void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct real_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -195,8 +196,9 @@ void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= real_btns_mask[i];
+                map_mask &= ~real_btns_mask[i];
             }
-            else {
+            else if (map_mask & real_btns_mask[i]) {
                 map_tmp.buttons &= ~real_btns_mask[i];
             }
         }
@@ -209,6 +211,7 @@ void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
 /* https://github.com/libretro/opera-libretro/blob/068c69ff784f2abaea69cdf1b8d3d9d39ac4826e/libopera/opera_pbus.c#L89 */
 void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct real_fs_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -216,8 +219,9 @@ void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= real_fs_btns_mask[i];
+                map_mask &= ~real_fs_btns_mask[i];
             }
-            else {
+            else if (map_mask & real_fs_btns_mask[i]) {
                 map_tmp.buttons &= ~real_fs_btns_mask[i];
             }
         }
