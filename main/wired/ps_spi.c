@@ -79,12 +79,13 @@ uint8_t test[16] = {0x01, 0xA5};
 struct ps_ctrl_port {
     spi_dev_t *spi_hw;
     uint8_t id;
-    uint8_t dev_type;
+    uint8_t root_dev_type;
     uint8_t mt_state;
     uint8_t mt_first_port;
     uint8_t tx_buf[PS_BUFFER_SIZE];
     uint8_t rx_buf[2][PS_BUFFER_SIZE];
     uint8_t active_rx_buf;
+    uint8_t dev_type[MT_PORT_MAX];
     uint8_t dev_id[MT_PORT_MAX];
     uint8_t pend_dev_id[MT_PORT_MAX];
     uint8_t last_rumble[MT_PORT_MAX];
@@ -179,8 +180,8 @@ static void toggle_dsr(uint32_t port) {
 }
 
 static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
-    if (port->dev_type != DEV_PSX_MOUSE && port->dev_type != DEV_PSX_FLIGHT
-            && port->dev_type != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
+    if (port->dev_type[id] != DEV_PSX_MOUSE && port->dev_type[id] != DEV_PSX_FLIGHT
+            && port->dev_type[id] != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
         if (wired_adapter.data[id + port->mt_first_port].output[18]) {
             if (!port->analog_btn[id]) {
                 port->analog_btn[id] = 1;
@@ -344,7 +345,7 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
             if (size < 6) {
                 size = 6;
             }
-            switch (port->dev_type) {
+            switch (port->dev_type[id]) {
                 case DEV_PSX_PS_2_KB_MOUSE_ADAPTER:
                 {
                     uint32_t len = 0;
@@ -478,7 +479,7 @@ static void packet_end(void *arg) {
             port->spi_hw->slave.trans_inten = 1;
             port->spi_hw->slave.trans_done = 0;
             if (port->valid) {
-                if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+                if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
                     uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
                     for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
                         ps_analog_btn_hdlr(port, j);
@@ -489,7 +490,7 @@ static void packet_end(void *arg) {
                     ps_analog_btn_hdlr(port, 0);
                     ps_cmd_req_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->rx_buf[port->active_rx_buf][2]);
                 }
-                if (port->dev_type == DEV_PSX_MULTITAP) {
+                if (port->root_dev_type == DEV_PSX_MULTITAP) {
                     port->mt_state = port->rx_buf[port->active_rx_buf][2];
                 }
                 port->valid = 0;
@@ -504,7 +505,7 @@ static void packet_end(void *arg) {
 
 static void spi_isr(void* arg) {
     struct ps_ctrl_port *port = (struct ps_ctrl_port *)arg;
-    if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state && port->idx > 10) {
+    if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state && port->idx > 10) {
         delay_us(0);
     }
     else {
@@ -516,7 +517,7 @@ static void spi_isr(void* arg) {
             if (port->rx_buf[port->active_rx_buf][0] == 0x01) {
                 set_output_state(port->id, 1);
                 port->valid = 1;
-                if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+                if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
                     port->tx_buf[1] = 0x80;
                     port->tx_buf[2] = 0x5A;
                 }
@@ -530,7 +531,7 @@ static void spi_isr(void* arg) {
                 goto early_end;
             }
         }
-        else if (port->dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+        else if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
             uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
             if (port->idx == 3 && port->rx_buf[port->active_rx_buf][2] == 0x00) {
                 port->mt_state = 0;
@@ -553,7 +554,7 @@ static void spi_isr(void* arg) {
         else {
             if (port->idx == 1) {
                 /* Special dev only ACK 0x42 */
-                if ((port->dev_type == DEV_PSX_MOUSE || port->dev_type == DEV_PSX_FLIGHT || port->dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER)
+                if ((port->root_dev_type == DEV_PSX_MOUSE || port->root_dev_type == DEV_PSX_FLIGHT || port->root_dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER)
                     && port->rx_buf[port->active_rx_buf][1] != 0x42) {
                     port->valid = 0;
                     port->spi_hw->slave.trans_inten = 0;
@@ -633,44 +634,63 @@ void ps_spi_init(void) {
     switch (config.global_cfg.multitap_cfg) {
         case MT_SLOT_1:
             ps_ctrl_ports[0].mt_state = 0x01;
-            ps_ctrl_ports[0].dev_type = DEV_PSX_MULTITAP;
+            ps_ctrl_ports[0].root_dev_type = DEV_PSX_MULTITAP;
             ps_ctrl_ports[1].mt_first_port = MT_PORT_MAX;
             break;
         case MT_SLOT_2:
             ps_ctrl_ports[1].mt_state = 0x01;
-            ps_ctrl_ports[1].dev_type = DEV_PSX_MULTITAP;
+            ps_ctrl_ports[1].root_dev_type = DEV_PSX_MULTITAP;
             ps_ctrl_ports[1].mt_first_port = 1;
             break;
         case MT_DUAL:
             ps_ctrl_ports[0].mt_state = 0x01;
-            ps_ctrl_ports[0].dev_type = DEV_PSX_MULTITAP;
+            ps_ctrl_ports[0].root_dev_type = DEV_PSX_MULTITAP;
             ps_ctrl_ports[1].mt_state = 0x01;
-            ps_ctrl_ports[1].dev_type = DEV_PSX_MULTITAP;
+            ps_ctrl_ports[1].root_dev_type = DEV_PSX_MULTITAP;
             ps_ctrl_ports[1].mt_first_port = MT_PORT_MAX;
             break;
         default:
             ps_ctrl_ports[1].mt_first_port = 1;
     }
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
-        if (ps_ctrl_ports[i].dev_type == DEV_NONE) {
-            switch (config.out_cfg[ps_ctrl_ports[i].mt_first_port].dev_mode) {
+        for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
+            switch (config.out_cfg[ps_ctrl_ports[i].mt_first_port + j].dev_mode) {
                 case DEV_PAD:
-                    ps_ctrl_ports[i].dev_type = DEV_PS2_DS2;
+                    ps_ctrl_ports[i].dev_id[j] = 0x41;
+                    ps_ctrl_ports[i].dev_type[j] = DEV_PS2_DS2;
+                    if (!ps_ctrl_ports[i].root_dev_type) {
+                        ps_ctrl_ports[i].root_dev_type = DEV_PS2_DS2;
+                        goto inner_break;
+                    }
                     break;
                 case DEV_PAD_ALT:
-                    ps_ctrl_ports[i].dev_type = DEV_PSX_FLIGHT;
-                    ps_ctrl_ports[i].dev_id[0] = 0x53;
+                    ps_ctrl_ports[i].dev_id[j] = 0x53;
+                    ps_ctrl_ports[i].dev_type[j] = DEV_PSX_FLIGHT;
+                    if (!ps_ctrl_ports[i].root_dev_type) {
+                        ps_ctrl_ports[i].root_dev_type = DEV_PSX_FLIGHT;
+                        goto inner_break;
+                    }
                     break;
                 case DEV_KB:
-                    ps_ctrl_ports[i].dev_type = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
-                    ps_ctrl_ports[i].dev_id[0] = 0x96;
+                    ps_ctrl_ports[i].dev_id[j] = 0x96;
+                    ps_ctrl_ports[i].dev_type[j] = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
+                    if (!ps_ctrl_ports[i].root_dev_type) {
+                        ps_ctrl_ports[i].root_dev_type = DEV_PSX_PS_2_KB_MOUSE_ADAPTER;
+                        goto inner_break;
+                    }
                     break;
                 case DEV_MOUSE:
-                    ps_ctrl_ports[i].dev_type = DEV_PSX_MOUSE;
-                    ps_ctrl_ports[i].dev_id[0] = 0x12;
+                    ps_ctrl_ports[i].dev_id[j] = 0x12;
+                    ps_ctrl_ports[i].dev_type[j] = DEV_PSX_MOUSE;
+                    if (!ps_ctrl_ports[i].root_dev_type) {
+                        ps_ctrl_ports[i].root_dev_type = DEV_PSX_MOUSE;
+                        goto inner_break;
+                    }
                     break;
             }
         }
+inner_break:
+        ;
     }
 
     /* DTR */
