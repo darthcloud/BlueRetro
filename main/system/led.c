@@ -5,6 +5,8 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "soc/efuse_reg.h"
+#include "esp_efuse.h"
 #include "zephyr/atomic.h"
 #include "system/gpio.h"
 #include "driver/ledc.h"
@@ -86,6 +88,11 @@ void err_led_init(void) {
         .hpoint     = 0,
         .timer_sel  = LEDC_TIMER_0,
     };
+
+    uint32_t package = esp_efuse_get_pkg_ver();
+    if (package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
+        ledc_channel.gpio_num = 20;
+    }
 
     ledc_timer_config(&ledc_timer);
     ledc_channel_config(&ledc_channel);
