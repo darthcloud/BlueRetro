@@ -1,0 +1,142 @@
+#include <string.h>
+#include "adapter/config.h"
+#include "zephyr/types.h"
+#include "tools/util.h"
+#include "parallel_1p.h"
+#include "soc/gpio_struct.h"
+#include "driver/gpio.h"
+#include "wired/sea_io.h"
+
+#define P1_LD_UP 19
+#define P1_LD_DOWN 22
+#define P1_LD_LEFT 18
+#define P1_LD_RIGHT 21
+#define P1_RB_DOWN 5
+#define P1_RB_RIGHT 13
+#define P1_RB_LEFT 23
+#define P1_RB_UP 12
+#define P1_MM 16
+#define P1_MS 4
+#define P1_MT 33
+#define P1_LM 15
+#define P1_RM 14
+
+enum {
+    GBAHD_B = 0,
+    GBAHD_A,
+    GBAHD_LD_LEFT,
+    GBAHD_LD_RIGHT,
+    GBAHD_LD_DOWN,
+    GBAHD_LD_UP,
+    GBAHD_OSD,
+};
+
+struct sea_map {
+    uint32_t buttons;
+    uint32_t buttons_high;
+    uint8_t buttons_osd;
+} __packed;
+
+static const uint32_t sea_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sea_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sea_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
+    0, 0, 0, 0,
+    BIT(P1_RB_LEFT), BIT(P1_RB_RIGHT), BIT(P1_RB_DOWN), BIT(P1_RB_UP),
+    BIT(P1_MM), BIT(P1_MS), BIT(P1_MT - 32) | 0xF0000000, 0,
+    BIT(P1_LM), BIT(P1_LM), 0, 0,
+    BIT(P1_RM), BIT(P1_RM), 0, 0,
+};
+static const uint32_t sea_gbahd_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(GBAHD_LD_LEFT), BIT(GBAHD_LD_RIGHT), BIT(GBAHD_LD_DOWN), BIT(GBAHD_LD_UP),
+    0, 0, 0, 0,
+    BIT(GBAHD_B), 0, BIT(GBAHD_A), 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+};
+
+void IRAM_ATTR sea_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
+    struct sea_map *map = (struct sea_map *)wired_data->output;
+
+    map->buttons = 0xFFFDFFFF;
+    map->buttons_high = 0xFFFFFFFF;
+    map->buttons_osd = 0x00;
+}
+
+void sea_meta_init(struct generic_ctrl *ctrl_data) {
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
+
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+        ctrl_data[i].mask = sea_mask;
+        ctrl_data[i].desc = sea_desc;
+    }
+}
+
+void sea_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    if (ctrl_data->index < 1) {
+        struct sea_map map_tmp;
+        uint32_t map_mask = 0xFFFFFFFF;
+        uint32_t map_mask_high = 0xFFFFFFFF;
+
+        memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+        for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+            if (ctrl_data->map_mask[0] & BIT(i)) {
+                if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                    if ((sea_btns_mask[i] & 0xF0000000) == 0xF0000000) {
+                        map_tmp.buttons_high &= ~(sea_btns_mask[i] & 0x000000FF);
+                        map_mask_high &= ~(sea_btns_mask[i] & 0x000000FF);
+                    }
+                    else {
+                        map_tmp.buttons &= ~sea_btns_mask[i];
+                        map_mask &= ~sea_btns_mask[i];
+                    }
+                    map_tmp.buttons_osd |= sea_gbahd_btns_mask[i];
+                }
+                else {
+                    if ((sea_btns_mask[i] & 0xF0000000) == 0xF0000000) {
+                        if (map_mask & (sea_btns_mask[i] & 0x000000FF)) {
+                            map_tmp.buttons_high |= sea_btns_mask[i] & 0x000000FF;
+                        }
+                    }
+                    else {
+                        if (map_mask & sea_btns_mask[i]) {
+                            map_tmp.buttons |= sea_btns_mask[i];
+                        }
+                    }
+                    map_tmp.buttons_osd &= ~sea_gbahd_btns_mask[i];
+                }
+            }
+        }
+
+        if (!(map_tmp.buttons_osd & BIT(GBAHD_OSD))) {
+            GPIO.out = map_tmp.buttons;
+            GPIO.out1.val = map_tmp.buttons_high;
+        }
+
+        /* OSD buttons */
+        if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+                if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                    atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+                }
+            }
+            else {
+                if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                    atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                    map_tmp.buttons_osd ^= BIT(GBAHD_OSD);
+                }
+            }
+        }
+
+        sea_tx_byte(map_tmp.buttons_osd);
+
+        memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    }
+}

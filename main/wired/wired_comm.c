@@ -16,6 +16,7 @@
 #include "ps_spi.h"
 #include "real_spi.h"
 #include "jag_io.h"
+#include "sea_io.h"
 #include "adapter/adapter.h"
 
 typedef void (*wired_init_t)(void);
@@ -71,7 +72,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     npiso_init, /* VB */
     parallel_io_init, /* PARALLEL_1P_OD */
     parallel_io_init, /* PARALLEL_2P_OD */
-    parallel_io_init, /* SEA_BOARD */
+    sea_init, /* SEA_BOARD */
 };
 
 void wired_comm_init(void) {

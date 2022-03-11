@@ -19,6 +19,7 @@
 #include "gc.h"
 #include "parallel_1p.h"
 #include "parallel_2p.h"
+#include "sea.h"
 #include "wired.h"
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
@@ -45,7 +46,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     npiso_from_generic, /* VB */
     para_1p_from_generic, /* PARALLEL_1P_OD */
     para_2p_from_generic, /* PARALLEL_2P_OD */
-    para_1p_from_generic, /* SEA_BOARD */
+    sea_from_generic, /* SEA_BOARD */
 };
 
 static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
@@ -99,7 +100,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     npiso_meta_init, /* VB */
     para_1p_meta_init, /* PARALLEL_1P_OD */
     para_2p_meta_init, /* PARALLEL_2P_OD */
-    para_1p_meta_init, /* SEA_BOARD */
+    sea_meta_init, /* SEA_BOARD */
 };
 
 static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
@@ -126,7 +127,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     npiso_init_buffer, /* VB */
     para_1p_init_buffer, /* PARALLEL_1P_OD */
     para_2p_init_buffer, /* PARALLEL_2P_OD */
-    para_1p_init_buffer, /* SEA_BOARD */
+    sea_init_buffer, /* SEA_BOARD */
 };
 
 int32_t wired_meta_init(struct generic_ctrl *ctrl_data) {

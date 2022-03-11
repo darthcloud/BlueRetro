@@ -6,21 +6,6 @@
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
-#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
-#define P1_LD_UP 19
-#define P1_LD_DOWN 4
-#define P1_LD_LEFT 18
-#define P1_LD_RIGHT 13
-#define P1_RB_DOWN 5
-#define P1_RB_RIGHT 21
-#define P1_RB_LEFT 23
-#define P1_RB_UP 12
-#define P1_MM 16
-#define P1_MS 22
-#define P1_MT 33
-#define P1_LM 15
-#define P1_RM 14
-#else
 #define P1_LD_UP 3
 #define P1_LD_DOWN 5
 #define P1_LD_LEFT 18
@@ -34,7 +19,6 @@
 #define P1_MT 16
 #define P1_LM 25
 #define P1_RM 33
-#endif
 
 struct para_1p_map {
     uint32_t buttons;
@@ -49,15 +33,9 @@ static const uint32_t para_1p_btns_mask[32] = {
     BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
     0, 0, 0, 0,
     BIT(P1_RB_LEFT), BIT(P1_RB_RIGHT), BIT(P1_RB_DOWN), BIT(P1_RB_UP),
-#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
-    BIT(P1_MM), BIT(P1_MS), BIT(P1_MT - 32) | 0xF0000000, 0,
-    BIT(P1_LM), BIT(P1_LM), 0, 0,
-    BIT(P1_RM), BIT(P1_RM), 0, 0,
-#else
     BIT(P1_MM - 32) | 0xF0000000, BIT(P1_MS), BIT(P1_MT), 0,
     BIT(P1_LM), BIT(P1_LM), 0, 0,
     BIT(P1_RM - 32) | 0xF0000000, BIT(P1_RM - 32) | 0xF0000000, 0, 0,
-#endif
 };
 
 void IRAM_ATTR para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
