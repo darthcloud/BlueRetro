@@ -20,6 +20,7 @@
 #include "parallel_1p.h"
 #include "parallel_2p.h"
 #include "sea.h"
+#include "wii.h"
 #include "wired.h"
 
 static from_generic_t from_generic_func[WIRED_MAX] = {
@@ -42,7 +43,7 @@ static from_generic_t from_generic_func[WIRED_MAX] = {
     dc_from_generic, /* DC */
     ps_from_generic, /* PS2 */
     gc_from_generic, /* GC */
-    NULL, /* WII_EXT */
+    wii_from_generic, /* WII_EXT */
     npiso_from_generic, /* VB */
     para_1p_from_generic, /* PARALLEL_1P_OD */
     para_2p_from_generic, /* PARALLEL_2P_OD */
@@ -96,7 +97,7 @@ static meta_init_t meta_init_func[WIRED_MAX] = {
     dc_meta_init, /* DC */
     ps_meta_init, /* PS2 */
     gc_meta_init, /* GC */
-    NULL, /* WII_EXT */
+    wii_meta_init, /* WII_EXT */
     npiso_meta_init, /* VB */
     para_1p_meta_init, /* PARALLEL_1P_OD */
     para_2p_meta_init, /* PARALLEL_2P_OD */
@@ -123,7 +124,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     dc_init_buffer, /* DC */
     ps_init_buffer, /* PS2 */
     gc_init_buffer, /* GC */
-    NULL, /* WII_EXT */
+    wii_init_buffer, /* WII_EXT */
     npiso_init_buffer, /* VB */
     para_1p_init_buffer, /* PARALLEL_1P_OD */
     para_2p_init_buffer, /* PARALLEL_2P_OD */
