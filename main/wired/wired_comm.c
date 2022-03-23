@@ -17,6 +17,7 @@
 #include "real_spi.h"
 #include "jag_io.h"
 #include "sea_io.h"
+#include "wii_i2c.h"
 #include "adapter/adapter.h"
 
 typedef void (*wired_init_t)(void);
@@ -68,7 +69,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     maple_init, /* DC */
     ps_spi_init, /* PS2 */
     nsi_init, /* GC */
-    NULL, /* WII_EXT */
+    wii_i2c_init, /* WII_EXT */
     npiso_init, /* VB */
     parallel_io_init, /* PARALLEL_1P_OD */
     parallel_io_init, /* PARALLEL_2P_OD */
