@@ -22,6 +22,13 @@
 * [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
 * [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
 
+## Commercial solution sponsoring BlueRetro FW development
+Buying these commercial adapters help the continued development of the BlueRetro firmware!!\
+Thanks to all sponsors!!
+* PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
+  https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
+  [![](https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png)](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
+
 ## Community Contribution
 * BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
   https://www.thingiverse.com/thing:4835926 \
@@ -33,13 +40,13 @@
 * BlueRetro AIO by [pmgducati](https://github.com/pmgducati): BlueRetro Through-hole base and cable PCBs.\
   https://github.com/pmgducati/Blue-Retro-AIO-Units
 
-## Commercial solution powered by BlueRetro FW
-* PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
-  https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
+## Others commercial solution using BlueRetro FW
 * JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
   https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
 * Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
   https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
+* N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
+  https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
 * BlueRetro adaptador universal by [GamesCare](https://twitter.com/MichelinFabio): BlueRetro universal base & cable.\
   https://gamescare.com.br/produto/blueretro-adaptador-universal/
 
