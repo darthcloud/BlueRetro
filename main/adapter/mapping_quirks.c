@@ -81,6 +81,22 @@ static void sw_right_joycon(uint32_t btns_mask[32]) {
     face_btns_rotate_right(btns_mask);
 }
 
+void n64_8bitdo(struct bt_data *bt_data) {
+    bt_data->raw_src_mappings[PAD].mask[0] = 0x23150FFF;
+    bt_data->raw_src_mappings[PAD].desc[0] = 0x0000000F;
+
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_UP] = BIT(8);
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_RIGHT] = BIT(9);
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_DOWN] = bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_LEFT];
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_LEFT] = bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_UP];
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_LM] = bt_data->raw_src_mappings[PAD].btns_mask[PAD_MS];
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_LEFT] = bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_RIGHT];
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_RIGHT] = 0;
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_UP] = 0;
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_MS] = 0;
+    bt_data->raw_src_mappings[PAD].btns_mask[PAD_RT] = 0;
+}
+
 void mapping_quirks_apply(struct bt_data *bt_data) {
     if (atomic_test_bit(&bt_data->flags, BT_QUIRK_FACE_BTNS_INVERT)) {
         face_btns_invert(bt_data->raw_src_mappings[PAD].btns_mask);
@@ -96,5 +112,8 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->flags, BT_QUIRK_SW_RIGHT_JOYCON)) {
         sw_right_joycon(bt_data->raw_src_mappings[PAD].btns_mask);
+    }
+    if (atomic_test_bit(&bt_data->flags, BT_QUIRK_8BITDO_N64)) {
+        n64_8bitdo(bt_data);
     }
 }

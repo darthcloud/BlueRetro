@@ -65,6 +65,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"MD/Gen Control Pad", BT_SW, BT_SW_MD_GEN, 0},
     {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
     {"8BitDo GBros Adapter", BT_XBOX, BT_8BITDO_GBROS, 0},
+    {"8Bitdo N64 GamePad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_8BITDO_N64)},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
