@@ -25,9 +25,16 @@
 ## Commercial solution sponsoring BlueRetro FW development
 Buying these commercial adapters help the continued development of the BlueRetro firmware!!\
 Thanks to all sponsors!!
+
+&emsp;&emsp;[![](https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png)](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
 * PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
   https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
-  [![](https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png)](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
+
+  [![](https://www.humblebazooka.com/images/HB_2021_white_rainbow_1200px.png)](https://www.humblebazooka.com)
+* JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
+  https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
+* Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
+  https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
 
 ## Community Contribution
 * BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
@@ -41,10 +48,6 @@ Thanks to all sponsors!!
   https://github.com/pmgducati/Blue-Retro-AIO-Units
 
 ## Others commercial solution using BlueRetro FW
-* JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
-  https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
-* Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
-  https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
 * N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
   https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
 * BlueRetro adaptador universal by [GamesCare](https://twitter.com/MichelinFabio): BlueRetro universal base & cable.\
@@ -59,4 +62,4 @@ Thanks to all sponsors!!
 * [SNES 2P & Super Multitap](https://hackaday.io/project/170365-blueretro/log/181686-2020-08-04-progress-update-sfcsnes-support)
 * [PlayStation & PlayStation 2 SPI interface](https://hackaday.io/project/170365-blueretro/log/186471-playstation-playstation-2-spi-interface)
 
-<br><p align="center"><img src="https://cdn.hackaday.io/images/5943961602443215535.png" height="200"/><img src="https://cdn.hackaday.io/images/4560691598833898038.png" height="200"/></p>
+<br><p align="center"><img src="https://cdn.hackaday.io/images/4560691598833898038.png" height="200"/></p>
