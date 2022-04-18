@@ -26,11 +26,11 @@
 Buying these commercial adapters help the continued development of the BlueRetro firmware!!\
 Thanks to all sponsors!!
 
-&emsp;&emsp;[![](https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png)](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
+&emsp;&emsp;[<img src="https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png" width="400"/>](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
 * PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
   https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
 
-  [![](https://www.humblebazooka.com/images/HB_2021_white_rainbow_1200px.png)](https://www.humblebazooka.com)
+  [<img src="https://www.humblebazooka.com/images/HB_2021_white_rainbow_1200px.png" width="400"/>](https://www.humblebazooka.com)
 * JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
   https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
 * Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
