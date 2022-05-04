@@ -462,6 +462,14 @@ int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device) {
     return -1;
 }
 
+int32_t bt_host_get_dev_from_id(uint8_t id, struct bt_dev **device) {
+    if (id < BT_MAX_DEV) {
+        *device = &bt_dev[id];
+        return id;
+    }
+    return -1;
+}
+
 int32_t bt_host_get_dev_conf(struct bt_dev **device) {
     *device = &bt_dev_conf;
     return 0;
