@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,6 +17,7 @@
 #include "adapter.h"
 #include "wired/wired.h"
 #include "wireless/wireless.h"
+#include "macro.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -367,6 +368,7 @@ void adapter_bridge(struct bt_data *bt_data) {
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
                     ctrl_output[i].index = i;
+                    sys_macro_hdl(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                     wired_from_generic(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                 }
             }
