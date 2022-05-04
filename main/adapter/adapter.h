@@ -418,6 +418,7 @@ struct raw_src_mapping {
 
 struct bt_ids {
     int32_t id;
+    int32_t out_idx;
     int32_t type;
     uint32_t subtype;
 } __packed;

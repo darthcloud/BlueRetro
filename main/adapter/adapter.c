@@ -282,7 +282,7 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
 
-    if (bt_data->pids->id != BT_NONE) {
+    if (bt_data->pids->type != BT_NONE) {
         if (wireless_to_generic(bt_data, &ctrl_input)) {
             /* Unsupported report */
             return;
@@ -331,7 +331,7 @@ void adapter_bridge(struct bt_data *bt_data) {
                 return;
             }
 
-            out_mask = adapter_mapping(&config.in_cfg[bt_data->pids->id]);
+            out_mask = adapter_mapping(&config.in_cfg[bt_data->pids->out_idx]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
             printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s",

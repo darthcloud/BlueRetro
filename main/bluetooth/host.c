@@ -470,6 +470,16 @@ int32_t bt_host_get_dev_from_id(uint8_t id, struct bt_dev **device) {
     return -1;
 }
 
+int32_t bt_host_get_dev_from_out_idx(uint8_t out_idx, struct bt_dev **device) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        if (bt_dev[i].ids.out_idx == out_idx) {
+            *device = &bt_dev[i];
+            return i;
+        }
+    }
+    return -1;
+}
+
 int32_t bt_host_get_dev_conf(struct bt_dev **device) {
     *device = &bt_dev_conf;
     return 0;
