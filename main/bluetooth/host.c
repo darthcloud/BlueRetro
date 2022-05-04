@@ -104,15 +104,6 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
 }
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
-static void bt_host_disconnect_all(void) {
-    printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
-    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
-        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
-            bt_hci_disconnect(&bt_dev[i]);
-        }
-    }
-}
-
 static int32_t bt_host_load_bdaddr_from_file(void) {
     struct stat st;
     int32_t ret = -1;
@@ -420,6 +411,15 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
 #endif
 
     return 0;
+}
+
+void bt_host_disconnect_all(void) {
+    printf("# %s BOOT SW pressed, DISCONN all devices!\n", __FUNCTION__);
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND)) {
+            bt_hci_disconnect(&bt_dev[i]);
+        }
+    }
 }
 
 int32_t bt_host_get_new_dev(struct bt_dev **device) {
