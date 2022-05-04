@@ -19,6 +19,7 @@
 #include "wired/detect.h"
 #include "wired/wired_comm.h"
 #include "adapter/memory_card.h"
+#include "system/manager.h"
 #include "sdkconfig.h"
 
 static void wired_init_task(void) {
@@ -89,6 +90,8 @@ static void wl_init_task(void *arg) {
 #endif
 
     mc_init();
+
+    sys_mgr_init();
 
     if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
         if (err) {
