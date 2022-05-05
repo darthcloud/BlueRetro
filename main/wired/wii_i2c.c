@@ -185,7 +185,7 @@ void wii_i2c_init(void) {
         p->hw->fifo_conf.tx_fifo_rst = 0;
         p->hw->fifo_conf.rx_fifo_rst = 1;
         p->hw->fifo_conf.rx_fifo_rst = 0;
-        p->hw->slave_addr.addr = 0x52; /* WII ACC all use 0x52 */
+        p->hw->slave_addr.addr = 0x70;
         p->hw->slave_addr.en_10bit = 0;
         p->hw->fifo_conf.rx_fifo_full_thrhd = 28;
         p->hw->fifo_conf.tx_fifo_empty_thrhd = 5;
@@ -197,4 +197,20 @@ void wii_i2c_init(void) {
 
     intexc_alloc_iram(ETS_I2C_EXT0_INTR_SOURCE, I2C0_INTR_NUM, isr_dispatch);
     intexc_alloc_iram(ETS_I2C_EXT1_INTR_SOURCE, I2C1_INTR_NUM, isr_dispatch);
+
+    wii_i2c_port_cfg(0x3);
+}
+
+void wii_i2c_port_cfg(uint16_t mask) {
+    for (uint32_t i = 0; i < WII_PORT_MAX; i++) {
+        struct wii_ctrl_port *p = &wii_ctrl_ports[i];
+
+        if (mask & 0x1) {
+            p->hw->slave_addr.addr = 0x52; /* WII ACC all use 0x52 */
+        }
+        else {
+            p->hw->slave_addr.addr = 0x70; /* Use random addr to simply disable port */
+        }
+        mask >>= 1;
+    }
 }
