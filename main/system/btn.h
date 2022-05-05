@@ -15,6 +15,5 @@ typedef enum {
 
 void boot_btn_init(void);
 void boot_btn_set_callback(void (*cb)(void), boot_btn_evt_t evt);
-void boot_btn_hold_state(uint32_t state);
 
 #endif /* _BUTTON_H_ */

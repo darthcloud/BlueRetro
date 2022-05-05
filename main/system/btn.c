@@ -10,6 +10,8 @@
 #include "zephyr/atomic.h"
 #include "esp32/rom/gpio.h"
 #include "driver/gpio.h"
+#include "bluetooth/host.h"
+#include "bluetooth/hci.h"
 #include "system/fs.h"
 #include "btn.h"
 
@@ -17,12 +19,6 @@
 #define HOLD_EVT_THRESHOLD 300
 #define RESET_EVT_THRESHOLD 1000
 
-/* Button flags */
-enum {
-    HOLD_EVT_SET = 0,
-};
-
-static atomic_t btn_flags = 0;
 static TaskHandle_t boot_btn_task_hdl;
 static void (*boot_btn_cb[BOOT_BTN_MAX_EVT])(void) = {0};
 
@@ -42,7 +38,7 @@ static void boot_btn_task(void *param) {
                     boot_btn_cb[BOOT_BTN_HOLD_EVT]();
                 }
             }
-            else if (atomic_test_bit(&btn_flags, HOLD_EVT_SET)) {
+            else if (bt_hci_get_inquiry()) {
                 if (boot_btn_cb[BOOT_BTN_HOLD_CANCEL_EVT]) {
                     boot_btn_cb[BOOT_BTN_HOLD_CANCEL_EVT]();
                 }
@@ -91,13 +87,4 @@ void boot_btn_init(void) {
 
 void boot_btn_set_callback(void (*cb)(void), boot_btn_evt_t evt) {
     boot_btn_cb[evt] = cb;
-}
-
-void boot_btn_hold_state(uint32_t state) {
-    if (state) {
-        atomic_set_bit(&btn_flags, HOLD_EVT_SET);
-    }
-    else {
-        atomic_clear_bit(&btn_flags, HOLD_EVT_SET);
-    }
 }

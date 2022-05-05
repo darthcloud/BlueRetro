@@ -1241,7 +1241,6 @@ void bt_hci_start_inquiry(void) {
     if (!inquiry_override) {
         err_led_pulse();
         inquiry_state = 1;
-        boot_btn_hold_state(1);
         bt_nb_inquiry = 0;
         bt_hci_cmd_le_set_scan_enable(0);
         bt_hci_cmd_le_set_scan_param_active();
@@ -1255,7 +1254,6 @@ void bt_hci_stop_inquiry(void) {
     bt_hci_cmd_le_set_scan_enable(0);
     bt_hci_cmd_le_set_scan_param_passive();
     bt_hci_cmd_le_set_scan_enable(1);
-    boot_btn_hold_state(0);
     inquiry_state = 0;
     err_led_clear();
 }
