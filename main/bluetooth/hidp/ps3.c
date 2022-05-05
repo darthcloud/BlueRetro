@@ -31,7 +31,7 @@ static void bt_hid_cmd_ps3_bt_init(struct bt_dev *device) {
 static void bt_hid_ps3_fb_init(struct bt_dev *device) {
     struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_hci_pkt_tmp.hidp_data;
     memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
-    set_conf->leds = (bt_hid_led_dev_id_map[device->ids.id] << 1);
+    set_conf->leds = (bt_hid_led_dev_id_map[device->ids.out_idx] << 1);
 
     bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_OUT, BT_HIDP_PS3_SET_CONF, sizeof(*set_conf));
 }

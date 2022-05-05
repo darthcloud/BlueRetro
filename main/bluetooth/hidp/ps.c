@@ -55,7 +55,7 @@ static void bt_hid_ps5_init_callback(void *arg) {
         .conf0 = 0x02,
         .conf1 = 0xF6,
     };
-    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->ids.id];
+    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
@@ -105,7 +105,7 @@ void bt_hid_ps_init(struct bt_dev *device) {
         .conf0 = 0xc0,
         .conf1 = 0x07,
     };
-    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.id];
+    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
 
     printf("# %s\n", __FUNCTION__);
 

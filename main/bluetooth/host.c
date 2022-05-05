@@ -243,17 +243,29 @@ static void bt_fb_task(void *param) {
         /* Look for rumble/led feedback data */
         fb_data = (struct raw_fb *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
         if (fb_data) {
+            struct bt_dev *device = NULL;
+            struct bt_data *bt_data = NULL;
+
+            bt_host_get_dev_from_out_idx(fb_data->header.wired_id, &device);
+            if (device) {
+                bt_data = &bt_adapter.data[device->ids.id];
+            }
+
             switch (fb_data->header.type) {
                 case FB_TYPE_MEM_WRITE:
                     mc_storage_update();
                     break;
+                case FB_TYPE_PLAYER_LED:
+                    if (device) {
+                        bt_hid_init(device);
+                    }
+                    break;
                 default:
                 {
-                    struct bt_dev *device = &bt_dev[fb_data->header.wired_id];
-                    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
-
-                    if (adapter_bridge_fb(fb_data, bt_data)) {
-                        bt_hid_feedback(device, bt_data->output);
+                    if (bt_data) {
+                        if (adapter_bridge_fb(fb_data, bt_data)) {
+                            bt_hid_feedback(device, bt_data->output);
+                        }
                     }
                     break;
                 }
@@ -501,6 +513,7 @@ reset_dev:
     memset((void *)device, 0, sizeof(*device));
 
     device->ids.id = dev_id;
+    device->ids.out_idx = dev_id;
     device->ids.type = BT_NONE;
     device->ids.subtype = BT_SUBTYPE_DEFAULT;
     bt_adapter.data[dev_id].pids = &device->ids;

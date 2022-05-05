@@ -95,7 +95,7 @@ void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_wii_init(struct bt_dev *device) {
-    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->ids.id] << 4)};
+    struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->ids.out_idx] << 4)};
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
