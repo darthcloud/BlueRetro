@@ -9,6 +9,9 @@
 typedef void (*bt_hci_le_cb_t)(struct bt_dev *device, uint8_t *data, uint32_t len);
 
 int32_t bt_hci_init(void);
+void bt_hci_start_inquiry(void);
+void bt_hci_stop_inquiry(void);
+uint32_t bt_hci_get_inquiry(void);
 void bt_hci_disconnect(struct bt_dev *device);
 void bt_hci_exit_sniff_mode(struct bt_dev *device);
 void bt_hci_get_le_local_addr(bt_addr_le_t *le_local);

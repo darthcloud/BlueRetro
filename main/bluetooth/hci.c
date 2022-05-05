@@ -89,6 +89,7 @@ static uint32_t bt_hci_pkt_retry = 0;
 static uint32_t bt_nb_inquiry = 0;
 static uint8_t local_bdaddr[6];
 static uint32_t bt_config_state = 0;
+static uint32_t inquiry_state = 0;
 static RingbufHandle_t randq_hdl, encryptq_hdl;
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
@@ -171,8 +172,6 @@ static void bt_hci_cmd_le_start_encryption(uint16_t handle, uint64_t rand, uint1
 //static void bt_hci_cmd_le_set_ext_scan_param(void *cp);
 //static void bt_hci_cmd_le_set_ext_scan_enable(void *cp);
 static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt);
-static void bt_hci_start_inquiry(void);
-static void bt_hci_stop_inquiry(void);
 static void bt_hci_start_inquiry_cfg_check(void *cp);
 static void bt_hci_load_le_accept_list(void *cp);
 
@@ -1152,24 +1151,6 @@ skip:
     }
 }
 
-static void bt_hci_start_inquiry(void) {
-    err_led_pulse();
-    boot_btn_hold_state(1);
-    bt_hci_cmd_le_set_scan_enable(0);
-    bt_hci_cmd_le_set_scan_param_active();
-    bt_hci_cmd_le_set_scan_enable(1);
-    bt_hci_cmd_periodic_inquiry(NULL);
-}
-
-static void bt_hci_stop_inquiry(void) {
-    bt_hci_cmd_exit_periodic_inquiry(NULL);
-    bt_hci_cmd_le_set_scan_enable(0);
-    bt_hci_cmd_le_set_scan_param_passive();
-    bt_hci_cmd_le_set_scan_enable(1);
-    boot_btn_hold_state(0);
-    err_led_clear();
-}
-
 static void bt_hci_start_inquiry_cfg_check(void *cp) {
     if (config.global_cfg.inquiry_mode == INQ_AUTO) {
         bt_hci_start_inquiry();
@@ -1235,6 +1216,30 @@ int32_t bt_hci_init(void) {
     boot_btn_set_callback(bt_hci_stop_inquiry, BOOT_BTN_HOLD_CANCEL_EVT);
 
     return 0;
+}
+
+void bt_hci_start_inquiry(void) {
+    err_led_pulse();
+    inquiry_state = 1;
+    boot_btn_hold_state(1);
+    bt_hci_cmd_le_set_scan_enable(0);
+    bt_hci_cmd_le_set_scan_param_active();
+    bt_hci_cmd_le_set_scan_enable(1);
+    bt_hci_cmd_periodic_inquiry(NULL);
+}
+
+void bt_hci_stop_inquiry(void) {
+    bt_hci_cmd_exit_periodic_inquiry(NULL);
+    bt_hci_cmd_le_set_scan_enable(0);
+    bt_hci_cmd_le_set_scan_param_passive();
+    bt_hci_cmd_le_set_scan_enable(1);
+    boot_btn_hold_state(0);
+    inquiry_state = 0;
+    err_led_clear();
+}
+
+uint32_t bt_hci_get_inquiry(void) {
+    return inquiry_state;
 }
 
 void bt_hci_disconnect(struct bt_dev *device) {
