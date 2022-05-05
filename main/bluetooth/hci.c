@@ -18,7 +18,7 @@
 #include "adapter/config.h"
 #include "zephyr/uuid.h"
 
-#define BT_INQUIRY_MAX 1
+#define BT_INQUIRY_MAX 10
 
 typedef void (*bt_cmd_func_t)(void *param);
 
@@ -90,6 +90,7 @@ static uint32_t bt_nb_inquiry = 0;
 static uint8_t local_bdaddr[6];
 static uint32_t bt_config_state = 0;
 static uint32_t inquiry_state = 0;
+static uint32_t inquiry_override = 0;
 static RingbufHandle_t randq_hdl, encryptq_hdl;
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
@@ -1034,7 +1035,7 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                 else {
                     struct bt_smp_encrypt_info encrypt_info = {0};
                     struct bt_smp_master_ident master_ident = {0};
-                    bt_nb_inquiry = 0;
+                    bt_nb_inquiry = BT_INQUIRY_MAX;
                     device->acl_handle = le_conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
@@ -1219,13 +1220,16 @@ int32_t bt_hci_init(void) {
 }
 
 void bt_hci_start_inquiry(void) {
-    err_led_pulse();
-    inquiry_state = 1;
-    boot_btn_hold_state(1);
-    bt_hci_cmd_le_set_scan_enable(0);
-    bt_hci_cmd_le_set_scan_param_active();
-    bt_hci_cmd_le_set_scan_enable(1);
-    bt_hci_cmd_periodic_inquiry(NULL);
+    if (!inquiry_override) {
+        err_led_pulse();
+        inquiry_state = 1;
+        boot_btn_hold_state(1);
+        bt_nb_inquiry = 0;
+        bt_hci_cmd_le_set_scan_enable(0);
+        bt_hci_cmd_le_set_scan_param_active();
+        bt_hci_cmd_le_set_scan_enable(1);
+        bt_hci_cmd_periodic_inquiry(NULL);
+    }
 }
 
 void bt_hci_stop_inquiry(void) {
@@ -1240,6 +1244,10 @@ void bt_hci_stop_inquiry(void) {
 
 uint32_t bt_hci_get_inquiry(void) {
     return inquiry_state;
+}
+
+void bt_hci_inquiry_override(uint32_t state) {
+    inquiry_override = state;
 }
 
 void bt_hci_disconnect(struct bt_dev *device) {
@@ -1371,7 +1379,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
-                    bt_nb_inquiry = 0;
+                    bt_nb_inquiry = BT_INQUIRY_MAX;
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
                     printf("# dev: %d acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
