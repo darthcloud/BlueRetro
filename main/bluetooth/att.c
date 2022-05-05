@@ -389,7 +389,7 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
 }
 
 static void bt_att_cmd_dev_name_rd_rsp(uint16_t handle) {
-    char *str = "BlueRetro";
+    const char *str = bt_hci_get_device_name();
     printf("# %s\n", __FUNCTION__);
 
     memcpy(bt_hci_pkt_tmp.att_data, str, strlen(str));

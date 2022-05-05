@@ -16,6 +16,7 @@
 #include "system/btn.h"
 #include "system/led.h"
 #include "adapter/config.h"
+#include "wired/wired_comm.h"
 #include "zephyr/uuid.h"
 
 #define BT_INQUIRY_MAX 10
@@ -92,6 +93,7 @@ static uint32_t bt_config_state = 0;
 static uint32_t inquiry_state = 0;
 static uint32_t inquiry_override = 0;
 static RingbufHandle_t randq_hdl, encryptq_hdl;
+static char local_name[24] = "BlueRetro";
 
 static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
 //static void bt_hci_cmd_inquiry(void *cp);
@@ -175,6 +177,7 @@ static void bt_hci_cmd_le_start_encryption(uint16_t handle, uint64_t rand, uint1
 static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt);
 static void bt_hci_start_inquiry_cfg_check(void *cp);
 static void bt_hci_load_le_accept_list(void *cp);
+static void bt_hci_set_device_name(void);
 
 static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_reset, NULL},
@@ -800,17 +803,20 @@ static void bt_hci_cmd_le_set_adv_param(void *cp) {
 }
 
 static void bt_hci_cmd_le_set_adv_data(void *cp) {
-    uint8_t adv_data[] = {
+    uint8_t adv_data[32] = {
         0x02, BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
         0x03, BT_DATA_UUID16_SOME, 0x0f, 0x18,
-        0x0a, BT_DATA_NAME_COMPLETE, 0x42, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x74, 0x72, 0x6f
+        0x0a, BT_DATA_NAME_COMPLETE, 0x00
     };
     struct bt_hci_cp_le_set_adv_data *le_set_adv_data = (struct bt_hci_cp_le_set_adv_data *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
+    adv_data[7] = strlen(bt_hci_get_device_name()) + 1;
+    strncat((char *)adv_data, bt_hci_get_device_name(), 22);
+
     memset(le_set_adv_data->data, 0, sizeof(le_set_adv_data->data));
-    le_set_adv_data->len = sizeof(adv_data);
-    memcpy(le_set_adv_data->data, adv_data, sizeof(adv_data));
+    le_set_adv_data->len = strlen((char *)adv_data);
+    memcpy(le_set_adv_data->data, adv_data, strlen((char *)adv_data));
 
     bt_hci_cmd(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*le_set_adv_data));
 }
@@ -1198,6 +1204,14 @@ static int32_t bt_hci_get_encrypt_context(struct bt_dev **device, bt_hci_le_cb_t
     return -1;
 }
 
+static void bt_hci_set_device_name(void) {
+    strcat(local_name, "_");
+    strncat(local_name, wired_get_sys_name(), 6);
+    strcat(local_name, "_");
+    snprintf(local_name + strlen(local_name), 5, "%02X%02X", local_bdaddr[1], local_bdaddr[0]);
+    printf("# local_name: %s\n", local_name);
+}
+
 int32_t bt_hci_init(void) {
     randq_hdl = xRingbufferCreate(sizeof(struct bt_hci_le_cb) * 8, RINGBUF_TYPE_NOSPLIT);
     if (randq_hdl == NULL) {
@@ -1217,6 +1231,10 @@ int32_t bt_hci_init(void) {
     boot_btn_set_callback(bt_hci_stop_inquiry, BOOT_BTN_HOLD_CANCEL_EVT);
 
     return 0;
+}
+
+const char *bt_hci_get_device_name(void) {
+    return local_name;
 }
 
 void bt_hci_start_inquiry(void) {
@@ -1666,6 +1684,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     {
                         struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
                         memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
+                        bt_hci_set_device_name();
                         printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
                             local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
                             local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);

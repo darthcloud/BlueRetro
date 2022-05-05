@@ -9,6 +9,7 @@
 typedef void (*bt_hci_le_cb_t)(struct bt_dev *device, uint8_t *data, uint32_t len);
 
 int32_t bt_hci_init(void);
+const char *bt_hci_get_device_name(void);
 void bt_hci_start_inquiry(void);
 void bt_hci_stop_inquiry(void);
 uint32_t bt_hci_get_inquiry(void);
