@@ -1,5 +1,10 @@
 menu "BlueRetro"
 
+    config BLUERETRO_INTERNAL_INSTALL
+        bool "Enable internal install mode"
+        help
+            Select this to enable internal install mode.
+
     choice
         prompt "Select filesystem location"
         default BLUERETRO_FAT_ON_SDCARD
