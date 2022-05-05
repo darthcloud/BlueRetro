@@ -581,7 +581,6 @@ int32_t bt_host_init(void) {
         return -1;
     }
     boot_btn_set_callback(bt_host_disconnect_all, BOOT_BTN_DEFAULT_EVT);
-    boot_btn_init();
 
     return ret;
 }
