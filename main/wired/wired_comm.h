@@ -95,6 +95,7 @@
 #endif
 
 void wired_comm_init(void);
+void wired_comm_port_cfg(uint16_t mask);
 const char *wired_get_sys_name(void);
 
 #endif /* _WIRED_COMM_H_ */

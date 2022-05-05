@@ -21,6 +21,7 @@
 #include "adapter/adapter.h"
 
 typedef void (*wired_init_t)(void);
+typedef void (*wired_port_cfg_t)(uint16_t mask);
 
 static const char *sys_name[WIRED_MAX] = {
     "AUTO",
@@ -76,9 +77,42 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     sea_init, /* SEA_BOARD */
 };
 
+static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
+    NULL, /* WIRED_AUTO */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
+    NULL, /* NES */
+    NULL, /* PCE */
+    NULL, /* GENESIS */
+    NULL, /* SNES */
+    NULL, /* CDI */
+    NULL, /* CD32 */
+    NULL, /* REAL_3DO */
+    NULL, /* JAGUAR */
+    NULL, /* PSX */
+    NULL, /* SATURN */
+    NULL, /* PCFX */
+    NULL, /* JVS */
+    NULL, /* N64 */
+    NULL, /* DC */
+    NULL, /* PS2 */
+    NULL, /* GC */
+    wii_i2c_port_cfg, /* WII_EXT */
+    NULL, /* VB */
+    NULL, /* PARALLEL_1P_OD */
+    NULL, /* PARALLEL_2P_OD */
+    NULL, /* SEA_BOARD */
+};
+
 void wired_comm_init(void) {
     if (wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
+    }
+}
+
+void wired_comm_port_cfg(uint16_t mask) {
+    if (wired_port_cfg[wired_adapter.system_id]) {
+        wired_port_cfg[wired_adapter.system_id](mask);
     }
 }
 
