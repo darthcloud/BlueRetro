@@ -37,7 +37,7 @@ Thanks to all sponsors!!
   https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
 
 ## Community Contribution
-* BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
+* BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
   https://github.com/Micha213/BlueRetro-PS1-2-Receiver
 * N64 BlueRetro Mount by [reventlow64](https://twitter.com/reventlow): 3d printed mount for ESP32-DevkitC for N64.\
   https://www.prusaprinters.org/prints/90275-nintendo-64-blueretro-bluetooth-receiver-mount
