@@ -38,8 +38,7 @@ Thanks to all sponsors!!
 
 ## Community Contribution
 * BlueRetro_PS1 by [mi213 ](https://twitter.com/mi213ger): 3d printed PSX plug case with PCB shield for ESP32 d1 mini.\
-  https://www.thingiverse.com/thing:4835926 \
-  https://oshpark.com/shared_projects/aharS64j
+  https://github.com/Micha213/BlueRetro-PS1-2-Receiver
 * N64 BlueRetro Mount by [reventlow64](https://twitter.com/reventlow): 3d printed mount for ESP32-DevkitC for N64.\
   https://www.prusaprinters.org/prints/90275-nintendo-64-blueretro-bluetooth-receiver-mount
 * BlueRetro Adapter Case by [Sigismond0](https://twitter.com/Sigismond0): 3d printed case for ESP32-DevkitC.\
