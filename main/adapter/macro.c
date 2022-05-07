@@ -13,6 +13,7 @@
 #define BT_INQUIRY (MACRO_BASE | BIT(PAD_RB_RIGHT))
 #define SYS_POWER_OFF (MACRO_BASE | BIT(PAD_RB_DOWN))
 #define FACTORY_RESET (MACRO_BASE | BIT(PAD_LD_UP) | BIT(PAD_RB_UP))
+#define DEEP_SLEEP (MACRO_BASE | BIT(PAD_LD_DOWN) | BIT(PAD_RB_UP))
 
 struct macro {
     uint32_t macro;
@@ -25,6 +26,7 @@ static struct macro macros[] = {
     {.macro = BT_INQUIRY, .action = sys_mgr_inquiry, .flag_mask = WIRED_WAITING_FOR_RELEASE_MACRO2},
     {.macro = SYS_POWER_OFF, .action = sys_mgr_power_off, .flag_mask = WIRED_WAITING_FOR_RELEASE_MACRO3},
     {.macro = FACTORY_RESET, .action = sys_mgr_factory_reset, .flag_mask = WIRED_WAITING_FOR_RELEASE_MACRO4},
+    {.macro = DEEP_SLEEP, .action = sys_mgr_deep_sleep, .flag_mask = WIRED_WAITING_FOR_RELEASE_MACRO5},
 };
 
 static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, atomic_t *flags) {

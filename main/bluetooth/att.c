@@ -16,12 +16,14 @@
 #include "adapter/config.h"
 #include "adapter/memory_card.h"
 #include "adapter/hid_parser.h"
+#include "system/manager.h"
 
 #define ATT_MAX_LEN 512
 #define BR_API_VER 2
 #define OTA_START 0xA5
 #define OTA_ABORT 0xDE
 #define OTA_END 0x5A
+#define SYS_DEEP_SLEEP 0x37
 #define HID_MAX_REPORT 5
 
 enum {
@@ -796,6 +798,10 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                             else {
                                 printf("# OTA FW Update end fail\n");
                             }
+                            break;
+                        case SYS_DEEP_SLEEP:
+                            printf("# ESP32 going in deep sleep\n");
+                            sys_mgr_deep_sleep();
                             break;
                         default:
                             if (ota_hdl) {

@@ -8,6 +8,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_partition.h>
+#include <esp_sleep.h>
 #include "driver/gpio.h"
 #include "adapter/adapter.h"
 #include "bluetooth/host.h"
@@ -181,6 +182,10 @@ void sys_mgr_factory_reset(void) {
     bt_host_disconnect_all();
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_restart();
+}
+
+void sys_mgr_deep_sleep(void) {
+    esp_deep_sleep_start();
 }
 
 void sys_mgr_init(void) {

@@ -10,6 +10,7 @@ void sys_mgr_reset(void);
 void sys_mgr_inquiry(void);
 void sys_mgr_power_off(void);
 void sys_mgr_factory_reset(void);
+void sys_mgr_deep_sleep(void);
 void sys_mgr_init(void);
 
 #endif /* _SYS_MANAGER_H_ */
