@@ -197,6 +197,7 @@ static void adapter_fb_stop_cb(void* arg) {
 
     /* Send 0 byte data, system that require callback stop shall look for that */
     adapter_q_fb(&fb_data);
+    adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 }
 
 int32_t btn_id_to_axis(uint8_t btn_id) {
@@ -391,8 +392,10 @@ void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us) {
 }
 
 void adapter_fb_stop_timer_stop(uint8_t dev_id) {
-    esp_timer_delete(wired_adapter.data[dev_id].fb_timer_hdl);
-    wired_adapter.data[dev_id].fb_timer_hdl = NULL;
+    if (wired_adapter.data[dev_id].fb_timer_hdl) {
+        esp_timer_delete(wired_adapter.data[dev_id].fb_timer_hdl);
+        wired_adapter.data[dev_id].fb_timer_hdl = NULL;
+    }
 }
 
 uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {

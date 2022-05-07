@@ -7,6 +7,8 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "bluetooth/host.h"
+#include "adapter/wireless/wireless.h"
 #include "n64.h"
 
 #define N64_AXES_MAX 2
@@ -182,6 +184,29 @@ void n64_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
+static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
+    struct bt_dev *device = NULL;
+    struct bt_data *bt_data = NULL;
+
+    bt_host_get_dev_from_out_idx(wired_id, &device);
+    if (device) {
+        bt_data = &bt_adapter.data[device->ids.id];
+        if (bt_data) {
+            struct generic_fb fb_data = {0};
+
+            fb_data.wired_id = wired_id;
+            fb_data.type = FB_TYPE_RUMBLE;
+            fb_data.cycles = 0;
+            fb_data.start = 0;
+            fb_data.state = 1;
+            adapter_fb_stop_timer_start(wired_id, duration_us);
+            wireless_fb_from_generic(&fb_data, bt_data);
+            bt_hid_feedback(device, bt_data->output);
+        }
+    }
+
+}
+
 static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_map map_tmp;
     uint32_t map_mask = 0xFFFF;
@@ -214,9 +239,11 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                 /* Change config directly but do not update file */
                 if (config.out_cfg[ctrl_data->index].acc_mode == ACC_MEM) {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_RUMBLE;
+                    n64_acc_toggle_fb(ctrl_data->index, 250000);
                 }
                 else {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_MEM;
+                    n64_acc_toggle_fb(ctrl_data->index, 75000);
                 }
             }
         }
