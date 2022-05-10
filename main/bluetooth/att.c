@@ -65,7 +65,9 @@ enum {
     BR_MC_CTRL_CHRC_HDL,
     BR_MC_DATA_ATT_HDL,
     BR_MC_DATA_CHRC_HDL,
-    LAST_HDL = BR_MC_DATA_CHRC_HDL,
+    BR_BD_ADDR_ATT_HDL,
+    BR_BD_ADDR_CHRC_HDL,
+    LAST_HDL = BR_BD_ADDR_CHRC_HDL,
     MAX_HDL,
 };
 
@@ -370,6 +372,7 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
     switch (rd_type_rsp->data->handle + 1) {
         case BR_API_VER_CHRC_HDL:
         case BR_FW_VER_CHRC_HDL:
+        case BR_BD_ADDR_CHRC_HDL:
             *data++ = BT_GATT_CHRC_READ;
             break;
         case BR_OTA_FW_CTRL_CHRC_HDL:
@@ -511,6 +514,16 @@ static void bt_att_cmd_app_ver_rsp(uint16_t handle) {
     printf("# %s %s\n", __FUNCTION__, bt_hci_pkt_tmp.att_data);
 
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 23);
+}
+
+static void bt_att_cmd_bd_addr_rsp(uint16_t handle) {
+    bt_addr_le_t bdaddr;
+
+    bt_hci_get_le_local_addr(&bdaddr);
+
+    memcpy(bt_hci_pkt_tmp.att_data, bdaddr.a.val, sizeof(bdaddr.a.val));
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 6);
 }
 
 static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t end) {
@@ -688,6 +701,9 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     break;
                 case BR_MC_DATA_CHRC_HDL:
                     bt_att_cmd_mc_rd_rsp(device->acl_handle, 0);
+                    break;
+                case BR_BD_ADDR_CHRC_HDL:
+                    bt_att_cmd_bd_addr_rsp(device->acl_handle);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
