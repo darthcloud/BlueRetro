@@ -24,6 +24,7 @@
 #define OTA_ABORT 0xDE
 #define OTA_END 0x5A
 #define SYS_DEEP_SLEEP 0x37
+#define SYS_RESET 0x38
 #define HID_MAX_REPORT 5
 
 enum {
@@ -818,6 +819,18 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                         case SYS_DEEP_SLEEP:
                             printf("# ESP32 going in deep sleep\n");
                             sys_mgr_deep_sleep();
+                            break;
+                        case SYS_RESET:
+                            printf("# Reset ESP32\n");
+                            const esp_timer_create_args_t ota_restart_args = {
+                                .callback = &bt_att_restart,
+                                .arg = (void *)device,
+                                .name = "ota_restart"
+                            };
+                            esp_timer_handle_t timer_hdl;
+
+                            esp_timer_create(&ota_restart_args, &timer_hdl);
+                            esp_timer_start_once(timer_hdl, 1000000);
                             break;
                         default:
                             if (ota_hdl) {
