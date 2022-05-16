@@ -38,7 +38,7 @@ jobs:
       working-directory: ./BlueRetro
       run: |
         . ../esp-idf/export.sh
-        for file in configs/*; do echo "$(git describe --always --tags --dirty) $(basename $file)" | cut -c -31 > version.txt; cp configs/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        for file in configs/*; do echo "$(git describe --always --tags --dirty) $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact
