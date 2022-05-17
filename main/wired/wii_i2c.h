@@ -6,6 +6,8 @@
 #ifndef _WII_I2C_H_
 #define _WII_I2C_H_
 
+#include <stdint.h>
+
 void wii_i2c_init(void);
 void wii_i2c_port_cfg(uint16_t mask);
 

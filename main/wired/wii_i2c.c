@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "wii_i2c.h"
+#include "sdkconfig.h"
+#if defined (CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL)
 #include <string.h>
 #include "soc/io_mux_reg.h"
 #include "esp_private/periph_ctrl.h"
@@ -22,7 +25,6 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
-#include "wii_i2c.h"
 
 #define I2C0_INTR_NUM 19
 #define I2C1_INTR_NUM 20
@@ -105,7 +107,6 @@ static inline void write_fifo(struct wii_ctrl_port *port, const uint8_t *data, u
     }
 }
 
-
 static void i2c_isr(void* arg) {
     struct wii_ctrl_port *port = (struct wii_ctrl_port *)arg;
     uint32_t rx_fifo_cnt = port->hw->status_reg.rx_fifo_cnt;
@@ -151,8 +152,10 @@ static uint32_t isr_dispatch(uint32_t cause) {
     }
     return 0;
 }
+#endif /* defined(CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL) */
 
 void wii_i2c_init(void) {
+#if defined (CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL)
     for (uint32_t i = 0; i < WII_PORT_MAX; i++) {
         struct wii_ctrl_port *p = &wii_ctrl_ports[i];
 
@@ -199,9 +202,11 @@ void wii_i2c_init(void) {
     intexc_alloc_iram(ETS_I2C_EXT1_INTR_SOURCE, I2C1_INTR_NUM, isr_dispatch);
 
     wii_i2c_port_cfg(0x3);
+#endif /* defined(CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL) */
 }
 
 void wii_i2c_port_cfg(uint16_t mask) {
+#if defined (CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL)
     for (uint32_t i = 0; i < WII_PORT_MAX; i++) {
         struct wii_ctrl_port *p = &wii_ctrl_ports[i];
 
@@ -213,4 +218,5 @@ void wii_i2c_port_cfg(uint16_t mask) {
         }
         mask >>= 1;
     }
+#endif /* defined(CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL) */
 }
