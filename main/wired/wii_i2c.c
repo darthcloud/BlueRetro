@@ -99,9 +99,6 @@ static uint8_t wii_registers[] = {
 
 static inline void write_fifo(struct wii_ctrl_port *port, const uint8_t *data, uint32_t len)
 {
-    port->hw->fifo_conf.tx_fifo_rst = 1;
-    port->hw->fifo_conf.tx_fifo_rst = 0;
-
     for (int i = 0; i < len; i++) {
         WRITE_PERI_REG(port->fifo_addr, data[i]);
     }
@@ -109,38 +106,51 @@ static inline void write_fifo(struct wii_ctrl_port *port, const uint8_t *data, u
 
 static void i2c_isr(void* arg) {
     struct wii_ctrl_port *port = (struct wii_ctrl_port *)arg;
+    uint32_t intr_sts = port->hw->int_status.val;
     uint32_t rx_fifo_cnt = port->hw->status_reg.rx_fifo_cnt;
+    uint32_t tx_fifo_cnt = port->hw->status_reg.tx_fifo_cnt;
 
-    if (rx_fifo_cnt) {
-        uint8_t reg = HAL_FORCE_READ_U32_REG_FIELD(port->hw->fifo_data, data);
+    if (tx_fifo_cnt) {
+        port->hw->fifo_conf.tx_fifo_rst = 1;
+        port->hw->fifo_conf.tx_fifo_rst = 0;
+        delay_us(25);
+        port->hw->fifo_conf.tx_fifo_rst = 1;
+        port->hw->fifo_conf.tx_fifo_rst = 0;
+        delay_us(25);
+    }
 
-        if (reg >= 0xF0) {
-            reg &= 0xF;
-            rx_fifo_cnt--;
-            if (rx_fifo_cnt) {
-                /* Write registers */
-                for (uint32_t i = 0; i < rx_fifo_cnt; i++) {
-                    uint8_t val = HAL_FORCE_READ_U32_REG_FIELD(port->hw->fifo_data, data);
-                    wii_registers[reg] = val;
-                    if (++reg > 0xF) {
-                        break;
+    if (intr_sts & I2C_TRANS_COMPLETE_INT_ST) {
+        if (rx_fifo_cnt) {
+            uint8_t reg = HAL_FORCE_READ_U32_REG_FIELD(port->hw->fifo_data, data);
+
+            if (reg >= 0xF0) {
+                reg &= 0xF;
+                rx_fifo_cnt--;
+                if (rx_fifo_cnt) {
+                    /* Write registers */
+                    for (uint32_t i = 0; i < rx_fifo_cnt; i++) {
+                        uint8_t val = HAL_FORCE_READ_U32_REG_FIELD(port->hw->fifo_data, data);
+                        wii_registers[reg] = val;
+                        if (++reg > 0xF) {
+                            break;
+                        }
                     }
                 }
+                else {
+                    /* Read registers */
+                    write_fifo(port, wii_registers + reg, sizeof(wii_registers) - reg);
+                }
             }
-            else {
-                /* Read registers */
-                write_fifo(port, wii_registers + reg, sizeof(wii_registers) - reg);
+            else if (reg == 0x00) {
+                /* Controller status poll */
+                write_fifo(port, wired_adapter.data[port->id].output, 32);
             }
-        }
-        else if (reg == 0x00) {
-            /* Controller status poll */
-            write_fifo(port, wired_adapter.data[port->id].output, 21);
         }
     }
 
     port->hw->fifo_conf.rx_fifo_rst = 1;
     port->hw->fifo_conf.rx_fifo_rst = 0;
-    port->hw->int_clr.val = I2C_LL_SLAVE_RX_INT;
+    port->hw->int_clr.val = intr_sts;
 }
 
 static uint32_t isr_dispatch(uint32_t cause) {
@@ -192,10 +202,10 @@ void wii_i2c_init(void) {
         p->hw->slave_addr.en_10bit = 0;
         p->hw->fifo_conf.rx_fifo_full_thrhd = 28;
         p->hw->fifo_conf.tx_fifo_empty_thrhd = 5;
-        p->hw->sda_hold.time = 10;
+        p->hw->sda_hold.time = 40;
         p->hw->sda_sample.time = 10;
         p->hw->timeout.tout = 32000;
-        p->hw->int_ena.val |= I2C_LL_SLAVE_RX_INT;
+        p->hw->int_ena.val |= I2C_TRANS_COMPLETE_INT_ENA;
     }
 
     intexc_alloc_iram(ETS_I2C_EXT0_INTR_SOURCE, I2C0_INTR_NUM, isr_dispatch);
