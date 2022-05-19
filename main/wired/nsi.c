@@ -530,7 +530,7 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[gpio_pin[i]], PIN_FUNC_GPIO);
-        gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD); /* Bidirectional open-drain */
+        gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT); /* Bidirectional open-drain */
         gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
         gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
 
