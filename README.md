@@ -35,6 +35,10 @@ Thanks to all sponsors!!
   https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
 * Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
   https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
+  
+  [<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
+* N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
+  https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
@@ -47,8 +51,6 @@ Thanks to all sponsors!!
   https://github.com/pmgducati/Blue-Retro-AIO-Units
 
 ## Others commercial solution using BlueRetro FW
-* N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
-  https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
 * BlueRetro adaptador universal by [GamesCare](https://twitter.com/MichelinFabio): BlueRetro universal base & cable.\
   https://gamescare.com.br/produto/blueretro-adaptador-universal/
 
