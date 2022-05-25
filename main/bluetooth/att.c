@@ -488,8 +488,9 @@ static void bt_att_cmd_mc_rd_rsp(uint16_t handle, uint8_t blob) {
 
     len = (block * 4096) - mc_offset;
 
-    if (len > (mtu - 1)) {
-        len = mtu - 1;
+    if (len > (mtu - 2)) {
+        len = mtu - 2;
+        len &= 0xFFFFFFFC;
     }
 
     mc_read(mc_offset, bt_hci_pkt_tmp.att_data, len);
