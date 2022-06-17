@@ -42,171 +42,171 @@
 static const uint32_t all_set = 0xFFFDFFFD;
 static const uint32_t *map_std_tt[][16] = {
     {   /* BANK0 */
-        (uint32_t *)&wired_adapter.data[1].output[0],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12], /* S3-3 */
+        &wired_adapter.data[1].output32[0], /* S1-0 */
+        &wired_adapter.data[1].output32[1], /* S1-1 */
+        &wired_adapter.data[1].output32[2], /* S1-2 */
+        &wired_adapter.data[1].output32[3], /* S1-3 */
+        &wired_adapter.data[2].output32[0], /* S2-0 */
+        &wired_adapter.data[2].output32[1], /* S2-1 */
+        &wired_adapter.data[2].output32[2], /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &wired_adapter.data[2].output32[3], /* S2-3 */
+        &wired_adapter.data[3].output32[0], /* S3-0 */
+        &wired_adapter.data[3].output32[1], /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &wired_adapter.data[3].output32[2], /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &wired_adapter.data[3].output32[3], /* S3-3 */
     },
     {   /* BANK 1 */
-        (uint32_t *)&wired_adapter.data[1].output[0],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12], /* S3-3 */
+        &wired_adapter.data[1].output32[0], /* S1-0 */
+        &wired_adapter.data[1].output32[1], /* S1-1 */
+        &wired_adapter.data[1].output32[2], /* S1-2 */
+        &wired_adapter.data[1].output32[3], /* S1-3 */
+        &wired_adapter.data[2].output32[0], /* S2-0 */
+        &wired_adapter.data[2].output32[1], /* S2-1 */
+        &wired_adapter.data[2].output32[2], /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &wired_adapter.data[2].output32[3], /* S2-3 */
+        &wired_adapter.data[3].output32[0], /* S3-0 */
+        &wired_adapter.data[3].output32[1], /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &wired_adapter.data[3].output32[2], /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &wired_adapter.data[3].output32[3], /* S3-3 */
     },
     {   /* BANK 2 */
-        (uint32_t *)&wired_adapter.data[1].output[0],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12], /* S3-3 */
+        &wired_adapter.data[1].output32[0], /* S1-0 */
+        &wired_adapter.data[1].output32[1], /* S1-1 */
+        &wired_adapter.data[1].output32[2], /* S1-2 */
+        &wired_adapter.data[1].output32[3], /* S1-3 */
+        &wired_adapter.data[2].output32[0], /* S2-0 */
+        &wired_adapter.data[2].output32[1], /* S2-1 */
+        &wired_adapter.data[2].output32[2], /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &wired_adapter.data[2].output32[3], /* S2-3 */
+        &wired_adapter.data[3].output32[0], /* S3-0 */
+        &wired_adapter.data[3].output32[1], /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &wired_adapter.data[3].output32[2], /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &wired_adapter.data[3].output32[3], /* S3-3 */
     },
 };
 
 static const uint32_t *map_6d[][16] = {
     {   /* BANK0 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 16],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 16],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 16],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 16], /* S1-3 */
-        (uint32_t *)&all_set,  /* S2-0 */
-        (uint32_t *)&all_set,  /* S2-1 */
-        (uint32_t *)&all_set,  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&all_set, /* S2-3 */
-        (uint32_t *)&all_set,  /* S3-0 */
-        (uint32_t *)&all_set,  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&all_set,  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&all_set, /* S3-3 */
+        &wired_adapter.data[0].output32[0 + 4], /* S1-0 */
+        &wired_adapter.data[0].output32[1 + 4], /* S1-1 */
+        &wired_adapter.data[0].output32[2 + 4], /* S1-2 */
+        &wired_adapter.data[0].output32[3 + 4], /* S1-3 */
+        &all_set, /* S2-0 */
+        &all_set, /* S2-1 */
+        &all_set, /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &all_set, /* S2-3 */
+        &all_set, /* S3-0 */
+        &all_set, /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &all_set, /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &all_set, /* S3-3 */
     },
     {   /* BANK 1 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 32],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 32],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 32],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 32], /* S1-3 */
-        (uint32_t *)&all_set,  /* S2-0 */
-        (uint32_t *)&all_set,  /* S2-1 */
-        (uint32_t *)&all_set,  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&all_set, /* S2-3 */
-        (uint32_t *)&all_set,  /* S3-0 */
-        (uint32_t *)&all_set,  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&all_set,  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&all_set, /* S3-3 */
+        &wired_adapter.data[0].output32[0 + 8], /* S1-0 */
+        &wired_adapter.data[0].output32[1 + 8], /* S1-1 */
+        &wired_adapter.data[0].output32[2 + 8], /* S1-2 */
+        &wired_adapter.data[0].output32[3 + 8], /* S1-3 */
+        &all_set, /* S2-0 */
+        &all_set, /* S2-1 */
+        &all_set, /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &all_set, /* S2-3 */
+        &all_set, /* S3-0 */
+        &all_set, /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &all_set, /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &all_set, /* S3-3 */
     },
     {   /* BANK 2 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 48],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 48],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 48],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 48], /* S1-3 */
-        (uint32_t *)&all_set,  /* S2-0 */
-        (uint32_t *)&all_set,  /* S2-1 */
-        (uint32_t *)&all_set,  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12], /* S0-3 */
-        (uint32_t *)&all_set, /* S2-3 */
-        (uint32_t *)&all_set,  /* S3-0 */
-        (uint32_t *)&all_set,  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8],  /* S0-2 */
-        (uint32_t *)&all_set,  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0],  /* S0-0 */
-        (uint32_t *)&all_set, /* S3-3 */
+        &wired_adapter.data[0].output32[0 + 12], /* S1-0 */
+        &wired_adapter.data[0].output32[1 + 12], /* S1-1 */
+        &wired_adapter.data[0].output32[2 + 12], /* S1-2 */
+        &wired_adapter.data[0].output32[3 + 12], /* S1-3 */
+        &all_set, /* S2-0 */
+        &all_set, /* S2-1 */
+        &all_set, /* S2-2 */
+        &wired_adapter.data[0].output32[3], /* S0-3 */
+        &all_set, /* S2-3 */
+        &all_set, /* S3-0 */
+        &all_set, /* S3-1 */
+        &wired_adapter.data[0].output32[2], /* S0-2 */
+        &all_set, /* S3-2 */
+        &wired_adapter.data[0].output32[1], /* S0-1 */
+        &wired_adapter.data[0].output32[0], /* S0-0 */
+        &all_set, /* S3-3 */
     },
 };
 static const uint32_t *map_6d_tt[][16] = {
     {   /* BANK0 */
-        (uint32_t *)&wired_adapter.data[1].output[0 + 16],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4 + 16],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8 + 16],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12 + 16], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0 + 16],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4 + 16],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8 + 16],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 16], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12 + 16], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0 + 16],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4 + 16],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 16],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8 + 16],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 16],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 16],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12 + 16], /* S3-3 */
+        &wired_adapter.data[1].output32[0 + 4], /* S1-0 */
+        &wired_adapter.data[1].output32[1 + 4], /* S1-1 */
+        &wired_adapter.data[1].output32[2 + 4], /* S1-2 */
+        &wired_adapter.data[1].output32[3 + 4], /* S1-3 */
+        &wired_adapter.data[2].output32[0 + 4], /* S2-0 */
+        &wired_adapter.data[2].output32[1 + 4], /* S2-1 */
+        &wired_adapter.data[2].output32[2 + 4], /* S2-2 */
+        &wired_adapter.data[0].output32[3 + 4], /* S0-3 */
+        &wired_adapter.data[2].output32[3 + 4], /* S2-3 */
+        &wired_adapter.data[3].output32[0 + 4], /* S3-0 */
+        &wired_adapter.data[3].output32[1 + 4], /* S3-1 */
+        &wired_adapter.data[0].output32[2 + 4], /* S0-2 */
+        &wired_adapter.data[3].output32[2 + 4], /* S3-2 */
+        &wired_adapter.data[0].output32[1 + 4], /* S0-1 */
+        &wired_adapter.data[0].output32[0 + 4], /* S0-0 */
+        &wired_adapter.data[3].output32[3 + 4], /* S3-3 */
     },
     {   /* BANK 1 */
-        (uint32_t *)&wired_adapter.data[1].output[0 + 32],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4 + 32],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8 + 32],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12 + 32], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0 + 32],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4 + 32],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8 + 32],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 32], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12 + 32], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0 + 32],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4 + 32],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 32],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8 + 32],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 32],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 32],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12 + 32], /* S3-3 */
+        &wired_adapter.data[1].output32[0 + 8], /* S1-0 */
+        &wired_adapter.data[1].output32[1 + 8], /* S1-1 */
+        &wired_adapter.data[1].output32[2 + 8], /* S1-2 */
+        &wired_adapter.data[1].output32[3 + 8], /* S1-3 */
+        &wired_adapter.data[2].output32[0 + 8], /* S2-0 */
+        &wired_adapter.data[2].output32[1 + 8], /* S2-1 */
+        &wired_adapter.data[2].output32[2 + 8], /* S2-2 */
+        &wired_adapter.data[0].output32[3 + 8], /* S0-3 */
+        &wired_adapter.data[2].output32[3 + 8], /* S2-3 */
+        &wired_adapter.data[3].output32[0 + 8], /* S3-0 */
+        &wired_adapter.data[3].output32[1 + 8], /* S3-1 */
+        &wired_adapter.data[0].output32[2 + 8], /* S0-2 */
+        &wired_adapter.data[3].output32[2 + 8], /* S3-2 */
+        &wired_adapter.data[0].output32[1 + 8], /* S0-1 */
+        &wired_adapter.data[0].output32[0 + 8], /* S0-0 */
+        &wired_adapter.data[3].output32[3 + 8], /* S3-3 */
     },
     {   /* BANK 2 */
-        (uint32_t *)&wired_adapter.data[1].output[0 + 48],  /* S1-0 */
-        (uint32_t *)&wired_adapter.data[1].output[4 + 48],  /* S1-1 */
-        (uint32_t *)&wired_adapter.data[1].output[8 + 48],  /* S1-2 */
-        (uint32_t *)&wired_adapter.data[1].output[12 + 48], /* S1-3 */
-        (uint32_t *)&wired_adapter.data[2].output[0 + 48],  /* S2-0 */
-        (uint32_t *)&wired_adapter.data[2].output[4 + 48],  /* S2-1 */
-        (uint32_t *)&wired_adapter.data[2].output[8 + 48],  /* S2-2 */
-        (uint32_t *)&wired_adapter.data[0].output[12 + 48], /* S0-3 */
-        (uint32_t *)&wired_adapter.data[2].output[12 + 48], /* S2-3 */
-        (uint32_t *)&wired_adapter.data[3].output[0 + 48],  /* S3-0 */
-        (uint32_t *)&wired_adapter.data[3].output[4 + 48],  /* S3-1 */
-        (uint32_t *)&wired_adapter.data[0].output[8 + 48],  /* S0-2 */
-        (uint32_t *)&wired_adapter.data[3].output[8 + 48],  /* S3-2 */
-        (uint32_t *)&wired_adapter.data[0].output[4 + 48],  /* S0-1 */
-        (uint32_t *)&wired_adapter.data[0].output[0 + 48],  /* S0-0 */
-        (uint32_t *)&wired_adapter.data[3].output[12 + 48], /* S3-3 */
+        &wired_adapter.data[1].output32[0 + 12], /* S1-0 */
+        &wired_adapter.data[1].output32[1 + 12], /* S1-1 */
+        &wired_adapter.data[1].output32[2 + 12], /* S1-2 */
+        &wired_adapter.data[1].output32[3 + 12], /* S1-3 */
+        &wired_adapter.data[2].output32[0 + 12], /* S2-0 */
+        &wired_adapter.data[2].output32[1 + 12], /* S2-1 */
+        &wired_adapter.data[2].output32[2 + 12], /* S2-2 */
+        &wired_adapter.data[0].output32[3 + 12], /* S0-3 */
+        &wired_adapter.data[2].output32[3 + 12], /* S2-3 */
+        &wired_adapter.data[3].output32[0 + 12], /* S3-0 */
+        &wired_adapter.data[3].output32[1 + 12], /* S3-1 */
+        &wired_adapter.data[0].output32[2 + 12], /* S0-2 */
+        &wired_adapter.data[3].output32[2 + 12], /* S3-2 */
+        &wired_adapter.data[0].output32[1 + 12], /* S0-1 */
+        &wired_adapter.data[0].output32[0 + 12], /* S0-0 */
+        &wired_adapter.data[3].output32[3 + 12], /* S3-3 */
     },
 };
 static const uint8_t socket_idx[16] = {
