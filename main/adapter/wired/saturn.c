@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
+#include "adapter/wired/wired.h"
 #include "saturn.h"
 
 enum {
@@ -66,6 +67,10 @@ struct saturn_map {
             uint8_t flags;
             uint8_t scancode;
         };
+        struct {
+            uint16_t sticks;
+            uint16_t triggers;
+        };
     };
 } __packed;
 
@@ -83,7 +88,7 @@ static const uint32_t saturn_mask[4] = {0x331F0F00, 0x00000000, 0x00000000, 0x00
 static const uint32_t saturn_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t saturn_3d_mask[4] = {0x331F0F0F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t saturn_3d_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t saturn_btns_mask[32] = {
+static DRAM_ATTR const uint32_t saturn_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(SATURN_LD_LEFT), BIT(SATURN_LD_RIGHT), BIT(SATURN_LD_DOWN), BIT(SATURN_LD_UP),
@@ -171,6 +176,7 @@ void IRAM_ATTR saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_dat
         default:
         {
             struct saturn_map *map = (struct saturn_map *)wired_data->output;
+            struct saturn_map *map_mask = (struct saturn_map *)wired_data->output_mask;
 
             map->buttons = 0xFFFF;
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
@@ -179,6 +185,10 @@ void IRAM_ATTR saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_dat
                 }
                 map->axes[saturn_axes_idx[i]] = saturn_axes_meta[i].neutral;
             }
+
+            map_mask->buttons = 0x0000;
+            map_mask->sticks = 0x0000;
+            map_mask->triggers = 0xFFFF;
             break;
         }
     }
@@ -225,9 +235,11 @@ void saturn_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data 
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~saturn_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 map_tmp.buttons |= saturn_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -248,6 +260,7 @@ void saturn_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data 
                     map_tmp.axes[saturn_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
                 }
             }
+            wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
         }
 
         if (map_tmp.axes[saturn_axes_idx[TRIG_L]] < 0x56) {
@@ -352,5 +365,36 @@ void saturn_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struc
         default:
             saturn_ctrl_from_generic(ctrl_data, wired_data);
             break;
+    }
+}
+
+void IRAM_ATTR saturn_gen_turbo_mask(struct wired_data *wired_data) {
+    struct saturn_map *map_mask = (struct saturn_map *)wired_data->output_mask;
+
+    map_mask->buttons = 0x0000;
+    map_mask->sticks = 0x0000;
+    map_mask->triggers = 0xFFFF;
+
+    wired_gen_turbo_mask_btns16_neg(wired_data, &map_mask->buttons, saturn_btns_mask);
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        if (i == 2 || i == 3) {
+            continue;
+        }
+
+        uint8_t btn_id = axis_to_btn_id(i);
+        uint8_t mask = wired_data->cnt_mask[btn_id] >> 1;
+        if (mask) {
+            if (wired_data->cnt_mask[btn_id] & 1) {
+                if (!(mask & wired_data->frame_cnt)) {
+                    map_mask->axes[saturn_axes_idx[i]] = saturn_axes_meta[i].neutral;
+                }
+            }
+            else {
+                if (!((mask & wired_data->frame_cnt) == mask)) {
+                    map_mask->axes[saturn_axes_idx[i]] = saturn_axes_meta[i].neutral;
+                }
+            }
+        }
     }
 }

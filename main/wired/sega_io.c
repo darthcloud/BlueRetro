@@ -10,6 +10,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/genesis.h"
+#include "adapter/wired/saturn.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
 #include "system/gpio.h"
@@ -276,19 +277,31 @@ end:
 /* Saturn analog pad digital mode */
 static void set_analog_digital_pad(uint8_t port, uint8_t src_port) {
     buffer[0] = (ID2_SATURN_PAD << 4) | 2;
-    memcpy(&buffer[1], wired_adapter.data[src_port].output, 2);
+    buffer[1] = wired_adapter.data[src_port].output[0] | wired_adapter.data[src_port].output_mask[0];
+    buffer[2] = wired_adapter.data[src_port].output[1] | wired_adapter.data[src_port].output_mask[1];
     buffer[3] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
     twh_tx(port, buffer, 4, 0);
+    ++wired_adapter.data[src_port].frame_cnt;
+    saturn_gen_turbo_mask(&wired_adapter.data[src_port]);
 }
 
 /* Saturn analog pad */
 static void set_analog_pad(uint8_t port, uint8_t src_port) {
     buffer[0] = (ID2_SATURN_ANALOG_PAD << 4) | 6;
-    memcpy(&buffer[1], wired_adapter.data[src_port].output, 6);
+    buffer[1] = wired_adapter.data[src_port].output[0] | wired_adapter.data[src_port].output_mask[0];
+    buffer[2] = wired_adapter.data[src_port].output[1] | wired_adapter.data[src_port].output_mask[1];
+    for (uint32_t i = 3; i < 5; ++i) {
+        buffer[i] = (wired_adapter.data[src_port].output_mask[i - 1]) ?
+            wired_adapter.data[src_port].output_mask[i - 1] : wired_adapter.data[src_port].output[i - 1];
+    }
+    buffer[5] = wired_adapter.data[src_port].output[4] & wired_adapter.data[src_port].output_mask[4];
+    buffer[6] = wired_adapter.data[src_port].output[5] & wired_adapter.data[src_port].output_mask[5];
     buffer[7] = ID0_SATURN_THREEWIRE_HANDSHAKE >> 4;
 
     twh_tx(port, buffer, 8, 0);
+    ++wired_adapter.data[src_port].frame_cnt;
+    saturn_gen_turbo_mask(&wired_adapter.data[src_port]);
 }
 
 /* SEGA Mouse */
@@ -333,13 +346,23 @@ static void set_saturn_multitap(uint8_t port, uint8_t first_port, uint8_t nb_por
             case DEV_SATURN_DIGITAL:
             case DEV_SATURN_DIGITAL_TWH:
                 *data++ = (ID2_SATURN_PAD << 4) | 2;
-                memcpy(data, wired_adapter.data[j].output, 2);
-                data += 2;
+                *data++ = wired_adapter.data[j].output[0] | wired_adapter.data[j].output_mask[0];
+                *data++ = wired_adapter.data[j].output[1] | wired_adapter.data[j].output_mask[1];
+                ++wired_adapter.data[j].frame_cnt;
+                saturn_gen_turbo_mask(&wired_adapter.data[j]);
                 break;
             case DEV_SATURN_ANALOG:
                 *data++ = (ID2_SATURN_ANALOG_PAD << 4) | 6;
-                memcpy(data, wired_adapter.data[j].output, 6);
-                data += 6;
+                *data++ = wired_adapter.data[j].output[0] | wired_adapter.data[j].output_mask[0];
+                *data++ = wired_adapter.data[j].output[1] | wired_adapter.data[j].output_mask[1];
+                for (uint32_t k = 2; k < 4; ++k) {
+                    *data++ = (wired_adapter.data[j].output_mask[k]) ?
+                        wired_adapter.data[j].output_mask[k] : wired_adapter.data[j].output[k];
+                }
+                *data++ = wired_adapter.data[j].output[4] & wired_adapter.data[j].output_mask[4];
+                *data++ = wired_adapter.data[j].output[5] & wired_adapter.data[j].output_mask[5];
+                ++wired_adapter.data[j].frame_cnt;
+                saturn_gen_turbo_mask(&wired_adapter.data[j]);
                 break;
             case DEV_SATURN_KB:
                 *data++ = (ID2_SATURN_KB << 4) | 4;
