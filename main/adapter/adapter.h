@@ -360,10 +360,16 @@ struct ctrl_meta {
     int32_t relative;
 };
 
-struct ctrl {
+struct ctrl_axis {
     int32_t value;
     int32_t relative;
     const struct ctrl_meta *meta;
+    uint8_t cnt_mask;
+};
+
+struct ctrl_btn {
+    int32_t value;
+    uint8_t cnt_mask[32];
 };
 
 struct generic_ctrl {
@@ -371,8 +377,8 @@ struct generic_ctrl {
     const uint32_t *mask;
     const uint32_t *desc;
     uint32_t map_mask[4];
-    struct ctrl btns[4];
-    struct ctrl axes[ADAPTER_MAX_AXES];
+    struct ctrl_btn btns[4];
+    struct ctrl_axis axes[ADAPTER_MAX_AXES];
 };
 
 struct generic_fb {
@@ -455,7 +461,17 @@ struct wired_data {
     /* from wired driver */
     uint32_t frame_cnt;
     /* from adapter */
-    uint8_t output[64];
+    union {
+        uint8_t output[64];
+        uint16_t output16[32];
+        uint32_t output32[16];
+    };
+    union {
+        uint8_t output_mask[64];
+        uint16_t output_mask16[32];
+        uint32_t output_mask32[16];
+    };
+    uint8_t cnt_mask[128];
 } __packed;
 
 struct wired_adapter {
@@ -486,6 +502,7 @@ extern struct wired_adapter wired_adapter;
 
 int32_t btn_id_to_axis(uint8_t btn_id);
 uint32_t axis_to_btn_mask(uint8_t axis);
+uint32_t axis_to_btn_id(uint8_t axis);
 int8_t btn_sign(uint32_t polarity, uint8_t btn_id);
 void adapter_init_buffer(uint8_t wired_id);
 void adapter_bridge(struct bt_data *bt_data);

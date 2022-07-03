@@ -103,6 +103,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
 
                     if (abs(value) > abs(out->axes[dst_axis_idx].value)) {
                         out->axes[dst_axis_idx].value = value;
+                        out->axes[dst_axis_idx].cnt_mask = map_cfg->turbo;
                     }
                 }
             }
@@ -112,6 +113,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                 /* Check if axis over threshold */
                 if (abs_src_value > threshold) {
                     out->btns[dst_btn_idx].value |= dst_mask;
+                    out->btns[dst_btn_idx].cnt_mask[dst & 0x1F] = map_cfg->turbo;
                 }
             }
         }
@@ -149,12 +151,14 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask
 
                     if (abs(value) > abs(out->axes[axis_id].value)) {
                         out->axes[axis_id].value = value;
+                        out->axes[axis_id].cnt_mask = map_cfg->turbo;
                     }
                 }
             }
             else {
                 /* Dst is a button */
                 out->btns[dst_btn_idx].value |= dst_mask;
+                out->btns[dst_btn_idx].cnt_mask[dst & 0x1F] = map_cfg->turbo;
             }
         }
         /* Flag this dst for update */
@@ -246,6 +250,24 @@ uint32_t axis_to_btn_mask(uint8_t axis) {
             return BIT(PAD_RM);
     }
     return 0x00000000;
+}
+
+uint32_t IRAM_ATTR axis_to_btn_id(uint8_t axis) {
+    switch (axis) {
+        case AXIS_LX:
+            return PAD_LX_LEFT;
+        case AXIS_LY:
+            return PAD_LY_DOWN;
+        case AXIS_RX:
+            return PAD_RX_LEFT;
+        case AXIS_RY:
+            return PAD_RY_DOWN;
+        case TRIG_L:
+            return PAD_LM;
+        case TRIG_R:
+            return PAD_RM;
+    }
+    return 0;
 }
 
 int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
