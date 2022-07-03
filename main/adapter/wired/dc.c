@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "dc.h"
 
 enum {
@@ -73,8 +74,9 @@ static DRAM_ATTR const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
 struct dc_map {
     union {
         struct {
-            uint16_t reserved;
+            uint16_t triggers;
             uint16_t buttons;
+            uint32_t sticks;
         };
         uint8_t axes[8];
     };
@@ -99,7 +101,7 @@ struct dc_kb_map {
 
 static const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t dc_btns_mask[32] = {
+static DRAM_ATTR const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(DC_LD_LEFT), BIT(DC_LD_RIGHT), BIT(DC_LD_DOWN), BIT(DC_LD_UP),
@@ -185,11 +187,16 @@ void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         default:
         {
             struct dc_map *map = (struct dc_map *)wired_data->output;
+            struct dc_map *map_mask = (struct dc_map *)wired_data->output_mask;
 
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 map->axes[dc_axes_idx[i]] = dc_axes_meta[i].neutral;
             }
             map->buttons = 0xFFFF;
+
+            map_mask->triggers = 0xFFFF;
+            map_mask->buttons = 0x0000;
+            map_mask->sticks = 0x00000000;
             break;
         }
     }
@@ -231,9 +238,11 @@ static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~dc_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 map_tmp.buttons |= dc_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -250,6 +259,7 @@ static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
                 map_tmp.axes[dc_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
@@ -378,4 +388,15 @@ void dc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
             adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
         }
     }
+}
+
+void IRAM_ATTR dc_gen_turbo_mask(struct wired_data *wired_data) {
+    struct dc_map *map_mask = (struct dc_map *)wired_data->output_mask;
+
+    map_mask->triggers = 0xFFFF;
+    map_mask->buttons = 0x0000;
+    map_mask->sticks = 0x00000000;
+
+    wired_gen_turbo_mask_btns16_neg(wired_data, &map_mask->buttons, dc_btns_mask);
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, dc_axes_idx, dc_axes_meta);
 }

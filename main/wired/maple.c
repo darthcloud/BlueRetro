@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/dc.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
 #include "system/gpio.h"
@@ -498,9 +499,15 @@ maple_end:
                                 pkt.len = 3;
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_CTRL;
-                                memcpy((void *)&pkt.data32[1], wired_adapter.data[port].output, sizeof(uint32_t) * 2);
-                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                *(uint16_t *)&pkt.data[8] = wired_adapter.data[port].output16[0] & wired_adapter.data[port].output_mask16[0];
+                                *(uint16_t *)&pkt.data[10] = wired_adapter.data[port].output16[1] | wired_adapter.data[port].output_mask16[1];
+                                for (uint32_t i = 12; i < 16; ++i) {
+                                    pkt.data[i] = (wired_adapter.data[port].output_mask[i - 8]) ?
+                                        wired_adapter.data[port].output_mask[i - 8] : wired_adapter.data[port].output[i - 8];
+                                }
                                 ++wired_adapter.data[port].frame_cnt;
+                                dc_gen_turbo_mask(&wired_adapter.data[port]);
+                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             default:
                                 ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
