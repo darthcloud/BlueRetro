@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2021-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/pce.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
 #include "system/gpio.h"
@@ -53,6 +54,13 @@ static uint32_t *map[] = {
     (uint32_t *)wired_adapter.data[0].output,
     (uint32_t *)wired_adapter.data[0].output,
     (uint32_t *)wired_adapter.data[0].output,
+};
+static uint32_t *map_mask[] = {
+    (uint32_t *)wired_adapter.data[0].output_mask,
+    (uint32_t *)wired_adapter.data[0].output_mask,
+    (uint32_t *)wired_adapter.data[0].output_mask,
+    (uint32_t *)wired_adapter.data[0].output_mask,
+    (uint32_t *)wired_adapter.data[0].output_mask,
 };
 static uint8_t cycle = 0;
 static uint8_t frame_cnt = 0;
@@ -115,6 +123,8 @@ static void pce_ctrl_task(void) {
                     core0_stall_end();
                     lock = 0;
                     timeout = 0;
+                    ++wired_adapter.data[0].frame_cnt;
+                    pce_gen_turbo_mask(&wired_adapter.data[0]);
                 }
             }
         }
@@ -126,7 +136,7 @@ static void pce_ctrl_task(void) {
             }
             idx = ((cur_in1 & P1_SEL_MASK) >> 1) ^ 0x01;
 
-            GPIO.out = map[0][idx];
+            GPIO.out = map[0][idx] | map_mask[0][idx];
             timeout = 0;
         }
     }
@@ -148,6 +158,10 @@ static void pce_mt_task(void) {
                     core0_stall_end();
                     lock = 0;
                     timeout = 0;
+                    for (uint32_t i = 0; i < 5; ++i) {
+                        ++wired_adapter.data[i].frame_cnt;
+                        pce_gen_turbo_mask(&wired_adapter.data[i]);
+                    }
                 }
             }
         }
@@ -165,15 +179,15 @@ static void pce_mt_task(void) {
                     GPIO.out = PCE_OUT_CLR;
                 }
                 else {
-                    GPIO.out = map[cycle][0];
+                    GPIO.out = map[cycle][0] | map_mask[cycle][0];
                 }
             }
             else {
                 if (frame_cnt & 0x01) {
-                    GPIO.out = map[cycle][2];
+                    GPIO.out = map[cycle][2] | map_mask[cycle][2];
                 }
                 else {
-                    GPIO.out = map[cycle][1];
+                    GPIO.out = map[cycle][1] | map_mask[cycle][1];
                 }
             }
             timeout = 0;
@@ -185,10 +199,10 @@ static uint32_t pce_mt_oe_isr(uint32_t cause) {
     uint32_t cur_in1 = GPIO.in1.val;
     cycle = 0;
     if (cur_in1 & P1_SEL_MASK) {
-        GPIO.out = map[cycle][0];
+        GPIO.out = map[cycle][0] | map_mask[cycle][0];
     }
     else {
-        GPIO.out = map[cycle][1];
+        GPIO.out = map[cycle][1] | map_mask[cycle][1];
     }
     GPIO.status_w1tc = P1_OE_MASK;
     return 0;
@@ -203,15 +217,15 @@ static uint32_t pce_6btns_oe_isr(uint32_t cause) {
             GPIO.out = PCE_OUT_CLR;
         }
         else {
-            GPIO.out = map[cycle][0];
+            GPIO.out = map[cycle][0] | map_mask[cycle][0];
         }
     }
     else {
         if (frame_cnt & 0x01) {
-            GPIO.out = map[cycle][2];
+            GPIO.out = map[cycle][2] | map_mask[cycle][2];
         }
         else {
-            GPIO.out = map[cycle][1];
+            GPIO.out = map[cycle][1] | map_mask[cycle][1];
         }
     }
     GPIO.status_w1tc = P1_OE_MASK;
@@ -319,6 +333,11 @@ void pce_io_init(void) {
         map[2] = (uint32_t *)wired_adapter.data[2].output;
         map[3] = (uint32_t *)wired_adapter.data[3].output;
         map[4] = (uint32_t *)wired_adapter.data[4].output;
+        map_mask[0] = (uint32_t *)wired_adapter.data[0].output_mask;
+        map_mask[1] = (uint32_t *)wired_adapter.data[1].output_mask;
+        map_mask[2] = (uint32_t *)wired_adapter.data[2].output_mask;
+        map_mask[3] = (uint32_t *)wired_adapter.data[3].output_mask;
+        map_mask[4] = (uint32_t *)wired_adapter.data[4].output_mask;
         if (config.out_cfg[0].dev_mode == DEV_PAD_ALT) {
             intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, pce_6btns_oe_isr);
         }

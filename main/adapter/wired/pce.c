@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 2021-2022, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "pce.h"
@@ -84,7 +90,7 @@ static const uint32_t pce_mouse_btns_mask[32] = {
 
 static const uint32_t pce_mask[4] = {0x00350F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t pce_btns_mask[][32] = {
+static DRAM_ATTR const uint32_t pce_btns_mask[][32] = {
     /* URDL */
     {
         0, 0, 0, 0,
@@ -122,7 +128,7 @@ static const uint32_t pce_btns_mask[][32] = {
 
 static const uint32_t pce_6btns_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_6btns_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t pce_6btns_btns_mask[][32] = {
+static DRAM_ATTR const uint32_t pce_6btns_btns_mask[][32] = {
     /* URDL */
     {
         0, 0, 0, 0,
@@ -206,6 +212,7 @@ static void pce_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                     map_tmp.buttons[j] &= ~btns_mask[j][i];
                     map_mask[j] &= ~btns_mask[j][i];
                 }
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
@@ -213,6 +220,7 @@ static void pce_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                         map_tmp.buttons[j] |= btns_mask[j][i];
                     }
                 }
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -236,9 +244,11 @@ void IRAM_ATTR pce_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
         default:
         {
             struct pce_map *map = (struct pce_map *)wired_data->output;
+            struct pce_map *map_mask = (struct pce_map *)wired_data->output_mask;
 
             for (uint32_t i = 0; i < 3; i++) {
                 map->buttons[i] = 0xFFFDFFFD;
+                map_mask->buttons[i] = 0x00000000;
             }
             break;
         }
@@ -277,4 +287,13 @@ void pce_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
             pce_ctrl_from_generic(ctrl_data, wired_data);
             break;
     }
+}
+
+void IRAM_ATTR pce_gen_turbo_mask(struct wired_data *wired_data) {
+    const uint32_t (*btns_mask)[32] = (config.out_cfg[0].dev_mode == DEV_PAD_ALT) ? pce_6btns_btns_mask : pce_btns_mask;
+    struct pce_map *map_mask = (struct pce_map *)wired_data->output_mask;
+
+    memset(map_mask, 0, sizeof(*map_mask));
+
+    wired_gen_turbo_mask_btns32(wired_data, map_mask->buttons, btns_mask, 3);
 }
