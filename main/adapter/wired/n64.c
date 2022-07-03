@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
+#include "adapter/wired/wired.h"
 #include "adapter/wireless/wireless.h"
 #include "n64.h"
 
@@ -65,7 +66,7 @@ struct n64_kb_map {
 
 static const uint32_t n64_mask[4] = {0x33DF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t n64_btns_mask[32] = {
+static DRAM_ATTR const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(N64_C_LEFT), BIT(N64_C_RIGHT), BIT(N64_C_DOWN), BIT(N64_C_UP),
     BIT(N64_LD_LEFT), BIT(N64_LD_RIGHT), BIT(N64_LD_DOWN), BIT(N64_LD_UP),
@@ -153,6 +154,7 @@ void IRAM_ATTR n64_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
             for (uint32_t i = 0; i < N64_AXES_MAX; i++) {
                 map->axes[n64_axes_idx[i]] = n64_axes_meta[i].neutral;
             }
+            memset(wired_data->output_mask, 0xFF, sizeof(struct n64_map));
             break;
         }
     }
@@ -260,9 +262,11 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= n64_btns_mask[i];
                 map_mask &= ~n64_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & n64_btns_mask[i]) {
                 map_tmp.buttons &= ~n64_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -281,6 +285,7 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                 map_tmp.axes[n64_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
@@ -364,4 +369,13 @@ void n64_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gene
     fb_data->state = raw_fb_data->data[0];
     fb_data->cycles = 0;
     fb_data->start = 0;
+}
+
+void IRAM_ATTR n64_gen_turbo_mask(struct wired_data *wired_data) {
+    struct n64_map *map_mask = (struct n64_map *)wired_data->output_mask;
+
+    memset(map_mask, 0xFF, sizeof(*map_mask));
+
+    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, n64_btns_mask);
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, N64_AXES_MAX, n64_axes_idx, n64_axes_meta);
 }

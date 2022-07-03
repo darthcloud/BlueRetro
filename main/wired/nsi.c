@@ -15,6 +15,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/memory_card.h"
+#include "adapter/wired/n64.h"
 #include "adapter/wired/gc.h"
 #include "system/gpio.h"
 #include "system/intr.h"
@@ -83,6 +84,7 @@ static const uint8_t gc_neutral[] = {
 };
 static volatile rmt_item32_t *rmt_items = (volatile rmt_item32_t *)RMTMEM.chan[0].data32;
 static uint8_t buf[128] = {0};
+static uint32_t *buf32 = (uint32_t *)buf;
 static uint16_t *buf16 = (uint16_t *)buf;
 static uint8_t last_rumble[4] = {0};
 static uint8_t rumble_state[4] = {0};
@@ -279,7 +281,7 @@ static uint32_t n64_isr(uint32_t cause) {
                     default:
                         switch (buf[0]) {
                             case 0x01:
-                                memcpy(buf, wired_adapter.data[channel].output, 4);
+                                buf32[0] = wired_adapter.data[channel].output32[0] & wired_adapter.data[channel].output_mask32[0];
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
@@ -287,6 +289,7 @@ static uint32_t n64_isr(uint32_t cause) {
                                 if (ctrl_acc_update[channel] > 1) {
                                     ctrl_acc_update[channel]--;
                                 }
+                                n64_gen_turbo_mask(&wired_adapter.data[channel]);
                                 break;
                             case 0x02:
                                 item = nsi_items_to_bytes(item, buf, 2);
