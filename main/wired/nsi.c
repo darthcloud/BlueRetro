@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,6 +15,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/memory_card.h"
+#include "adapter/wired/gc.h"
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "nsi.h"
@@ -82,6 +83,7 @@ static const uint8_t gc_neutral[] = {
 };
 static volatile rmt_item32_t *rmt_items = (volatile rmt_item32_t *)RMTMEM.chan[0].data32;
 static uint8_t buf[128] = {0};
+static uint16_t *buf16 = (uint16_t *)buf;
 static uint8_t last_rumble[4] = {0};
 static uint8_t rumble_state[4] = {0};
 static uint8_t ctrl_acc_mode[4] = {0};
@@ -456,7 +458,12 @@ static uint32_t gc_isr(uint32_t cause) {
                                 break;
                             case 0x40:
                                 nsi_items_to_bytes(item, buf, 2);
-                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, wired_adapter.data[port].output, 8, &crc, STOP_BIT_2US);
+                                buf16[2] = wired_adapter.data[port].output16[0] & wired_adapter.data[port].output_mask16[0];
+                                for (uint32_t i = 6; i < 12; ++i) {
+                                    buf[i] = (wired_adapter.data[port].output_mask[i - 4]) ?
+                                        wired_adapter.data[port].output_mask[i - 4] : wired_adapter.data[port].output[i - 4];
+                                }
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, &buf[4], 8, &crc, STOP_BIT_2US);
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
                                 if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
@@ -473,6 +480,7 @@ static uint32_t gc_isr(uint32_t cause) {
                                 }
 
                                 ++wired_adapter.data[port].frame_cnt;
+                                gc_gen_turbo_mask(&wired_adapter.data[port]);
                                 break;
                             case 0x41:
                             case 0x42:

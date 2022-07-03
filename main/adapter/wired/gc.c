@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "gc.h"
 
 enum {
@@ -54,7 +55,7 @@ struct gc_kb_map {
 
 static const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t gc_btns_mask[32] = {
+static DRAM_ATTR const uint32_t gc_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(GC_LD_LEFT), BIT(GC_LD_RIGHT), BIT(GC_LD_DOWN), BIT(GC_LD_UP),
@@ -113,11 +114,14 @@ void IRAM_ATTR gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         default:
         {
             struct gc_map *map = (struct gc_map *)wired_data->output;
+            struct gc_map *map_mask = (struct gc_map *)wired_data->output_mask;
 
             map->buttons = 0x8020;
+            map_mask->buttons = 0xFFFF;
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 map->axes[gc_axes_idx[i]] = gc_axes_meta[i].neutral;
             }
+            memset(map_mask->axes, 0x00, sizeof(map_mask->axes));
             break;
         }
     }
@@ -155,9 +159,11 @@ static void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= gc_btns_mask[i];
                 map_mask &= ~gc_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & gc_btns_mask[i]) {
                 map_tmp.buttons &= ~gc_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -174,6 +180,7 @@ static void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
                 map_tmp.axes[gc_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
@@ -215,4 +222,14 @@ void gc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
     fb_data->state = raw_fb_data->data[0];
     fb_data->cycles = 0;
     fb_data->start = 0;
+}
+
+void IRAM_ATTR gc_gen_turbo_mask(struct wired_data *wired_data) {
+    struct gc_map *map_mask = (struct gc_map *)wired_data->output_mask;
+
+    map_mask->buttons = 0xFFFF;
+    memset(map_mask->axes, 0x00, sizeof(map_mask->axes));
+
+    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, gc_btns_mask);
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, gc_axes_idx, gc_axes_meta);
 }
