@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
+#include "adapter/wired/wired.h"
 #include "ps.h"
 
 enum {
@@ -63,7 +64,13 @@ static DRAM_ATTR const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
 
 struct ps_map {
     uint16_t buttons;
-    uint8_t axes[16];
+    union {
+        uint8_t axes[16];
+        struct {
+            uint32_t sticks;
+            uint8_t pressure[12];
+        };
+    };
     uint8_t analog_btn;
 } __packed;
 
@@ -75,7 +82,7 @@ struct ps_mouse_map {
 
 static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t ps_btns_mask[32] = {
+static DRAM_ATTR const uint32_t ps_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PS_D_LEFT), BIT(PS_D_RIGHT), BIT(PS_D_DOWN), BIT(PS_D_UP),
@@ -168,6 +175,7 @@ void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
         default:
         {
             struct ps_map *map = (struct ps_map *)wired_data->output;
+            struct ps_map *map_mask = (struct ps_map *)wired_data->output_mask;
 
             memset((void *)map, 0, sizeof(*map));
             map->buttons = 0xFFFF;
@@ -175,6 +183,10 @@ void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 map->axes[ps_axes_idx[i]] = ps_axes_meta[i].neutral;
             }
+
+            map_mask->buttons = 0x0000;
+            map_mask->sticks = 0x00000000;
+            memset(map_mask->pressure, 0xFF, sizeof(map_mask->pressure));
             break;
         }
     }
@@ -219,12 +231,14 @@ static void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
                 if (ps_btns_idx[i]) {
                     map_tmp.axes[ps_btns_idx[i]] = 0xFF;
                 }
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 map_tmp.buttons |= ps_btns_mask[i];
                 if (ps_btns_idx[i]) {
                     map_tmp.axes[ps_btns_idx[i]] = 0x00;
                 }
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -250,6 +264,7 @@ static void ps_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
                 map_tmp.axes[ps_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
@@ -339,4 +354,37 @@ void ps_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
     fb_data->state = raw_fb_data->data[0];
     fb_data->cycles = 0;
     fb_data->start = 0;
+}
+
+void IRAM_ATTR ps_gen_turbo_mask(struct wired_data *wired_data) {
+    struct ps_map *map_mask = (struct ps_map *)wired_data->output_mask;
+
+    map_mask->buttons = 0x0000;
+    map_mask->sticks = 0x00000000;
+    memset(map_mask->pressure, 0xFF, sizeof(map_mask->pressure));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(ps_btns_mask); i++) {
+        uint8_t mask = wired_data->cnt_mask[i] >> 1;
+
+        if (ps_btns_mask[i] && mask) {
+            if (wired_data->cnt_mask[i] & 1) {
+                if (!(mask & wired_data->frame_cnt)) {
+                    map_mask->buttons |= ps_btns_mask[i];
+                    if (ps_btns_idx[i]) {
+                        map_mask->axes[ps_btns_idx[i]] = 0x00;
+                    }
+                }
+            }
+            else {
+                if (!((mask & wired_data->frame_cnt) == mask)) {
+                    map_mask->buttons |= ps_btns_mask[i];
+                    if (ps_btns_idx[i]) {
+                        map_mask->axes[ps_btns_idx[i]] = 0x00;
+                    }
+                }
+            }
+        }
+    }
+
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, ps_axes_idx, ps_axes_meta);
 }

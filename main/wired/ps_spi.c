@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,6 +21,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
+#include "adapter/wired/ps.h"
 #include "ps_spi.h"
 #include "sdkconfig.h"
 
@@ -341,6 +342,7 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
         __attribute__ ((fallthrough));
         case 0x42:
         {
+            uint32_t index = id + port->mt_first_port;
             uint32_t size = (port->dev_id[id] & 0xF) * 2;
             if (size < 6) {
                 size = 6;
@@ -350,15 +352,27 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 {
                     uint32_t len = 0;
                     memset(rsp, 0x00, size);
-                    (void)kbmon_get_code(id + port->mt_first_port, rsp, &len);
+                    (void)kbmon_get_code(index, rsp, &len);
                     break;
                 }
                 case DEV_PSX_MOUSE:
-                    memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, 2);
-                    load_mouse_axes(id + port->mt_first_port, &rsp[2]);
+                    memcpy(rsp, wired_adapter.data[index].output, 2);
+                    load_mouse_axes(index, &rsp[2]);
                     break;
                 default:
-                    memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
+                    *(uint16_t *)&rsp[0] = wired_adapter.data[index].output16[0] | wired_adapter.data[index].output_mask16[0];
+                    if (size >  2) {
+                        for (uint32_t i = 2; i < 6; ++i) {
+                            rsp[i] = (wired_adapter.data[index].output_mask[i]) ?
+                                wired_adapter.data[index].output_mask[i] : wired_adapter.data[index].output[i];
+                        }
+                    }
+                    if (size >  6) {
+                        *(uint16_t *)&rsp[6] = wired_adapter.data[index].output16[3] | wired_adapter.data[index].output_mask16[3];
+                        *(uint32_t *)&rsp[8] = wired_adapter.data[index].output32[2] | wired_adapter.data[index].output_mask32[2];
+                        *(uint32_t *)&rsp[12] = wired_adapter.data[index].output32[3] | wired_adapter.data[index].output_mask32[3];
+                    }
+                    ++wired_adapter.data[index].frame_cnt;
                     break;
             }
             break;
@@ -484,11 +498,13 @@ static void packet_end(void *arg) {
                     for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
                         ps_analog_btn_hdlr(port, j);
                         ps_cmd_req_hdlr(port, j, port->rx_buf[prev_rx_buf][3 + (j * 8)], &port->rx_buf[prev_rx_buf][4 + (j * 8)]);
+                        ps_gen_turbo_mask(&wired_adapter.data[port->mt_first_port + j]);
                     }
                 }
                 else {
                     ps_analog_btn_hdlr(port, 0);
                     ps_cmd_req_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->rx_buf[port->active_rx_buf][2]);
+                    ps_gen_turbo_mask(&wired_adapter.data[port->id]);
                 }
                 if (port->root_dev_type == DEV_PSX_MULTITAP) {
                     port->mt_state = port->rx_buf[port->active_rx_buf][2];
