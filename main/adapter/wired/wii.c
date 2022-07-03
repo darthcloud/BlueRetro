@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "wii.h"
 
 enum {
@@ -42,7 +43,7 @@ struct wiic_map {
     uint16_t buttons;
 } __packed;
 
-static const uint8_t wiic_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t wiic_axes_idx[ADAPTER_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
     0,       2,       1,       3,       4,      5
@@ -51,7 +52,7 @@ static const uint8_t wiic_axes_idx[ADAPTER_MAX_AXES] =
 static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_pro_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t wiic_btns_mask[32] = {
+static DRAM_ATTR const uint32_t wiic_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(WII_CLASSIC_D_LEFT), BIT(WII_CLASSIC_D_RIGHT), BIT(WII_CLASSIC_D_DOWN), BIT(WII_CLASSIC_D_UP),
@@ -73,6 +74,7 @@ void IRAM_ATTR wii_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
             for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
                 map->axes[wiic_axes_idx[i]] = wiic_axes_meta[i].neutral;
             }
+            memset(wired_data->output_mask, 0x00, sizeof(struct wiic_map));
             break;
         }
     }
@@ -110,9 +112,11 @@ void wii_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~wiic_btns_mask[i];
                 map_mask &= ~wiic_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & wiic_btns_mask[i]) {
                 map_tmp.buttons |= wiic_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -129,7 +133,17 @@ void wii_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
                 map_tmp.axes[wiic_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
+void IRAM_ATTR wii_gen_turbo_mask(struct wired_data *wired_data) {
+    struct wiic_map *map_mask = (struct wiic_map *)wired_data->output_mask;
+
+    memset(map_mask, 0x00, sizeof(*map_mask));
+
+    wired_gen_turbo_mask_btns16_neg(wired_data, &map_mask->buttons, wiic_btns_mask);
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, wiic_axes_idx, wiic_axes_meta);
 }

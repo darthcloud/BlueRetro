@@ -25,6 +25,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/wii.h"
 
 #define I2C0_INTR_NUM 19
 #define I2C1_INTR_NUM 20
@@ -99,7 +100,28 @@ static uint8_t wii_registers[] = {
 
 static inline void write_fifo(struct wii_ctrl_port *port, const uint8_t *data, uint32_t len)
 {
-    for (int i = 0; i < len; i++) {
+    for (uint32_t i = 0; i < len; i++) {
+        WRITE_PERI_REG(port->fifo_addr, data[i]);
+    }
+}
+
+static inline void write_fifo_status(struct wii_ctrl_port *port, const uint8_t *data, const uint8_t *mask)
+{
+    uint32_t i = 0;
+
+    for (; i < 6; i++) {
+        if (mask[i]) {
+            WRITE_PERI_REG(port->fifo_addr, mask[i]);
+        }
+        else {
+            WRITE_PERI_REG(port->fifo_addr, data[i]);
+        }
+    }
+    WRITE_PERI_REG(port->fifo_addr, data[i] | mask[i]);
+    ++i;
+    WRITE_PERI_REG(port->fifo_addr, data[i] | mask[i]);
+    ++i;
+    for (; i < 32; i++) {
         WRITE_PERI_REG(port->fifo_addr, data[i]);
     }
 }
@@ -143,7 +165,9 @@ static void i2c_isr(void* arg) {
             }
             else if (reg == 0x00) {
                 /* Controller status poll */
-                write_fifo(port, wired_adapter.data[port->id].output, 32);
+                write_fifo_status(port, wired_adapter.data[port->id].output, wired_adapter.data[port->id].output_mask);
+                ++wired_adapter.data[port->id].frame_cnt;
+                wii_gen_turbo_mask(&wired_adapter.data[port->id]);
             }
         }
     }
