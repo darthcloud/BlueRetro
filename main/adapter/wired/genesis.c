@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 2020-2022, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "genesis.h"
@@ -118,7 +124,7 @@ struct genesis_map {
 
 static const uint32_t genesis_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t genesis_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t genesis_btns_mask[2][3][32] = {
+static DRAM_ATTR const uint32_t genesis_btns_mask[2][3][32] = {
     {
         /* TH HIGH */
         {
@@ -191,7 +197,7 @@ static const uint32_t genesis_btns_mask[2][3][32] = {
     },
 };
 
-static const uint32_t genesis_twh_btns_mask[32] = {
+static DRAM_ATTR const uint32_t genesis_twh_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(GENESIS_LD_LEFT), BIT(GENESIS_LD_RIGHT), BIT(GENESIS_LD_DOWN), BIT(GENESIS_LD_UP),
@@ -257,6 +263,7 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
                         map_mask[j] &= ~genesis_btns_mask[ctrl_data->index][j][i];
                     }
                 }
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 for (uint32_t j = 0; j < 3; j++) {
@@ -271,6 +278,7 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
                         }
                     }
                 }
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -289,9 +297,11 @@ static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wire
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.twh_buttons &= ~genesis_twh_btns_mask[i];
                 map_mask &= ~genesis_twh_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & genesis_twh_btns_mask[i]) {
                 map_tmp.twh_buttons |=  genesis_twh_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -331,6 +341,8 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     /* Hackish but wtv */
     struct genesis_map *map1 = (struct genesis_map *)wired_adapter.data[0].output;
     struct genesis_map *map2 = (struct genesis_map *)wired_adapter.data[1].output;
+    struct genesis_map *map1_mask = (struct genesis_map *)wired_adapter.data[0].output_mask;
+    struct genesis_map *map2_mask = (struct genesis_map *)wired_adapter.data[1].output_mask;
 
     if (config.global_cfg.multitap_cfg == MT_SLOT_1 || config.global_cfg.multitap_cfg == MT_DUAL) {
         map1->buttons[0] = 0xFF79FFFD;
@@ -352,6 +364,7 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
         map1->buttons[1] = 0xFF79FFFD;
         map1->buttons[2] = 0xFFFDFFFD;
     }
+    memset(map1_mask->buttons, 0, sizeof(map1_mask->buttons));
 
     if (config.global_cfg.multitap_cfg == MT_SLOT_2 || config.global_cfg.multitap_cfg == MT_DUAL) {
         map2->buttons[0] = 0xFDBDFFFD;
@@ -361,6 +374,8 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     else if (config.global_cfg.multitap_cfg == MT_ALT) {
         struct genesis_map *map3 = (struct genesis_map *)wired_adapter.data[2].output;
         struct genesis_map *map4 = (struct genesis_map *)wired_adapter.data[3].output;
+        struct genesis_map *map3_mask = (struct genesis_map *)wired_adapter.data[2].output_mask;
+        struct genesis_map *map4_mask = (struct genesis_map *)wired_adapter.data[3].output_mask;
         map2->buttons[0] = 0xFFFDFFFF;
         map2->buttons[1] = 0xFF79FFFF;
         map2->buttons[2] = 0xF379FFD7;
@@ -370,6 +385,8 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
         map4->buttons[0] = 0xFFFDFFFF;
         map4->buttons[1] = 0xFF79FFFF;
         map4->buttons[2] = 0xF379FFD7;
+        memset(map3_mask->buttons, 0, sizeof(map3_mask->buttons));
+        memset(map4_mask->buttons, 0, sizeof(map4_mask->buttons));
     }
     else if (config.out_cfg[1].dev_mode == DEV_MOUSE) {
         map2->buttons[0] = P2_MOUSE_ID0_HI;
@@ -381,6 +398,7 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
         map2->buttons[1] = 0xFDBDFFFD;
         map2->buttons[2] = 0xFFFDFFFD;
     }
+    memset(map2_mask->buttons, 0, sizeof(map2_mask->buttons));
 
     map1->buttons_high[0] = 0xFFFFFFFE;
     map1->buttons_high[1] = 0xFFFFFFFE;
@@ -388,6 +406,8 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     map2->buttons_high[0] = 0xFFFFFFFE;
     map2->buttons_high[1] = 0xFFFFFFFE;
     map2->buttons_high[2] = 0xFFFFFFFE;
+    memset(map1_mask->buttons_high, 0, sizeof(map1_mask->buttons_high));
+    memset(map2_mask->buttons_high, 0, sizeof(map2_mask->buttons_high));
 
     if (dev_mode == DEV_MOUSE) {
         struct sega_mouse_map *map = (struct sega_mouse_map *)wired_data->output;
@@ -399,7 +419,9 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     }
     else {
         struct genesis_map *map = (struct genesis_map *)wired_data->output;
+        struct genesis_map *map_mask = (struct genesis_map *)wired_data->output_mask;
         map->twh_buttons = 0xFFFF;
+        map_mask->twh_buttons = 0x0000;
     }
 }
 
@@ -493,4 +515,49 @@ void genesis_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
 #endif
             break;
     }
+}
+
+void IRAM_ATTR genesis_gen_turbo_mask(uint32_t index, struct wired_data *wired_data) {
+    struct genesis_map *map_mask = (struct genesis_map *)wired_data->output_mask;
+
+    memset(map_mask, 0, sizeof(*map_mask));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        uint8_t mask = wired_data->cnt_mask[i] >> 1;
+
+        if (mask) {
+            for (uint32_t j = 0; j < 3; j++) {
+                if (genesis_btns_mask[index][j][i]) {
+                    if (wired_data->cnt_mask[i] & 1) {
+                        if (!(mask & wired_data->frame_cnt)) {
+                            if ((genesis_btns_mask[index][j][i] & 0xF0000000) == 0xF0000000) {
+                                map_mask->buttons_high[j] |= genesis_btns_mask[index][j][i];
+                            }
+                            else {
+                                map_mask->buttons[j] |= genesis_btns_mask[index][j][i];
+                            }
+                        }
+                    }
+                    else {
+                        if (!((mask & wired_data->frame_cnt) == mask)) {
+                            if ((genesis_btns_mask[index][j][i] & 0xF0000000) == 0xF0000000) {
+                                map_mask->buttons_high[j] |= genesis_btns_mask[index][j][i];
+                            }
+                            else {
+                                map_mask->buttons[j] |= genesis_btns_mask[index][j][i];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void IRAM_ATTR genesis_twh_gen_turbo_mask(struct wired_data *wired_data) {
+    struct genesis_map *map_mask = (struct genesis_map *)wired_data->output_mask;
+
+    map_mask->twh_buttons = 0x0000;
+
+    wired_gen_turbo_mask_btns16_neg(wired_data, &map_mask->twh_buttons, genesis_twh_btns_mask);
 }
