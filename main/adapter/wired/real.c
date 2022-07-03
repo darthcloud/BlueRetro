@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "real.h"
 
 enum {
@@ -86,7 +87,7 @@ struct real_mouse_map {
 
 static const uint32_t real_mask[4] = {0x33370F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t real_btns_mask[32] = {
+static DRAM_ATTR const uint32_t real_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(REAL_LD_LEFT), BIT(REAL_LD_RIGHT), BIT(REAL_LD_DOWN), BIT(REAL_LD_UP),
@@ -99,7 +100,7 @@ static const uint32_t real_btns_mask[32] = {
 
 static const uint32_t real_fs_mask[4] = {0x333F0FCF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_fs_desc[4] = {0x000000CF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t real_fs_btns_mask[32] = {
+static DRAM_ATTR const uint32_t real_fs_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(REAL_FS_LD_LEFT), BIT(REAL_FS_LD_RIGHT), BIT(REAL_FS_LD_DOWN), BIT(REAL_FS_LD_UP),
@@ -149,6 +150,7 @@ void IRAM_ATTR real_init_buffer(int32_t dev_mode, struct wired_data *wired_data)
             map->axes[2] = 0x08;
             map->axes[3] = 0x02;
             map->buttons = 0x0000;
+            memset(wired_data->output_mask, 0xFF, sizeof(struct real_fs_map));
             break;
         }
         default:
@@ -156,6 +158,7 @@ void IRAM_ATTR real_init_buffer(int32_t dev_mode, struct wired_data *wired_data)
             struct real_map *map = (struct real_map *)wired_data->output;
 
             map->buttons = 0x0080;
+            memset(wired_data->output_mask, 0xFF, sizeof(struct real_map));
             break;
         }
     }
@@ -197,9 +200,11 @@ void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= real_btns_mask[i];
                 map_mask &= ~real_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & real_btns_mask[i]) {
                 map_tmp.buttons &= ~real_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -220,9 +225,11 @@ void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= real_fs_btns_mask[i];
                 map_mask &= ~real_fs_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & real_fs_btns_mask[i]) {
                 map_tmp.buttons &= ~real_fs_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -311,4 +318,13 @@ void real_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct 
             real_ctrl_from_generic(ctrl_data, wired_data);
             break;
     }
+}
+
+void IRAM_ATTR real_gen_turbo_mask(int32_t dev_mode, struct wired_data *wired_data) {
+    const uint32_t *btns_mask = (dev_mode == DEV_PAD) ? real_btns_mask : real_fs_btns_mask;
+    uint16_t *buttons = (dev_mode == DEV_PAD) ? wired_data->output_mask16 : (uint16_t *)&wired_data->output_mask[7];
+
+    *buttons = 0xFFFF;
+
+    wired_gen_turbo_mask_btns16_pos(wired_data, buttons, btns_mask);
 }

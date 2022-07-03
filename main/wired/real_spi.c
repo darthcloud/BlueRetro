@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,6 +19,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/real.h"
 #include "real_spi.h"
 
 enum {
@@ -114,14 +115,19 @@ static void load_buffer(void) {
     for (uint32_t i = 0; i < REAL_MAX_DEVICE; i++) {
         switch (config.out_cfg[i].dev_mode) {
             case DEV_PAD:
-                memcpy(data, wired_adapter.data[i].output, 2);
+                *(uint16_t *)data = wired_adapter.data[i].output16[0] & wired_adapter.data[i].output_mask16[0];
                 data += 2;
                 size += 2;
+                ++wired_adapter.data[i].frame_cnt;
+                real_gen_turbo_mask(DEV_PAD, &wired_adapter.data[i]);
                 break;
             case DEV_PAD_ALT:
-                memcpy(data, wired_adapter.data[i].output, 9);
+                memcpy(data, wired_adapter.data[i].output, 7);
+                *(uint16_t *)&data[7] = *(uint16_t *)&wired_adapter.data[i].output[7] & *(uint16_t *)&wired_adapter.data[i].output_mask[7];
                 data += 9;
                 size += 9;
+                ++wired_adapter.data[i].frame_cnt;
+                real_gen_turbo_mask(DEV_PAD_ALT, &wired_adapter.data[i]);
                 break;
             case DEV_MOUSE:
                 memcpy(data, wired_adapter.data[i].output, 2);
