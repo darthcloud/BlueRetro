@@ -17,6 +17,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/jvs.h"
 #include "system/delay.h"
 #include "system/gpio.h"
 #include "system/intr.h"
@@ -182,7 +183,11 @@ static void jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_buf, uint32
                     tx_buf[len++] = 0x01;
                     tx_buf[len++] = wired_adapter.data[0].output[8];
                     for (uint32_t i = 0; i < player_cnt; i++) {
-                        memcpy(tx_buf + len, wired_adapter.data[i].output + 2, data_cnt);
+                        for (uint32_t j = 0; j < data_cnt; j++) {
+                            tx_buf[len + j] = wired_adapter.data[i].output[2 + j] & wired_adapter.data[i].output_mask[2 + j];
+                        }
+                        ++wired_adapter.data[i].frame_cnt;
+                        jvs_gen_turbo_mask(&wired_adapter.data[i]);
                         len += data_cnt;
                     }
                     break;
@@ -202,7 +207,12 @@ static void jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_buf, uint32
                     uint8_t ch_cnt = *jvs++;
                     tx_buf[len++] = 0x01;
                     for (uint32_t i = 0; i < ch_cnt; i++) {
-                        *(uint16_t *)&tx_buf[len] = *(uint16_t *)(wired_adapter.data[i / 2].output + ((i & 0x1) ? 6 : 4));
+                        if (*(uint16_t *)(wired_adapter.data[i / 2].output_mask + ((i & 0x1) ? 6 : 4))) {
+                            *(uint16_t *)&tx_buf[len] = *(uint16_t *)(wired_adapter.data[i / 2].output_mask + ((i & 0x1) ? 6 : 4));
+                        }
+                        else {
+                            *(uint16_t *)&tx_buf[len] = *(uint16_t *)(wired_adapter.data[i / 2].output + ((i & 0x1) ? 6 : 4));
+                        }
                         len += 2;
                     }
                     break;
