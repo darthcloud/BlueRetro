@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/npiso.h"
 #include "npiso_io.h"
 
 #define NPISO_PORT_MAX 2
@@ -179,11 +180,17 @@ static uint32_t npiso_isr(uint32_t cause) {
                     set_data(i, 1, wired_adapter.data[i].output[0] & 0x80);
                     break;
                 case DEV_FC_MULTITAP_ALT:
-                    set_data(i, 1, wired_adapter.data[i + 2].output[0] & 0x80);
+                    set_data(i, 1, (wired_adapter.data[i + 2].output[0] | wired_adapter.data[i + 2].output_mask[0]) & 0x80);
                 __attribute__ ((fallthrough));
                 default:
-                    set_data(i, 0, wired_adapter.data[i].output[0] & 0x80);
+                    set_data(i, 0, (wired_adapter.data[i].output[0] | wired_adapter.data[i].output_mask[0]) & 0x80);
                     break;
+            }
+            ++wired_adapter.data[i].frame_cnt;
+            npiso_gen_turbo_mask(&wired_adapter.data[i]);
+            if (dev_type[i] == DEV_FC_MULTITAP_ALT || dev_type[i] == DEV_FC_NES_MULTITAP) {
+                ++wired_adapter.data[i + 2].frame_cnt;
+                npiso_gen_turbo_mask(&wired_adapter.data[i + 2]);
             }
             cnt[i] = 1;
             mask[i] = 0x40;
@@ -205,7 +212,7 @@ static uint32_t npiso_isr(uint32_t cause) {
                         set_data(i, 0, 0);
                     }
                     else {
-                        set_data(i, 0, wired_adapter.data[i].output[0] & mask[i]);
+                        set_data(i, 0, (wired_adapter.data[i].output[0] | wired_adapter.data[i].output_mask[0]) & mask[i]);
                     }
                     break;
                 case DEV_FC_TRACKBALL:
@@ -234,10 +241,10 @@ static uint32_t npiso_isr(uint32_t cause) {
                     while (!(GPIO.in & clk_mask)); /* Wait rising edge */
                     switch (idx[i]) {
                         case 0:
-                            set_data(i, 0, wired_adapter.data[i].output[0] & mask[i]);
+                            set_data(i, 0, (wired_adapter.data[i].output[0] | wired_adapter.data[i].output_mask[0]) & mask[i]);
                             break;
                         case 1:
-                            set_data(i, 0, wired_adapter.data[i + 2].output[0] & mask[i]);
+                            set_data(i, 0, (wired_adapter.data[i + 2].output[0] | wired_adapter.data[i + 2].output_mask[0]) & mask[i]);
                             break;
                         case 2:
                             set_data(i, 0, fs_id[i] & mask[i]);
@@ -254,8 +261,8 @@ static uint32_t npiso_isr(uint32_t cause) {
                         set_data(i, 1, 0);
                     }
                     else {
-                        set_data(i, 0, wired_adapter.data[i].output[0] & mask[i]);
-                        set_data(i, 1, wired_adapter.data[i + 2].output[0] & mask[i]);
+                        set_data(i, 0, (wired_adapter.data[i].output[0] | wired_adapter.data[i].output_mask[0]) & mask[i]);
+                        set_data(i, 1, (wired_adapter.data[i + 2].output[0] | wired_adapter.data[i + 2].output_mask[0]) & mask[i]);
                     }
                     break;
                 case DEV_SFC_SNES_PAD:
@@ -264,7 +271,7 @@ static uint32_t npiso_isr(uint32_t cause) {
                         set_data(i, 0, 0);
                     }
                     else {
-                        set_data(i, 0, wired_adapter.data[i].output[idx[i]] & mask[i]);
+                        set_data(i, 0, (wired_adapter.data[i].output[idx[i]] | wired_adapter.data[i].output_mask[idx[i]]) & mask[i]);
                     }
                     break;
                 case DEV_SFC_SNES_MOUSE:

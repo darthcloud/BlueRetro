@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "npiso.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
@@ -78,7 +79,7 @@ struct npiso_trackball_map {
 
 static const uint32_t npiso_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t npiso_btns_mask[32] = {
+static DRAM_ATTR const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(NPISO_LD_LEFT), BIT(NPISO_LD_RIGHT), BIT(NPISO_LD_DOWN), BIT(NPISO_LD_UP),
@@ -91,7 +92,7 @@ static const uint32_t npiso_btns_mask[32] = {
 
 static const uint32_t npiso_vb_mask[4] = {0xBBF50FF0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_vb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t npiso_vb_btns_mask[32] = {
+static DRAM_ATTR const uint32_t npiso_vb_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(NPISO_VB_RD_LEFT), BIT(NPISO_VB_RD_RIGHT), BIT(NPISO_VB_RD_DOWN), BIT(NPISO_VB_RD_UP),
     BIT(NPISO_LD_LEFT), BIT(NPISO_LD_RIGHT), BIT(NPISO_LD_DOWN), BIT(NPISO_LD_UP),
@@ -156,16 +157,16 @@ void IRAM_ATTR npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data
         }
         default:
         {
-            if (wired_adapter.system_id == VBOY) {
-                struct npiso_map *map = (struct npiso_map *)wired_data->output;
+            struct npiso_map *map = (struct npiso_map *)wired_data->output;
+            struct npiso_map *map_mask = (struct npiso_map *)wired_data->output_mask;
 
+            if (wired_adapter.system_id == VBOY) {
                 map->buttons = 0xFDFF;
             }
             else {
-                struct npiso_map *map = (struct npiso_map *)wired_data->output;
-
                 map->buttons = 0xFFFF;
             }
+            map_mask->buttons = 0x0000;
             break;
         }
     }
@@ -249,9 +250,11 @@ static void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~btns_mask[i];
                 map_mask &= ~btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & btns_mask[i]) {
                 map_tmp.buttons |= btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -342,4 +345,13 @@ void npiso_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct
             }
             break;
     }
+}
+
+void IRAM_ATTR npiso_gen_turbo_mask(struct wired_data *wired_data) {
+    const uint32_t *btns_mask = (wired_adapter.system_id == VBOY) ? npiso_vb_btns_mask : npiso_btns_mask;
+    struct npiso_map *map_mask = (struct npiso_map *)wired_data->output_mask;
+
+    map_mask->buttons = 0x0000;
+
+    wired_gen_turbo_mask_btns16_neg(wired_data, &map_mask->buttons, btns_mask);
 }
