@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "pcfx.h"
 
 enum {
@@ -63,7 +64,7 @@ struct pcfx_mouse_map {
 
 static const uint32_t pcfx_mask[4] = {0xBB3F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pcfx_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t pcfx_btns_mask[32] = {
+static DRAM_ATTR const uint32_t pcfx_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(PCFX_LD_LEFT), BIT(PCFX_LD_RIGHT), BIT(PCFX_LD_DOWN), BIT(PCFX_LD_UP),
@@ -108,6 +109,8 @@ void IRAM_ATTR pcfx_init_buffer(int32_t dev_mode, struct wired_data *wired_data)
             map->buttons = 0x0000;
             map->ids[0] = 0x00;
             map->ids[1] = 0xF0;
+
+            wired_data->output_mask32[0] = 0xFFFFFFFF;
             break;
         }
     }
@@ -144,9 +147,11 @@ void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= pcfx_btns_mask[i];
                 map_mask &= ~pcfx_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else if (map_mask & pcfx_btns_mask[i]) {
                 map_tmp.buttons &= ~pcfx_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -228,4 +233,12 @@ void pcfx_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct 
             pcfx_ctrl_from_generic(ctrl_data, wired_data);
             break;
     }
+}
+
+void IRAM_ATTR pcfx_gen_turbo_mask(struct wired_data *wired_data) {
+    struct pcfx_map *map_mask = (struct pcfx_map *)wired_data->output_mask;
+
+    wired_data->output_mask32[0] = 0xFFFFFFFF;
+
+    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, pcfx_btns_mask);
 }

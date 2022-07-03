@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,6 +19,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/pcfx.h"
 #include "pcfx_spi.h"
 
 #define GPIO_INTR_NUM 19
@@ -123,8 +124,13 @@ static inline void write_buffer(spi_dev_t *hw, const uint8_t *data, uint32_t len
 static void load_buffer(uint8_t port) {
     switch (config.out_cfg[port].dev_mode) {
         case DEV_PAD:
-            write_buffer(pcfx_ctrl_ports[port].hw, wired_adapter.data[port].output, 4);
+        {
+            uint32_t tmp = wired_adapter.data[port].output32[0] & wired_adapter.data[port].output_mask32[0];
+            write_buffer(pcfx_ctrl_ports[port].hw, (uint8_t *)&tmp, 4);
+            ++wired_adapter.data[port].frame_cnt;
+            pcfx_gen_turbo_mask(&wired_adapter.data[port]);
             break;
+        }
         case DEV_MOUSE:
         {
             uint8_t tmp[4];
