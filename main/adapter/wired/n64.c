@@ -207,24 +207,7 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
 
 }
 
-static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
-    struct n64_map map_tmp;
-    uint32_t map_mask = 0xFFFF;
-
-    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
-
-    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
-            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons |= n64_btns_mask[i];
-                map_mask &= ~n64_btns_mask[i];
-            }
-            else if (map_mask & n64_btns_mask[i]) {
-                map_tmp.buttons &= ~n64_btns_mask[i];
-            }
-        }
-    }
-
+static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
     /* Memory / Rumble toggle */
     if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
         if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
@@ -264,6 +247,27 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
             }
         }
     }
+}
+
+static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct n64_map map_tmp;
+    uint32_t map_mask = 0xFFFF;
+
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
+            if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
+                map_tmp.buttons |= n64_btns_mask[i];
+                map_mask &= ~n64_btns_mask[i];
+            }
+            else if (map_mask & n64_btns_mask[i]) {
+                map_tmp.buttons &= ~n64_btns_mask[i];
+            }
+        }
+    }
+
+    n64_ctrl_special_action(ctrl_data, wired_data);
 
     for (uint32_t i = 0; i < N64_AXES_MAX; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & n64_desc[0])) {
