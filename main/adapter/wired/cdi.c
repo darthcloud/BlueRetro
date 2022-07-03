@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -45,7 +45,7 @@ struct cdi_map {
 
 static const uint32_t cdi_mask[4] = {0x0005000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t cdi_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t cdi_btns_mask[32] = {
+static DRAM_ATTR const uint32_t cdi_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -313,6 +313,7 @@ void IRAM_ATTR cdi_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
                 map->raw_axes[i] = 0;
                 map->relative[i] = 1;
             }
+            memset(wired_data->output_mask, 0xFF, sizeof(struct cdi_map));
             break;
         }
     }
@@ -355,9 +356,11 @@ void cdi_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wi
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons |= cdi_btns_mask[i];
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 map_tmp.buttons &= ~cdi_btns_mask[i];
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -367,6 +370,7 @@ void cdi_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wi
             map_tmp.relative[cdi_axes_idx[i]] = 0;
             raw_axes[cdi_axes_idx[i]] = ctrl_data->axes[i].value;
         }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
@@ -547,5 +551,45 @@ void cdi_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
         default:
             cdi_ctrl_from_generic(ctrl_data, wired_data);
             break;
+    }
+}
+
+void IRAM_ATTR cdi_gen_turbo_mask(struct wired_data *wired_data) {
+    struct cdi_map *map_mask = (struct cdi_map *)wired_data->output_mask;
+
+    memset(map_mask, 0xFF, sizeof(*map_mask));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(cdi_btns_mask); i++) {
+        uint8_t mask = wired_data->cnt_mask[i] >> 1;
+
+        if (cdi_btns_mask[i] && mask) {
+            if (wired_data->cnt_mask[i] & 1) {
+                if (!(mask & wired_data->frame_cnt)) {
+                    map_mask->buttons &= ~cdi_btns_mask[i];
+                }
+            }
+            else {
+                if (!((mask & wired_data->frame_cnt) == mask)) {
+                    map_mask->buttons &= ~cdi_btns_mask[i];
+                }
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < 2; i++) {
+        uint8_t btn_id = axis_to_btn_id(i);
+        uint8_t mask = wired_data->cnt_mask[btn_id] >> 1;
+        if (mask) {
+            if (wired_data->cnt_mask[btn_id] & 1) {
+                if (!(mask & wired_data->frame_cnt)) {
+                    map_mask->raw_axes[cdi_axes_idx[i]] = cdi_axes_meta[i].neutral;
+                }
+            }
+            else {
+                if (!((mask & wired_data->frame_cnt) == mask)) {
+                    map_mask->raw_axes[cdi_axes_idx[i]] = cdi_axes_meta[i].neutral;
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jacques Gagnon
+ * Copyright (c) 2021-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,6 +18,7 @@
 #include "system/gpio.h"
 #include "system/intr.h"
 #include "adapter/kb_monitor.h"
+#include "adapter/wired/cdi.h"
 #include "cdi_uart.h"
 
 #define UART1_INTR_NUM 19
@@ -80,18 +81,19 @@ static struct cdi_ctrl_port cdi_ctrl_ports[CDI_PORT_MAX] = {
 static inline uint8_t load_data(uint8_t port, uint8_t *data) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 6);
     int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 8);
+    int32_t *raw_axes_mask = (int32_t *)(wired_adapter.data[port].output_mask + 8);
     int32_t val = 0;
     uint8_t tmp = 0;
     uint8_t move = 0;
 
-    data[0] = wired_adapter.data[port].output[0];
+    data[0] = wired_adapter.data[port].output[0] & wired_adapter.data[port].output_mask[0];
 
     for (uint32_t i = 0; i < 2; i++) {
         if (relative[i]) {
             val = atomic_clear(&raw_axes[i]);
         }
         else {
-            val = raw_axes[i];
+            val = raw_axes[i] & raw_axes_mask[i];
         }
 
         if (val > 127) {
@@ -230,6 +232,8 @@ static void tx_hdlr(void) {
                         if (p->buffer[0] != tmp[0]) {
                             update = 1;
                         }
+                        ++wired_adapter.data[i].frame_cnt;
+                        cdi_gen_turbo_mask(&wired_adapter.data[i]);
                         break;
                 }
 
