@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/wired/jag.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
 #include "system/gpio.h"
@@ -40,6 +41,7 @@
 
 
 static const uint32_t all_set = 0xFFFDFFFD;
+static const uint32_t all_clr = 0x00000000;
 static const uint32_t *map_std_tt[][16] = {
     {   /* BANK0 */
         &wired_adapter.data[1].output32[0], /* S1-0 */
@@ -209,6 +211,175 @@ static const uint32_t *map_6d_tt[][16] = {
         &wired_adapter.data[3].output32[3 + 12], /* S3-3 */
     },
 };
+static const uint32_t *map_std_tt_mask[][16] = {
+    {   /* BANK0 */
+        &wired_adapter.data[1].output_mask32[0], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3], /* S3-3 */
+    },
+    {   /* BANK 1 */
+        &wired_adapter.data[1].output_mask32[0], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3], /* S3-3 */
+    },
+    {   /* BANK 2 */
+        &wired_adapter.data[1].output_mask32[0], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3], /* S3-3 */
+    },
+};
+
+static const uint32_t *map_6d_mask[][16] = {
+    {   /* BANK0 */
+        &wired_adapter.data[0].output_mask32[0 + 4], /* S1-0 */
+        &wired_adapter.data[0].output_mask32[1 + 4], /* S1-1 */
+        &wired_adapter.data[0].output_mask32[2 + 4], /* S1-2 */
+        &wired_adapter.data[0].output_mask32[3 + 4], /* S1-3 */
+        &all_clr, /* S2-0 */
+        &all_clr, /* S2-1 */
+        &all_clr, /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &all_clr, /* S2-3 */
+        &all_clr, /* S3-0 */
+        &all_clr, /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &all_clr, /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &all_clr, /* S3-3 */
+    },
+    {   /* BANK 1 */
+        &wired_adapter.data[0].output_mask32[0 + 8], /* S1-0 */
+        &wired_adapter.data[0].output_mask32[1 + 8], /* S1-1 */
+        &wired_adapter.data[0].output_mask32[2 + 8], /* S1-2 */
+        &wired_adapter.data[0].output_mask32[3 + 8], /* S1-3 */
+        &all_clr, /* S2-0 */
+        &all_clr, /* S2-1 */
+        &all_clr, /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &all_clr, /* S2-3 */
+        &all_clr, /* S3-0 */
+        &all_clr, /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &all_clr, /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &all_clr, /* S3-3 */
+    },
+    {   /* BANK 2 */
+        &wired_adapter.data[0].output_mask32[0 + 12], /* S1-0 */
+        &wired_adapter.data[0].output_mask32[1 + 12], /* S1-1 */
+        &wired_adapter.data[0].output_mask32[2 + 12], /* S1-2 */
+        &wired_adapter.data[0].output_mask32[3 + 12], /* S1-3 */
+        &all_clr, /* S2-0 */
+        &all_clr, /* S2-1 */
+        &all_clr, /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3], /* S0-3 */
+        &all_clr, /* S2-3 */
+        &all_clr, /* S3-0 */
+        &all_clr, /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2], /* S0-2 */
+        &all_clr, /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0], /* S0-0 */
+        &all_clr, /* S3-3 */
+    },
+};
+static const uint32_t *map_6d_tt_mask[][16] = {
+    {   /* BANK0 */
+        &wired_adapter.data[1].output_mask32[0 + 4], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1 + 4], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2 + 4], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3 + 4], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0 + 4], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1 + 4], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2 + 4], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3 + 4], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3 + 4], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0 + 4], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1 + 4], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2 + 4], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2 + 4], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1 + 4], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0 + 4], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3 + 4], /* S3-3 */
+    },
+    {   /* BANK 1 */
+        &wired_adapter.data[1].output_mask32[0 + 8], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1 + 8], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2 + 8], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3 + 8], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0 + 8], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1 + 8], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2 + 8], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3 + 8], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3 + 8], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0 + 8], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1 + 8], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2 + 8], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2 + 8], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1 + 8], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0 + 8], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3 + 8], /* S3-3 */
+    },
+    {   /* BANK 2 */
+        &wired_adapter.data[1].output_mask32[0 + 12], /* S1-0 */
+        &wired_adapter.data[1].output_mask32[1 + 12], /* S1-1 */
+        &wired_adapter.data[1].output_mask32[2 + 12], /* S1-2 */
+        &wired_adapter.data[1].output_mask32[3 + 12], /* S1-3 */
+        &wired_adapter.data[2].output_mask32[0 + 12], /* S2-0 */
+        &wired_adapter.data[2].output_mask32[1 + 12], /* S2-1 */
+        &wired_adapter.data[2].output_mask32[2 + 12], /* S2-2 */
+        &wired_adapter.data[0].output_mask32[3 + 12], /* S0-3 */
+        &wired_adapter.data[2].output_mask32[3 + 12], /* S2-3 */
+        &wired_adapter.data[3].output_mask32[0 + 12], /* S3-0 */
+        &wired_adapter.data[3].output_mask32[1 + 12], /* S3-1 */
+        &wired_adapter.data[0].output_mask32[2 + 12], /* S0-2 */
+        &wired_adapter.data[3].output_mask32[2 + 12], /* S3-2 */
+        &wired_adapter.data[0].output_mask32[1 + 12], /* S0-1 */
+        &wired_adapter.data[0].output_mask32[0 + 12], /* S0-0 */
+        &wired_adapter.data[3].output_mask32[3 + 12], /* S3-3 */
+    },
+};
 static const uint8_t socket_idx[16] = {
     1, 1, 1, 1, 2, 2, 2, 0, 2, 3, 3, 0, 3, 0, 0, 3
 };
@@ -217,6 +388,7 @@ static const uint8_t row_idx[16] = {
 };
 
 static const uint32_t *(*map)[16];
+static const uint32_t *(*map_mask)[16];
 static uint8_t bank[4] = {0};
 
 static void jag_ctrl_task(void) {
@@ -235,6 +407,10 @@ static void jag_ctrl_task(void) {
                     core0_stall_end();
                     lock = 0;
                     timeout = 0;
+                    for (uint32_t i = 0; i < 4; ++i) {
+                        ++wired_adapter.data[i].frame_cnt;
+                        jag_gen_turbo_mask(&wired_adapter.data[i]);
+                    }
                 }
             }
         }
@@ -246,7 +422,7 @@ static void jag_ctrl_task(void) {
             }
             idx = (((cur_in1 & 0x18) >> 1) | (cur_in1 & 0x3)) & 0xF;
 
-            GPIO.out = *map[bank[socket_idx[idx]]][idx];
+            GPIO.out = *map[bank[socket_idx[idx]]][idx] | *map_mask[bank[socket_idx[idx]]][idx];
             timeout = 0;
 
             if (row_idx[idx] == 3) {
@@ -296,13 +472,16 @@ void jag_io_init(void) {
     if (config.out_cfg[0].dev_mode == DEV_PAD_ALT) {
         if (config.global_cfg.multitap_cfg == MT_SLOT_1) {
             map = map_6d_tt;
+            map_mask = map_6d_tt_mask;
         }
         else {
             map = map_6d;
+            map_mask = map_6d_mask;
         }
     }
     else {
         map = map_std_tt;
+        map_mask = map_std_tt_mask;
     }
     jag_ctrl_task();
 }

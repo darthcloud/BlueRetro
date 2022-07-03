@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 2021-2022, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include "adapter/config.h"
+#include "adapter/wired/wired.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "jag.h"
@@ -64,7 +70,7 @@ struct jag_map {
 
 static const uint32_t jag_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t jag_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t jag_btns_mask[][32] = {
+static DRAM_ATTR const uint32_t jag_btns_mask[][32] = {
     /* Pause, A, Up, Down, Left, Right */
     {
         0, 0, 0, 0,
@@ -113,7 +119,7 @@ static const uint32_t jag_btns_mask[][32] = {
 
 static const uint32_t jag_6d_mask[4] = {0xFFFF7FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t jag_6d_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t jag_6d_btns_mask[][32] = {
+static DRAM_ATTR const uint32_t jag_6d_btns_mask[][32] = {
     /* Pause, A, Up, Down, Left, Right */
     {
         0, 0, 0, 0,
@@ -190,13 +196,16 @@ void IRAM_ATTR jag_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
         default:
         {
             struct jag_map *map = (struct jag_map *)wired_data->output;
+            struct jag_map *map_mask = (struct jag_map *)wired_data->output_mask;
 
             for (uint32_t i = 0; i < 4; i++) {
                 map->buttons[i] = 0xFFFDFFFD;
+                map_mask->buttons[i] = 0x00000000;
             }
             for (uint32_t i = 0; i < 3; i++) {
                 for (uint32_t j = 0; j < 4; j++) {
                     map->buttons_s1[i][j] = 0xFFFDFFFD & ~(NIBBLE_MASK | jag_6d_cbits[i][j] | jag_6d_bbits[i][j]);
+                    map_mask->buttons_s1[i][j] = 0x00000000;
                 }
             }
             if (config.global_cfg.multitap_cfg == MT_SLOT_1) {
@@ -245,6 +254,7 @@ static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                     map_tmp.buttons[j] &= ~jag_btns_mask[j][i];
                     map_mask[j] &= ~jag_btns_mask[j][i];
                 }
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 for (uint32_t j = 0; j < 4; j++) {
@@ -252,6 +262,7 @@ static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
                         map_tmp.buttons[j] |= jag_btns_mask[j][i];
                     }
                 }
+                wired_data->cnt_mask[i] = 0;
             }
         }
     }
@@ -273,6 +284,7 @@ static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
                 if (jag_6d_btns_idx[i]) {
                     map_tmp.buttons_s1[(jag_6d_btns_idx[i] >> 4) & 0x3][jag_6d_btns_idx[i] & 0xF] &= ~P1_B1_OP_C_B_A_MASK;
                 }
+                wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 for (uint32_t j = 0; j < 4; j++) {
@@ -325,4 +337,13 @@ void jag_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
             break;
     }
     jag_io_force_update();
+}
+
+void IRAM_ATTR jag_gen_turbo_mask(struct wired_data *wired_data) {
+    const uint32_t (*btns_mask)[32] = (config.out_cfg[0].dev_mode == DEV_PAD_ALT) ? jag_6d_btns_mask : jag_btns_mask;
+    struct jag_map *map_mask = (struct jag_map *)wired_data->output_mask;
+
+    memset(map_mask, 0, sizeof(*map_mask));
+
+    wired_gen_turbo_mask_btns32(wired_data, map_mask->buttons, btns_mask, 4);
 }
