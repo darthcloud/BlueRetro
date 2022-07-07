@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2022, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include "adapter/config.h"
 #include "zephyr/types.h"
@@ -41,7 +46,7 @@ struct para_2p_map {
 
 static const uint32_t para_2p_mask[4] = {0x00050F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t para_2p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t para_2p_btns_mask[2][32] = {
+static DRAM_ATTR const uint32_t para_2p_btns_mask[2][32] = {
     {
         0, 0, 0, 0,
         0, 0, 0, 0,
@@ -67,12 +72,18 @@ static const uint32_t para_2p_btns_mask[2][32] = {
 void IRAM_ATTR para_2p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct para_2p_map *map1 = (struct para_2p_map *)wired_adapter.data[0].output;
     struct para_2p_map *map2 = (struct para_2p_map *)wired_adapter.data[1].output;
+    struct para_2p_map *map1_mask = (struct para_2p_map *)wired_adapter.data[0].output_mask;
+    struct para_2p_map *map2_mask = (struct para_2p_map *)wired_adapter.data[1].output_mask;
 
     map1->buttons = 0xFFFDFFFD;
     map2->buttons = 0xFFFDFFFD;
+    map1_mask->buttons = 0;
+    map2_mask->buttons = 0;
 
     map1->buttons_high = 0xFFFFFFFE;
     map2->buttons_high = 0xFFFFFFFE;
+    map1_mask->buttons_high = 0;
+    map2_mask->buttons_high = 0;
 }
 
 void para_2p_meta_init(struct generic_ctrl *ctrl_data) {
@@ -89,6 +100,8 @@ void para_2p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
         struct para_2p_map map_tmp;
         struct para_2p_map *map1 = (struct para_2p_map *)wired_adapter.data[0].output;
         struct para_2p_map *map2 = (struct para_2p_map *)wired_adapter.data[1].output;
+        struct para_2p_map *map1_mask = (struct para_2p_map *)wired_adapter.data[0].output_mask;
+        struct para_2p_map *map2_mask = (struct para_2p_map *)wired_adapter.data[1].output_mask;
 
         memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -101,6 +114,7 @@ void para_2p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
                     else {
                         map_tmp.buttons &= ~para_2p_btns_mask[ctrl_data->index][i];
                     }
+                    wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
                 }
                 else {
                     if ((para_2p_btns_mask[ctrl_data->index][i] & 0xF0000000) == 0xF0000000) {
@@ -109,13 +123,49 @@ void para_2p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
                     else {
                         map_tmp.buttons |= para_2p_btns_mask[ctrl_data->index][i];
                     }
+                    wired_data->cnt_mask[i] = 0;
                 }
             }
         }
 
-        GPIO.out = map1->buttons & map2->buttons;
-        GPIO.out1.val = map1->buttons_high & map2->buttons_high;
-
         memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+        GPIO.out = (map1->buttons | map1_mask->buttons) & (map2->buttons | map2_mask->buttons);
+        GPIO.out1.val = (map1->buttons_high | map1_mask->buttons_high) & (map2->buttons_high | map2_mask->buttons_high);
+    }
+}
+
+void para_2p_gen_turbo_mask(uint32_t index, struct wired_data *wired_data) {
+    struct para_2p_map *map_mask = (struct para_2p_map *)wired_data->output_mask;
+
+    memset(map_mask, 0, sizeof(*map_mask));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        uint8_t mask = wired_data->cnt_mask[i] >> 1;
+
+        if (mask) {
+            if (para_2p_btns_mask[index][i]) {
+                if (wired_data->cnt_mask[i] & 1) {
+                    if (!(mask & wired_data->frame_cnt)) {
+                        if ((para_2p_btns_mask[index][i] & 0xF0000000) == 0xF0000000) {
+                            map_mask->buttons_high |= para_2p_btns_mask[index][i];
+                        }
+                        else {
+                            map_mask->buttons |= para_2p_btns_mask[index][i];
+                        }
+                    }
+                }
+                else {
+                    if (!((mask & wired_data->frame_cnt) == mask)) {
+                        if ((para_2p_btns_mask[index][i] & 0xF0000000) == 0xF0000000) {
+                            map_mask->buttons_high |= para_2p_btns_mask[index][i];
+                        }
+                        else {
+                            map_mask->buttons |= para_2p_btns_mask[index][i];
+                        }
+                    }
+                }
+            }
+        }
     }
 }

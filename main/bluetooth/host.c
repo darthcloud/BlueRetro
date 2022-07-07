@@ -24,6 +24,7 @@
 #include "system/btn.h"
 #include "system/fs.h"
 #include "adapter/memory_card.h"
+#include "adapter/wired/wired.h"
 
 #define BT_TX 0
 #define BT_RX 1
@@ -320,7 +321,11 @@ static void bt_host_task(void *param) {
                 }
             }
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+
+        /* Update turbo mask for parallel system */
+        wired_para_turbo_mask_hdlr();
+
+        vTaskDelay(16 / portTICK_PERIOD_MS);
     }
 }
 

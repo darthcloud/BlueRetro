@@ -157,6 +157,23 @@ void wired_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct ge
     }
 }
 
+void wired_para_turbo_mask_hdlr(void) {
+    if (wired_adapter.system_id == PARALLEL_1P || wired_adapter.system_id == PARALLEL_1P_OD) {
+        ++wired_adapter.data[0].frame_cnt;
+        para_1p_gen_turbo_mask(&wired_adapter.data[0]);
+    }
+    else if (wired_adapter.system_id == PARALLEL_2P || wired_adapter.system_id == PARALLEL_2P_OD) {
+        ++wired_adapter.data[0].frame_cnt;
+        para_2p_gen_turbo_mask(0, &wired_adapter.data[0]);
+        ++wired_adapter.data[1].frame_cnt;
+        para_2p_gen_turbo_mask(1, &wired_adapter.data[1]);
+    }
+    else if (wired_adapter.system_id == SEA_BOARD) {
+        ++wired_adapter.data[0].frame_cnt;
+        sea_gen_turbo_mask(&wired_adapter.data[0]);
+    }
+}
+
 void IRAM_ATTR wired_gen_turbo_mask_btns16_pos(struct wired_data *wired_data, uint16_t *buttons, const uint32_t btns_mask[32]) {
     for (uint32_t i = 0; i < 32; i++) {
         uint8_t mask = wired_data->cnt_mask[i] >> 1;

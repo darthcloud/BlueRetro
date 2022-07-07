@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019-2022, Jacques Gagnon
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include "adapter/config.h"
 #include "zephyr/types.h"
@@ -27,7 +32,7 @@ struct para_1p_map {
 
 static const uint32_t para_1p_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t para_1p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t para_1p_btns_mask[32] = {
+static DRAM_ATTR const uint32_t para_1p_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
@@ -40,9 +45,12 @@ static const uint32_t para_1p_btns_mask[32] = {
 
 void IRAM_ATTR para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     struct para_1p_map *map = (struct para_1p_map *)wired_data->output;
+    struct para_1p_map *map_mask = (struct para_1p_map *)wired_data->output_mask;
 
     map->buttons = 0xFFFDFFFF;
     map->buttons_high = 0xFFFFFFFF;
+    map_mask->buttons = 0;
+    map_mask->buttons_high = 0;
 }
 
 void para_1p_meta_init(struct generic_ctrl *ctrl_data) {
@@ -59,6 +67,7 @@ void para_1p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
         struct para_1p_map map_tmp;
         uint32_t map_mask = 0xFFFFFFFF;
         uint32_t map_mask_high = 0xFFFFFFFF;
+        struct para_1p_map *turbo_map_mask = (struct para_1p_map *)wired_data->output_mask;
 
         memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
 
@@ -73,6 +82,7 @@ void para_1p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
                         map_tmp.buttons &= ~para_1p_btns_mask[i];
                         map_mask &= ~para_1p_btns_mask[i];
                     }
+                    wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
                 }
                 else {
                     if ((para_1p_btns_mask[i] & 0xF0000000) == 0xF0000000) {
@@ -85,13 +95,49 @@ void para_1p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
                             map_tmp.buttons |= para_1p_btns_mask[i];
                         }
                     }
+                    wired_data->cnt_mask[i] = 0;
                 }
             }
         }
 
-        GPIO.out = map_tmp.buttons;
-        GPIO.out1.val = map_tmp.buttons_high;
+        GPIO.out = map_tmp.buttons | turbo_map_mask->buttons;
+        GPIO.out1.val = map_tmp.buttons_high | turbo_map_mask->buttons_high;
 
         memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+    }
+}
+
+void para_1p_gen_turbo_mask(struct wired_data *wired_data) {
+    struct para_1p_map *map_mask = (struct para_1p_map *)wired_data->output_mask;
+
+    memset(map_mask, 0, sizeof(*map_mask));
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        uint8_t mask = wired_data->cnt_mask[i] >> 1;
+
+        if (mask) {
+            if (para_1p_btns_mask[i]) {
+                if (wired_data->cnt_mask[i] & 1) {
+                    if (!(mask & wired_data->frame_cnt)) {
+                        if ((para_1p_btns_mask[i] & 0xF0000000) == 0xF0000000) {
+                            map_mask->buttons_high |= para_1p_btns_mask[i];
+                        }
+                        else {
+                            map_mask->buttons |= para_1p_btns_mask[i];
+                        }
+                    }
+                }
+                else {
+                    if (!((mask & wired_data->frame_cnt) == mask)) {
+                        if ((para_1p_btns_mask[i] & 0xF0000000) == 0xF0000000) {
+                            map_mask->buttons_high |= para_1p_btns_mask[i];
+                        }
+                        else {
+                            map_mask->buttons |= para_1p_btns_mask[i];
+                        }
+                    }
+                }
+            }
+        }
     }
 }
