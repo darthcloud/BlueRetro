@@ -83,6 +83,7 @@ struct ps_ctrl_port {
     uint8_t root_dev_type;
     uint8_t mt_state;
     uint8_t mt_first_port;
+    uint8_t tx_buf_len;
     uint8_t tx_buf[PS_BUFFER_SIZE];
     uint8_t rx_buf[2][PS_BUFFER_SIZE];
     uint8_t active_rx_buf;
@@ -389,6 +390,9 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
         default:
         {
             uint32_t size = (port->dev_id[id] & 0xF) * 2;
+            if (!(port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state)) {
+                port->tx_buf_len = 3 + size;
+            }
             if (size < 6) {
                 size = 6;
             }
@@ -500,10 +504,12 @@ static void spi_isr(void* arg) {
     port->rx_buf[port->active_rx_buf][port->idx] = port->spi_hw->data_buf[0];
     if (!get_dtr_state(port->id)) {
         if (port->idx == 0) {
+            port->tx_buf_len = 3 + 6;
             if (port->rx_buf[port->active_rx_buf][0] == 0x01) {
                 set_output_state(port->id, 1);
                 port->valid = 1;
                 if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+                    port->tx_buf_len = 3 + (2 + 6) * 4;
                     port->tx_buf[1] = 0x80;
                     port->tx_buf[2] = 0x5A;
                 }
@@ -559,7 +565,9 @@ static void spi_isr(void* arg) {
         port->spi_hw->slave.sync_reset = 1;
         port->spi_hw->slave.trans_done = 0;
         port->spi_hw->cmd.usr = 1;
-        toggle_dsr(port->id);
+        if (port->idx < port->tx_buf_len) {
+            toggle_dsr(port->id);
+        }
         return;
     }
 early_end:
