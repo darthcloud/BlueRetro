@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -239,6 +239,29 @@ static void hid_device_fingerprint(struct hid_report *report, int32_t *type, uin
     return;
 }
 
+static void hid_process_report(struct bt_data *bt_data, struct hid_report *wip_report, uint32_t report_bit_offset, uint32_t report_usage_idx) {
+    int32_t report_type = REPORT_NONE;
+    int32_t dev_type = BT_NONE;
+    uint32_t dev_subtype = BT_SUBTYPE_DEFAULT;
+
+    wip_report->len = report_bit_offset / 8;
+    wip_report->usage_cnt = report_usage_idx;
+    if (report_bit_offset % 8) {
+        wip_report->len++;
+    }
+    report_type = hid_report_fingerprint(wip_report);
+    if (report_type != REPORT_NONE && bt_data->reports[report_type].id == 0) {
+        hid_device_fingerprint(wip_report, &dev_type, &dev_subtype);
+        memcpy(&bt_data->reports[report_type], wip_report, sizeof(bt_data->reports[0]));
+        if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
+            bt_data->pids->type = dev_type;
+            bt_data->pids->subtype = dev_subtype;
+        }
+        printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
+    }
+    printf("\n");
+}
+
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     struct hid_stack_element hid_stack[HID_STACK_MAX] = {0};
     uint8_t hid_stack_idx = 0;
@@ -247,9 +270,6 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint16_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
-    int32_t report_type = REPORT_NONE;
-    int32_t dev_type = BT_NONE;
-    uint32_t dev_subtype = BT_SUBTYPE_DEFAULT;
     uint8_t report_id = 0;
     uint32_t report_bit_offset = 0;
     uint32_t report_usage_idx = 0;
@@ -381,22 +401,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
             case HID_GI_REPORT_ID: /* 0x85 */
                 /* process previous report fingerprint */
                 if (report_id) {
-                    wip_report.len = report_bit_offset / 8;
-                    wip_report.usage_cnt = report_usage_idx;
-                    if (report_bit_offset % 8) {
-                        wip_report.len++;
-                    }
-                    report_type = hid_report_fingerprint(&wip_report);
-                    if (report_type != REPORT_NONE) {
-                        hid_device_fingerprint(&wip_report, &dev_type, &dev_subtype);
-                        memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
-                        if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-                            bt_data->pids->type = dev_type;
-                            bt_data->pids->subtype = dev_subtype;
-                        }
-                        printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
-                    }
-                    printf("\n");
+                    hid_process_report(bt_data, &wip_report, report_bit_offset, report_usage_idx);
                 }
                 memset((void *)&wip_report, 0, sizeof(wip_report));
                 report_id = *desc++;
@@ -452,21 +457,6 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
         }
     }
     if (report_id) {
-        wip_report.len = report_bit_offset / 8;
-        wip_report.usage_cnt = report_usage_idx;
-        if (report_bit_offset % 8) {
-            wip_report.len++;
-        }
-        report_type = hid_report_fingerprint(&wip_report);
-        if (report_type != REPORT_NONE) {
-            hid_device_fingerprint(&wip_report, &dev_type, &dev_subtype);
-            memcpy((void *)&bt_data->reports[report_type], (void *)&wip_report, sizeof(bt_data->reports[report_type]));
-            if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-                bt_data->pids->type = dev_type;
-                bt_data->pids->subtype = dev_subtype;
-            }
-            printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
-        }
-        printf("\n");
+        hid_process_report(bt_data, &wip_report, report_bit_offset, report_usage_idx);
     }
 }
