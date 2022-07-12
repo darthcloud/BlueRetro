@@ -93,10 +93,10 @@ static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
     NULL, /* SATURN */
     NULL, /* PCFX */
     NULL, /* JVS */
-    NULL, /* N64 */
+    nsi_port_cfg, /* N64 */
     NULL, /* DC */
     NULL, /* PS2 */
-    NULL, /* GC */
+    nsi_port_cfg, /* GC */
     wii_i2c_port_cfg, /* WII_EXT */
     NULL, /* VB */
     NULL, /* PARALLEL_1P_OD */

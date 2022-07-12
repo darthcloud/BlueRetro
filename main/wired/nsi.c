@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include "soc/io_mux_reg.h"
+#include "soc/gpio_pins.h"
 #include <hal/clk_gate_ll.h>
 #include <soc/rmt_struct.h>
 #include <hal/rmt_types.h>
@@ -577,6 +578,13 @@ void nsi_init(void) {
 
     RMT.apb_conf.fifo_mask = 1;
 
+    if (wired_adapter.system_id == N64) {
+        nsi_port_cfg(0xF);
+    }
+    else {
+        nsi_port_cfg(0x0);
+    }
+
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         RMT.conf_ch[rmt_ch[i][system]].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
         RMT.conf_ch[rmt_ch[i][system]].conf1.mem_rd_rst = 1;
@@ -595,18 +603,6 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_thres = 0; /* No minimum length */
         RMT.conf_ch[rmt_ch[i][system]].conf1.rx_filter_en = 0;
 
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[gpio_pin[i]], PIN_FUNC_GPIO);
-        if (wired_adapter.system_id == N64 && i == 0) {
-            /* Bidirectional push-pull to workaround N64 Digital OSD glitching the line on port 1 */
-            gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT);
-        }
-        else {
-            /* Bidirectional open-drain */
-            gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD);
-        }
-        gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
-        gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
-
         rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_TX_DONE(rmt_ch[i][system]), 1);
         rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_RX_DONE(rmt_ch[i][system]), 1);
         rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_RX_ERROR(rmt_ch[i][system]), 1);
@@ -621,3 +617,28 @@ void nsi_init(void) {
     intexc_alloc_iram(ETS_RMT_INTR_SOURCE, 19, wired_adapter.system_id == N64 ? n64_isr : gc_isr);
 }
 
+void nsi_port_cfg(uint16_t mask) {
+    uint32_t system = (wired_adapter.system_id == N64) ? 0 : 1;
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
+
+        if (mask & 0x1) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[gpio_pin[i]], PIN_FUNC_GPIO);
+            if (wired_adapter.system_id == N64 && i == 0) {
+                /* Bidirectional push-pull to workaround N64 Digital OSD glitching the line on port 1 */
+                gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT);
+            }
+            else {
+                /* Bidirectional open-drain */
+                gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD);
+            }
+            gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
+            gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
+        }
+        else {
+            gpio_reset_iram(gpio_pin[i]);
+            gpio_matrix_in(GPIO_MATRIX_CONST_ONE_INPUT, RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
+        }
+        mask >>= 1;
+    }
+}
