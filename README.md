@@ -35,10 +35,18 @@ Thanks to all sponsors!!
   https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
 * Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
   https://www.humblebazooka.com/product/neo-geo-bt-bluetooth-adapter/
+* PCE BT by [Humble Bazooka](https://twitter.com/humblebazooka): NEC PC-Engine dongle.\
+  https://www.humblebazooka.com/product/pce-bt-pc-engine-bluetooth-adapter/
+* Turbo BT by [Humble Bazooka](https://twitter.com/humblebazooka): NEC TurboGrafx-16 dongle.\
+  https://www.humblebazooka.com/product/turbo-bt-turbografx-16-bluetooth-adapter/
   
   [<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
 * N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
   https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
+  
+  [<img src="https://static.wixstatic.com/media/ce8a57_fe2ccaa817704811aefee7a0bbd74098~mv2.png/v1/fill/w_445,h_60,al_c,q_85,enc_auto/RetroOnyx_logo_primary_grey_RGB60px.png" width="400"/>](https://www.retroonyx.com/)
+* Virtual Boy BlueRetro Adapter by [RetroOnyx](https://twitter.com/mellott124): Virtual Boy dongle.\
+  https://www.retroonyx.com/product-page/virtual-boy-blueretro-adapter
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
