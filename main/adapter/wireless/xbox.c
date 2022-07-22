@@ -261,7 +261,16 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
 
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             ctrl_data->axes[i].meta = &xb1_axes_meta[i];
-            ctrl_data->axes[i].value = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->axes_cal[i];
+            int32_t tmp = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->axes_cal[i];
+
+            if (bt_data->raw_src_mappings[PAD].axes_to_btns[i]) {
+                if (tmp >= xb1_axes_meta[i].abs_max) {
+                    ctrl_data->btns[0].value |= generic_btns_mask[bt_data->raw_src_mappings[PAD].axes_to_btns[i]];
+                }
+            }
+            else {
+                ctrl_data->axes[i].value = tmp;
+            }
         }
     }
     else if (bt_data->report_id == 0x02) {

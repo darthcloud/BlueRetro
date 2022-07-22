@@ -268,6 +268,7 @@ enum {
     BT_INIT = 0,
     BT_QUIRK_FACE_BTNS_INVERT,
     BT_QUIRK_FACE_BTNS_ROTATE_RIGHT,
+    BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS,
     BT_QUIRK_TRIGGER_PRI_SEC_INVERT,
     BT_QUIRK_SW_LEFT_JOYCON,
     BT_QUIRK_SW_RIGHT_JOYCON,
@@ -426,6 +427,7 @@ struct raw_src_mapping {
     uint32_t mask[4];
     uint32_t desc[4];
     uint32_t btns_mask[32];
+    uint8_t axes_to_btns[6];
 };
 
 struct bt_ids {

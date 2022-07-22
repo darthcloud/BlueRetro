@@ -30,6 +30,18 @@ static void face_btns_rotate_right(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RB_RIGHT] = tmp;
 }
 
+static void face_btns_trigger_to_6buttons(struct raw_src_mapping *map) {
+    map->desc[0] = 0x000000FF;
+
+    map->btns_mask[PAD_LM] = map->btns_mask[PAD_RB_LEFT];
+    map->btns_mask[PAD_RB_LEFT] = map->btns_mask[PAD_RB_DOWN];
+    map->btns_mask[PAD_RB_DOWN] = map->btns_mask[PAD_RB_RIGHT];
+    map->btns_mask[PAD_RB_RIGHT] = 0;
+
+    map->axes_to_btns[TRIG_L] = PAD_RS;
+    map->axes_to_btns[TRIG_R] = PAD_RB_RIGHT;
+}
+
 static void trigger_pri_sec_invert(struct raw_src_mapping *map) {
     uint32_t tmp = map->btns_mask[PAD_LM];
 
@@ -103,6 +115,9 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->flags, BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)) {
         face_btns_rotate_right(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->flags, BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS)) {
+        face_btns_trigger_to_6buttons(&bt_data->raw_src_mappings[PAD]);
     }
     if (atomic_test_bit(&bt_data->flags, BT_QUIRK_TRIGGER_PRI_SEC_INVERT)) {
         trigger_pri_sec_invert(&bt_data->raw_src_mappings[PAD]);
