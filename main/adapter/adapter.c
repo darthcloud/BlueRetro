@@ -312,6 +312,8 @@ void adapter_bridge(struct bt_data *bt_data) {
             return;
         }
 
+        sys_macro_hdl(&ctrl_input, &bt_data->flags);
+
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
         printf("LX: %s%08X%s, LY: %s%08X%s, RX: %s%08X%s, RY: %s%08X%s, LT: %s%08X%s, RT: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s, BTNS: %s%08X%s",
             BOLD, ctrl_input.axes[0].value, RESET, BOLD, ctrl_input.axes[1].value, RESET, BOLD, ctrl_input.axes[2].value, RESET, BOLD, ctrl_input.axes[3].value, RESET,
@@ -391,7 +393,6 @@ void adapter_bridge(struct bt_data *bt_data) {
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
                     ctrl_output[i].index = i;
-                    sys_macro_hdl(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                     wired_from_generic(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                 }
             }

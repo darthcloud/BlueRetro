@@ -8,6 +8,6 @@
 
 #include "adapter/adapter.h"
 
-void sys_macro_hdl(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
+void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags);
 
 #endif /* _SYS_MACRO_H_ */
