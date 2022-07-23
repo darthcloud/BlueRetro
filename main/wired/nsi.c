@@ -466,6 +466,12 @@ static uint32_t gc_isr(uint32_t cause) {
                                     buf[i] = (wired_adapter.data[port].output_mask[i - 4]) ?
                                         wired_adapter.data[port].output_mask[i - 4] : wired_adapter.data[port].output[i - 4];
                                 }
+                                if (buf[0] == 0x00) {
+                                    /* Trigger 4 bits mode */
+                                    buf[10] &= 0xF0;
+                                    buf[10] |= buf[11] >> 4;
+                                    buf[11] = 0x00;
+                                }
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, &buf[4], 8, &crc, STOP_BIT_2US);
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
