@@ -58,10 +58,6 @@ Thanks to all sponsors!!
 * BlueRetro AIO by [pmgducati](https://github.com/pmgducati): BlueRetro Through-hole base and cable PCBs.\
   https://github.com/pmgducati/Blue-Retro-AIO-Units
 
-## Others commercial solution using BlueRetro FW
-* BlueRetro adaptador universal by [GamesCare](https://twitter.com/MichelinFabio): BlueRetro universal base & cable.\
-  https://gamescare.com.br/produto/blueretro-adaptador-universal/
-
 ## General documentation
 * [ESP32 RTOS + Bare Metal: Best of Both Worlds?](https://hackaday.io/project/170365/log/189836-esp32-rtos-bare-metal-best-of-both-worlds)
 * [Learning Bluetooth Classic (BR/EDR) with HCI traces](https://hackaday.io/project/170365-blueretro/log/178249-learning-bluetooth-classic-bredr-with-hci-traces)
