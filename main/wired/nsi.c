@@ -472,25 +472,61 @@ static unsigned gc_isr(unsigned cause) {
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
                                 break;
                             case 0x40:
-                                nsi_items_to_bytes(item, buf, 2);
+                            case 0x43:
+                            {
+                                uint8_t len = 8;
+                                nsi_items_to_bytes(item, &buf[1], 2);
                                 buf16[2] = wired_adapter.data[port].output16[0] & wired_adapter.data[port].output_mask16[0];
                                 for (uint32_t i = 6; i < 12; ++i) {
                                     buf[i] = (wired_adapter.data[port].output_mask[i - 4]) ?
                                         wired_adapter.data[port].output_mask[i - 4] : wired_adapter.data[port].output[i - 4];
                                 }
-                                if (buf[0] == 0x00) {
-                                    /* Trigger 4 bits mode */
-                                    buf[10] &= 0xF0;
-                                    buf[10] |= buf[11] >> 4;
-                                    buf[11] = 0x00;
+                                /* A & B buttons pressure is zeroed like release controller */
+                                if (buf[0] == 0x43) {
+                                    len = 10;
+                                    buf[12] = 0;
+                                    buf[13] = 0;
                                 }
-                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, &buf[4], 8, &crc, STOP_BIT_2US);
+                                else switch (buf[1]) {
+                                    case 1:
+                                        /* 4bits C axes + 8bits triggers + 4bits pressure */
+                                        buf[8] &= 0xF0;
+                                        buf[8] |= buf[9] >> 4;
+                                        buf[9] = buf[10];
+                                        buf[10] = buf[11];
+                                        buf[11] = 0x00;
+                                        break;
+                                    case 2:
+                                        /* 4bits C axes + 4bits triggers + 8bits pressure */
+                                        buf[8] &= 0xF0;
+                                        buf[8] |= buf[9] >> 4;
+                                        buf[9] &= 0xF0;
+                                        buf[9] |= buf[11] >> 4;
+                                        buf[10] = 0x00;
+                                        buf[11] = 0x00;
+                                        break;
+                                    case 3:
+                                        /* 8bits C axes + 8bits triggers */
+                                        break;
+                                    case 4:
+                                        /* 8bits C axes + 8bits pressure */
+                                        buf[10] = 0x00;
+                                        buf[11] = 0x00;
+                                        break;
+                                    default:
+                                        /* 8bits C axes + 4bits triggers + 4bits pressure */
+                                        buf[10] &= 0xF0;
+                                        buf[10] |= buf[11] >> 4;
+                                        buf[11] = 0x00;
+                                        break;
+                                }
+                                nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, &buf[4], len, &crc, STOP_BIT_2US);
                                 RMT.conf_ch[channel].conf1.tx_start = 1;
 
                                 if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
                                     struct raw_fb fb_data = {0};
 
-                                    fb_data.data[0] = buf[1] & 0x01;
+                                    fb_data.data[0] = buf[2] & 0x01;
                                     if (last_rumble[port] != fb_data.data[0]) {
                                         last_rumble[port] = fb_data.data[0];
                                         fb_data.header.wired_id = port;
@@ -503,6 +539,7 @@ static unsigned gc_isr(unsigned cause) {
                                 ++wired_adapter.data[port].frame_cnt;
                                 gc_gen_turbo_mask(&wired_adapter.data[port]);
                                 break;
+                            }
                             case 0x41:
                             case 0x42:
                                 nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_neutral, sizeof(gc_neutral), &crc, STOP_BIT_2US);
