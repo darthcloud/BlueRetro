@@ -30,19 +30,17 @@ static struct macro macros[] = {
 };
 
 static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, atomic_t *flags) {
-    if ((value ^ macro->macro) == 0) {
+    if (value == macro->macro) {
         if (!atomic_test_bit(flags, macro->flag_mask)) {
             atomic_set_bit(flags, macro->flag_mask);
         }
     }
-    else {
-        if (atomic_test_bit(flags, macro->flag_mask)) {
-            atomic_clear_bit(flags, macro->flag_mask);
+    else if (atomic_test_bit(flags, macro->flag_mask)) {
+        atomic_clear_bit(flags, macro->flag_mask);
 
-            printf("# %s: Apply macro %08lX\n", __FUNCTION__, macro->macro);
-            if (macro->action) {
-                macro->action();
-            }
+        printf("# %s: Apply macro %08lX %08lX\n", __FUNCTION__, value, macro->macro);
+        if (macro->action) {
+            macro->action();
         }
     }
 }
