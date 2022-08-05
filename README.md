@@ -47,6 +47,10 @@ Thanks to all sponsors!!
   [<img src="https://static.wixstatic.com/media/ce8a57_fe2ccaa817704811aefee7a0bbd74098~mv2.png/v1/fill/w_445,h_60,al_c,q_85,enc_auto/RetroOnyx_logo_primary_grey_RGB60px.png" width="400"/>](https://www.retroonyx.com/)
 * Virtual Boy BlueRetro Adapter by [RetroOnyx](https://twitter.com/mellott124): Virtual Boy dongle.\
   https://www.retroonyx.com/product-page/virtual-boy-blueretro-adapter
+  
+  [<img src="http://www.retroscaler.com/wp-content/uploads/2022/03/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
+* RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.
+  https://www.aliexpress.com/item/1005004114458491.html
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
