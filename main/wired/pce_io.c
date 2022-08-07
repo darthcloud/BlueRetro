@@ -195,7 +195,7 @@ static void pce_mt_task(void) {
     }
 }
 
-static uint32_t pce_mt_oe_isr(uint32_t cause) {
+static unsigned pce_mt_oe_isr(unsigned cause) {
     uint32_t cur_in1 = GPIO.in1.val;
     cycle = 0;
     if (cur_in1 & P1_SEL_MASK) {
@@ -208,7 +208,7 @@ static uint32_t pce_mt_oe_isr(uint32_t cause) {
     return 0;
 }
 
-static uint32_t pce_6btns_oe_isr(uint32_t cause) {
+static unsigned pce_6btns_oe_isr(unsigned cause) {
     uint32_t cur_in1 = GPIO.in1.val;
     cycle = 0;
     ++frame_cnt;
@@ -277,7 +277,7 @@ static void pce_mouse_task(void) {
     }
 }
 
-static uint32_t pce_mouse_oe_isr(uint32_t cause) {
+static unsigned pce_mouse_oe_isr(unsigned cause) {
     cycle = 0;
     ++frame_cnt;
     ++mouse_cnt;

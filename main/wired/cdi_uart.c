@@ -251,7 +251,7 @@ static void tx_hdlr(void) {
     }
 }
 
-static uint32_t isr_dispatch(uint32_t cause) {
+static unsigned isr_dispatch(unsigned cause) {
     if (cause & UART1_INTR_MASK) {
         uart_isr((void *)&cdi_ctrl_ports[0]);
     }

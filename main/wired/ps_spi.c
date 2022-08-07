@@ -598,7 +598,7 @@ early_end:
     port->spi_hw->cmd.usr = 1;
 }
 
-static uint32_t isr_dispatch(uint32_t cause) {
+static unsigned isr_dispatch(unsigned cause) {
     if (cause & SPI2_HSPI_INTR_MASK) {
         spi_isr((void *)&ps_ctrl_ports[0]);
     }

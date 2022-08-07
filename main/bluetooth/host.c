@@ -10,6 +10,8 @@
 #include <freertos/ringbuf.h>
 #include <esp_system.h>
 #include <esp_bt.h>
+#include <esp_mac.h>
+#include <esp_timer.h>
 #include <nvs_flash.h>
 #include <driver/gpio.h>
 #include "queue_bss.h"

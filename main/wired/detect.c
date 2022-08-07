@@ -36,7 +36,7 @@ static const uint8_t output_list[] = {
 };
 #endif
 
-static uint32_t detect_isr(uint32_t cause) {
+static unsigned detect_isr(unsigned cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 

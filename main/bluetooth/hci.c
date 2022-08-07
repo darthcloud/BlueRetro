@@ -1183,7 +1183,7 @@ static void bt_hci_load_le_accept_list(void *cp) {
 }
 
 static int32_t bt_hci_get_random_context(struct bt_dev **device, bt_hci_le_cb_t *cb) {
-    uint32_t len;
+    size_t len;
     struct bt_hci_le_cb *tmp = (struct bt_hci_le_cb *)xRingbufferReceive(randq_hdl, &len, 0);
     if (tmp) {
         *device = tmp->device;
@@ -1195,7 +1195,7 @@ static int32_t bt_hci_get_random_context(struct bt_dev **device, bt_hci_le_cb_t 
 }
 
 static int32_t bt_hci_get_encrypt_context(struct bt_dev **device, bt_hci_le_cb_t *cb) {
-    uint32_t len;
+    size_t len;
     struct bt_hci_le_cb *tmp = (struct bt_hci_le_cb *)xRingbufferReceive(encryptq_hdl, &len, 0);
     if (tmp) {
         *device = tmp->device;

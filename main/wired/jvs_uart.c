@@ -241,7 +241,7 @@ static void jvs_parser(uint8_t *rx_buf, uint32_t rx_len, uint8_t *tx_buf, uint32
     }
 }
 
-static uint32_t uart_rx(uint32_t cause) {
+static unsigned uart_rx(unsigned cause) {
     uint32_t intr_status = UART1.int_st.val;
 
     if (intr_status & UART_INTR_RXFIFO_TOUT) {

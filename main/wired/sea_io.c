@@ -6,8 +6,8 @@
 #include "soc/io_mux_reg.h"
 #include <hal/clk_gate_ll.h>
 #include "soc/rmt_struct.h"
-#include <driver/rmt.h>
 #include <hal/rmt_ll.h>
+#include <hal/rmt_types.h>
 #include "adapter/adapter.h"
 #include "system/gpio.h"
 #include "zephyr/types.h"
@@ -19,13 +19,24 @@
 #define BIT_ONE  0x80100008
 #define BIT_STOP 0x80008000
 
+#define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
+
+typedef struct {
+    struct {
+        rmt_symbol_word_t data32[SOC_RMT_MEM_WORDS_PER_CHANNEL];
+    } chan[SOC_RMT_CHANNELS_PER_GROUP];
+} rmt_mem_t;
+
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_mem_t RMTMEM;
+
 static const uint8_t output_list[] = {
     4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23
 };
-static volatile rmt_item32_t *rmt_items = (volatile rmt_item32_t *)RMTMEM.chan[0].data32;
+static volatile rmt_symbol_word_t *rmt_items = (volatile rmt_symbol_word_t *)RMTMEM.chan[0].data32;
 
 void sea_tx_byte(uint8_t data) {
-    volatile uint32_t *item_ptr = &rmt_items[0].val;
+    volatile unsigned *item_ptr = &rmt_items[0].val;
 
     for (uint32_t mask = 0x80; mask; mask >>= 1, ++item_ptr) {
         if (data & mask) {
@@ -36,7 +47,7 @@ void sea_tx_byte(uint8_t data) {
         }
     }
     *item_ptr = BIT_STOP;
-    rmt_tx_start(0, 1);
+    rmt_ll_tx_start(&RMT, 0);
 }
 
 void sea_init(void) {
@@ -58,18 +69,18 @@ void sea_init(void) {
     /* Setup RMT peripheral for GBAHD comport */
     periph_ll_enable_clk_clear_rst(PERIPH_RMT_MODULE);
 
-    RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
+    RMT.apb_conf.fifo_mask = 1;
     RMT.conf_ch[0].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
     RMT.conf_ch[0].conf1.mem_rd_rst = 1;
     RMT.conf_ch[0].conf1.mem_wr_rst = 1;
     RMT.conf_ch[0].conf1.tx_conti_mode = 0;
     RMT.conf_ch[0].conf0.mem_size = 8;
-    RMT.conf_ch[0].conf1.mem_owner = RMT_MEM_OWNER_TX;
-    RMT.conf_ch[0].conf1.ref_always_on = RMT_BASECLK_APB;
+    RMT.conf_ch[0].conf1.mem_owner = RMT_LL_MEM_OWNER_SW;
+    RMT.conf_ch[0].conf1.ref_always_on = 1;
     RMT.conf_ch[0].conf1.idle_out_en = 1;
-    RMT.conf_ch[0].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
+    RMT.conf_ch[0].conf1.idle_out_lv = 1;
     RMT.conf_ch[0].conf0.carrier_en = 0;
-    RMT.conf_ch[0].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
+    RMT.conf_ch[0].conf0.carrier_out_lv = 0;
     RMT.carrier_duty_ch[0].high = 0;
     RMT.carrier_duty_ch[0].low = 0;
     RMT.conf_ch[0].conf0.idle_thres = GBAHD_BIT_PERIOD_TICKS;
@@ -84,5 +95,5 @@ void sea_init(void) {
     /* No RX, just set in good state */
     rmt_ll_rx_enable(&RMT, 0, 0);
     rmt_ll_rx_reset_pointer(&RMT, 0);
-    rmt_ll_clear_rx_end_interrupt(&RMT, 0);
+    rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_RX_DONE(0));
 }

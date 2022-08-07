@@ -6,9 +6,10 @@
 #include <string.h>
 #include "soc/io_mux_reg.h"
 #include <hal/clk_gate_ll.h>
-#include "soc/rmt_struct.h"
-#include <driver/rmt.h>
+#include <soc/rmt_struct.h>
+#include <hal/rmt_types.h>
 #include <hal/rmt_ll.h>
+#include <esp32/rom/ets_sys.h>
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
@@ -37,6 +38,17 @@
 #define N64_SLOT_EMPTY 0x02
 #define N64_SLOT_OCCUPY 0x01
 #define N64_SLOT_CHANGE 0x03
+
+#define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
+
+typedef struct {
+    struct {
+        rmt_symbol_word_t data32[SOC_RMT_MEM_WORDS_PER_CHANNEL];
+    } chan[SOC_RMT_CHANNELS_PER_GROUP];
+} rmt_mem_t;
+
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_mem_t RMTMEM;
 
 static const uint8_t gpio_pin[4] = {
     19, 5, 26, 27
@@ -82,7 +94,7 @@ static const uint8_t gc_kb_ident[3] = {0x08, 0x20, 0x00};
 static const uint8_t gc_neutral[] = {
     0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x20, 0x20, 0x00, 0x00
 };
-static volatile rmt_item32_t *rmt_items = (volatile rmt_item32_t *)RMTMEM.chan[0].data32;
+static volatile rmt_symbol_word_t *rmt_items = (volatile rmt_symbol_word_t *)RMTMEM.chan[0].data32;
 static uint8_t buf[128] = {0};
 static uint32_t *buf32 = (uint32_t *)buf;
 static uint16_t *buf16 = (uint16_t *)buf;
@@ -120,7 +132,7 @@ static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
 static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
-    volatile uint32_t *item_ptr = &rmt_items[item].val;
+    volatile unsigned *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
     for (; item < bit_len; ++data) {
@@ -143,7 +155,7 @@ static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint3
 
 static uint16_t nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *xor, uint32_t stop_bit) {
     uint32_t bit_len = item + len * 8;
-    volatile uint32_t *item_ptr = &rmt_items[item].val;
+    volatile unsigned *item_ptr = &rmt_items[item].val;
 
     *xor = 0x00;
     for (; item < bit_len; ++data) {
@@ -165,7 +177,7 @@ static uint16_t nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint3
 
 static uint16_t nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
     uint32_t bit_len = item + len * 8;
-    volatile uint32_t *item_ptr = &rmt_items[item].val;
+    volatile unsigned *item_ptr = &rmt_items[item].val;
 
     for (; item < bit_len; ++data) {
         do {
@@ -185,7 +197,7 @@ static uint16_t nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
 static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t len, uint8_t *crc) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
-    volatile uint32_t *item_ptr = &rmt_items[item].val;
+    volatile unsigned *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
     for (; item < bit_len; ++data) {
@@ -201,7 +213,7 @@ static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t le
     return item;
 }
 
-static uint32_t n64_isr(uint32_t cause) {
+static unsigned n64_isr(unsigned cause) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -218,14 +230,14 @@ static uint32_t n64_isr(uint32_t cause) {
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
                 /* Go RX right away */
-                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
                 RMT.conf_ch[channel].conf1.rx_en = 1;
                 break;
             /* RX End */
             case 1:
                 //ets_printf("RX_END\n");
                 RMT.conf_ch[channel].conf1.rx_en = 0;
-                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_SW;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                 item = nsi_items_to_bytes(channel * RMT_MEM_ITEM_NUM, buf, 1);
 
@@ -400,7 +412,7 @@ static uint32_t n64_isr(uint32_t cause) {
     return 0;
 }
 
-static uint32_t gc_isr(uint32_t cause) {
+static unsigned gc_isr(unsigned cause) {
     const uint32_t intr_st = RMT.int_st.val;
     uint32_t status = intr_st;
     uint16_t item;
@@ -418,14 +430,14 @@ static uint32_t gc_isr(uint32_t cause) {
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
                 RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
                 /* Go RX right away */
-                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
                 RMT.conf_ch[channel].conf1.rx_en = 1;
                 break;
             /* RX End */
             case 1:
                 //ets_printf("RX_END\n");
                 RMT.conf_ch[channel].conf1.rx_en = 0;
-                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
+                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_SW;
                 RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                 item = nsi_items_to_bytes(channel * RMT_MEM_ITEM_NUM, buf, 1);
                 switch (config.out_cfg[port].dev_mode) {
@@ -447,7 +459,7 @@ static uint32_t gc_isr(uint32_t cause) {
                                 /* Bad frame go back RX */
                                 RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
                                 RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
                                 RMT.conf_ch[channel].conf1.rx_en = 1;
                                 break;
                         }
@@ -501,7 +513,7 @@ static uint32_t gc_isr(uint32_t cause) {
                                 /* Bad frame go back RX */
                                 RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
                                 RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
-                                RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                                RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
                                 RMT.conf_ch[channel].conf1.rx_en = 1;
                                 break;
                         }
@@ -526,7 +538,7 @@ void nsi_init(void) {
 
     periph_ll_enable_clk_clear_rst(PERIPH_RMT_MODULE);
 
-    RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
+    RMT.apb_conf.fifo_mask = 1;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
         RMT.conf_ch[rmt_ch[i][system]].conf0.div_cnt = 40; /* 80MHz (APB CLK) / 40 = 0.5us TICK */;
@@ -534,12 +546,12 @@ void nsi_init(void) {
         RMT.conf_ch[rmt_ch[i][system]].conf1.mem_wr_rst = 1;
         RMT.conf_ch[rmt_ch[i][system]].conf1.tx_conti_mode = 0;
         RMT.conf_ch[rmt_ch[i][system]].conf0.mem_size = 8;
-        RMT.conf_ch[rmt_ch[i][system]].conf1.mem_owner = RMT_MEM_OWNER_TX;
-        RMT.conf_ch[rmt_ch[i][system]].conf1.ref_always_on = RMT_BASECLK_APB;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.mem_owner = RMT_LL_MEM_OWNER_SW;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.ref_always_on = 1;
         RMT.conf_ch[rmt_ch[i][system]].conf1.idle_out_en = 1;
-        RMT.conf_ch[rmt_ch[i][system]].conf1.idle_out_lv = RMT_IDLE_LEVEL_HIGH;
+        RMT.conf_ch[rmt_ch[i][system]].conf1.idle_out_lv = 1;
         RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_en = 0;
-        RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_out_lv = RMT_CARRIER_LEVEL_LOW;
+        RMT.conf_ch[rmt_ch[i][system]].conf0.carrier_out_lv = 0;
         RMT.carrier_duty_ch[rmt_ch[i][system]].high = 0;
         RMT.carrier_duty_ch[rmt_ch[i][system]].low = 0;
         RMT.conf_ch[rmt_ch[i][system]].conf0.idle_thres = (wired_adapter.system_id == N64) ? N64_BIT_PERIOD_TICKS : GC_BIT_PERIOD_TICKS;
@@ -558,14 +570,14 @@ void nsi_init(void) {
         gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
         gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
 
-        rmt_ll_enable_tx_end_interrupt(&RMT, rmt_ch[i][system], 1);
-        rmt_ll_enable_rx_end_interrupt(&RMT, rmt_ch[i][system], 1);
-        rmt_ll_enable_rx_err_interrupt(&RMT, rmt_ch[i][system], 1);
+        rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_TX_DONE(rmt_ch[i][system]), 1);
+        rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_RX_DONE(rmt_ch[i][system]), 1);
+        rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_RX_ERROR(rmt_ch[i][system]), 1);
 
         rmt_ll_rx_enable(&RMT, rmt_ch[i][system], 0);
         rmt_ll_rx_reset_pointer(&RMT, rmt_ch[i][system]);
-        rmt_ll_clear_rx_end_interrupt(&RMT, rmt_ch[i][system]);
-        rmt_ll_enable_rx_end_interrupt(&RMT, rmt_ch[i][system], 1);
+        rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_RX_DONE(rmt_ch[i][system]));
+        rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_RX_DONE(rmt_ch[i][system]), 1);
         rmt_ll_rx_enable(&RMT, rmt_ch[i][system], 1);
     }
 

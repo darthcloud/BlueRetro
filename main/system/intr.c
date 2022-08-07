@@ -4,7 +4,8 @@
  */
 
 #include <stdbool.h>
-#include "hal/cpu_ll.h"
+#include <esp32/rom/ets_sys.h>
+#include <esp_cpu.h>
 #include "intr.h"
 
 #define INT_MUX_DISABLED_INTNO 6
@@ -50,7 +51,7 @@ static inline void xt_int_enable_mask(uint32_t newmask)
 
 int32_t intexc_alloc_iram(uint32_t source, uint32_t intr_num, XT_INTEXC_HOOK handler) {
     uint32_t intr_level = 0;
-    uint32_t core_id = cpu_ll_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
 
     switch (intr_num) {
         case 19:
@@ -74,7 +75,7 @@ int32_t intexc_alloc_iram(uint32_t source, uint32_t intr_num, XT_INTEXC_HOOK han
 
 int32_t intexc_free_iram(uint32_t source, uint32_t intr_num) {
     uint32_t intr_level = 0;
-    uint32_t core_id = cpu_ll_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
 
     switch (intr_num) {
         case 19:

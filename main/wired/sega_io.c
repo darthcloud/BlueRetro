@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include <esp32/rom/ets_sys.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/adapter.h"

@@ -7,6 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_ota_ops.h>
+#include <esp32/rom/ets_sys.h>
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"

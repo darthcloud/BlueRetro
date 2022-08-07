@@ -21,6 +21,7 @@
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "soc/dport_reg.h"
 #include "soc/timer_group_reg.h"
 
@@ -77,7 +78,7 @@ xt_highint5:
     s32i    a2, a0, 0   /* clear intr */
     movi    a0, 0
 
-    rsil    a4, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested iterrupt */
+    rsil    a4, SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL /* disable nested iterrupt */
     /* set and wait flag */
     movi    a2, core0_stall_start_var
     addx4   a2, a0, a2

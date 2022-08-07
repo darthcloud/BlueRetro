@@ -177,7 +177,7 @@ static void i2c_isr(void* arg) {
     port->hw->int_clr.val = intr_sts;
 }
 
-static uint32_t isr_dispatch(uint32_t cause) {
+static unsigned isr_dispatch(unsigned cause) {
     if (cause & I2C0_INTR_MASK) {
         i2c_isr((void *)&wii_ctrl_ports[0]);
     }

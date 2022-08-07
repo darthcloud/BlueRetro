@@ -25,7 +25,7 @@
 
 
 #include <stdio.h>
-#include <hal/cpu_hal.h>
+#include <esp_cpu.h>
 #include <soc/dport_reg.h>
 #include <soc/soc_memory_layout.h>
 #include <esp_heap_caps.h>
@@ -35,6 +35,7 @@
 #include <xt_instr_macros.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa/xtensa_api.h>
+#include <xtensa/config/core.h>
 
 typedef void (*wired_init_t)(void);
 
@@ -96,10 +97,17 @@ static inline void cpu_write_dtlb(uint32_t vpn, unsigned attr)
     asm volatile ("wdtlb  %1, %0; dsync\n" :: "r" (vpn), "r" (attr));
 }
 
-
 static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
 {
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
+}
+
+static inline void cpu_init_hwloop(void)
+{
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
 }
 
 static inline void cpu_configure_region_protection()
@@ -121,12 +129,12 @@ static inline void cpu_configure_region_protection()
 static void IRAM_ATTR app_cpu_init()
 {
     // init interrupt handler
-    cpu_hal_set_vecbase(&_vector_table);
+    esp_cpu_intr_set_ivt_addr(&_vector_table);
 
     /* New cpu_configure_region_protection within bootloader_init_mem fail */
     /* Use version from v4.0.2 here and call cpu_init_memctl replacement */
     cpu_configure_region_protection();
-    cpu_hal_init_hwloop();
+    cpu_init_hwloop();
 
 #ifdef APP_CPU_RESERVE_ROM_DATA
     uartAttach();

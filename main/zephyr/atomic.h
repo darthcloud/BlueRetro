@@ -22,7 +22,12 @@
 extern "C" {
 #endif
 
+#ifdef BLUERETRO
+typedef int32_t atomic_t;
+#else
+#error atomic int
 typedef int atomic_t;
+#endif /* BLUERETRO */
 typedef atomic_t atomic_val_t;
 
 /**

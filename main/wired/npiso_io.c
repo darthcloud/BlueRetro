@@ -168,7 +168,7 @@ static inline void load_trackball_axes(uint8_t port) {
     }
 }
 
-static uint32_t npiso_isr(uint32_t cause) {
+static unsigned npiso_isr(unsigned cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 
@@ -333,7 +333,7 @@ static uint32_t npiso_isr(uint32_t cause) {
     return 0;
 }
 
-static uint32_t npiso_sfc_snes_5p_isr(uint32_t cause) {
+static unsigned npiso_sfc_snes_5p_isr(unsigned cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
 

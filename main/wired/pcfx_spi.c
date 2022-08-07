@@ -142,7 +142,7 @@ static void load_buffer(uint8_t port) {
     }
 }
 
-static uint32_t latch_isr(uint32_t cause) {
+static unsigned latch_isr(unsigned cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
     uint8_t port = 0;

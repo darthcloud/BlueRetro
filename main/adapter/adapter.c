@@ -9,6 +9,7 @@
 #include <freertos/FreeRTOS.h>
 #include <xtensa/hal.h>
 #include <esp_timer.h>
+#include <esp32/rom/ets_sys.h>
 #include "sdkconfig.h"
 #include "queue_bss.h"
 #include "zephyr/types.h"

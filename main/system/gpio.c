@@ -308,7 +308,7 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
 
     do {
         io_reg = GPIO_PIN_MUX_REG_IRAM[io_num];
-        uint32_t core_id = cpu_ll_get_core_id();
+        uint32_t core_id = esp_cpu_get_core_id();
 
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
             assert(io_reg != (intptr_t)NULL);

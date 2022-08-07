@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <esp_timer.h>
+#include <esp32/rom/ets_sys.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/adapter.h"
@@ -313,7 +314,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_INPUT);
 }
 
-static uint32_t maple_rx(uint32_t cause) {
+static unsigned maple_rx(unsigned cause) {
     const uint32_t maple0 = GPIO.acpu_int;
     uint32_t timeout;
     uint32_t bit_cnt = 0;
