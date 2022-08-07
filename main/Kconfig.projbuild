@@ -164,6 +164,11 @@ menu "BlueRetro"
             help
                 Select this to enable Generic HID report debug.
 
+        config BLUERETRO_DUMP_HID_DESC
+            bool "Enable HID descriptor dump"
+            help
+                Select this to dump HID descriptor.
+
         config BLUERETRO_ADAPTER_BTNS_DBG
             bool "Enable adapter buttons debug"
             help

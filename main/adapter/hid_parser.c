@@ -8,6 +8,7 @@
 #include "adapter.h"
 #include "hid_parser.h"
 #include "zephyr/usb_hid.h"
+#include "tools/util.h"
 
 #define HID_STACK_MAX 4
 
@@ -273,6 +274,10 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t report_id = 0;
     uint32_t report_bit_offset = 0;
     uint32_t report_usage_idx = 0;
+
+#ifdef CONFIG_BLUERETRO_DUMP_HID_DESC
+    data_dump(data, len);
+#endif
 
     while (desc < end) {
         switch (*desc++) {
