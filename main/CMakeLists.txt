@@ -1,5 +1,6 @@
 idf_component_register(SRCS "main.c"
                             "adapter/adapter.c"
+                            "adapter/adapter_debug.c"
                             "adapter/config.c"
                             "adapter/hid_parser.c"
                             "adapter/kb_monitor.c"

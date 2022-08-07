@@ -16,6 +16,7 @@
 #include "tools/util.h"
 #include "config.h"
 #include "adapter.h"
+#include "adapter_debug.h"
 #include "wired/wired.h"
 #include "wireless/wireless.h"
 #include "macro.h"
@@ -316,35 +317,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         sys_macro_hdl(&ctrl_input, &bt_data->flags);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
-        printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
-            BOLD, ctrl_input.axes[0].value, RESET, BOLD, ctrl_input.axes[1].value, RESET, BOLD, ctrl_input.axes[2].value, RESET, BOLD, ctrl_input.axes[3].value, RESET,
-            BOLD, ctrl_input.axes[4].value, RESET, BOLD, ctrl_input.axes[5].value, RESET, BOLD, ctrl_input.btns[0].value, RESET, BOLD, ctrl_input.btns[1].value, RESET,
-            BOLD, ctrl_input.btns[2].value, RESET, BOLD, ctrl_input.btns[3].value, RESET);
-#ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
-        uint32_t b = ctrl_input.btns[0].value;
-        printf(" %sDL%s %sDR%s %sDD%s %sDU%s %sBL%s %sBR%s %sBD%s %sBU%s %sMM%s %sMS%s %sMT%s %sMQ%s %sLM%s %sLS%s %sLT%s %sLJ%s %sRM%s %sRS%s %sRT%s %sRJ%s",
-            (b & BIT(PAD_LD_LEFT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LD_RIGHT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LD_DOWN)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LD_UP)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RB_LEFT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RB_RIGHT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RB_DOWN)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RB_UP)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_MM)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_MS)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_MT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_MQ)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LM)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LS)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_LJ)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RM)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RS)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RT)) ? GREEN : RESET, RESET,
-            (b & BIT(PAD_RJ)) ? GREEN : RESET, RESET);
-#endif
-        printf("\n");
+        adapter_debug_print(&ctrl_input);
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
         if (ctrl_input.btns[0].value & BIT(PAD_RB_DOWN)) {
             uint8_t tmp = 0;
@@ -361,35 +334,7 @@ void adapter_bridge(struct bt_data *bt_data) {
             out_mask = adapter_mapping(&config.in_cfg[bt_data->pids->out_idx]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
-            printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
-                BOLD, ctrl_output[0].axes[0].value, RESET, BOLD, ctrl_output[0].axes[1].value, RESET, BOLD, ctrl_output[0].axes[2].value, RESET, BOLD, ctrl_output[0].axes[3].value, RESET,
-                BOLD, ctrl_output[0].axes[4].value, RESET, BOLD, ctrl_output[0].axes[5].value, RESET, BOLD, ctrl_output[0].btns[0].value, RESET, BOLD, ctrl_output[0].btns[1].value, RESET,
-                BOLD, ctrl_output[0].btns[2].value, RESET, BOLD, ctrl_output[0].btns[3].value, RESET);
-#ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
-            uint32_t b = ctrl_output[0].btns[0].value;
-            printf(" %sDL%s %sDR%s %sDD%s %sDU%s %sBL%s %sBR%s %sBD%s %sBU%s %sMM%s %sMS%s %sMT%s %sMQ%s %sLM%s %sLS%s %sLT%s %sLJ%s %sRM%s %sRS%s %sRT%s %sRJ%s",
-                (b & BIT(PAD_LD_LEFT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LD_RIGHT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LD_DOWN)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LD_UP)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RB_LEFT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RB_RIGHT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RB_DOWN)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RB_UP)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_MM)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_MS)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_MT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_MQ)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LM)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LS)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_LJ)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RM)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RS)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RT)) ? GREEN : RESET, RESET,
-                (b & BIT(PAD_RJ)) ? GREEN : RESET, RESET);
-#endif
-            printf("\n");
+            adapter_debug_print(&ctrl_output[0]);
 #else
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
@@ -397,9 +342,9 @@ void adapter_bridge(struct bt_data *bt_data) {
                     wired_from_generic(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                 }
             }
-#endif
+#endif /* CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG */
         }
-#endif
+#endif /* CONFIG_BLUERETRO_ADAPTER_INPUT_DBG */
     }
 }
 
