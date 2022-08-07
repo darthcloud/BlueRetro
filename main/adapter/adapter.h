@@ -453,7 +453,7 @@ struct bt_data {
     int32_t axes_cal[ADAPTER_MAX_AXES];
     uint32_t sdp_len;
     uint8_t *sdp_data;
-} __packed;
+};
 
 struct wired_data {
     uint32_t index;
@@ -474,7 +474,7 @@ struct wired_data {
         uint32_t output_mask32[16];
     };
     uint8_t cnt_mask[128];
-} __packed;
+};
 
 struct wired_adapter {
     /* from wired driver */

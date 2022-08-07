@@ -72,10 +72,10 @@ struct maple_pkt {
             uint8_t dst;
             uint8_t cmd;
             uint32_t data32[135];
-        };
+        } __packed;
         uint8_t data[545];
     };
-} __packed;
+};
 
 static const uint8_t gpio_pin[][2] = {
     {21, 22},
