@@ -257,7 +257,7 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *wip_r
             bt_data->pids->type = dev_type;
             bt_data->pids->subtype = dev_subtype;
         }
-        printf("rtype: %d dtype: %d sub: %d", report_type, dev_type, dev_subtype);
+        printf("rtype: %ld dtype: %ld sub: %ld", report_type, dev_type, dev_subtype);
     }
     printf("\n");
 }
@@ -361,7 +361,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                         wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
                         wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
                         wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
-                        printf("%02X%02X %u %u ", hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset, hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
+                        printf("%02X%02X %lu %lu ", hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset, hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
                         report_bit_offset += hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
                         ++report_usage_idx;
                     }
@@ -386,7 +386,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                             wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_size;
                             wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
                             wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
-                            printf("%u %u, ", report_bit_offset, hid_stack[hid_stack_idx].report_size);
+                            printf("%lu %lu, ", report_bit_offset, hid_stack[hid_stack_idx].report_size);
                             report_bit_offset += hid_stack[hid_stack_idx].report_size;
                         }
                     }

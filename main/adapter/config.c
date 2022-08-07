@@ -140,7 +140,7 @@ static int32_t config_load_from_file(struct config *data) {
             ret = config_store_on_file(data);
         }
         else {
-            printf("%s: Upgrading cfg v%d to v%d\n", __FUNCTION__, file_ver, CONFIG_VERSION);
+            printf("%s: Upgrading cfg v%ld to v%d\n", __FUNCTION__, file_ver, CONFIG_VERSION);
             for (uint32_t i = file_ver; i < CONFIG_VERSION; i++) {
                 if (config_ver_update[i]) {
                     ret = config_ver_update[i](data);

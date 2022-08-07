@@ -558,19 +558,19 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         uint32_t bit_shift = offset % 8;
         uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
         if (report->usages[i].bit_size <= 4) {
-            printf("R%d %02X%02X: %s%01X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%01lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 8) {
-            printf("R%d %02X%02X: %s%02X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%02lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 12) {
-            printf("R%d %02X%02X: %s%03X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%03lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 16) {
-            printf("R%d %02X%02X: %s%04X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%04lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 32) {
-            printf("R%d %02X%02X: %s%08X%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%08lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
     }
     printf("\n");
@@ -587,7 +587,7 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
             hid_pad_to_generic(bt_data, ctrl_data);
             break;
         default:
-            printf("# Unsupported report type: %02X\n", bt_data->report_type);
+            printf("# Unsupported report type: %02lX\n", bt_data->report_type);
             return -1;
     }
 #endif

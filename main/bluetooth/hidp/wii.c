@@ -132,7 +132,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     if (subtype > BT_SUBTYPE_DEFAULT) {
                         device->ids.subtype = subtype;
                     }
-                    printf("# dev: %d wii ext: %d\n", device->ids.id, device->ids.subtype);
+                    printf("# dev: %ld wii ext: %ld\n", device->ids.id, device->ids.subtype);
                     bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                     break;
                 }
@@ -141,7 +141,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     struct bt_hidp_wii_ack *ack = (struct bt_hidp_wii_ack *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_ACK\n");
                     if (ack->err) {
-                        printf("# dev: %d ack err: 0x%02X\n", device->ids.id, ack->err);
+                        printf("# dev: %ld ack err: 0x%02X\n", device->ids.id, ack->err);
                         if (device->hid_state) {
                             bt_hid_cmd_wii_write(device, (void *)&wii_ext_init1);
                         }

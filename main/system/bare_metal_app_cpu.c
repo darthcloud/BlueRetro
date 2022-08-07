@@ -173,12 +173,12 @@ static void IRAM_ATTR app_cpu_init()
 int32_t start_app_cpu(wired_init_t user)
 {
 #if BAREMETAL_APP_CPU_DEBUG
-    printf("App main at %08X\n", (uint32_t)&app_cpu_main);
-    printf("App init at %08X\n", (uint32_t)&app_cpu_init);
-    printf("APP_CPU RESET: %u\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_A_REG));
-    printf("APP_CPU CLKGATE: %u\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_B_REG));
-    printf("APP_CPU STALL: %u\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_C_REG));
-    printf("APP_CACHE_CTRL: %08x\n", DPORT_READ_PERI_REG(DPORT_APP_CACHE_CTRL_REG));
+    printf("# App main at %08lX\n", (uint32_t)&app_cpu_main);
+    printf("# App init at %08lX\n", (uint32_t)&app_cpu_init);
+    printf("# APP_CPU RESET: %lu\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_A_REG));
+    printf("# APP_CPU CLKGATE: %lu\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_B_REG));
+    printf("# APP_CPU STALL: %lu\n", DPORT_READ_PERI_REG(DPORT_APPCPU_CTRL_C_REG));
+    printf("# APP_CACHE_CTRL: %08lx\n", DPORT_READ_PERI_REG(DPORT_APP_CACHE_CTRL_REG));
 #endif
     app_cpu_user = user;
 
@@ -204,7 +204,7 @@ int32_t start_app_cpu(wired_init_t user)
     }
 
 #if BAREMETAL_APP_CPU_DEBUG
-    printf("APP CPU STACK PTR: %08X\n", (uint32_t)app_cpu_stack_ptr);
+    printf("# APP CPU STACK PTR: %08lX\n", (uint32_t)app_cpu_stack_ptr);
 #endif
 
     DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);

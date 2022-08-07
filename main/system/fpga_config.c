@@ -54,7 +54,7 @@ int32_t fpga_config(void) {
     }
     block_cnt = st.st_size / BUFFER_SIZE;
     end_size = st.st_size % BUFFER_SIZE;
-    printf("# %s: Bitstream file found! size: (4KB * %d) + %d\n", __FUNCTION__, block_cnt, end_size);
+    printf("# %s: Bitstream file found! size: (4KB * %ld) + %ld\n", __FUNCTION__, block_cnt, end_size);
 
     gpio_set_level(FPGA_PROGRAM_B_PIN, 1);
     io_conf.pin_bit_mask = 1ULL << FPGA_PROGRAM_B_PIN;
@@ -110,11 +110,11 @@ int32_t fpga_config(void) {
                 transcfg.length = BUFFER_SIZE * 8;
                 transcfg.tx_buffer = buffer;
                 if (spi_device_transmit(spi, &transcfg)) {
-                    printf("# %s: SPI TX fail block: %d\n", __FUNCTION__, total_cnt);
+                    printf("# %s: SPI TX fail block: %ld\n", __FUNCTION__, total_cnt);
                     goto close_file;
                 }
                 total_cnt++;
-                printf("\r# %s: Uploading bitstream to FPGA... %d%%", __FUNCTION__, 100 * total_cnt / block_cnt);
+                printf("\r# %s: Uploading bitstream to FPGA... %ld%%", __FUNCTION__, 100 * total_cnt / block_cnt);
             }
         }
 
@@ -128,12 +128,12 @@ int32_t fpga_config(void) {
             transcfg.length = end_size * 8;
             transcfg.tx_buffer = buffer;
             if (spi_device_transmit(spi, &transcfg)) {
-                printf("# %s: SPI TX fail block: %d\n", __FUNCTION__, total_cnt);
+                printf("# %s: SPI TX fail block: %ld\n", __FUNCTION__, total_cnt);
                 goto close_file;
             }
         }
         printf("\r# %s: Uploading bitstream to FPGA... 100%%\n", __FUNCTION__);
-        printf("# %s: Bitstream upload done! 4KB block: %d last block size: %d\n", __FUNCTION__, total_cnt, end_size);
+        printf("# %s: Bitstream upload done! 4KB block: %ld last block size: %ld\n", __FUNCTION__, total_cnt, end_size);
 close_file:
         fclose(file);
     }

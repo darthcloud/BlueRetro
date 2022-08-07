@@ -64,7 +64,7 @@ static int32_t mc_restore(void) {
                 printf("# %s: restore sucessful!\n", __FUNCTION__);
             }
             else {
-                printf("# %s: restore failed! cnt: %d File size:%ld\n", __FUNCTION__, count, st.st_size);
+                printf("# %s: restore failed! cnt: %ld File size:%ld\n", __FUNCTION__, count, st.st_size);
             }
         }
     }
@@ -89,7 +89,7 @@ static int32_t mc_store(void) {
             ret = 0;
             mc_block_state = 0;
         }
-        printf("# %s: file updated cnt: %d\n", __FUNCTION__, count);
+        printf("# %s: file updated cnt: %ld\n", __FUNCTION__, count);
     }
     return ret;
 }
@@ -117,7 +117,7 @@ static int32_t mc_store_spread(void) {
                 atomic_clear_bit(&mc_block_state, block);
             }
 
-            printf("# %s: block %d updated cnt: %d\n", __FUNCTION__, block, count);
+            printf("# %s: block %ld updated cnt: %ld\n", __FUNCTION__, block, count);
 
             if (mc_block_state) {
                 mc_start_update_timer(20000);
@@ -143,7 +143,7 @@ int32_t mc_init(void) {
         mc_buffer[i] = malloc(MC_BUFFER_BLOCK_SIZE);
 
         if (mc_buffer[i] == NULL) {
-            printf("# %s mc_buffer[%d] alloc fail\n", __FUNCTION__, i);
+            printf("# %s mc_buffer[%ld] alloc fail\n", __FUNCTION__, i);
             heap_caps_dump_all();
             goto exit;
         }

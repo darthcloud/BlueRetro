@@ -454,7 +454,7 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
     else if (config_id == 4) {
         uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[in_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
         uint32_t sum_offset = in_cfg_offset + offset;
-        printf("# Input config %d\n", cfg_len);
+        printf("# Input config %ld\n", cfg_len);
         if (sum_offset > cfg_len || offset > ATT_MAX_LEN) {
             len = 0;
         }
@@ -754,7 +754,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             uint16_t *data = (uint16_t *)wr_req->value;
             uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
             uint32_t data_len = att_len - sizeof(wr_req->handle);
-            printf("# BT_ATT_OP_WRITE_REQ len: %d\n", data_len);
+            printf("# BT_ATT_OP_WRITE_REQ len: %ld\n", data_len);
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
                     printf("# BR_GLBL_CFG_CHRC_HDL %04X\n", wr_req->handle);
@@ -867,7 +867,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             struct bt_att_prepare_write_req *prep_wr_req = (struct bt_att_prepare_write_req *)bt_hci_acl_pkt->att_data;
             uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
             uint32_t data_len = att_len - (sizeof(prep_wr_req->handle) + sizeof(prep_wr_req->offset));
-            printf("# BT_ATT_OP_PREPARE_WRITE_REQ len: %d offset: %d\n", data_len, prep_wr_req->offset);
+            printf("# BT_ATT_OP_PREPARE_WRITE_REQ len: %ld offset: %d\n", data_len, prep_wr_req->offset);
             switch (prep_wr_req->handle) {
                 case BR_IN_CFG_DATA_CHRC_HDL:
                     memcpy((void *)&config.in_cfg[in_cfg_id] + in_cfg_offset + prep_wr_req->offset, prep_wr_req->value, data_len);
@@ -1064,7 +1064,7 @@ find_info_rsp_end:
                     }
                     memcpy(device_name, read_type_rsp->data[0].value, rsp_len);
                     bt_hci_set_type_flags_from_name(device, device_name);
-                    printf("# dev: %d type: %d %s\n", device->ids.id, device->ids.type, device_name);
+                    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, device_name);
 
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
@@ -1084,7 +1084,7 @@ find_info_rsp_end:
                     if (bt_data->sdp_data == NULL) {
                         bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_data->sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
+                            printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
@@ -1105,7 +1105,7 @@ find_info_rsp_end:
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                         }
                         else {
-                            printf("# dev: %d No report found!!\n", device->ids.id);
+                            printf("# dev: %ld No report found!!\n", device->ids.id);
                         }
                     }
                     break;
@@ -1146,7 +1146,7 @@ find_info_rsp_end:
                     if (bt_data->sdp_data == NULL) {
                         bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_data->sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
+                            printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
@@ -1167,7 +1167,7 @@ find_info_rsp_end:
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                         }
                         else {
-                            printf("# dev: %d No report found!!\n", device->ids.id);
+                            printf("# dev: %ld No report found!!\n", device->ids.id);
                         }
                     }
                     break;

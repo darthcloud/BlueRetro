@@ -117,7 +117,7 @@ static void wired_port_hdl(void) {
 
         if (device->ids.out_idx != prev_idx) {
             update++;
-            printf("# %s: BTDEV %d map to WIRED %d\n", __FUNCTION__, i, device->ids.out_idx);
+            printf("# %s: BTDEV %ld map to WIRED %ld\n", __FUNCTION__, i, device->ids.out_idx);
             if (atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
                 struct raw_fb fb_data = {0};
 

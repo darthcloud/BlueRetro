@@ -311,7 +311,7 @@ static void bt_host_task(void *param) {
                     device->report_stall_cnt = 0;
                 }
                 if (device->report_stall_cnt > 5) {
-                    printf("# %s dev: %d report stalled\n", __FUNCTION__, device->ids.id);
+                    printf("# %s dev: %ld report stalled\n", __FUNCTION__, device->ids.id);
                     device->report_stall_cnt = 0;
                     device->report_cnt = 0;
 
@@ -342,12 +342,12 @@ static void bt_host_acl_hdlr(struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
             pkt->acl_hdr.len);
         frag_offset += pkt->acl_hdr.len;
         if (frag_offset < frag_size) {
-            printf("# %s Waiting for next fragment. offset: %d size %d\n", __FUNCTION__, frag_offset, frag_size);
+            printf("# %s Waiting for next fragment. offset: %ld size %ld\n", __FUNCTION__, frag_offset, frag_size);
             return;
         }
         pkt = (struct bt_hci_pkt *)frag_buf;
         pkt_len = frag_size;
-        printf("# %s process reassembled frame. offset: %d size %d\n", __FUNCTION__, frag_offset, frag_size);
+        printf("# %s process reassembled frame. offset: %ld size %ld\n", __FUNCTION__, frag_offset, frag_size);
     }
     if (bt_acl_flags(pkt->acl_hdr.handle) == BT_ACL_START
         && (pkt_len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr))) < pkt->l2cap_hdr.len) {

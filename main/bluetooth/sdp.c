@@ -253,9 +253,9 @@ void bt_sdp_parser(struct bt_data *bt_data) {
                 hid_desc += 4;
                 break;
         }
-        printf("# %s HID descriptor size: %u Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
+        printf("# %s HID descriptor size: %lu Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
         if ((hid_offset + hid_desc_len) > bt_data->sdp_len) {
-            printf("# %s HID descriptor size exceed buffer size: %d, trunc\n", __FUNCTION__, bt_data->sdp_len);
+            printf("# %s HID descriptor size exceed buffer size: %ld, trunc\n", __FUNCTION__, bt_data->sdp_len);
             hid_desc_len = bt_data->sdp_len - hid_offset;
         }
         hid_parser(bt_data, hid_desc, hid_desc_len);
@@ -297,7 +297,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 
             if (cp_len > free_len) {
                 cp_len = free_len;
-                printf("# %s SDP data > buffer will be trunc to %d, cp_len %d\n", __FUNCTION__, BT_SDP_DATA_SIZE, cp_len);
+                printf("# %s SDP data > buffer will be trunc to %d, cp_len %ld\n", __FUNCTION__, BT_SDP_DATA_SIZE, cp_len);
             }
 
             switch (device->sdp_state) {
@@ -305,7 +305,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                     if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
                         bt_adapter.data[device->ids.id].sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
-                            printf("# dev: %d Failed to alloc report memory\n", device->ids.id);
+                            printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }

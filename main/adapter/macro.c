@@ -39,7 +39,7 @@ static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, a
         if (atomic_test_bit(flags, macro->flag_mask)) {
             atomic_clear_bit(flags, macro->flag_mask);
 
-            printf("# %s: Apply macro %08X\n", __FUNCTION__, macro->macro);
+            printf("# %s: Apply macro %08lX\n", __FUNCTION__, macro->macro);
             if (macro->action) {
                 macro->action();
             }

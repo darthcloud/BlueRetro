@@ -227,7 +227,7 @@ int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ps5_to_generic(bt_data, ctrl_data);
             break;
         default:
-            printf("# Unknown report type: %02X\n", bt_data->report_type);
+            printf("# Unknown report type: %02lX\n", bt_data->report_type);
             return -1;
     }
 
