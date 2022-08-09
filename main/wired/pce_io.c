@@ -278,9 +278,18 @@ static void pce_mouse_task(void) {
 }
 
 static unsigned pce_mouse_oe_isr(unsigned cause) {
+    uint32_t cur_in1 = GPIO.in1.val;
     cycle = 0;
     ++frame_cnt;
     ++mouse_cnt;
+    if (cur_in1 & P1_SEL_MASK) {
+        if (mouse_cnt) {
+            GPIO.out = axes[mouse_cnt - 1];
+        }
+    }
+    else {
+        GPIO.out = map[0][2];
+    }
     GPIO.status_w1tc = P1_OE_MASK;
     return 0;
 }
