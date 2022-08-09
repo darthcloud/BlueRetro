@@ -272,6 +272,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t report_id = 0;
+    uint8_t report_cnt = 0;
     uint32_t report_bit_offset = 0;
     uint32_t report_usage_idx = 0;
 
@@ -407,6 +408,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 /* process previous report fingerprint */
                 if (report_id) {
                     hid_process_report(bt_data, &wip_report, report_bit_offset, report_usage_idx);
+                    report_cnt++;
                 }
                 memset((void *)&wip_report, 0, sizeof(wip_report));
                 report_id = *desc++;
@@ -460,6 +462,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 printf("# Unknown HID marker: %02X\n", *--desc);
                 return;
         }
+    }
+    if (report_cnt == 0) {
+        report_id = 1;
     }
     if (report_id) {
         hid_process_report(bt_data, &wip_report, report_bit_offset, report_usage_idx);
