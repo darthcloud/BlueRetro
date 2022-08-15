@@ -117,6 +117,6 @@ void app_main()
     adapter_init();
 
     start_app_cpu(wired_init_task);
-    xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2048, NULL, 10, NULL, 0);
+    xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2560, NULL, 10, NULL, 0);
 }
 
