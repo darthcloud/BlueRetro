@@ -1120,15 +1120,20 @@ find_info_rsp_end:
                         bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                     }
                     else {
+                        uint32_t i = 0;
                         device->hid_state = BT_ATT_HID_REPORT_CFG;
 
-                        for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
+                        for (i = 0; i < HID_MAX_REPORT; i++) {
                             if (bt_att_is_report_required(&hid_data->reports[i], bt_data)) {
                                 uint16_t data = 0x0001;
                                 bt_att_cmd_write_req(device->acl_handle, hid_data->reports[i].cfg_hdl, (uint8_t *)&data, sizeof(data));
                                 hid_data->report_idx = i + 1;
                                 break;
                             }
+                        }
+                        if (i >= HID_MAX_REPORT) {
+                            atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
+                            bt_hid_init(device);
                         }
                     }
                     break;
@@ -1199,7 +1204,9 @@ find_info_rsp_end:
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_CFG:
-                    for (uint32_t i = hid_data->report_idx; i < HID_MAX_REPORT; i++) {
+                {
+                    uint32_t i = 0;
+                    for (i = hid_data->report_idx; i < HID_MAX_REPORT; i++) {
                         if (bt_att_is_report_required(&hid_data->reports[i], bt_data)) {
                             uint16_t data = 0x0001;
                             bt_att_cmd_write_req(device->acl_handle, hid_data->reports[i].cfg_hdl, (uint8_t *)&data, sizeof(data));
@@ -1207,7 +1214,12 @@ find_info_rsp_end:
                             break;
                         }
                     }
+                    if (i >= HID_MAX_REPORT) {
+                        atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
+                        bt_hid_init(device);
+                    }
                     break;
+                }
             }
             break;
         }
