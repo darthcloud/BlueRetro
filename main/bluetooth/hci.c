@@ -13,7 +13,6 @@
 #include "att.h"
 #include "smp.h"
 #include "tools/util.h"
-#include "system/btn.h"
 #include "system/led.h"
 #include "adapter/config.h"
 #include "wired/wired_comm.h"
@@ -1229,8 +1228,6 @@ int32_t bt_hci_init(void) {
 
     bt_config_state = 0;
     bt_hci_q_conf(0);
-    boot_btn_set_callback(bt_hci_start_inquiry, BOOT_BTN_HOLD_EVT);
-    boot_btn_set_callback(bt_hci_stop_inquiry, BOOT_BTN_HOLD_CANCEL_EVT);
 
     return 0;
 }

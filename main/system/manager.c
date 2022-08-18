@@ -10,60 +10,203 @@
 #include <esp_partition.h>
 #include <esp_sleep.h>
 #include "driver/gpio.h"
+#include "hal/ledc_hal.h"
+#include "hal/gpio_hal.h"
+#include "driver/ledc.h"
+#include "esp_rom_gpio.h"
 #include "adapter/adapter.h"
 #include "bluetooth/host.h"
 #include "bluetooth/hci.h"
 #include "wired/wired_comm.h"
 #include "tools/util.h"
 #include "system/fs.h"
+#include "system/led.h"
 #include "manager.h"
+
+#define BOOT_BTN_PIN 0
 
 #define RESET_PIN 14
 
 #define POWER_ON_PIN 13
-#define POWER_OFF_PIN 12
+#define POWER_OFF_PIN 16
 #define POWER_SENSE_PIN 39
 
-#define SENSE_P1_PIN 4
-#define SENSE_P2_PIN 15
-#define SENSE_P3_PIN 2
-#define SENSE_P4_PIN 0
+#define POWER_OFF_ALT_PIN 12
 
-#if defined(CONFIG_BLUERETRO_SYSTEM_N64) || defined(CONFIG_BLUERETRO_SYSTEM_DC) || defined(CONFIG_BLUERETRO_SYSTEM_GC)
-#define PORT_CNT 4
-#else
-#define PORT_CNT 2
-#endif
+#define SENSE_P1_PIN 35
+#define SENSE_P2_PIN 36
+#define SENSE_P3_PIN 32
+#define SENSE_P4_PIN 33
+
+#define SENSE_P1_ALT_PIN 15
+#define SENSE_P2_ALT_PIN 34
+
+#define LED_P1_PIN 2
+#define LED_P2_PIN 4
+#define LED_P3_PIN 12
+#define LED_P4_PIN 15
+
+#define RELAY_PULSE_MS 20
+#define DUTY_CYCLE_HALF 0x80000
+#define DUTY_CYCLE_FULL 0xFFFFF
 
 enum {
     SYS_MGR_POWER_ON_HOLD = 0,
+    SYS_MGR_SENSE_NEG,
+    SYS_MGR_POWER_NEG,
+    SYS_MGR_EXTERNAL,
+    SYS_MGR_HOTPLUG,
+    SYS_MGR_SENSE_OUT,
 };
 
-static const uint8_t input_list[] = {
+enum {
+    SYS_MGR_BTN_STATE0 = 0,
+    SYS_MGR_BTN_STATE1,
+    SYS_MGR_BTN_STATE2,
+    SYS_MGR_BTN_STATE3,
+};
+
+static atomic_t sys_mgr_flags = 0;
+#ifdef CONFIG_BLUERETRO_HW2
+static uint8_t sense_list[] = {
     SENSE_P1_PIN, SENSE_P2_PIN, SENSE_P3_PIN, SENSE_P4_PIN
 };
-static atomic_t sys_mgr_flags = 0;
+#endif
+static const uint8_t led_list[] = {
+    LED_P1_PIN, LED_P2_PIN, LED_P3_PIN, LED_P4_PIN
+};
+static const uint32_t sw_thresholds[] = {
+    100, 300, 600
+};
+static const uint32_t led_flash_hz[] = {
+    2, 4, 8
+};
+static uint8_t current_pulse_led = LED_P1_PIN;
+static uint8_t err_led_pin;
+static uint8_t power_off_pin = POWER_OFF_PIN;
+static uint8_t port_cnt = 1;
+static uint16_t port_state = 0;
+
+static inline uint32_t sense_port_is_empty(uint32_t index) {
+#ifdef CONFIG_BLUERETRO_HW2
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_SENSE_NEG)) {
+        return !gpio_get_level(sense_list[index]);
+    }
+    else {
+        return gpio_get_level(sense_list[index]);
+    }
+#else
+    return 1;
+#endif
+}
+
+static inline void set_power_on(uint32_t state) {
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+        gpio_set_level(POWER_ON_PIN, !state);
+    }
+    else {
+        gpio_set_level(POWER_ON_PIN, state);
+    }
+}
+
+static inline void set_power_off(uint32_t state) {
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+        gpio_set_level(power_off_pin, !state);
+    }
+    else {
+        gpio_set_level(power_off_pin, state);
+    }
+}
+
+static inline void set_port_led(uint32_t index, uint32_t state) {
+    gpio_set_level(led_list[index], state);
+}
+
+static inline uint32_t get_port_led_pin(uint32_t index) {
+    return led_list[index];
+}
+
+static void internal_flag_init(void) {
+#ifdef CONFIG_BLUERETRO_HW2
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+        if (!gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
+        }
+    }
+    else {
+        if (gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
+        }
+    }
+#else
+    atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
+#endif
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL)) {
+        printf("# %s: External adapter\n", __FUNCTION__);
+    }
+    else {
+        printf("# %s: Internal adapter\n", __FUNCTION__);
+    }
+}
+
+static void port_led_reset(uint32_t pin) {
+    if (pin) {
+        gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+    }
+}
+
+static void port_led_pulse(uint32_t pin) {
+    if (pin) {
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
+        gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+        esp_rom_gpio_connect_out_signal(pin, ledc_periph_signal[LEDC_HIGH_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_0, 0, 0);
+    }
+}
+
+static void set_leds_as_btn_status(uint8_t state) {
+    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, DUTY_CYCLE_FULL, 0);
+
+    /* Use all port LEDs */
+    for (uint32_t i = 0; i < port_cnt; i++) {
+        uint8_t pin = led_list[i];
+
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
+        gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+        if (state) {
+            esp_rom_gpio_connect_out_signal(pin, ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_1, 0, 0);
+        }
+    }
+
+    /* Use error LED as well */
+    if (state) {
+        esp_rom_gpio_connect_out_signal(err_led_pin, ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_1, 0, 0);
+    }
+    else {
+        esp_rom_gpio_connect_out_signal(err_led_pin, ledc_periph_signal[LEDC_HIGH_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_0, 0, 0);
+    }
+}
 
 static void power_on_hdl(void) {
+#ifdef CONFIG_BLUERETRO_HW2
     static int32_t curr = 0, prev = 0;
     struct bt_dev *not_used;
 
     prev = curr;
-    curr = gpio_get_level(POWER_SENSE_PIN);
+    curr = sys_mgr_get_power();
     if (curr) {
         /* System is power on */
         bt_hci_inquiry_override(0);
 
         if (bt_host_get_active_dev(&not_used) < 0) {
             /* No Bt device */
-            uint32_t port_cnt = 0;
+            uint32_t port_cnt_loc = 0;
 
-            for (uint32_t i = 0; i < PORT_CNT; i++) {
-                if (!gpio_get_level(input_list[i])) {
-                    port_cnt++;
+            for (uint32_t i = 0; i < port_cnt; i++) {
+                if (sense_port_is_empty(i)) {
+                    port_cnt_loc++;
                 }
             }
-            if (port_cnt == PORT_CNT) {
+            if (port_cnt_loc == port_cnt) {
                 /* No wired controller */
                 if (!bt_hci_get_inquiry()) {
                     bt_hci_start_inquiry();
@@ -77,14 +220,10 @@ static void power_on_hdl(void) {
             /* Kick BT controllers on off transition */
             bt_host_disconnect_all();
         }
-        else if (bt_host_get_active_dev(&not_used) > -1) {
+        else if (bt_host_get_hid_init_dev(&not_used) > -1) {
             /* Power on BT connect */
             bt_hci_inquiry_override(0);
-            gpio_set_level(POWER_ON_PIN, 0);
-            if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
-                vTaskDelay(500 / portTICK_PERIOD_MS);
-                gpio_set_level(POWER_ON_PIN, 1);
-            }
+            sys_mgr_power_on();
             return;
         }
         /* Make sure no inquiry while power off */
@@ -93,32 +232,70 @@ static void power_on_hdl(void) {
             bt_hci_stop_inquiry();
         }
     }
+#endif /* CONFIG_BLUERETRO_HW2 */
 }
 
 static void wired_port_hdl(void) {
     uint32_t update = 0;
     uint16_t port_mask = 0;
+    uint8_t err_led_set = 0;
+
     for (int32_t i = 0, j = 0, idx = 0; i < BT_MAX_DEV; i++) {
         struct bt_dev *device = NULL;
-        int32_t prev_idx = 0;
+        uint8_t bt_ready = 0;
 
         bt_host_get_dev_from_id(i, &device);
-        prev_idx = device->ids.out_idx;
 
-        for (; j < PORT_CNT; j++) {
-            if (!gpio_get_level(input_list[j])) {
+        for (; j < port_cnt; j++) {
+            if (sense_port_is_empty(j)) {
                 j++;
                 break;
             }
+            set_port_led(j, 0);
             idx++;
         }
-        port_mask |= BIT(idx);
+
+        bt_ready = atomic_test_bit(&device->flags, BT_DEV_HID_INIT_DONE);
+
+#ifdef CONFIG_BLUERETRO_HW2
+        int32_t prev_idx = device->ids.out_idx;
+#endif
+        if ((atomic_test_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG) && bt_ready) ||
+                !atomic_test_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG)) {
+            port_mask |= BIT(idx);
+        }
         device->ids.out_idx = idx++;
 
+
+        if (device->ids.out_idx < port_cnt) {
+            if (bt_ready) {
+                set_port_led(device->ids.out_idx, 1);
+            }
+            else if (get_port_led_pin(device->ids.out_idx) != current_pulse_led) {
+                set_port_led(device->ids.out_idx, 0);
+            }
+        }
+
+        if (!bt_ready && !err_led_set) {
+            uint8_t new_led = (device->ids.out_idx < port_cnt) ? get_port_led_pin(device->ids.out_idx) : 0;
+
+            port_led_reset(current_pulse_led);
+
+            if (bt_hci_get_inquiry()) {
+                port_led_pulse(new_led);
+                err_led_set = 1;
+                current_pulse_led = new_led;
+            }
+            else {
+                current_pulse_led = 0;
+            }
+        }
+
+#ifdef CONFIG_BLUERETRO_HW2
         if (device->ids.out_idx != prev_idx) {
             update++;
             printf("# %s: BTDEV %ld map to WIRED %ld\n", __FUNCTION__, i, device->ids.out_idx);
-            if (atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+            if (bt_ready) {
                 struct raw_fb fb_data = {0};
 
                 fb_data.header.wired_id = device->ids.out_idx;
@@ -127,26 +304,97 @@ static void wired_port_hdl(void) {
                 adapter_q_fb(&fb_data);
             }
         }
+#endif
+    }
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG)) {
+        if (port_state != port_mask) {
+            update++;
+        }
     }
     if (update) {
         printf("# %s: Update ports state: %04X\n", __FUNCTION__, port_mask);
         wired_comm_port_cfg(port_mask);
-#ifdef CONFIG_BLUERETRO_SYSTEM_WII_EXT
-        /* Toggle Wii classic sense line to force ctrl reinit */
-        gpio_set_level(SENSE_P3_PIN, 0);
-        gpio_set_level(SENSE_P4_PIN, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        gpio_set_level(SENSE_P3_PIN, 1);
-        gpio_set_level(SENSE_P4_PIN, 1);
+        port_state = port_mask;
+        if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_SENSE_OUT)) {
+            /* Toggle Wii classic sense line to force ctrl reinit */
+            gpio_set_level(SENSE_P3_PIN, 0);
+            gpio_set_level(SENSE_P4_PIN, 0);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            gpio_set_level(SENSE_P3_PIN, 1);
+            gpio_set_level(SENSE_P4_PIN, 1);
+        }
+    }
+}
+
+static void boot_btn_hdl(void) {
+    uint32_t hold_cnt = 0;
+    uint32_t state = 0;
+
+    if (sys_mgr_get_boot_btn()) {
+        if (!sys_mgr_get_power()) {
+            sys_mgr_power_on();
+            return;
+        }
+
+        set_leds_as_btn_status(1);
+
+        while (sys_mgr_get_boot_btn()) {
+            hold_cnt++;
+            if (hold_cnt > sw_thresholds[state] && state < SYS_MGR_BTN_STATE3) {
+                ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, DUTY_CYCLE_HALF, 0);
+                ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, led_flash_hz[state]);
+                state++;
+            }
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
+
+#ifndef CONFIG_BLUERETRO_SYSTEM_UNIVERSAL
+        if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL))
 #endif
+        {
+            state++;
+        }
+
+        switch (state) {
+            case SYS_MGR_BTN_STATE0:
+                sys_mgr_reset();
+                break;
+            case SYS_MGR_BTN_STATE1:
+                if (bt_hci_get_inquiry()) {
+                    bt_hci_stop_inquiry();
+                }
+                else {
+                    bt_host_disconnect_all();
+                }
+                break;
+            case SYS_MGR_BTN_STATE2:
+                bt_hci_start_inquiry();
+                break;
+            default:
+                sys_mgr_factory_reset();
+                break;
+        }
+
+        set_leds_as_btn_status(0);
+        /* Inhibit SW press for 2 seconds */
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
 static void sys_mgr_task(void *arg) {
+    uint32_t cnt = 0;
     while (1) {
-        wired_port_hdl();
-        power_on_hdl();
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        boot_btn_hdl();
+
+        /* Update those only 1/32 loop */
+        if ((cnt & 0x1F) == 0x1F) {
+            wired_port_hdl();
+            if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL)) {
+                power_on_hdl();
+            }
+        }
+        cnt++;
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
@@ -156,7 +404,7 @@ void sys_mgr_reset(void) {
     gpio_set_level(RESET_PIN, 1);
 }
 
-void sys_mgr_inquiry(void) {
+void sys_mgr_inquiry_toggle(void) {
     if (bt_hci_get_inquiry()) {
         bt_hci_stop_inquiry();
     }
@@ -165,9 +413,43 @@ void sys_mgr_inquiry(void) {
     }
 }
 
+void sys_mgr_power_on(void) {
+    set_power_on(1);
+    if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
+        vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
+        set_power_on(0);
+    }
+}
+
 void sys_mgr_power_off(void) {
     bt_host_disconnect_all();
-    gpio_set_level(POWER_ON_PIN, 1);
+#ifdef CONFIG_BLUERETRO_HW2
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
+        set_power_on(0);
+    }
+    else {
+        set_power_off(1);
+        vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
+        set_power_off(0);
+    }
+#endif
+}
+
+int32_t sys_mgr_get_power(void) {
+#ifdef CONFIG_BLUERETRO_SYSTEM_UNIVERSAL
+    return 1;
+#else
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL)) {
+        return 1;
+    }
+    else {
+        return gpio_get_level(POWER_SENSE_PIN);
+    }
+#endif
+}
+
+int32_t sys_mgr_get_boot_btn(void) {
+    return !gpio_get_level(BOOT_BTN_PIN);
 }
 
 void sys_mgr_factory_reset(void) {
@@ -191,45 +473,144 @@ void sys_mgr_deep_sleep(void) {
 void sys_mgr_init(void) {
     gpio_config_t io_conf = {0};
 
-#ifdef CONFIG_BLUERETRO_SYSTEM_WII_EXT
-    sys_mgr_flags = BIT(SYS_MGR_POWER_ON_HOLD);
-#endif
-
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
 
-    for (uint32_t i = 0; i < PORT_CNT; i++) {
-        io_conf.pin_bit_mask = 1ULL << input_list[i];
+    io_conf.pin_bit_mask = 1ULL << BOOT_BTN_PIN;
+    gpio_config(&io_conf);
+
+    err_led_pin = err_led_get_pin();
+
+    ledc_timer_config_t ledc_timer = {
+        .duty_resolution = LEDC_TIMER_20_BIT,
+        .freq_hz = 2,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .timer_num = LEDC_TIMER_1,
+        .clk_cfg = LEDC_AUTO_CLK,
+    };
+    ledc_channel_config_t ledc_channel = {
+        .channel    = LEDC_CHANNEL_1,
+        .duty       = DUTY_CYCLE_FULL,
+        .gpio_num   = LED_P1_PIN,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .hpoint     = 0,
+        .timer_sel  = LEDC_TIMER_1,
+    };
+    ledc_timer_config(&ledc_timer);
+    ledc_channel_config(&ledc_channel);
+
+    while (wired_adapter.system_id <= WIRED_AUTO) {
+        boot_btn_hdl();
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
+    switch (wired_adapter.system_id) {
+        case GENESIS:
+        case SATURN:
+            port_cnt = 2;
+#ifdef CONFIG_BLUERETRO_HW2
+            sense_list[0] = SENSE_P1_ALT_PIN;
+            sense_list[1] = SENSE_P2_ALT_PIN;
+            power_off_pin = POWER_OFF_ALT_PIN;
+#endif
+            break;
+        case JAGUAR:
+            port_cnt = 1;
+#ifdef CONFIG_BLUERETRO_HW2
+            sense_list[0] = SENSE_P1_ALT_PIN;
+            sense_list[1] = SENSE_P2_ALT_PIN;
+#endif
+            break;
+        case WII_EXT:
+            port_cnt = 2;
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD);
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_SENSE_NEG);
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG);
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_SENSE_OUT);
+            break;
+        case N64:
+            port_cnt = 4;
+            break;
+        case DC:
+        case GC:
+            port_cnt = 4;
+            atomic_set_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG);
+            break;
+        case PARALLEL_1P:
+        case PCE:
+        case REAL_3DO:
+        case JVS:
+        case VBOY:
+        case PARALLEL_1P_OD:
+        case SEA_BOARD:
+            port_cnt = 1;
+            break;
+        default:
+            port_cnt = 2;
+            break;
+    }
+
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
+    gpio_config(&io_conf);
+    io_conf.pin_bit_mask = 1ULL << RESET_PIN;
+    gpio_config(&io_conf);
+
+    internal_flag_init();
+
+#ifdef CONFIG_BLUERETRO_HW2
+    for (uint32_t i = 0; i < port_cnt; i++) {
+        io_conf.pin_bit_mask = 1ULL << sense_list[i];
         gpio_config(&io_conf);
     }
     io_conf.pin_bit_mask = 1ULL << POWER_SENSE_PIN;
     gpio_config(&io_conf);
+#endif
 
-    gpio_set_level(POWER_ON_PIN, 1);
-    io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    for (uint32_t i = 0; i < port_cnt; i++) {
+        io_conf.pin_bit_mask = 1ULL << led_list[i];
+        gpio_config(&io_conf);
+    }
+
+#ifdef CONFIG_BLUERETRO_HW2
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+        io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    }
+    set_power_on(0);
     io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
     gpio_config(&io_conf);
 
-    gpio_set_level(RESET_PIN, 1);
+    set_power_off(0);
+    io_conf.pin_bit_mask = 1ULL << power_off_pin;
+    gpio_config(&io_conf);
+
+    io_conf.mode = GPIO_MODE_OUTPUT_OD;
     io_conf.pin_bit_mask = 1ULL << RESET_PIN;
     gpio_config(&io_conf);
 
-#ifdef CONFIG_BLUERETRO_SYSTEM_WII_EXT
-    /* Wii-ext got a sense line that we need to control */
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.pin_bit_mask = 1ULL << SENSE_P4_PIN;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config(&io_conf);
-    gpio_set_level(SENSE_P4_PIN, 1);
-    io_conf.pin_bit_mask = 1ULL << SENSE_P3_PIN;
-    gpio_config(&io_conf);
-    gpio_set_level(SENSE_P3_PIN, 1);
-#endif
+    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_SENSE_OUT)) {
+        /* Wii-ext got a sense line that we need to control */
+        io_conf.intr_type = GPIO_INTR_DISABLE;
+        io_conf.pin_bit_mask = 1ULL << SENSE_P4_PIN;
+        io_conf.mode = GPIO_MODE_OUTPUT;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        gpio_config(&io_conf);
+        gpio_set_level(SENSE_P4_PIN, 1);
+        io_conf.pin_bit_mask = 1ULL << SENSE_P3_PIN;
+        gpio_config(&io_conf);
+        gpio_set_level(SENSE_P3_PIN, 1);
+    }
+
+    /* If boot switch pressed at boot, trigger system on and goes to deep sleep */
+    if (sys_mgr_get_boot_btn() && !sys_mgr_get_power()) {
+        sys_mgr_power_on();
+        sys_mgr_deep_sleep();
+    }
+#endif /* CONFIG_BLUERETRO_HW2 */
 
     xTaskCreatePinnedToCore(sys_mgr_task, "sys_mgr_task", 2048, NULL, 5, NULL, 0);
 }
-

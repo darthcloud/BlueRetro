@@ -21,7 +21,6 @@
 #include "wired/wired_comm.h"
 #include "adapter/memory_card.h"
 #include "system/manager.h"
-#include "system/btn.h"
 #include "sdkconfig.h"
 
 static void wired_init_task(void) {
@@ -93,11 +92,7 @@ static void wl_init_task(void *arg) {
 
     mc_init();
 
-#ifdef CONFIG_BLUERETRO_INTERNAL_INSTALL
     sys_mgr_init();
-#else
-    boot_btn_init();
-#endif
 
     if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
         if (err) {

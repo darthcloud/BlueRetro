@@ -23,7 +23,6 @@
 #include "smp.h"
 #include "tools/util.h"
 #include "debug.h"
-#include "system/btn.h"
 #include "system/fs.h"
 #include "adapter/memory_card.h"
 #include "adapter/wired/wired.h"
@@ -599,7 +598,6 @@ int32_t bt_host_init(void) {
         printf("# HCI init fail.\n");
         return -1;
     }
-    boot_btn_set_callback(bt_host_disconnect_all, BOOT_BTN_DEFAULT_EVT);
 
     return ret;
 }

@@ -23,7 +23,7 @@ struct macro {
 
 static struct macro macros[] = {
     {.macro = SYS_RESET, .action = sys_mgr_reset, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO1},
-    {.macro = BT_INQUIRY, .action = sys_mgr_inquiry, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO2},
+    {.macro = BT_INQUIRY, .action = sys_mgr_inquiry_toggle, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO2},
     {.macro = SYS_POWER_OFF, .action = sys_mgr_power_off, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO3},
     {.macro = FACTORY_RESET, .action = sys_mgr_factory_reset, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO4},
     {.macro = DEEP_SLEEP, .action = sys_mgr_deep_sleep, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO5},
