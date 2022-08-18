@@ -17,6 +17,7 @@
 #else
 #define ERR_LED_PIN 17
 #endif
+#define PICO_ERR_LED_PIN 20
 #define ERR_LED_DUTY_MIN 50
 #define ERR_LED_DUTY_MAX 2000
 #define ERR_LED_FADE_TIME 500
@@ -28,6 +29,7 @@ enum {
 
 static atomic_t led_flags = 0;
 static TaskHandle_t err_led_task_hdl;
+static uint8_t err_led_pin = ERR_LED_PIN;
 
 static void err_led_task(void *param) {
     while (1) {
@@ -64,7 +66,8 @@ void err_led_init(void) {
 
     uint32_t package = esp_efuse_get_pkg_ver();
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
-        ledc_channel.gpio_num = 20;
+        ledc_channel.gpio_num = PICO_ERR_LED_PIN;
+        err_led_pin = PICO_ERR_LED_PIN;
     }
 
     ledc_timer_config(&ledc_timer);
@@ -92,4 +95,8 @@ void err_led_clear(void) {
 
 void err_led_pulse(void) {
     vTaskResume(err_led_task_hdl);
+}
+
+uint32_t err_led_get_pin(void) {
+    return err_led_pin;
 }
