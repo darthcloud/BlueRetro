@@ -195,19 +195,9 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                 port->rumble_l_state[id] = 0;
                 if (port->dev_id[id] == 0x41) {
                     port->dev_id[id] = 0x73;
-#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
-                    if (id == 0) {
-                        d1m_led_set();
-                    }
-#endif
                 }
                 else {
                     port->dev_id[id] = 0x41;
-#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
-                    if (id == 0) {
-                        d1m_led_clear();
-                    }
-#endif
                 }
             }
         }
@@ -257,19 +247,9 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 port->rumble_l_state[id] = 0;
                 if (req[1] == 0x01) {
                     port->pend_dev_id[id] = 0x73;
-#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
-                    if (id == 0) {
-                        d1m_led_set();
-                    }
-#endif
                 }
                 else {
                     port->pend_dev_id[id] = 0x41;
-#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
-                    if (id == 0) {
-                        d1m_led_clear();
-                    }
-#endif
                 }
             }
             break;
@@ -613,10 +593,6 @@ static unsigned isr_dispatch(unsigned cause) {
 
 void ps_spi_init(void) {
     gpio_config_t io_conf = {0};
-
-#ifdef CONFIG_BLUERETRO_FAT_ON_SPIFLASH
-    d1m_led_clear();
-#endif
 
     ps_ctrl_ports[0].id = 0;
     ps_ctrl_ports[1].id = 1;
