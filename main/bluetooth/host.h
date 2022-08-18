@@ -27,6 +27,7 @@ enum {
     BT_DEV_HID_CTRL_PENDING,
     BT_DEV_HID_INTR_PENDING,
     BT_DEV_HID_INTR_READY,
+    BT_DEV_HID_INIT_DONE,
     BT_DEV_SDP_DATA,
     BT_DEV_ROLE_SW_FAIL,
     BT_DEV_IS_BLE,
@@ -124,6 +125,7 @@ extern struct bt_hci_pkt bt_hci_pkt_tmp;
 void bt_host_disconnect_all(void);
 int32_t bt_host_get_new_dev(struct bt_dev **device);
 int32_t bt_host_get_active_dev(struct bt_dev **device);
+int32_t bt_host_get_hid_init_dev(struct bt_dev **device);
 int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device);
 int32_t bt_host_get_dev_from_handle(uint16_t handle, struct bt_dev **device);
 int32_t bt_host_get_dev_from_id(uint8_t id, struct bt_dev **device);

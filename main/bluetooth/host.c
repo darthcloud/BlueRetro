@@ -461,6 +461,16 @@ int32_t bt_host_get_active_dev(struct bt_dev **device) {
     return -1;
 }
 
+int32_t bt_host_get_hid_init_dev(struct bt_dev **device) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_HID_INIT_DONE)) {
+            *device = &bt_dev[i];
+            return i;
+        }
+    }
+    return -1;
+}
+
 int32_t bt_host_get_dev_from_bdaddr(uint8_t *bdaddr, struct bt_dev **device) {
     for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_DEVICE_FOUND) && memcmp((void *)bdaddr, bt_dev[i].remote_bdaddr, 6) == 0) {
