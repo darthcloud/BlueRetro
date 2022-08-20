@@ -1,6 +1,8 @@
 # BlueRetro
 ![CI](https://github.com/darthcloud/BlueRetro/workflows/CI/badge.svg)
 
+<img src="/static/PNGs/BRE_Logo_Color_Outline.png" width="800"/>
+<br>
 <img align="right" src="https://cdn.hackaday.io/images/5521711598645122765.jpg" width="400"/>
 <p style='text-align: justify;'>BlueRetro is a multiplayer Bluetooth controllers adapter for various retro game consoles. Lost or broken controllers? Reproduction too expensive? Need those rare and obscure accessories? Just use the Bluetooth devices you already got! The project is open source hardware & software under the CERN-OHL-P-2.0 & Apache-2.0 licenses respectively. It's built for the popular ESP32 chip. All processing for Bluetooth and HID input decoding is done on the first core which makes it easy for other projects to use the Bluetooth stack within their own project by using the 2nd core. Wii, Switch, PS3, PS4, PS5, Xbox One, Xbox Series X|S & generic HID Bluetooth (BR/EDR & LE) devices are supported. Parallel 1P (NeoGeo, Supergun, JAMMA, Handheld, etc), Parallel 2P (Atari 2600/7800, Master System, etc), NES, PCE / TG16, Mega Drive / Genesis, SNES, CD-i, 3DO, Jaguar, Saturn, PSX, PC-FX, JVS (Arcade), Virtual Boy, N64, Dreamcast, PS2, GameCube & Wii extension are supported with simultaneous 4+ players using a single adapter.</p>
 
@@ -49,8 +51,13 @@ Thanks to all sponsors!!
   https://www.retroonyx.com/product-page/virtual-boy-blueretro-adapter
   
   [<img src="http://www.retroscaler.com/wp-content/uploads/2022/03/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
-* RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.
+* RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
   https://www.aliexpress.com/item/1005004114458491.html
+  
+  [<img src="https://cdn.shopify.com/s/files/1/0550/1855/3556/files/mikegoble2ND_Logo_05_R1A_5f70d3e5-90bb-4e08-a4bc-1e91a60bd833.png" width="400"/>](https://www.laserbear.net/)
+* GameCube Blue Retro Internal Adapter by [Laser Bear Industries](https://twitter.com/collingall): GameCube controller PCB replacement with integrated BlueRetro.\
+  https://www.laserbear.net/products/gamecube-blue-retro-internal-adapter \
+  https://8bitmods.com/internal-bluetooth-blueretro-adapter-for-gamecube/
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
