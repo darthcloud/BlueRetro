@@ -685,14 +685,8 @@ void nsi_port_cfg(uint16_t mask) {
 
         if (mask & 0x1) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[gpio_pin[i]], PIN_FUNC_GPIO);
-            if (wired_adapter.system_id == N64 && i == 0) {
-                /* Bidirectional push-pull to workaround N64 Digital OSD glitching the line on port 1 */
-                gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT);
-            }
-            else {
-                /* Bidirectional open-drain */
-                gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD);
-            }
+            /* Bidirectional open-drain */
+            gpio_set_direction_iram(gpio_pin[i], GPIO_MODE_INPUT_OUTPUT_OD);
             gpio_matrix_out(gpio_pin[i], RMT_SIG_OUT0_IDX + rmt_ch[i][system], 0, 0);
             gpio_matrix_in(gpio_pin[i], RMT_SIG_IN0_IDX + rmt_ch[i][system], 0);
         }
