@@ -100,6 +100,7 @@ struct ps_ctrl_port {
     uint32_t idx;
     uint32_t mt_idx;
     uint32_t valid;
+    uint32_t game_id_len;
 };
 
 static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {0};
@@ -486,6 +487,11 @@ static void packet_end(void *arg) {
                 port->valid = 0;
                 port->active_rx_buf ^= 0x01;
             }
+            else if (port->game_id_len) {
+                port->rx_buf[port->active_rx_buf][5 + port->game_id_len] = 0;
+                ets_printf("%s\n", &port->rx_buf[port->active_rx_buf][4]);
+                port->game_id_len = 0;
+            }
         }
     }
 
@@ -519,8 +525,23 @@ static void spi_isr(void* arg) {
             }
             else {
                 port->valid = 0;
-                port->spi_hw->slave.trans_inten = 0;
-                goto early_end;
+                if (port->rx_buf[port->active_rx_buf][0] != 0x81) {
+                    port->spi_hw->slave.trans_inten = 0;
+                    goto early_end;
+                }
+            }
+        }
+        /* GAME ID sent to memcard */
+        else if (!port->valid) {
+            if (port->idx == 1) {
+                if (port->rx_buf[port->active_rx_buf][1] != 0x21) {
+                    port->spi_hw->slave.trans_inten = 0;
+                    goto early_end;
+                }
+                port->game_id_len = 0;
+            }
+            else if (port->idx == 3) {
+                port->game_id_len = port->rx_buf[port->active_rx_buf][3];
             }
         }
         else if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
@@ -565,7 +586,7 @@ static void spi_isr(void* arg) {
         port->spi_hw->slave.sync_reset = 1;
         port->spi_hw->slave.trans_done = 0;
         port->spi_hw->cmd.usr = 1;
-        if (port->idx < port->tx_buf_len) {
+        if (port->valid && port->idx < port->tx_buf_len) {
             toggle_dsr(port->id);
         }
         return;
