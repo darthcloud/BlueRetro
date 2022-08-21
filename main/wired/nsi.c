@@ -40,6 +40,8 @@
 #define N64_SLOT_OCCUPY 0x01
 #define N64_SLOT_CHANGE 0x03
 
+#define GAME_ID_CMD 0x1D
+
 #define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
 
 typedef struct {
@@ -214,10 +216,27 @@ static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t le
     return item;
 }
 
-static void n64_kb_cmd_hdlr(uint8_t channel) {
+static void nsi_game_id_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
+    item = nsi_items_to_bytes(item, buf, 10);
+    /* Don't answer, go back read */
+    RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+    RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
+    RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
+    RMT.conf_ch[channel].conf1.rx_en = 1;
+
+    for (uint32_t i = 0; i < 10; ++i) {
+        ets_printf("%02X", buf[i]);
+    }
+    ets_printf("\n");
+}
+
+static void n64_kb_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     uint8_t crc;
 
     switch (buf[0]) {
+        case GAME_ID_CMD:
+            nsi_game_id_cmd_hdlr(channel, port, item);
+            break;
         case 0x13:
             memcpy(buf, wired_adapter.data[channel].output, 7);
             nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 7, &crc, STOP_BIT_2US);
@@ -235,10 +254,13 @@ static void n64_kb_cmd_hdlr(uint8_t channel) {
     }
 }
 
-static void n64_mouse_cmd_hdlr(uint8_t channel) {
+static void n64_mouse_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     uint8_t crc;
 
     switch (buf[0]) {
+        case GAME_ID_CMD:
+            nsi_game_id_cmd_hdlr(channel, port, item);
+            break;
         case 0x01:
                 memcpy(buf, wired_adapter.data[channel].output, 2);
                 load_mouse_axes(channel, &buf[2]);
@@ -258,10 +280,13 @@ static void n64_mouse_cmd_hdlr(uint8_t channel) {
     }
 }
 
-static void n64_pad_cmd_hdlr(uint8_t channel, uint16_t item) {
+static void n64_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     uint8_t crc;
 
     switch (buf[0]) {
+        case GAME_ID_CMD:
+            nsi_game_id_cmd_hdlr(channel, port, item);
+            break;
         case 0x01:
             buf32[0] = wired_adapter.data[channel].output32[0] & wired_adapter.data[channel].output_mask32[0];
             nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, buf, 4, &crc, STOP_BIT_2US);
@@ -368,11 +393,13 @@ static void n64_pad_cmd_hdlr(uint8_t channel, uint16_t item) {
     }
 }
 
-static void gc_kb_cmd_hdlr(uint8_t channel, uint8_t port) {
+static void gc_kb_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     uint8_t crc;
-    uint16_t item;
 
     switch (buf[0]) {
+        case GAME_ID_CMD:
+            nsi_game_id_cmd_hdlr(channel, port, item);
+            break;
         case 0x00:
         case 0xFF:
             nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_kb_ident, sizeof(gc_kb_ident), &crc, STOP_BIT_2US);
@@ -399,6 +426,9 @@ static void gc_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     uint8_t crc;
 
     switch (buf[0]) {
+        case GAME_ID_CMD:
+            nsi_game_id_cmd_hdlr(channel, port, item);
+            break;
         case 0x00:
         case 0xFF:
             nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, gc_ident, sizeof(gc_ident), &crc, STOP_BIT_2US);
@@ -529,13 +559,13 @@ static unsigned n64_isr(unsigned cause) {
 
                 switch (config.out_cfg[channel].dev_mode) {
                     case DEV_KB:
-                        n64_kb_cmd_hdlr(channel);
+                        n64_kb_cmd_hdlr(channel, channel, item);
                         break;
                     case DEV_MOUSE:
-                        n64_mouse_cmd_hdlr(channel);
+                        n64_mouse_cmd_hdlr(channel, channel, item);
                         break;
                     default:
-                        n64_pad_cmd_hdlr(channel, item);
+                        n64_pad_cmd_hdlr(channel, channel, item);
                         break;
                 }
                 break;
@@ -582,7 +612,7 @@ static unsigned gc_isr(unsigned cause) {
                 item = nsi_items_to_bytes(channel * RMT_MEM_ITEM_NUM, buf, 1);
                 switch (config.out_cfg[port].dev_mode) {
                     case DEV_KB:
-                        gc_kb_cmd_hdlr(channel, port);
+                        gc_kb_cmd_hdlr(channel, port, item);
                         break;
                     default:
                         gc_pad_cmd_hdlr(channel, port, item);
