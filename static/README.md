@@ -13,3 +13,13 @@
 
 ![BlueRetro](/static/PNGs/BRE_Logo_KO_white.png)
 
+![BlueRetro](/static/PNGs/BRE_Logo_Short_BW.png)
+
+![BlueRetro](/static/PNGs/BRE_Logo_Short_RGB.png)
+
+![BlueRetro](/static/PNGs/BRE_Logo_Short_RGB_Outline.png)
+
+![BlueRetro](/static/PNGs/BRE_Logo_Short_KO_Black.png)
+
+![BlueRetro](/static/PNGs/BRE_Logo_Short_KO_White.png)
+
