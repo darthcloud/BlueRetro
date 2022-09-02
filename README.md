@@ -58,6 +58,10 @@ Thanks to all sponsors!!
 * GameCube Blue Retro Internal Adapter by [Laser Bear Industries](https://twitter.com/collingall): GameCube controller PCB replacement with integrated BlueRetro.\
   https://www.laserbear.net/products/gamecube-blue-retro-internal-adapter \
   https://8bitmods.com/internal-bluetooth-blueretro-adapter-for-gamecube/
+  
+  [<img src="https://pbs.twimg.com/profile_banners/1219272912999473153/1637604861" width="400"/>](https://www.tindie.com/stores/grechtech/)
+* RetroRosetta by [GrechTech](https://twitter.com/GrechTech): BlueRetro universal core and cables.\
+  https://www.tindie.com/stores/grechtech/
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
