@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <freertos/FreeRTOS.h>
 #include <xtensa/hal.h>
+#include <esp_heap_caps.h>
 #include <esp_timer.h>
 #include <esp32/rom/ets_sys.h>
 #include "sdkconfig.h"
@@ -37,8 +38,8 @@ const uint32_t generic_btns_mask[32] = {
     BIT(PAD_RM), BIT(PAD_RS), BIT(PAD_RT), BIT(PAD_RJ),
 };
 
-struct generic_ctrl ctrl_input;
-struct generic_ctrl ctrl_output[WIRED_MAX_DEV];
+struct generic_ctrl *ctrl_input;
+struct generic_ctrl *ctrl_output;
 struct generic_fb fb_input;
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
@@ -74,18 +75,18 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
 
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
-        int32_t abs_src_value = abs(ctrl_input.axes[src_axis_idx].value);
-        int32_t src_sign = btn_sign(ctrl_input.axes[src_axis_idx].meta->polarity, src);
-        int32_t sign_check = src_sign * ctrl_input.axes[src_axis_idx].value;
+        int32_t abs_src_value = abs(ctrl_input->axes[src_axis_idx].value);
+        int32_t src_sign = btn_sign(ctrl_input->axes[src_axis_idx].meta->polarity, src);
+        int32_t sign_check = src_sign * ctrl_input->axes[src_axis_idx].value;
 
         /* Check if the srv value sign match the src mapping sign */
         if (sign_check >= 0) {
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
                 /* Keep track of source axis type */
-                out->axes[dst_axis_idx].relative = ctrl_input.axes[src_axis_idx].meta->relative;
+                out->axes[dst_axis_idx].relative = ctrl_input->axes[src_axis_idx].meta->relative;
                 /* Dst is an axis */
-                int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input.axes[src_axis_idx].meta->abs_max) + ctrl_input.axes[src_axis_idx].meta->deadzone;
+                int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input->axes[src_axis_idx].meta->abs_max) + ctrl_input->axes[src_axis_idx].meta->deadzone;
                 /* Check if axis over deadzone */
                 if (abs_src_value > deadzone) {
                     int32_t value = abs_src_value - deadzone;
@@ -93,7 +94,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                     float scale, fvalue;
                     switch (map_cfg->algo & 0xF) {
                         case LINEAR:
-                            scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input.axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
+                            scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input->axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
                             break;
                         default:
                             scale = ((float)map_cfg->perc_max)/100;
@@ -111,7 +112,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
             }
             else {
                 /* Dst is a button */
-                int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input.axes[src_axis_idx].meta->abs_max);
+                int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input->axes[src_axis_idx].meta->abs_max);
                 /* Check if axis over threshold */
                 if (abs_src_value > threshold) {
                     out->btns[dst_btn_idx].value |= dst_mask;
@@ -136,7 +137,7 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask
     /* Check if mapping dst exist in output */
     if (dst_mask & out->mask[dst_btn_idx]) {
         /* Check if button pressed */
-        if (ctrl_input.btns[src_btn_idx].value & src_mask) {
+        if (ctrl_input->btns[src_btn_idx].value & src_mask) {
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
                 /* Dst is an axis */
@@ -179,9 +180,9 @@ static uint32_t adapter_mapping(struct in_cfg * in_cfg) {
         uint32_t src_btn_idx = btn_id_to_btn_idx(src);
 
         /* Check if mapping src exist in input */
-        if (src_mask & ctrl_input.mask[src_btn_idx]) {
+        if (src_mask & ctrl_input->mask[src_btn_idx]) {
             /* Check if src is an axis */
-            if (src_mask & ctrl_input.desc[src_btn_idx]) {
+            if (src_mask & ctrl_input->desc[src_btn_idx]) {
                 /* Src is an axis */
                 out_mask |= adapter_map_from_axis(&in_cfg->map_cfg[i]);
             }
@@ -309,17 +310,17 @@ void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
 
     if (bt_data->pids->type != BT_NONE) {
-        if (wireless_to_generic(bt_data, &ctrl_input)) {
+        if (wireless_to_generic(bt_data, ctrl_input)) {
             /* Unsupported report */
             return;
         }
 
-        sys_macro_hdl(&ctrl_input, &bt_data->flags);
+        sys_macro_hdl(ctrl_input, &bt_data->flags);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
-        adapter_debug_print(&ctrl_input);
+        adapter_debug_print(ctrl_input);
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
-        if (ctrl_input.btns[0].value & BIT(PAD_RB_DOWN)) {
+        if (ctrl_input->btns[0].value & BIT(PAD_RB_DOWN)) {
             uint8_t tmp = 0;
             adapter_q_fb(&tmp, 1);
         }
@@ -392,6 +393,34 @@ void IRAM_ATTR adapter_q_fb(struct raw_fb *fb_data) {
 
 void adapter_init(void) {
     wired_adapter.system_id = WIRED_AUTO;
+
+    /* Save regular DRAM by allocating big sruct w/ only 32bits access in IRAM */
+    ctrl_input = heap_caps_malloc(sizeof(struct generic_ctrl), MALLOC_CAP_32BIT);
+    if (ctrl_input == NULL) {
+        printf("# %s ctrl_input alloc fail\n", __FUNCTION__);
+    }
+    ctrl_output = heap_caps_malloc(sizeof(struct generic_ctrl) * WIRED_MAX_DEV, MALLOC_CAP_32BIT);
+    if (ctrl_output == NULL) {
+        printf("# %s ctrl_output alloc fail\n", __FUNCTION__);
+    }
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+        wired_adapter.data[i].cnt_mask = heap_caps_malloc(sizeof(uint32_t) * 128, MALLOC_CAP_32BIT);
+        if (wired_adapter.data[i].cnt_mask == NULL) {
+            printf("# %s cnt_mask[%ld] alloc fail\n", __FUNCTION__, i);
+        }
+    }
+    bt_adapter.data = heap_caps_malloc(sizeof(struct bt_data) * BT_MAX_DEV, MALLOC_CAP_32BIT);
+    if (bt_adapter.data != NULL) {
+        for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+            bt_adapter.data[i].output = heap_caps_malloc(128, MALLOC_CAP_8BIT);
+            if (bt_adapter.data[i].output == NULL) {
+                printf("# %s bt_adapter.data[%ld].output alloc fail\n", __FUNCTION__, i);
+            }
+        }
+    }
+    else {
+        printf("# %s bt_adapter.data alloc fail\n", __FUNCTION__);
+    }
 
     wired_adapter.input_q_hdl = queue_bss_init(16, sizeof(struct raw_fb));
     if (wired_adapter.input_q_hdl == NULL) {

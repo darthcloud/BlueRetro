@@ -365,12 +365,12 @@ struct ctrl_axis {
     int32_t value;
     int32_t relative;
     const struct ctrl_meta *meta;
-    uint8_t cnt_mask;
+    uint32_t cnt_mask;
 };
 
 struct ctrl_btn {
     int32_t value;
-    uint8_t cnt_mask[32];
+    uint32_t cnt_mask[32];
 };
 
 struct generic_ctrl {
@@ -406,9 +406,9 @@ struct raw_fb {
 } __packed;
 
 struct hid_usage {
-    uint8_t usage_page;
-    uint16_t usage;
-    uint8_t flags;
+    uint32_t usage_page;
+    uint32_t usage;
+    uint32_t flags;
     uint32_t bit_offset;
     uint32_t bit_size;
     int32_t logical_min;
@@ -417,7 +417,7 @@ struct hid_usage {
 
 struct hid_report {
     atomic_t flags;
-    uint8_t id;
+    uint32_t id;
     uint32_t len;
     uint32_t usage_cnt;
     struct hid_usage usages[REPORT_MAX_USAGE];
@@ -427,7 +427,7 @@ struct raw_src_mapping {
     uint32_t mask[4];
     uint32_t desc[4];
     uint32_t btns_mask[32];
-    uint8_t axes_to_btns[6];
+    uint32_t axes_to_btns[6];
 };
 
 struct bt_ids {
@@ -441,7 +441,7 @@ struct bt_data {
     /* Bi-directional */
     atomic_t flags;
     /* from adapter */
-    uint8_t output[128];
+    uint8_t *output; /* 128 */
     /* from wireless */
     struct bt_ids *pids;
     uint32_t report_id;
@@ -473,7 +473,7 @@ struct wired_data {
         uint16_t output_mask16[32];
         uint32_t output_mask32[16];
     };
-    uint8_t cnt_mask[128];
+    uint32_t *cnt_mask;
 };
 
 struct wired_adapter {
@@ -487,7 +487,7 @@ struct wired_adapter {
 };
 
 struct bt_adapter {
-    struct bt_data data[BT_MAX_DEV];
+    struct bt_data *data;
 };
 
 typedef int32_t (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);

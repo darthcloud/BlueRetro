@@ -515,6 +515,7 @@ void bt_host_reset_dev(struct bt_dev *device) {
     return;
 
 reset_dev:
+    uint8_t *output_ptr = bt_adapter.data[dev_id].output;
     adapter_init_buffer(dev_id);
     memset((void *)&bt_adapter.data[dev_id], 0, sizeof(bt_adapter.data[0]));
     memset((void *)device, 0, sizeof(*device));
@@ -524,6 +525,7 @@ reset_dev:
     device->ids.type = BT_NONE;
     device->ids.subtype = BT_SUBTYPE_DEFAULT;
     bt_adapter.data[dev_id].pids = &device->ids;
+    bt_adapter.data[dev_id].output = output_ptr;
 }
 
 void bt_host_q_wait_pkt(uint32_t ms) {
