@@ -22,8 +22,6 @@
 #include "soc/rtc_io_periph.h"
 #include "gpio.h"
 
-#define GPIO_PIN_COUNT (40)
-
 typedef struct {
     uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
     uint32_t pullup;    /*!< Mask of pullup enable */

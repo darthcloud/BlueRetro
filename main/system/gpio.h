@@ -18,7 +18,8 @@
 #include "soc/gpio_sig_map.h"
 #include "esp32/rom/gpio.h"
 #include "soc/gpio_struct.h"
-#include <hal/gpio_types.h>
+#include "hal/gpio_types.h"
+#include "driver/gpio.h"
 
 extern const uint32_t GPIO_PIN_MUX_REG_IRAM[];
 
