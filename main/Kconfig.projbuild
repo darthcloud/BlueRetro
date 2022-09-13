@@ -2,12 +2,13 @@ menu "BlueRetro"
 
     config BLUERETRO_HW2
         bool "Enable support for HW2 features"
+        default y
         help
             Select this to enable HW2 features like port detection.
 
     choice
         prompt "Select filesystem location"
-        default BLUERETRO_FAT_ON_SDCARD
+        default BLUERETRO_FAT_ON_SPIFLASH
         help
             Select where BlueRetro file are saved.
 
