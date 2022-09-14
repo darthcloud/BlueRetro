@@ -114,7 +114,7 @@ static int32_t config_load_from_file(struct config *data) {
     int32_t ret = -1;
 
     if (stat(CONFIG_FILE, &st) != 0) {
-        printf("%s: No config on FATFS. Creating...\n", __FUNCTION__);
+        printf("%s: No config on FS. Creating...\n", __FUNCTION__);
         config_init_struct(data);
         ret = config_store_on_file(data);
     }

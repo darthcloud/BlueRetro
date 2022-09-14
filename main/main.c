@@ -73,7 +73,7 @@ static void wl_init_task(void *arg) {
     if (fs_init()) {
         err_led_set();
         err = 1;
-        printf("FATFS init fail!\n");
+        printf("FS init fail!\n");
     }
 
 #ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD

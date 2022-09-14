@@ -7,24 +7,6 @@ menu "BlueRetro"
             Select this to enable HW2 features like port detection.
 
     choice
-        prompt "Select filesystem location"
-        default BLUERETRO_FAT_ON_SPIFLASH
-        help
-            Select where BlueRetro file are saved.
-
-        config BLUERETRO_FAT_ON_SDCARD
-            bool "Put FAT FS on external SD card"
-            help
-                Put FAT FS on external SD card.
-
-        config BLUERETRO_FAT_ON_SPIFLASH
-            bool "Put FAT FS on internal flash"
-            help
-                Put FAT FS on internal flash.
-
-    endchoice
-
-    choice
         prompt "Select universal or specific system"
         default BLUERETRO_SYSTEM_UNIVERSAL
         help
