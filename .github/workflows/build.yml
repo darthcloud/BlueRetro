@@ -25,8 +25,8 @@ jobs:
     - name: Checkout main repo
       working-directory: ./BlueRetro
       run: |
-        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.event.repository.full_name }}.git "+refs/heads/*:refs/remotes/origin/*"
-        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.event.repository.full_name }}.git "+refs/pull/*:refs/remotes/origin/pr/*"
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "+refs/heads/*:refs/remotes/origin/*"
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "+refs/pull/*:refs/remotes/origin/pr/*"
         git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
         git submodule update --init --recursive
     - name: Install ESP-IDF
@@ -34,17 +34,34 @@ jobs:
       run: sh ./install.sh
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
-    - name: Build with ESP-IDF
+    - name: Build HW1 with ESP-IDF
       working-directory: ./BlueRetro
       run: |
         . ../esp-idf/export.sh
-        for file in configs/*; do echo "$(git describe --always --tags --dirty) $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
+        for file in configs/hw1/*; do echo "$(git describe --always --tags --dirty) hw1 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw1/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
-    - name: Upload artifact
+    - name: Upload artifact HW1
       uses: actions/upload-artifact@v2
       with:
-        name: firmware
+        name: ${{ env.br_version }}_hw1
+        path: |
+          BlueRetro/build/partition_table/partition-table.bin
+          BlueRetro/build/bootloader/bootloader.bin
+          BlueRetro/build/BlueRetro*.bin
+        if-no-files-found: error
+    - name: Build HW2 with ESP-IDF
+      working-directory: ./BlueRetro
+      run: |
+        . ../esp-idf/export.sh
+        for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+      env:
+        IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
+    - name: Upload artifact HW2
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.br_version }}_hw2
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
