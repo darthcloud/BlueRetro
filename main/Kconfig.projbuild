@@ -1,9 +1,9 @@
 menu "BlueRetro"
 
-    config BLUERETRO_INTERNAL_INSTALL
-        bool "Enable internal install mode"
+    config BLUERETRO_HW2
+        bool "Enable support for HW2 features"
         help
-            Select this to enable internal install mode.
+            Select this to enable HW2 features like port detection.
 
     choice
         prompt "Select filesystem location"
