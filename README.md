@@ -44,7 +44,7 @@ Thanks to all sponsors!!
   
   [<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
 * N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
-  https://www.tindie.com/products/retrotime/nintendo-64-bluetooth-controller-receiver/
+  https://8bitmods.com/n64-blueretro-bt-controller-receiver-with-memory-pak-original-grey/
   
   [<img src="https://static.wixstatic.com/media/ce8a57_fe2ccaa817704811aefee7a0bbd74098~mv2.png/v1/fill/w_445,h_60,al_c,q_85,enc_auto/RetroOnyx_logo_primary_grey_RGB60px.png" width="400"/>](https://www.retroonyx.com/)
 * Virtual Boy BlueRetro Adapter by [RetroOnyx](https://twitter.com/mellott124): Virtual Boy dongle.\
