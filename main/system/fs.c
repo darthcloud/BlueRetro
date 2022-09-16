@@ -17,7 +17,7 @@ int32_t fs_init(void) {
     esp_vfs_spiffs_conf_t conf = {
       .base_path = ROOT,
       .partition_label = NULL,
-      .max_files = 5,
+      .max_files = 16,
       .format_if_mount_failed = true
     };
 
