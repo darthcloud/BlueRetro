@@ -11,7 +11,7 @@
 #include <esp_random.h>
 #include "host.h"
 #include "hci.h"
-#include "att.h"
+#include "att_hid.h"
 #include "smp.h"
 #include "zephyr/smp.h"
 

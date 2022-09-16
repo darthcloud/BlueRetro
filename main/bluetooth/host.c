@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,7 +19,8 @@
 #include "hci.h"
 #include "l2cap.h"
 #include "sdp.h"
-#include "att.h"
+#include "att_cfg.h"
+#include "att_hid.h"
 #include "smp.h"
 #include "tools/util.h"
 #include "debug.h"

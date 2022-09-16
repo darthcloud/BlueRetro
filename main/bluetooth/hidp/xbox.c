@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include "bluetooth/host.h"
-#include "bluetooth/att.h"
+#include "bluetooth/att_hid.h"
 #include "xbox.h"
 
 void bt_hid_cmd_xbox_rumble(struct bt_dev *device, void *report) {

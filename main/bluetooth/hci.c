@@ -11,6 +11,7 @@
 #include "l2cap.h"
 #include "hci.h"
 #include "att.h"
+#include "att_hid.h"
 #include "smp.h"
 #include "tools/util.h"
 #include "system/led.h"
