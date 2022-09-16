@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,13 +19,14 @@
 #include "system/manager.h"
 
 #define ATT_MAX_LEN 512
-#define BR_API_VER 2
-#define OTA_START 0xA5
-#define OTA_ABORT 0xDE
-#define OTA_END 0x5A
-#define SYS_DEEP_SLEEP 0x37
-#define SYS_RESET 0x38
+#define BR_ABI_VER 2
 #define HID_MAX_REPORT 5
+
+#define CFG_CMD_SYS_DEEP_SLEEP 0x37
+#define CFG_CMD_SYS_RESET 0x38
+#define CFG_CMD_OTA_END 0x5A
+#define CFG_CMD_OTA_START 0xA5
+#define CFG_CMD_OTA_ABORT 0xDE
 
 enum {
     GATT_GRP_HDL = 0x0001,
@@ -54,10 +55,10 @@ enum {
     BR_IN_CFG_CTRL_CHRC_HDL,
     BR_IN_CFG_DATA_ATT_HDL,
     BR_IN_CFG_DATA_CHRC_HDL,
-    BR_API_VER_ATT_HDL,
-    BR_API_VER_CHRC_HDL,
-    BR_OTA_FW_CTRL_ATT_HDL,
-    BR_OTA_FW_CTRL_CHRC_HDL,
+    BR_ABI_VER_ATT_HDL,
+    BR_ABI_VER_CHRC_HDL,
+    BR_CFG_CMD_ATT_HDL,
+    BR_CFG_CMD_CHRC_HDL,
     BR_OTA_FW_DATA_ATT_HDL,
     BR_OTA_FW_DATA_CHRC_HDL,
     BR_FW_VER_ATT_HDL,
@@ -371,12 +372,12 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
     }
 
     switch (rd_type_rsp->data->handle + 1) {
-        case BR_API_VER_CHRC_HDL:
+        case BR_ABI_VER_CHRC_HDL:
         case BR_FW_VER_CHRC_HDL:
         case BR_BD_ADDR_CHRC_HDL:
             *data++ = BT_GATT_CHRC_READ;
             break;
-        case BR_OTA_FW_CTRL_CHRC_HDL:
+        case BR_CFG_CMD_CHRC_HDL:
         case BR_OTA_FW_DATA_CHRC_HDL:
         case BR_MC_CTRL_CHRC_HDL:
             *data++ = BT_GATT_CHRC_WRITE;
@@ -473,9 +474,9 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
         }
     }
     else {
-        printf("# API version: %d\n", BR_API_VER);
+        printf("# ABI version: %d\n", BR_ABI_VER);
         len = 1;
-        bt_hci_pkt_tmp.att_data[0] = BR_API_VER;
+        bt_hci_pkt_tmp.att_data[0] = BR_ABI_VER;
     }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
@@ -595,6 +596,70 @@ static void bt_att_cmd_exec_wr_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_EXEC_WRITE_RSP, 0);
 }
 
+static void bt_att_cfg_cmd_hdlr(struct bt_dev *device, struct bt_att_write_req *wr_req) {
+    switch (wr_req->value[0]) {
+        case CFG_CMD_OTA_START:
+            update_partition = esp_ota_get_next_update_partition(NULL);
+            if (esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_hdl) == 0) {
+                printf("# OTA FW Update started...\n");
+            }
+            else {
+                esp_ota_abort(ota_hdl);
+                ota_hdl = 0;
+                printf("# OTA FW Update start fail\n");
+            }
+            break;
+        case CFG_CMD_OTA_END:
+            if (esp_ota_end(ota_hdl) == 0) {
+                if (esp_ota_set_boot_partition(update_partition) == 0) {
+                    ota_hdl = 0;
+                    const esp_timer_create_args_t ota_restart_args = {
+                        .callback = &bt_att_restart,
+                        .arg = (void *)device,
+                        .name = "ota_restart"
+                    };
+                    esp_timer_handle_t timer_hdl;
+
+                    esp_timer_create(&ota_restart_args, &timer_hdl);
+                    esp_timer_start_once(timer_hdl, 1000000);
+                    printf("# OTA FW Update sucessfull! Restarting...\n");
+                }
+                else {
+                    printf("# OTA FW Update set partition fail\n");
+                }
+            }
+            else {
+                printf("# OTA FW Update end fail\n");
+            }
+            break;
+        case CFG_CMD_SYS_DEEP_SLEEP:
+            printf("# ESP32 going in deep sleep\n");
+            sys_mgr_deep_sleep();
+            break;
+        case CFG_CMD_SYS_RESET:
+            printf("# Reset ESP32\n");
+            const esp_timer_create_args_t ota_restart_args = {
+                .callback = &bt_att_restart,
+                .arg = (void *)device,
+                .name = "ota_restart"
+            };
+            esp_timer_handle_t timer_hdl;
+
+            esp_timer_create(&ota_restart_args, &timer_hdl);
+            esp_timer_start_once(timer_hdl, 1000000);
+            break;
+        case CFG_CMD_OTA_ABORT:
+        default:
+            if (ota_hdl) {
+                esp_ota_abort(ota_hdl);
+                ota_hdl = 0;
+                printf("# OTA FW Update abort from WebUI\n");
+            }
+            break;
+    }
+    bt_att_cmd_wr_rsp(device->acl_handle);
+}
+
 void bt_att_set_le_max_mtu(uint16_t le_max_mtu) {
     max_mtu = le_max_mtu;
     printf("# %s %d\n", __FUNCTION__, max_mtu);
@@ -695,7 +760,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                case BR_API_VER_CHRC_HDL:
+                case BR_ABI_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
                     break;
                 case BR_FW_VER_CHRC_HDL:
@@ -724,7 +789,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                case BR_API_VER_CHRC_HDL:
+                case BR_ABI_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, rd_blob_req->offset);
                     break;
                 case BR_MC_DATA_CHRC_HDL:
@@ -781,67 +846,8 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     in_cfg_offset = *data;
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
-                case BR_OTA_FW_CTRL_CHRC_HDL:
-                    switch (wr_req->value[0]) {
-                        case OTA_START:
-                            update_partition = esp_ota_get_next_update_partition(NULL);
-                            if (esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_hdl) == 0) {
-                                printf("# OTA FW Update started...\n");
-                            }
-                            else {
-                                esp_ota_abort(ota_hdl);
-                                ota_hdl = 0;
-                                printf("# OTA FW Update start fail\n");
-                            }
-                            break;
-                        case OTA_END:
-                            if (esp_ota_end(ota_hdl) == 0) {
-                                if (esp_ota_set_boot_partition(update_partition) == 0) {
-                                    ota_hdl = 0;
-                                    const esp_timer_create_args_t ota_restart_args = {
-                                        .callback = &bt_att_restart,
-                                        .arg = (void *)device,
-                                        .name = "ota_restart"
-                                    };
-                                    esp_timer_handle_t timer_hdl;
-
-                                    esp_timer_create(&ota_restart_args, &timer_hdl);
-                                    esp_timer_start_once(timer_hdl, 1000000);
-                                    printf("# OTA FW Update sucessfull! Restarting...\n");
-                                }
-                                else {
-                                    printf("# OTA FW Update set partition fail\n");
-                                }
-                            }
-                            else {
-                                printf("# OTA FW Update end fail\n");
-                            }
-                            break;
-                        case SYS_DEEP_SLEEP:
-                            printf("# ESP32 going in deep sleep\n");
-                            sys_mgr_deep_sleep();
-                            break;
-                        case SYS_RESET:
-                            printf("# Reset ESP32\n");
-                            const esp_timer_create_args_t ota_restart_args = {
-                                .callback = &bt_att_restart,
-                                .arg = (void *)device,
-                                .name = "ota_restart"
-                            };
-                            esp_timer_handle_t timer_hdl;
-
-                            esp_timer_create(&ota_restart_args, &timer_hdl);
-                            esp_timer_start_once(timer_hdl, 1000000);
-                            break;
-                        default:
-                            if (ota_hdl) {
-                                esp_ota_abort(ota_hdl);
-                                ota_hdl = 0;
-                                printf("# OTA FW Update abort from WebUI\n");
-                            }
-                            break;
-                    }
-                    bt_att_cmd_wr_rsp(device->acl_handle);
+                case BR_CFG_CMD_CHRC_HDL:
+                    bt_att_cfg_cmd_hdlr(device, wr_req);
                     break;
                 case BR_OTA_FW_DATA_CHRC_HDL:
                     esp_ota_write(ota_hdl, wr_req->value, data_len);
