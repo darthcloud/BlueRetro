@@ -21,6 +21,9 @@
 #define ATT_MAX_LEN 512
 #define BR_ABI_VER 2
 
+#define CFG_CMD_GET_ABI_VER 0x01
+#define CFG_CMD_GET_FW_VER 0x02
+#define CFG_CMD_GET_BDADDR 0x03
 #define CFG_CMD_SYS_DEEP_SLEEP 0x37
 #define CFG_CMD_SYS_RESET 0x38
 #define CFG_CMD_OTA_END 0x5A
@@ -55,19 +58,19 @@ enum {
     BR_IN_CFG_DATA_ATT_HDL,
     BR_IN_CFG_DATA_CHRC_HDL,
     BR_ABI_VER_ATT_HDL,
-    BR_ABI_VER_CHRC_HDL,
+    BR_ABI_VER_CHRC_HDL, /* Deprecated, use BR_CFG_CMD_CHRC_HDL */
     BR_CFG_CMD_ATT_HDL,
     BR_CFG_CMD_CHRC_HDL,
     BR_OTA_FW_DATA_ATT_HDL,
     BR_OTA_FW_DATA_CHRC_HDL,
     BR_FW_VER_ATT_HDL,
-    BR_FW_VER_CHRC_HDL,
+    BR_FW_VER_CHRC_HDL, /* Deprecated, use BR_CFG_CMD_CHRC_HDL */
     BR_MC_CTRL_ATT_HDL,
     BR_MC_CTRL_CHRC_HDL,
     BR_MC_DATA_ATT_HDL,
     BR_MC_DATA_CHRC_HDL,
     BR_BD_ADDR_ATT_HDL,
-    BR_BD_ADDR_CHRC_HDL,
+    BR_BD_ADDR_CHRC_HDL, /* Deprecated, use BR_CFG_CMD_CHRC_HDL */
     LAST_HDL = BR_BD_ADDR_CHRC_HDL,
     MAX_HDL,
 };
@@ -82,6 +85,7 @@ static uint16_t out_cfg_id = 0;
 static uint16_t in_cfg_offset = 0;
 static uint16_t in_cfg_id = 0;
 static uint32_t mc_offset = 0;
+static uint8_t cfg_cmd = 0;
 
 static void bt_att_restart(void *arg) {
     esp_restart();
@@ -202,7 +206,6 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
         case BR_BD_ADDR_CHRC_HDL:
             *data++ = BT_GATT_CHRC_READ;
             break;
-        case BR_CFG_CMD_CHRC_HDL:
         case BR_OTA_FW_DATA_CHRC_HDL:
         case BR_MC_CTRL_CHRC_HDL:
             *data++ = BT_GATT_CHRC_WRITE;
@@ -298,11 +301,6 @@ static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_
             memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[in_cfg_id] + sum_offset, len);
         }
     }
-    else {
-        printf("# ABI version: %d\n", BR_ABI_VER);
-        len = 1;
-        bt_hci_pkt_tmp.att_data[0] = BR_ABI_VER;
-    }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
 }
@@ -334,7 +332,15 @@ static void bt_att_cmd_conf_rd_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
 }
 
-static void bt_att_cmd_app_ver_rsp(uint16_t handle) {
+static void bt_att_cfg_cmd_abi_ver_rsp(uint16_t handle) {
+    printf("# ABI version: %d\n", BR_ABI_VER);
+
+    bt_hci_pkt_tmp.att_data[0] = BR_ABI_VER;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 1);
+}
+
+static void bt_att_cfg_cmd_fw_ver_rsp(uint16_t handle) {
     const esp_app_desc_t *app_desc = esp_ota_get_app_description();
 
     memcpy(bt_hci_pkt_tmp.att_data, app_desc->version, 23);
@@ -344,7 +350,7 @@ static void bt_att_cmd_app_ver_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 23);
 }
 
-static void bt_att_cmd_bd_addr_rsp(uint16_t handle) {
+static void bt_att_cfg_cmd_bdaddr_rsp(uint16_t handle) {
     bt_addr_le_t bdaddr;
 
     bt_hci_get_le_local_addr(&bdaddr);
@@ -401,7 +407,26 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
     bt_att_cmd(handle, BT_ATT_OP_READ_GROUP_RSP, len);
 }
 
-static void bt_att_cfg_cmd_hdlr(struct bt_dev *device, struct bt_att_write_req *wr_req) {
+static void bt_att_cfg_cmd_rd_hdlr(uint16_t handle) {
+    switch (cfg_cmd) {
+        case CFG_CMD_GET_ABI_VER:
+            bt_att_cfg_cmd_abi_ver_rsp(handle);
+            break;
+        case CFG_CMD_GET_FW_VER:
+            bt_att_cfg_cmd_fw_ver_rsp(handle);
+            break;
+        case CFG_CMD_GET_BDADDR:
+            bt_att_cfg_cmd_bdaddr_rsp(handle);
+            break;
+        default:
+            printf("# Invalid read cfg cmd: %02X\n", cfg_cmd);
+            break;
+    }
+}
+
+static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_req *wr_req) {
+    cfg_cmd = wr_req->value[0];
+
     switch (wr_req->value[0]) {
         case CFG_CMD_OTA_START:
             update_partition = esp_ota_get_next_update_partition(NULL);
@@ -454,12 +479,13 @@ static void bt_att_cfg_cmd_hdlr(struct bt_dev *device, struct bt_att_write_req *
             esp_timer_start_once(timer_hdl, 1000000);
             break;
         case CFG_CMD_OTA_ABORT:
-        default:
             if (ota_hdl) {
                 esp_ota_abort(ota_hdl);
                 ota_hdl = 0;
                 printf("# OTA FW Update abort from WebUI\n");
             }
+            break;
+        default:
             break;
     }
     bt_att_cmd_wr_rsp(device->acl_handle);
@@ -561,17 +587,22 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                 case BR_IN_CFG_CTRL_CHRC_HDL:
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                case BR_ABI_VER_CHRC_HDL:
                     bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
                     break;
+                case BR_ABI_VER_CHRC_HDL:
+                    bt_att_cfg_cmd_abi_ver_rsp(device->acl_handle);
+                    break;
                 case BR_FW_VER_CHRC_HDL:
-                    bt_att_cmd_app_ver_rsp(device->acl_handle);
+                    bt_att_cfg_cmd_fw_ver_rsp(device->acl_handle);
                     break;
                 case BR_MC_DATA_CHRC_HDL:
                     bt_att_cmd_mc_rd_rsp(device->acl_handle, 0);
                     break;
                 case BR_BD_ADDR_CHRC_HDL:
-                    bt_att_cmd_bd_addr_rsp(device->acl_handle);
+                    bt_att_cfg_cmd_bdaddr_rsp(device->acl_handle);
+                    break;
+                case BR_CFG_CMD_CHRC_HDL:
+                    bt_att_cfg_cmd_rd_hdlr(device->acl_handle);
                     break;
                 default:
                     bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_READ_REQ, rd_req->handle, BT_ATT_ERR_INVALID_HANDLE);
@@ -648,7 +679,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_CFG_CMD_CHRC_HDL:
-                    bt_att_cfg_cmd_hdlr(device, wr_req);
+                    bt_att_cfg_cmd_wr_hdlr(device, wr_req);
                     break;
                 case BR_OTA_FW_DATA_CHRC_HDL:
                     esp_ota_write(ota_hdl, wr_req->value, data_len);
