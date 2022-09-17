@@ -488,8 +488,23 @@ static void packet_end(void *arg) {
                 port->active_rx_buf ^= 0x01;
             }
             else if (port->game_id_len) {
-                port->rx_buf[port->active_rx_buf][5 + port->game_id_len] = 0;
-                ets_printf("%s\n", &port->rx_buf[port->active_rx_buf][4]);
+                struct raw_fb fb_data = {0};
+                uint8_t offset = (port->rx_buf[port->active_rx_buf][4] == 'c') ? 7 : 0;
+                uint8_t len = port->game_id_len - offset;
+
+                offset += 4;
+                if (len > 13) {
+                    len = 13;
+                }
+
+                fb_data.header.wired_id = 0;
+                fb_data.header.type = FB_TYPE_GAME_ID;
+                fb_data.header.data_len = len;
+                for (uint32_t i = 0; i < len; ++i) {
+                    fb_data.data[i] = port->rx_buf[port->active_rx_buf][offset + i];
+                }
+                adapter_q_fb(&fb_data);
+
                 port->game_id_len = 0;
             }
         }

@@ -347,6 +347,7 @@ enum {
     FB_TYPE_STATUS_LED,
     FB_TYPE_PLAYER_LED,
     FB_TYPE_MEM_WRITE,
+    FB_TYPE_GAME_ID,
 };
 
 struct ctrl_meta {

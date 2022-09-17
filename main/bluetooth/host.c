@@ -25,6 +25,7 @@
 #include "tools/util.h"
 #include "debug.h"
 #include "system/fs.h"
+#include "adapter/gameid.h"
 #include "adapter/memory_card.h"
 #include "adapter/wired/wired.h"
 
@@ -263,7 +264,7 @@ static void bt_fb_task(void *param) {
                         bt_hid_init(device);
                     }
                     break;
-                default:
+                case FB_TYPE_RUMBLE:
                 {
                     if (bt_data) {
                         if (adapter_bridge_fb(fb_data, bt_data)) {
@@ -272,6 +273,11 @@ static void bt_fb_task(void *param) {
                     }
                     break;
                 }
+                case FB_TYPE_GAME_ID:
+                    gid_update(fb_data);
+                    break;
+                default:
+                    break;
             }
             queue_bss_return(wired_adapter.input_q_hdl, (uint8_t *)fb_data, fb_len);
         }

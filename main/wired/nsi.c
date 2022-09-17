@@ -217,6 +217,8 @@ static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t le
 }
 
 static void nsi_game_id_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
+    struct raw_fb fb_data = {0};
+
     item = nsi_items_to_bytes(item, buf, 10);
     /* Don't answer, go back read */
     RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
@@ -224,10 +226,13 @@ static void nsi_game_id_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
     RMT.conf_ch[channel].conf1.mem_owner = RMT_LL_MEM_OWNER_HW;
     RMT.conf_ch[channel].conf1.rx_en = 1;
 
+    fb_data.header.wired_id = channel;
+    fb_data.header.type = FB_TYPE_GAME_ID;
+    fb_data.header.data_len = 10;
     for (uint32_t i = 0; i < 10; ++i) {
-        ets_printf("%02X", buf[i]);
+        fb_data.data[i] = buf[i];
     }
-    ets_printf("\n");
+    adapter_q_fb(&fb_data);
 }
 
 static void n64_kb_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
