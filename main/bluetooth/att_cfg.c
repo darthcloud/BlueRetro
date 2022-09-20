@@ -86,6 +86,7 @@ static uint16_t in_cfg_offset = 0;
 static uint16_t in_cfg_id = 0;
 static uint32_t mc_offset = 0;
 static uint8_t cfg_cmd = 0;
+static uint32_t cfg_dst = DEFAULT_CFG;
 
 static void bt_att_restart(void *arg) {
     esp_restart();
@@ -656,17 +657,17 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case BR_GLBL_CFG_CHRC_HDL:
                     printf("# BR_GLBL_CFG_CHRC_HDL %04X\n", wr_req->handle);
                     memcpy((void *)&config.global_cfg, wr_req->value, sizeof(config.global_cfg));
-                    config_update();
+                    config_update(cfg_dst);
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
                     memcpy((void *)&config.out_cfg[out_cfg_id], wr_req->value, sizeof(config.out_cfg[0]));
-                    config_update();
+                    config_update(cfg_dst);
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
                     memcpy((void *)&config.in_cfg[in_cfg_id] + in_cfg_offset, wr_req->value, data_len);
-                    config_update();
+                    config_update(cfg_dst);
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_OUT_CFG_CTRL_CHRC_HDL:
@@ -731,7 +732,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             struct bt_att_exec_write_req *exec_wr_req = (struct bt_att_exec_write_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_EXEC_WRITE_REQ\n");
             if (!ota_hdl && exec_wr_req->flags == BT_ATT_FLAG_EXEC) {
-                config_update();
+                config_update(cfg_dst);
             }
             bt_att_cmd_exec_wr_rsp(device->acl_handle);
             break;

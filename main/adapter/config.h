@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,6 +14,11 @@
 #define CONFIG_MAGIC CONFIG_MAGIC_V2
 #define CONFIG_VERSION 2
 #define ADAPTER_MAPPING_MAX 128
+
+enum {
+    DEFAULT_CFG = 0,
+    GAMEID_CFG,
+};
 
 struct map_cfg {
     uint8_t src_btn;
@@ -54,7 +59,7 @@ struct config {
 
 extern struct config config;
 
-void config_init(void);
-void config_update(void);
+void config_init(uint32_t src);
+void config_update(uint32_t dst);
 
 #endif /* _CONFIG_H_ */

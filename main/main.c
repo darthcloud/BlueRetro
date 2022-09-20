@@ -80,7 +80,7 @@ static void wl_init_task(void *arg) {
     fpga_config();
 #endif
 
-    config_init();
+    config_init(DEFAULT_CFG);
 
 #ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,7 @@
 #include "adapter.h"
 #include "config.h"
 #include "system/fs.h"
+#include "adapter/gameid.h"
 
 struct config config;
 static uint32_t config_version_magic[] = {
@@ -20,33 +21,33 @@ static uint32_t config_version_magic[] = {
 };
 
 static void config_init_struct(struct config *data);
-static int32_t config_load_from_file(struct config *data);
-static int32_t config_store_on_file(struct config *data);
-static int32_t config_v0_update(struct config *data);
-static int32_t config_v1_update(struct config *data);
+static int32_t config_load_from_file(struct config *data, char *filename);
+static int32_t config_store_on_file(struct config *data, char *filename);
+static int32_t config_v0_update(struct config *data, char *filename);
+static int32_t config_v1_update(struct config *data, char *filename);
 
-static int32_t (*config_ver_update[])(struct config *data) = {
+static int32_t (*config_ver_update[])(struct config *data, char *filename) = {
     config_v0_update,
     config_v1_update,
     NULL,
 };
 
-static int32_t config_v0_update(struct config *data) {
+static int32_t config_v0_update(struct config *data, char *filename) {
     memmove((uint8_t *)data + 7, (uint8_t *)data + 6, sizeof(*data) - 7);
 
     data->magic = CONFIG_MAGIC;
     data->global_cfg.inquiry_mode = INQ_AUTO;
 
-    return config_store_on_file(data);
+    return config_store_on_file(data, filename);
 }
 
-static int32_t config_v1_update(struct config *data) {
+static int32_t config_v1_update(struct config *data, char *filename) {
     memmove((uint8_t *)data + 8, (uint8_t *)data + 7, 31 - 8);
 
     data->magic = CONFIG_MAGIC;
     data->global_cfg.banksel = 0;
 
-    FILE *file = fopen(CONFIG_FILE, "rb");
+    FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("%s: failed to open file for reading\n", __FUNCTION__);
         goto fail;
@@ -66,12 +67,12 @@ static int32_t config_v1_update(struct config *data) {
             goto fail;
         }
     }
-    return config_store_on_file(data);
+    return config_store_on_file(data, filename);
 
 fail:
     printf("%s: Update failed, reset config (Sorry!)\n", __FUNCTION__);
     config_init_struct(data);
-    return config_store_on_file(data);
+    return config_store_on_file(data, filename);
 }
 
 static int32_t config_get_version(uint32_t magic) {
@@ -109,17 +110,17 @@ static void config_init_struct(struct config *data) {
     }
 }
 
-static int32_t config_load_from_file(struct config *data) {
+static int32_t config_load_from_file(struct config *data, char *filename) {
     struct stat st;
     int32_t ret = -1;
 
-    if (stat(CONFIG_FILE, &st) != 0) {
+    if (stat(filename, &st) != 0) {
         printf("%s: No config on FS. Creating...\n", __FUNCTION__);
         config_init_struct(data);
-        ret = config_store_on_file(data);
+        ret = config_store_on_file(data, filename);
     }
     else {
-        FILE *file = fopen(CONFIG_FILE, "rb");
+        FILE *file = fopen(filename, "rb");
         if (file == NULL) {
             printf("%s: failed to open file for reading\n", __FUNCTION__);
         }
@@ -137,13 +138,13 @@ static int32_t config_load_from_file(struct config *data) {
         if (file_ver == -1) {
             printf("%s: Bad magic, reset config\n", __FUNCTION__);
             config_init_struct(data);
-            ret = config_store_on_file(data);
+            ret = config_store_on_file(data, filename);
         }
         else {
             printf("%s: Upgrading cfg v%ld to v%d\n", __FUNCTION__, file_ver, CONFIG_VERSION);
             for (uint32_t i = file_ver; i < CONFIG_VERSION; i++) {
                 if (config_ver_update[i]) {
-                    ret = config_ver_update[i](data);
+                    ret = config_ver_update[i](data, filename);
                 }
             }
         }
@@ -152,10 +153,10 @@ static int32_t config_load_from_file(struct config *data) {
     return ret;
 }
 
-static int32_t config_store_on_file(struct config *data) {
+static int32_t config_store_on_file(struct config *data, char *filename) {
     int32_t ret = -1;
 
-    FILE *file = fopen(CONFIG_FILE, "wb");
+    FILE *file = fopen(filename, "wb");
     if (file == NULL) {
         printf("%s: failed to open file for writing\n", __FUNCTION__);
     }
@@ -167,10 +168,32 @@ static int32_t config_store_on_file(struct config *data) {
     return ret;
 }
 
-void config_init(void) {
-    config_load_from_file(&config);
+void config_init(uint32_t src) {
+    char tmp_str[32] = "/fs/";
+    char *filename = CONFIG_FILE;
+    char *gameid = gid_get();
+
+    if (src == GAMEID_CFG && strlen(gameid)) {
+        struct stat st;
+
+        strcat(tmp_str, gameid);
+        if (stat(tmp_str, &st) == 0) {
+            filename = tmp_str;
+        }
+    }
+
+    config_load_from_file(&config, filename);
 }
 
-void config_update(void) {
-    config_store_on_file(&config);
+void config_update(uint32_t dst) {
+    char tmp_str[32] = "/fs/";
+    char *filename = CONFIG_FILE;
+    char *gameid = gid_get();
+
+    if (dst == GAMEID_CFG && strlen(gameid)) {
+        strcat(tmp_str, gameid);
+        filename = tmp_str;
+    }
+
+    config_store_on_file(&config, filename);
 }
