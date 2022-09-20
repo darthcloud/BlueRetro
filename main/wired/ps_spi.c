@@ -76,7 +76,6 @@ enum {
 #define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
 
-uint8_t test[16] = {0x01, 0xA5};
 struct ps_ctrl_port {
     spi_dev_t *spi_hw;
     uint8_t id;
@@ -626,8 +625,6 @@ static unsigned isr_dispatch(unsigned cause) {
 }
 
 void ps_spi_init(void) {
-    gpio_config_t io_conf = {0};
-
     ps_ctrl_ports[0].id = 0;
     ps_ctrl_ports[1].id = 1;
     ps_ctrl_ports[0].spi_hw = &SPI2;
@@ -720,16 +717,7 @@ inner_break:
     }
 
     /* DTR */
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    io_conf.pin_bit_mask = 1ULL << P1_DTR_PIN;
-    gpio_config_iram(&io_conf);
-    io_conf.pin_bit_mask = 1ULL << P2_DTR_PIN;
-    gpio_config_iram(&io_conf);
-    gpio_matrix_in(P1_DTR_PIN, HSPICS0_IN_IDX, false);
-    gpio_matrix_in(P2_DTR_PIN, VSPICS0_IN_IDX, false);
+    ps_spi_port_cfg(0x3);
 
     /* DSR */
     gpio_set_level_iram(P1_DSR_PIN, 1);
@@ -823,4 +811,30 @@ inner_break:
     intexc_alloc_iram(ETS_SPI2_INTR_SOURCE, SPI2_HSPI_INTR_NUM, isr_dispatch);
     intexc_alloc_iram(ETS_SPI3_INTR_SOURCE, SPI3_VSPI_INTR_NUM, isr_dispatch);
     intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, isr_dispatch);
+}
+
+void ps_spi_port_cfg(uint16_t mask) {
+    uint32_t signals[PS_PORT_MAX] = {HSPICS0_IN_IDX, VSPICS0_IN_IDX};
+    uint32_t gpio_pin[PS_PORT_MAX] = {P1_DTR_PIN, P2_DTR_PIN};
+
+    for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
+
+        if (mask & 0x1) {
+            gpio_config_t io_conf = {
+                .mode = GPIO_MODE_INPUT,
+                .intr_type = GPIO_PIN_INTR_POSEDGE,
+                .pull_down_en = GPIO_PULLDOWN_DISABLE,
+                .pull_up_en = GPIO_PULLUP_DISABLE,
+            };
+
+            io_conf.pin_bit_mask = 1ULL << gpio_pin[i];
+            gpio_config_iram(&io_conf);
+            gpio_matrix_in(gpio_pin[i], signals[i], 0);
+        }
+        else {
+            gpio_reset_iram(gpio_pin[i]);
+            gpio_matrix_in(GPIO_MATRIX_CONST_ONE_INPUT, signals[i], 0);
+        }
+        mask >>= 1;
+    }
 }
