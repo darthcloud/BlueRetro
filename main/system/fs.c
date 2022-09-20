@@ -4,6 +4,8 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
 #include <esp_spiffs.h>
 #include <esp_err.h>
 #include "sdkconfig.h"
@@ -43,8 +45,19 @@ int32_t fs_init(void) {
 }
 
 void fs_reset(void) {
-    (void)remove(LINK_KEYS_FILE);
-    (void)remove(LE_LINK_KEYS_FILE);
-    (void)remove(CONFIG_FILE);
-    (void)remove(MEMORY_CARD_FILE);
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(ROOT);
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            char tmp_str[32] = "/fs/";
+            strcat(tmp_str, dir->d_name);
+            if (strcmp(tmp_str, BDADDR_FILE) != 0 && strcmp(tmp_str, BITSTREAM_FILE) != 0) {
+                if(remove(tmp_str) == 0) {
+                    printf("# RM %s\n", tmp_str);
+                }
+            }
+        }
+        closedir(d);
+    }
 }
