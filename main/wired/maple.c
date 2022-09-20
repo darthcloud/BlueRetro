@@ -610,18 +610,31 @@ maple_abort:
 
 void maple_init(void)
 {
-    gpio_config_t io_conf;
+    maple_port_cfg(0x0);
+    intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, maple_rx);
+}
+
+void maple_port_cfg(uint16_t mask) {
+    gpio_config_t io_conf = {0};
+
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
-        for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {
-            io_conf.intr_type = j ? 0 : GPIO_INTR_NEGEDGE;
-            io_conf.pin_bit_mask = BIT(gpio_pin[i][j]);
-            io_conf.mode = GPIO_MODE_INPUT;
-            io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-            io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-            gpio_config_iram(&io_conf);
-        }
-    }
 
-    intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, maple_rx);
+        if (mask & 0x1) {
+            for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {
+                io_conf.intr_type = j ? 0 : GPIO_INTR_NEGEDGE;
+                io_conf.pin_bit_mask = BIT(gpio_pin[i][j]);
+                gpio_config_iram(&io_conf);
+            }
+        }
+        else {
+            for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {
+                gpio_reset_iram(gpio_pin[i][j]);
+            }
+        }
+        mask >>= 1;
+    }
 }

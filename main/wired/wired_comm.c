@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jacques Gagnon
+ * Copyright (c) 2021-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -94,7 +94,7 @@ static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
     NULL, /* PCFX */
     NULL, /* JVS */
     nsi_port_cfg, /* N64 */
-    NULL, /* DC */
+    maple_port_cfg, /* DC */
     NULL, /* PS2 */
     nsi_port_cfg, /* GC */
     wii_i2c_port_cfg, /* WII_EXT */
