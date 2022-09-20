@@ -25,6 +25,7 @@
 #include "tools/util.h"
 #include "debug.h"
 #include "system/fs.h"
+#include "adapter/config.h"
 #include "adapter/gameid.h"
 #include "adapter/memory_card.h"
 #include "adapter/wired/wired.h"
@@ -274,7 +275,9 @@ static void bt_fb_task(void *param) {
                     break;
                 }
                 case FB_TYPE_GAME_ID:
-                    gid_update(fb_data);
+                    if (gid_update(fb_data)) {
+                        config_init(GAMEID_CFG);
+                    }
                     break;
                 default:
                     break;
