@@ -26,6 +26,7 @@
 #define CFG_CMD_GET_BDADDR 0x03
 #define CFG_CMD_SYS_DEEP_SLEEP 0x37
 #define CFG_CMD_SYS_RESET 0x38
+#define CFG_CMD_SYS_FACTORY 0x39
 #define CFG_CMD_OTA_END 0x5A
 #define CFG_CMD_OTA_START 0xA5
 #define CFG_CMD_OTA_ABORT 0xDE
@@ -90,6 +91,10 @@ static uint32_t cfg_dst = DEFAULT_CFG;
 
 static void bt_att_restart(void *arg) {
     esp_restart();
+}
+
+static void bt_att_factory_reset(void *arg) {
+    sys_mgr_factory_reset();
 }
 
 static void bt_att_cmd_find_info_rsp_uuid16(uint16_t handle, uint16_t start) {
@@ -468,17 +473,32 @@ static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_re
             sys_mgr_deep_sleep();
             break;
         case CFG_CMD_SYS_RESET:
+        {
             printf("# Reset ESP32\n");
-            const esp_timer_create_args_t ota_restart_args = {
+            const esp_timer_create_args_t timer_args = {
                 .callback = &bt_att_restart,
                 .arg = (void *)device,
                 .name = "ota_restart"
             };
             esp_timer_handle_t timer_hdl;
 
-            esp_timer_create(&ota_restart_args, &timer_hdl);
+            esp_timer_create(&timer_args, &timer_hdl);
             esp_timer_start_once(timer_hdl, 1000000);
             break;
+        }
+        case CFG_CMD_SYS_FACTORY:
+        {
+            const esp_timer_create_args_t timer_args = {
+                .callback = &bt_att_factory_reset,
+                .arg = (void *)device,
+                .name = "factory"
+            };
+            esp_timer_handle_t timer_hdl;
+
+            esp_timer_create(&timer_args, &timer_hdl);
+            esp_timer_start_once(timer_hdl, 1000000);
+            break;
+        }
         case CFG_CMD_OTA_ABORT:
             if (ota_hdl) {
                 esp_ota_abort(ota_hdl);
