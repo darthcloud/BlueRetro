@@ -16,6 +16,7 @@
 #include "zephyr/gatt.h"
 #include "adapter/config.h"
 #include "adapter/memory_card.h"
+#include "adapter/gameid.h"
 #include "system/manager.h"
 
 #define ATT_MAX_LEN 512
@@ -24,6 +25,7 @@
 #define CFG_CMD_GET_ABI_VER 0x01
 #define CFG_CMD_GET_FW_VER 0x02
 #define CFG_CMD_GET_BDADDR 0x03
+#define CFG_CMD_GET_GAMEID 0x04
 #define CFG_CMD_SYS_DEEP_SLEEP 0x37
 #define CFG_CMD_SYS_RESET 0x38
 #define CFG_CMD_SYS_FACTORY 0x39
@@ -366,6 +368,16 @@ static void bt_att_cfg_cmd_bdaddr_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 6);
 }
 
+static void bt_att_cfg_cmd_gameid_rsp(uint16_t handle) {
+    const char *gameid = gid_get();
+
+    memcpy(bt_hci_pkt_tmp.att_data, gameid, 23);
+    bt_hci_pkt_tmp.att_data[23] = 0;
+    printf("# %s %s\n", __FUNCTION__, bt_hci_pkt_tmp.att_data);
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 23);
+}
+
 static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t end) {
     struct bt_att_read_group_rsp *rd_grp_rsp = (struct bt_att_read_group_rsp *)bt_hci_pkt_tmp.att_data;
     struct bt_att_group_data *gatt_data = (struct bt_att_group_data *)((uint8_t *)rd_grp_rsp->data + 0);
@@ -423,6 +435,9 @@ static void bt_att_cfg_cmd_rd_hdlr(uint16_t handle) {
             break;
         case CFG_CMD_GET_BDADDR:
             bt_att_cfg_cmd_bdaddr_rsp(handle);
+            break;
+        case CFG_CMD_GET_GAMEID:
+            bt_att_cfg_cmd_gameid_rsp(handle);
             break;
         default:
             printf("# Invalid read cfg cmd: %02X\n", cfg_cmd);
