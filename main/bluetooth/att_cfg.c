@@ -26,6 +26,8 @@
 #define CFG_CMD_GET_FW_VER 0x02
 #define CFG_CMD_GET_BDADDR 0x03
 #define CFG_CMD_GET_GAMEID 0x04
+#define CFG_CMD_SET_DEFAULT_CFG 0x10
+#define CFG_CMD_SET_GAMEID_CFG 0x11
 #define CFG_CMD_SYS_DEEP_SLEEP 0x37
 #define CFG_CMD_SYS_RESET 0x38
 #define CFG_CMD_SYS_FACTORY 0x39
@@ -449,6 +451,12 @@ static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_re
     cfg_cmd = wr_req->value[0];
 
     switch (wr_req->value[0]) {
+        case CFG_CMD_SET_DEFAULT_CFG:
+            cfg_dst = DEFAULT_CFG;
+            break;
+        case CFG_CMD_SET_GAMEID_CFG:
+            cfg_dst = GAMEID_CFG;
+            break;
         case CFG_CMD_OTA_START:
             update_partition = esp_ota_get_next_update_partition(NULL);
             if (esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_hdl) == 0) {
