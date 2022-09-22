@@ -195,50 +195,58 @@ static void bt_att_cmd_app_rd_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
 }
 
-static void bt_att_cmd_config_rd_rsp(uint16_t handle, uint8_t config_id, uint16_t offset) {
+static void bt_att_cmd_global_cfg_rd_rsp(uint16_t handle, uint16_t offset) {
     uint32_t len = 0;
     printf("# %s\n", __FUNCTION__);
 
-    if (config_id == 0) {
-        printf("# Global config\n");
-        len = sizeof(config.global_cfg);
-        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
+    len = sizeof(config.global_cfg);
+    memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.global_cfg, len);
+
+    bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
+}
+
+static void bt_att_cmd_out_cfg_rd_rsp(uint16_t handle, uint16_t offset) {
+    uint32_t len = 0;
+    printf("# %s\n", __FUNCTION__);
+
+    if (offset > sizeof(config.out_cfg[0])) {
+        len = 0;
     }
-    else if (config_id == 2) {
-        printf("# Output config\n");
-        if (offset > sizeof(config.out_cfg[0])) {
-            len = 0;
-        }
-        else {
-            len = sizeof(config.out_cfg[0]) - offset;
+    else {
+        len = sizeof(config.out_cfg[0]) - offset;
 
-            if (len > (mtu - 1)) {
-                len = mtu - 1;
-            }
-
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[out_cfg_id] + offset, len);
+        if (len > (mtu - 1)) {
+            len = mtu - 1;
         }
+
+        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.out_cfg[out_cfg_id] + offset, len);
     }
-    else if (config_id == 4) {
-        uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[in_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
-        uint32_t sum_offset = in_cfg_offset + offset;
-        printf("# Input config %ld\n", cfg_len);
-        if (sum_offset > cfg_len || offset > ATT_MAX_LEN) {
-            len = 0;
+
+    bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
+}
+
+static void bt_att_cmd_in_cfg_rd_rsp(uint16_t handle, uint16_t offset) {
+    uint32_t len = 0;
+    uint32_t cfg_len = (sizeof(config.in_cfg[0]) - (ADAPTER_MAPPING_MAX * sizeof(config.in_cfg[0].map_cfg[0]) - config.in_cfg[in_cfg_id].map_size * sizeof(config.in_cfg[0].map_cfg[0])));
+    uint32_t sum_offset = in_cfg_offset + offset;
+
+    printf("# %s\n", __FUNCTION__);
+
+    if (sum_offset > cfg_len || offset > ATT_MAX_LEN) {
+        len = 0;
+    }
+    else {
+        len = cfg_len - sum_offset;
+
+        if (len > (mtu - 1)) {
+            len = mtu - 1;
         }
-        else {
-            len = cfg_len - sum_offset;
 
-            if (len > (mtu - 1)) {
-                len = mtu - 1;
-            }
-
-            if ((offset + len) > ATT_MAX_LEN) {
-                len = ATT_MAX_LEN - offset;
-            }
-
-            memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[in_cfg_id] + sum_offset, len);
+        if ((offset + len) > ATT_MAX_LEN) {
+            len = ATT_MAX_LEN - offset;
         }
+
+        memcpy(bt_hci_pkt_tmp.att_data, (void *)&config.in_cfg[in_cfg_id] + sum_offset, len);
     }
 
     bt_att_cmd(handle, offset ? BT_ATT_OP_READ_BLOB_RSP : BT_ATT_OP_READ_RSP, len);
@@ -521,11 +529,13 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_app_rd_rsp(device->acl_handle);
                     break;
                 case BR_GLBL_CFG_CHRC_HDL:
-                case BR_OUT_CFG_CTRL_CHRC_HDL:
+                    bt_att_cmd_global_cfg_rd_rsp(device->acl_handle, 0);
+                    break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
-                case BR_IN_CFG_CTRL_CHRC_HDL:
+                    bt_att_cmd_out_cfg_rd_rsp(device->acl_handle, 0);
+                    break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, 0);
+                    bt_att_cmd_in_cfg_rd_rsp(device->acl_handle, 0);
                     break;
                 case BR_ABI_VER_CHRC_HDL:
                     bt_att_cfg_cmd_abi_ver_rsp(device->acl_handle);
@@ -555,12 +565,13 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
             switch (rd_blob_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
-                case BR_OUT_CFG_CTRL_CHRC_HDL:
+                    bt_att_cmd_global_cfg_rd_rsp(device->acl_handle, rd_blob_req->offset);
+                    break;
                 case BR_OUT_CFG_DATA_CHRC_HDL:
-                case BR_IN_CFG_CTRL_CHRC_HDL:
+                    bt_att_cmd_out_cfg_rd_rsp(device->acl_handle, rd_blob_req->offset);
+                    break;
                 case BR_IN_CFG_DATA_CHRC_HDL:
-                case BR_ABI_VER_CHRC_HDL:
-                    bt_att_cmd_config_rd_rsp(device->acl_handle, (rd_blob_req->handle - BR_GLBL_CFG_CHRC_HDL) / 2, rd_blob_req->offset);
+                    bt_att_cmd_in_cfg_rd_rsp(device->acl_handle, rd_blob_req->offset);
                     break;
                 case BR_MC_DATA_CHRC_HDL:
                     bt_att_cmd_mc_rd_rsp(device->acl_handle, 1);
