@@ -161,6 +161,8 @@ static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t st
         case BR_BD_ADDR_CHRC_HDL:
             *data++ = BT_GATT_CHRC_READ;
             break;
+        case BR_OUT_CFG_CTRL_CHRC_HDL:
+        case BR_IN_CFG_CTRL_CHRC_HDL:
         case BR_OTA_FW_DATA_CHRC_HDL:
         case BR_MC_CTRL_CHRC_HDL:
             *data++ = BT_GATT_CHRC_WRITE;
