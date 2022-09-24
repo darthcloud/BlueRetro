@@ -7,8 +7,10 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/ringbuf.h>
 #include <esp_partition.h>
 #include <esp_sleep.h>
+#include <esp_system.h>
 #include "driver/gpio.h"
 #include "hal/ledc_hal.h"
 #include "hal/gpio_hal.h"
@@ -50,6 +52,8 @@
 #define DUTY_CYCLE_HALF 0x80000
 #define DUTY_CYCLE_FULL 0xFFFFF
 
+typedef void (*sys_mgr_cmd_t)(void);
+
 enum {
     SYS_MGR_POWER_ON_HOLD = 0,
     SYS_MGR_SENSE_NEG,
@@ -86,6 +90,27 @@ static uint8_t err_led_pin;
 static uint8_t power_off_pin = POWER_OFF_PIN;
 static uint8_t port_cnt = 1;
 static uint16_t port_state = 0;
+static RingbufHandle_t cmd_q_hdl = NULL;
+
+static int32_t sys_mgr_get_power(void);
+static int32_t sys_mgr_get_boot_btn(void);
+static void sys_mgr_reset(void);
+static void sys_mgr_power_on(void);
+static void sys_mgr_power_off(void);
+static void sys_mgr_inquiry_toggle(void);
+static void sys_mgr_factory_reset(void);
+static void sys_mgr_deep_sleep(void);
+static void sys_mgr_esp_restart(void);
+
+static const sys_mgr_cmd_t sys_mgr_cmds[] = {
+    sys_mgr_reset,
+    sys_mgr_power_on,
+    sys_mgr_power_off,
+    sys_mgr_inquiry_toggle,
+    sys_mgr_factory_reset,
+    sys_mgr_deep_sleep,
+    sys_mgr_esp_restart,
+};
 
 static inline uint32_t sense_port_is_empty(uint32_t index) {
 #ifdef CONFIG_BLUERETRO_HW2
@@ -383,8 +408,22 @@ static void boot_btn_hdl(void) {
 
 static void sys_mgr_task(void *arg) {
     uint32_t cnt = 0;
+    uint8_t *cmd;
+    size_t cmd_len;
+
     while (1) {
         boot_btn_hdl();
+
+        /* Fetch system cmd to execute */
+        if (cmd_q_hdl) {
+            cmd = (uint8_t *)xRingbufferReceive(cmd_q_hdl, &cmd_len, 0);
+            if (cmd) {
+                if (sys_mgr_cmds[*cmd]) {
+                    sys_mgr_cmds[*cmd]();
+                }
+                vRingbufferReturnItem(cmd_q_hdl, (void *)cmd);
+            }
+        }
 
         /* Update those only 1/32 loop */
         if ((cnt & 0x1F) == 0x1F) {
@@ -398,13 +437,13 @@ static void sys_mgr_task(void *arg) {
     }
 }
 
-void sys_mgr_reset(void) {
+static void sys_mgr_reset(void) {
     gpio_set_level(RESET_PIN, 0);
     vTaskDelay(500 / portTICK_PERIOD_MS);
     gpio_set_level(RESET_PIN, 1);
 }
 
-void sys_mgr_inquiry_toggle(void) {
+static void sys_mgr_inquiry_toggle(void) {
     if (bt_hci_get_inquiry()) {
         bt_hci_stop_inquiry();
     }
@@ -413,7 +452,7 @@ void sys_mgr_inquiry_toggle(void) {
     }
 }
 
-void sys_mgr_power_on(void) {
+static void sys_mgr_power_on(void) {
     set_power_on(1);
     if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
         vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
@@ -421,7 +460,7 @@ void sys_mgr_power_on(void) {
     }
 }
 
-void sys_mgr_power_off(void) {
+static void sys_mgr_power_off(void) {
     bt_host_disconnect_all();
 #ifdef CONFIG_BLUERETRO_HW2
     if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
@@ -435,7 +474,7 @@ void sys_mgr_power_off(void) {
 #endif
 }
 
-int32_t sys_mgr_get_power(void) {
+static int32_t sys_mgr_get_power(void) {
 #ifdef CONFIG_BLUERETRO_SYSTEM_UNIVERSAL
     return 1;
 #else
@@ -448,11 +487,11 @@ int32_t sys_mgr_get_power(void) {
 #endif
 }
 
-int32_t sys_mgr_get_boot_btn(void) {
+static int32_t sys_mgr_get_boot_btn(void) {
     return !gpio_get_level(BOOT_BTN_PIN);
 }
 
-void sys_mgr_factory_reset(void) {
+static void sys_mgr_factory_reset(void) {
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, "otadata");
     if (partition) {
@@ -466,8 +505,23 @@ void sys_mgr_factory_reset(void) {
     esp_restart();
 }
 
-void sys_mgr_deep_sleep(void) {
+static void sys_mgr_esp_restart(void) {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    esp_restart();
+}
+
+static void sys_mgr_deep_sleep(void) {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_deep_sleep_start();
+}
+
+void sys_mgr_cmd(uint8_t cmd) {
+    if (cmd_q_hdl) {
+        UBaseType_t ret = xRingbufferSend(cmd_q_hdl, &cmd, sizeof(cmd), portMAX_DELAY);
+        if (ret != pdTRUE) {
+            printf("# %s cmd_q full!\n", __FUNCTION__);
+        }
+    }
 }
 
 void sys_mgr_init(void) {
@@ -504,6 +558,11 @@ void sys_mgr_init(void) {
     while (wired_adapter.system_id <= WIRED_AUTO) {
         boot_btn_hdl();
         vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
+    cmd_q_hdl = xRingbufferCreate(32, RINGBUF_TYPE_NOSPLIT);
+    if (cmd_q_hdl == NULL) {
+        printf("# Failed to create cmd_q ring buffer\n");
     }
 
     switch (wired_adapter.system_id) {

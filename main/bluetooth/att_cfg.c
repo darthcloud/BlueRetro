@@ -5,8 +5,6 @@
 
 #include <stdio.h>
 #include <esp_ota_ops.h>
-#include <esp_system.h>
-#include <esp_timer.h>
 #include "host.h"
 #include "hci.h"
 #include "att.h"
@@ -84,14 +82,6 @@ static uint16_t in_cfg_id = 0;
 static uint32_t mc_offset = 0;
 static uint8_t cfg_cmd = 0;
 static uint32_t cfg_dst = DEFAULT_CFG;
-
-static void bt_att_restart(void *arg) {
-    esp_restart();
-}
-
-static void bt_att_factory_reset(void *arg) {
-    sys_mgr_factory_reset();
-}
 
 static void bt_att_cmd_gatt_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
@@ -395,15 +385,7 @@ static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_re
             if (esp_ota_end(ota_hdl) == 0) {
                 if (esp_ota_set_boot_partition(update_partition) == 0) {
                     ota_hdl = 0;
-                    const esp_timer_create_args_t ota_restart_args = {
-                        .callback = &bt_att_restart,
-                        .arg = (void *)device,
-                        .name = "ota_restart"
-                    };
-                    esp_timer_handle_t timer_hdl;
-
-                    esp_timer_create(&ota_restart_args, &timer_hdl);
-                    esp_timer_start_once(timer_hdl, 1000000);
+                    sys_mgr_cmd(SYS_MGR_CMD_ADAPTER_RST);
                     printf("# OTA FW Update sucessfull! Restarting...\n");
                 }
                 else {
@@ -416,33 +398,17 @@ static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_re
             break;
         case CFG_CMD_SYS_DEEP_SLEEP:
             printf("# ESP32 going in deep sleep\n");
-            sys_mgr_deep_sleep();
+            sys_mgr_cmd(SYS_MGR_CMD_DEEP_SLEEP);
             break;
         case CFG_CMD_SYS_RESET:
         {
             printf("# Reset ESP32\n");
-            const esp_timer_create_args_t timer_args = {
-                .callback = &bt_att_restart,
-                .arg = (void *)device,
-                .name = "ota_restart"
-            };
-            esp_timer_handle_t timer_hdl;
-
-            esp_timer_create(&timer_args, &timer_hdl);
-            esp_timer_start_once(timer_hdl, 1000000);
+            sys_mgr_cmd(SYS_MGR_CMD_ADAPTER_RST);
             break;
         }
         case CFG_CMD_SYS_FACTORY:
         {
-            const esp_timer_create_args_t timer_args = {
-                .callback = &bt_att_factory_reset,
-                .arg = (void *)device,
-                .name = "factory"
-            };
-            esp_timer_handle_t timer_hdl;
-
-            esp_timer_create(&timer_args, &timer_hdl);
-            esp_timer_start_once(timer_hdl, 1000000);
+            sys_mgr_cmd(SYS_MGR_CMD_FACTORY_RST);
             break;
         }
         case CFG_CMD_OTA_ABORT:

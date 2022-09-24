@@ -17,16 +17,16 @@
 
 struct macro {
     uint32_t macro;
-    void (*action)(void);
+    uint8_t sys_mgr_cmd;
     uint32_t flag_mask;
 };
 
 static struct macro macros[] = {
-    {.macro = SYS_RESET, .action = sys_mgr_reset, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO1},
-    {.macro = BT_INQUIRY, .action = sys_mgr_inquiry_toggle, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO2},
-    {.macro = SYS_POWER_OFF, .action = sys_mgr_power_off, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO3},
-    {.macro = FACTORY_RESET, .action = sys_mgr_factory_reset, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO4},
-    {.macro = DEEP_SLEEP, .action = sys_mgr_deep_sleep, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO5},
+    {.macro = SYS_RESET, .sys_mgr_cmd = SYS_MGR_CMD_RST, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO1},
+    {.macro = BT_INQUIRY, .sys_mgr_cmd = SYS_MGR_CMD_INQ_TOOGLE, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO2},
+    {.macro = SYS_POWER_OFF, .sys_mgr_cmd = SYS_MGR_CMD_PWR_OFF, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO3},
+    {.macro = FACTORY_RESET, .sys_mgr_cmd = SYS_MGR_CMD_FACTORY_RST, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO4},
+    {.macro = DEEP_SLEEP, .sys_mgr_cmd = SYS_MGR_CMD_DEEP_SLEEP, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO5},
 };
 
 static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, atomic_t *flags) {
@@ -39,9 +39,7 @@ static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, a
         atomic_clear_bit(flags, macro->flag_mask);
 
         printf("# %s: Apply macro %08lX %08lX\n", __FUNCTION__, value, macro->macro);
-        if (macro->action) {
-            macro->action();
-        }
+        sys_mgr_cmd(macro->sys_mgr_cmd);
     }
 }
 

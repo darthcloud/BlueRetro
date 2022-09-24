@@ -6,14 +6,19 @@
 #ifndef _SYS_MANAGER_H_
 #define _SYS_MANAGER_H_ 
 
-void sys_mgr_reset(void);
-void sys_mgr_inquiry_toggle(void);
-void sys_mgr_power_on(void);
-void sys_mgr_power_off(void);
-int32_t sys_mgr_get_power(void);
-int32_t sys_mgr_get_boot_btn(void);
-void sys_mgr_factory_reset(void);
-void sys_mgr_deep_sleep(void);
+#include <stdint.h>
+
+enum {
+    SYS_MGR_CMD_RST = 0,
+    SYS_MGR_CMD_PWR_ON,
+    SYS_MGR_CMD_PWR_OFF,
+    SYS_MGR_CMD_INQ_TOOGLE,
+    SYS_MGR_CMD_FACTORY_RST,
+    SYS_MGR_CMD_DEEP_SLEEP,
+    SYS_MGR_CMD_ADAPTER_RST,
+};
+
+void sys_mgr_cmd(uint8_t cmd);
 void sys_mgr_init(void);
 
 #endif /* _SYS_MANAGER_H_ */
