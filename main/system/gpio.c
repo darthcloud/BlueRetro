@@ -306,7 +306,6 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
 
     do {
         io_reg = GPIO_PIN_MUX_REG_IRAM[io_num];
-        uint32_t core_id = esp_cpu_get_core_id();
 
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
             assert(io_reg != (intptr_t)NULL);
@@ -356,7 +355,8 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
                 } else {
                     gpio_ll_clear_intr_status_high(&GPIO, BIT(io_num - 32));
                 }
-                gpio_ll_intr_enable_on_core(&GPIO, core_id, io_num);
+                /* Always set interrupt to core 1 */
+                gpio_ll_intr_enable_on_core(&GPIO, 1, io_num);
             } else {
                 gpio_ll_intr_disable(&GPIO, io_num);
                 if (io_num < 32) {
