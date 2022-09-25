@@ -60,6 +60,7 @@
 #define PWR_KB     0x5E019001
 
 #define TIMEOUT 8
+#define TIMEOUT_ABORT 100
 
 #define wait_100ns() asm("nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n");
 #define maple_fix_byte(s, a, b) (s ? ((a << s) | (b >> (8 - s))) : b)
@@ -333,8 +334,18 @@ static unsigned maple_rx(unsigned cause) {
         maple1 = maple0_to_maple1[__builtin_ffs(maple0) - 1];
         while (1) {
             for (uint32_t mask = 0x80; mask; mask >>= 1, ++bit_cnt) {
-                while (!(GPIO.in & maple0));
-                while (((gpio = GPIO.in) & maple0));
+                timeout = 0;
+                while (!(GPIO.in & maple0)) {
+                    if (++timeout > TIMEOUT_ABORT) {
+                        goto maple_abort;
+                    }
+                }
+                timeout = 0;
+                while (((gpio = GPIO.in) & maple0)) {
+                    if (++timeout > TIMEOUT_ABORT) {
+                        goto maple_abort;
+                    }
+                }
                 if (gpio & maple1) {
                     *data |= mask;
                 }
@@ -343,7 +354,12 @@ static unsigned maple_rx(unsigned cause) {
                 }
                 mask >>= 1;
                 ++bit_cnt;
-                while (!(GPIO.in & maple1));
+                timeout = 0;
+                while (!(GPIO.in & maple1)) {
+                    if (++timeout > TIMEOUT_ABORT) {
+                        goto maple_abort;
+                    }
+                }
                 timeout = 0;
                 while (((gpio = GPIO.in) & maple1)) {
                     if (++timeout > TIMEOUT) {
@@ -582,9 +598,13 @@ maple_end:
                 break;
         }
 #endif
-
         GPIO.status_w1tc = maple0;
     }
+    return 0;
+
+maple_abort:
+    core0_stall_end();
+    GPIO.status_w1tc = maple0;
     return 0;
 }
 
