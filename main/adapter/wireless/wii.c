@@ -74,6 +74,13 @@ struct wiic_map {
     uint16_t buttons;
 } __packed;
 
+struct wiic_8bit_map {
+    uint16_t core;
+    uint8_t reserved[3];
+    uint8_t axes[6];
+    uint16_t buttons;
+} __packed;
+
 struct wiin_map {
     uint16_t core;
     uint8_t reserved[3];
@@ -89,6 +96,12 @@ struct wiiu_map {
 
 static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
+};
+
+static const uint8_t wiic_8bit_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    0,       2,       1,       3,       4,      5
 };
 
 static const uint8_t wiiu_axes_idx[WIIU_AXES_MAX] =
@@ -111,6 +124,16 @@ static const struct ctrl_meta wiic_axes_meta[ADAPTER_MAX_AXES] =
     {.neutral = 0x10, .abs_max = 0x0D},
     {.neutral = 0x02, .abs_max = 0x1D},
     {.neutral = 0x02, .abs_max = 0x1D},
+};
+
+static const struct ctrl_meta wiic_8bit_axes_meta[ADAPTER_MAX_AXES] =
+{
+    {.neutral = 0x80, .abs_max = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66},
+    {.neutral = 0x16, .abs_max = 0xDA},
+    {.neutral = 0x16, .abs_max = 0xDA},
 };
 
 static const struct ctrl_meta wiiu_axes_meta =
@@ -245,10 +268,29 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     struct wiic_map *map = (struct wiic_map *)bt_data->base.input;
     uint8_t axes[6];
 
+    axes[0] = map->axes[0] & 0x3F;
+    axes[1] = map->axes[1] & 0x3F;
+    axes[2] = ((map->axes[0] & 0xC0) >> 3) | ((map->axes[1] & 0xC0) >> 5) | ((map->axes[2] & 0x80) >> 7);
+    axes[3] = map->axes[2] & 0x1F;
+    axes[4] = ((map->axes[2] & 0x60) >> 2) | ((map->axes[3] & 0xE0) >> 5);
+    axes[5] = map->axes[3] & 0x1F;
+
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
     ctrl_data->mask = (uint32_t *)wiic_mask;
     ctrl_data->desc = (uint32_t *)wiic_desc;
+
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        struct wiic_8bit_map *map_8bit = (struct wiic_8bit_map *)bt_data->base.input;
+        if (map_8bit->buttons != 0x0000) {
+            bt_data->base.pids->subtype = BT_WII_CLASSIC_8BIT;
+            return -1;
+        }
+        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            bt_data->base.axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
+        }
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
+    }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (map->core & wiic_core_btns_mask[i]) {
@@ -262,23 +304,48 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         }
     }
 
-    axes[0] = map->axes[0] & 0x3F;
-    axes[1] = map->axes[1] & 0x3F;
-    axes[2] = ((map->axes[0] & 0xC0) >> 3) | ((map->axes[1] & 0xC0) >> 5) | ((map->axes[2] & 0x80) >> 7);
-    axes[3] = map->axes[2] & 0x1F;
-    axes[4] = ((map->axes[2] & 0x60) >> 2) | ((map->axes[3] & 0xE0) >> 5);
-    axes[5] = map->axes[3] & 0x1F;
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        ctrl_data->axes[i].meta = &wiic_axes_meta[i];
+        ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->base.axes_cal[i];
+    }
+
+    return 0;
+}
+
+static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+    struct wiic_8bit_map *map = (struct wiic_8bit_map *)bt_data->base.input;
+
+    memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
+
+    ctrl_data->mask = (uint32_t *)wiic_mask;
+    ctrl_data->desc = (uint32_t *)wiic_desc;
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        if (map->buttons == 0x0000) {
+            bt_data->base.pids->subtype = BT_WII_CLASSIC;
+            return -1;
+        }
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->base.axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[wiic_8bit_axes_idx[i]] - wiic_8bit_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (map->core & wiic_core_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        if (~map->buttons & wiic_btns_mask[i]) {
+            ctrl_data->btns[0].value |= generic_btns_mask[i];
+        }
+    }
+
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        ctrl_data->axes[i].meta = &wiic_axes_meta[i];
-        ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->base.axes_cal[i];
+        ctrl_data->axes[i].meta = &wiic_8bit_axes_meta[i];
+        ctrl_data->axes[i].value = map->axes[wiic_8bit_axes_idx[i]] - wiic_8bit_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;
@@ -319,6 +386,8 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
             return wiin_to_generic(bt_data, ctrl_data);
         case BT_WII_CLASSIC:
             return wiic_to_generic(bt_data, ctrl_data);
+        case BT_WII_CLASSIC_8BIT:
+            return wiic_8bit_to_generic(bt_data, ctrl_data);
         case BT_WIIU_PRO:
             return wiiu_to_generic(bt_data, ctrl_data);
         default:
