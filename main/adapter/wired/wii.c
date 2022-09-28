@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -118,6 +118,22 @@ void wii_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
                 map_tmp.buttons |= wiic_btns_mask[i];
                 wired_data->cnt_mask[i] = 0;
             }
+        }
+    }
+
+    if (dev_mode == DEV_PAD) {
+        /* Wii Classic Pro analogs status is link to digital buttons */
+        if (map_tmp.buttons & BIT(WII_CLASSIC_L)) {
+            map_tmp.axes[wiic_axes_idx[TRIG_L]] = 0x00;
+        }
+        else {
+            map_tmp.axes[wiic_axes_idx[TRIG_L]] = 0xF8;
+        }
+        if (map_tmp.buttons & BIT(WII_CLASSIC_R)) {
+            map_tmp.axes[wiic_axes_idx[TRIG_R]] = 0x00;
+        }
+        else {
+            map_tmp.axes[wiic_axes_idx[TRIG_R]] = 0xF8;
         }
     }
 
