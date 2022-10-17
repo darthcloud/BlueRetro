@@ -14,6 +14,7 @@
 #include "adapter/gameid.h"
 
 struct config config;
+static uint32_t config_src = DEFAULT_CFG;
 static uint32_t config_version_magic[] = {
     CONFIG_MAGIC_V0,
     CONFIG_MAGIC_V1,
@@ -172,6 +173,7 @@ void config_init(uint32_t src) {
     char tmp_str[32] = "/fs/";
     char *filename = CONFIG_FILE;
     char *gameid = gid_get();
+    config_src = DEFAULT_CFG;
 
     if (src == GAMEID_CFG && strlen(gameid)) {
         struct stat st;
@@ -179,6 +181,7 @@ void config_init(uint32_t src) {
         strcat(tmp_str, gameid);
         if (stat(tmp_str, &st) == 0) {
             filename = tmp_str;
+            config_src = GAMEID_CFG;
         }
     }
 
@@ -189,11 +192,17 @@ void config_update(uint32_t dst) {
     char tmp_str[32] = "/fs/";
     char *filename = CONFIG_FILE;
     char *gameid = gid_get();
+    config_src = DEFAULT_CFG;
 
     if (dst == GAMEID_CFG && strlen(gameid)) {
         strcat(tmp_str, gameid);
         filename = tmp_str;
+        config_src = GAMEID_CFG;
     }
 
     config_store_on_file(&config, filename);
+}
+
+uint32_t config_get_src(void) {
+    return config_src;
 }

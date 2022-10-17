@@ -61,5 +61,6 @@ extern struct config config;
 
 void config_init(uint32_t src);
 void config_update(uint32_t dst);
+uint32_t config_get_src(void);
 
 #endif /* _CONFIG_H_ */

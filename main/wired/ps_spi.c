@@ -492,6 +492,9 @@ static void packet_end(void *arg) {
                 uint8_t len = port->game_id_len - offset;
 
                 offset += 4;
+
+                uint8_t *str = &port->rx_buf[port->active_rx_buf][offset];
+
                 if (len > 13) {
                     len = 13;
                 }
@@ -500,7 +503,7 @@ static void packet_end(void *arg) {
                 fb_data.header.type = FB_TYPE_GAME_ID;
                 fb_data.header.data_len = len;
                 for (uint32_t i = 0; i < len; ++i) {
-                    fb_data.data[i] = port->rx_buf[port->active_rx_buf][offset + i];
+                    fb_data.data[i] = str[i];
                 }
                 adapter_q_fb(&fb_data);
 

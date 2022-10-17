@@ -228,8 +228,8 @@ static void nsi_game_id_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
 
     fb_data.header.wired_id = channel;
     fb_data.header.type = FB_TYPE_GAME_ID;
-    fb_data.header.data_len = 10;
-    for (uint32_t i = 0; i < 10; ++i) {
+    fb_data.header.data_len = 8;
+    for (uint32_t i = 0; i < 8; ++i) {
         fb_data.data[i] = buf[i];
     }
     adapter_q_fb(&fb_data);

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "gameid.h"
+#include "tools/ps1_gameid.h"
 
 #define GAME_ID_BUF_LEN 23
 
@@ -17,16 +18,13 @@ static void set_pfx_gameid(uint8_t *data, uint32_t len) {
         len = (sizeof(gameid) - 1) / 2;
     }
 
-    for (uint32_t i = 0; i < len; i++) {
-        itoa(data[i], &tmp_gameid[i * 2], 16);
-    }
+    snprintf(tmp_gameid, GAME_ID_BUF_LEN, "%02X%02X%02X%02X%02X%02X%02X%02X",
+        data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
 }
 
 static void set_ps1_gameid(uint8_t *data, uint32_t len) {
-    if (len >= sizeof(gameid)) {
-        len = sizeof(gameid) - 1;
-    }
     memcpy(tmp_gameid, data, len);
+    ps1_gid_sanitize(tmp_gameid);
 }
 
 int32_t gid_update(struct raw_fb *fb_data) {
