@@ -279,6 +279,11 @@ static void bt_fb_task(void *param) {
                         config_init(GAMEID_CFG);
                     }
                     break;
+                case FB_TYPE_SYS_ID:
+                    if (gid_update_sys(fb_data)) {
+                        config_init(GAMEID_CFG);
+                    }
+                    break;
                 default:
                     break;
             }

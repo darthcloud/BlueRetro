@@ -56,6 +56,14 @@ static void wired_init_task(void) {
         adapter_init_buffer(i);
     }
 
+    struct raw_fb fb_data = {0};
+    const char *sysname = wired_get_sys_name();
+    fb_data.header.wired_id = 0;
+    fb_data.header.type = FB_TYPE_SYS_ID;
+    fb_data.header.data_len = strlen(sysname);
+    memcpy(fb_data.data, sysname, fb_data.header.data_len);
+    adapter_q_fb(&fb_data);
+
     if (wired_adapter.system_id < WIRED_MAX) {
         wired_comm_init();
     }

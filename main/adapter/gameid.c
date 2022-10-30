@@ -49,6 +49,18 @@ int32_t gid_update(struct raw_fb *fb_data) {
     return 0;
 }
 
+int32_t gid_update_sys(struct raw_fb *fb_data) {
+    memset(tmp_gameid, 0, sizeof(gameid));
+    memcpy(tmp_gameid, fb_data->data, fb_data->header.data_len);
+
+    if (memcmp(gameid, tmp_gameid, sizeof(gameid)) != 0) {
+        memcpy(gameid, tmp_gameid, sizeof(gameid));
+        printf("# %s: %s\n", __FUNCTION__, gameid);
+        return 1;
+    }
+    return 0;
+}
+
 char *gid_get(void) {
     return gameid;
 }
