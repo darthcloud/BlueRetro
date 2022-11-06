@@ -6,6 +6,7 @@
 #ifndef _FS_H_
 #define _FS_H_
 
+#define ROOT "/fs"
 #define LINK_KEYS_FILE "/fs/linkkeys.bin"
 #define LE_LINK_KEYS_FILE "/fs/le_linkkeys.bin"
 #define BDADDR_FILE "/fs/bdaddr.bin"

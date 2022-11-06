@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <dirent.h>
 #include <esp_ota_ops.h>
 #include "host.h"
 #include "hci.h"
@@ -16,6 +17,7 @@
 #include "adapter/memory_card.h"
 #include "adapter/gameid.h"
 #include "system/manager.h"
+#include "system/fs.h"
 
 #define ATT_MAX_LEN 512
 #define BR_ABI_VER 2
@@ -25,8 +27,12 @@
 #define CFG_CMD_GET_BDADDR 0x03
 #define CFG_CMD_GET_GAMEID 0x04
 #define CFG_CMD_GET_CFG_SRC 0x05
+#define CFG_CMD_GET_FILE 0x06
 #define CFG_CMD_SET_DEFAULT_CFG 0x10
 #define CFG_CMD_SET_GAMEID_CFG 0x11
+#define CFG_CMD_OPEN_DIR 0x12
+#define CFG_CMD_CLOSE_DIR 0x13
+#define CFG_CMD_DEL_FILE 0x14
 #define CFG_CMD_SYS_DEEP_SLEEP 0x37
 #define CFG_CMD_SYS_RESET 0x38
 #define CFG_CMD_SYS_FACTORY 0x39
@@ -82,6 +88,8 @@ static uint16_t in_cfg_offset = 0;
 static uint16_t in_cfg_id = 0;
 static uint32_t mc_offset = 0;
 static uint8_t cfg_cmd = 0;
+static DIR *d = NULL;
+static struct dirent *dir = NULL;
 
 static void bt_att_cmd_gatt_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
@@ -311,6 +319,27 @@ static void bt_att_cfg_cmd_cfg_src_rsp(uint16_t handle) {
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, 1);
 }
 
+static void bt_att_cfg_cmd_file_rsp(uint16_t handle) {
+    uint32_t len;
+
+    dir = readdir(d);
+
+    if (dir == NULL) {
+        len = 0;
+    }
+    else {
+        len = strlen(dir->d_name);
+    }
+
+    if (len > 23) {
+        len = 23;
+    }
+
+    memcpy(bt_hci_pkt_tmp.att_data, dir->d_name, len);
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, len);
+}
+
 static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t end) {
     struct bt_att_read_group_rsp *rd_grp_rsp = (struct bt_att_read_group_rsp *)bt_hci_pkt_tmp.att_data;
     struct bt_att_group_data *gatt_data = (struct bt_att_group_data *)((uint8_t *)rd_grp_rsp->data + 0);
@@ -367,16 +396,19 @@ static void bt_att_cfg_cmd_rd_hdlr(uint16_t handle) {
         case CFG_CMD_GET_CFG_SRC:
             bt_att_cfg_cmd_cfg_src_rsp(handle);
             break;
+        case CFG_CMD_GET_FILE:
+            bt_att_cfg_cmd_file_rsp(handle);
+            break;
         default:
             printf("# Invalid read cfg cmd: %02X\n", cfg_cmd);
             break;
     }
 }
 
-static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_req *wr_req) {
-    cfg_cmd = wr_req->value[0];
+static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, uint8_t *data, uint32_t len) {
+    cfg_cmd = data[0];
 
-    switch (wr_req->value[0]) {
+    switch (cfg_cmd) {
         case CFG_CMD_SET_DEFAULT_CFG:
         {
             char tmp_str[32] = "/fs/";
@@ -436,6 +468,30 @@ static void bt_att_cfg_cmd_wr_hdlr(struct bt_dev *device, struct bt_att_write_re
                 printf("# OTA FW Update abort from WebUI\n");
             }
             break;
+        case CFG_CMD_OPEN_DIR:
+            if (d) {
+                closedir(d);
+            }
+            d = opendir(ROOT);
+            break;
+        case CFG_CMD_CLOSE_DIR:
+            if (d) {
+                closedir(d);
+            }
+            break;
+        case CFG_CMD_DEL_FILE:
+        {
+            char tmp_str[32] = "/fs/";
+            memcpy(&tmp_str[4], &data[1], len - 1);
+            tmp_str[4 + len - 1] = 0;
+            printf("# delete file: %s\n", tmp_str);
+            if (strncmp(&tmp_str[4], gid_get(), len) == 0) {
+                printf("# Deleting current cfg, switch to default\n");
+                config_init(DEFAULT_CFG);
+            }
+            remove(tmp_str);
+            break;
+        }
         default:
             break;
     }
@@ -614,7 +670,7 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_CFG_CMD_CHRC_HDL:
-                    bt_att_cfg_cmd_wr_hdlr(device, wr_req);
+                    bt_att_cfg_cmd_wr_hdlr(device, wr_req->value, data_len);
                     break;
                 case BR_OTA_FW_DATA_CHRC_HDL:
                     esp_ota_write(ota_hdl, wr_req->value, data_len);
