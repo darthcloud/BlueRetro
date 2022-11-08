@@ -519,14 +519,14 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_find_info_req *find_info_req = (struct bt_att_find_info_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_FIND_INFO_REQ %04X %04X\n", find_info_req->start_handle, find_info_req->end_handle);
-            bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_FIND_INFO_REQ, find_info_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+            bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_FIND_INFO_REQ, find_info_req->start_handle, BT_ATT_ERR_NOT_SUPPORTED);
             break;
         }
         case BT_ATT_OP_FIND_TYPE_REQ:
         {
             struct bt_att_find_type_req *fd_type_req = (struct bt_att_find_type_req *)bt_hci_acl_pkt->att_data;
             printf("# BT_ATT_OP_FIND_TYPE_REQ %04X %04X\n", fd_type_req->start_handle, fd_type_req->end_handle);
-            bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_FIND_TYPE_REQ, fd_type_req->start_handle, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+            bt_att_cmd_error_rsp(device->acl_handle, BT_ATT_OP_FIND_TYPE_REQ, fd_type_req->start_handle, BT_ATT_ERR_NOT_SUPPORTED);
             break;
         }
         case BT_ATT_OP_READ_TYPE_REQ:
