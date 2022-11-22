@@ -53,6 +53,8 @@ Thanks to all sponsors!!
   [<img src="http://www.retroscaler.com/wp-content/uploads/2022/03/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
 * RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
   https://www.aliexpress.com/item/1005004114458491.html
+* RetroScaler BlueRetro Motor Wireless Game Controllers Adapter For Nintendo GameCube by [RetroScaler](https://twitter.com/RetroScaler): GameCube single port dongle.\
+  https://www.aliexpress.us/item/1005004917765807.html
   
   [<img src="https://cdn.shopify.com/s/files/1/0550/1855/3556/files/mikegoble2ND_Logo_05_R1A_5f70d3e5-90bb-4e08-a4bc-1e91a60bd833.png" width="400"/>](https://www.laserbear.net/)
 * GameCube Blue Retro Internal Adapter by [Laser Bear Industries](https://twitter.com/collingall): GameCube controller PCB replacement with integrated BlueRetro.\
