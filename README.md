@@ -41,7 +41,7 @@ Thanks to all sponsors!!
   https://www.humblebazooka.com/product/pce-bt-pc-engine-bluetooth-adapter/
 * Turbo BT by [Humble Bazooka](https://twitter.com/humblebazooka): NEC TurboGrafx-16 dongle.\
   https://www.humblebazooka.com/product/turbo-bt-turbografx-16-bluetooth-adapter/
-* 3DO BT by [Humble Bazooka](https://twitter.com/humblebazooka): 3D0 dongle.\
+* 3DO BT by [Humble Bazooka](https://twitter.com/humblebazooka): 3DO dongle.\
   https://www.humblebazooka.com/products/3do-bt-3do-bluetooth-adapter
   
   [<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
