@@ -76,6 +76,8 @@ Thanks to all sponsors!!
   https://www.prusaprinters.org/prints/116729-blueretro-bluetooth-controller-adapter-case
 * BlueRetro AIO by [pmgducati](https://github.com/pmgducati): BlueRetro Through-hole base and cable PCBs.\
   https://github.com/pmgducati/Blue-Retro-AIO-Units
+* BlueRetro HW2 internal guides by [Nostalgic Indulgences](https://twitter.com/nosIndulgences): Internal install guides\
+  https://github.com/nostalgic-indulgences/BlueRetro_Internal_Installation
 
 ## General documentation
 * [ESP32 RTOS + Bare Metal: Best of Both Worlds?](https://hackaday.io/project/170365/log/189836-esp32-rtos-bare-metal-best-of-both-worlds)
