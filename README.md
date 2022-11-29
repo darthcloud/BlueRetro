@@ -17,12 +17,6 @@
 * [Demo on my Youtube channel](https://www.youtube.com/channel/UC9uPsTgDhUFKuS-9zxoLi9w/videos)
 * [User manual](https://github.com/darthcloud/BlueRetro/wiki)
 * [Roadmap](https://docs.google.com/spreadsheets/d/e/2PACX-1vTR9HpZM9DBp986BL8aVeUu7-rP161CXUoBpRx1uX2eSsB6fmjHF_v4mPWj_SDjaliEh6Rq6c2BL1qk/pubhtml)
-* [Web-Bluetooth (BLE) configuration interface Documentation](https://hackaday.io/project/170365-blueretro/log/180020-web-bluetooth-ble-configuration-interface)
-* [Web-Bluetooth (BLE) configuration interface Page](https://blueretro.io)
-* [BlueRetro Legacy (pre-v1.3) mapping label reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vRln_dhkahEIhq4FQY_p461r5qvLn-Hkl89ZtfyIOGAqdnPtQZ5Ihfsjvd94fRbaHX8wU3F-r2ODYbM/pubhtml)
-* [BlueRetro v1.4+ mapping label reference](https://docs.google.com/spreadsheets/d/e/2PACX-1vT9rPK2__komCjELFpf0UYz0cMWwvhAXgAU7C9nnwtgEaivjsh0q0xeCEiZAMA-paMrneePV7IqdX48/pubhtml)
-* [Development environment setup & building instruction](https://github.com/darthcloud/BlueRetroRoot)
-* [Hardware files repository](https://github.com/darthcloud/BlueRetroHW)
 
 ## Commercial solution sponsoring BlueRetro FW development
 Buying these commercial adapters help the continued development of the BlueRetro firmware!!\
@@ -52,7 +46,7 @@ Thanks to all sponsors!!
 * Virtual Boy BlueRetro Adapter by [RetroOnyx](https://twitter.com/mellott124): Virtual Boy dongle.\
   https://www.retroonyx.com/product-page/virtual-boy-blueretro-adapter
   
-  [<img src="http://www.retroscaler.com/wp-content/uploads/2022/03/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
+  [<img src="http://www.retroscaler.com/wp-content/uploads/2022/11/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
 * RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
   https://www.aliexpress.com/item/1005004114458491.html
 * RetroScaler BlueRetro Motor Wireless Game Controllers Adapter For Nintendo GameCube by [RetroScaler](https://twitter.com/RetroScaler): GameCube single port dongle.\
@@ -78,6 +72,8 @@ Thanks to all sponsors!!
   https://github.com/pmgducati/Blue-Retro-AIO-Units
 * BlueRetro HW2 internal guides by [Nostalgic Indulgences](https://twitter.com/nosIndulgences): Internal install guides\
   https://github.com/nostalgic-indulgences/BlueRetro_Internal_Installation
+* BlueRetro latency test by [GamingNJncos](https://twitter.com/GamingNJncos): Documentation on how to run BlueRetro latency test\
+  https://github.com/GamingNJncos/BLE-3D-Saturn-Public/tree/main/BlueRetro_Latency_Testing
 
 ## General documentation
 * [ESP32 RTOS + Bare Metal: Best of Both Worlds?](https://hackaday.io/project/170365/log/189836-esp32-rtos-bare-metal-best-of-both-worlds)
