@@ -403,12 +403,6 @@ void adapter_init(void) {
     if (ctrl_output == NULL) {
         printf("# %s ctrl_output alloc fail\n", __FUNCTION__);
     }
-    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
-        wired_adapter.data[i].cnt_mask = heap_caps_malloc(sizeof(uint32_t) * 128, MALLOC_CAP_32BIT);
-        if (wired_adapter.data[i].cnt_mask == NULL) {
-            printf("# %s cnt_mask[%ld] alloc fail\n", __FUNCTION__, i);
-        }
-    }
     bt_adapter.data = heap_caps_malloc(sizeof(struct bt_data) * BT_MAX_DEV, MALLOC_CAP_32BIT);
     if (bt_adapter.data != NULL) {
         for (uint32_t i = 0; i < BT_MAX_DEV; i++) {

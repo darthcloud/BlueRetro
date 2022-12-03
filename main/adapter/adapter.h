@@ -475,7 +475,7 @@ struct wired_data {
         uint16_t output_mask16[32];
         uint32_t output_mask32[16];
     };
-    uint32_t *cnt_mask;
+    uint8_t cnt_mask[KBM_MAX];
 };
 
 struct wired_adapter {
