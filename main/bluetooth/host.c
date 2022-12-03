@@ -269,7 +269,7 @@ static void bt_fb_task(void *param) {
                 {
                     if (bt_data) {
                         if (adapter_bridge_fb(fb_data, bt_data)) {
-                            bt_hid_feedback(device, bt_data->output);
+                            bt_hid_feedback(device, bt_data->base.output);
                         }
                     }
                     break;
@@ -539,17 +539,17 @@ void bt_host_reset_dev(struct bt_dev *device) {
     return;
 
 reset_dev:
-    uint8_t *output_ptr = bt_adapter.data[dev_id].output;
     adapter_init_buffer(dev_id);
-    memset((void *)&bt_adapter.data[dev_id], 0, sizeof(bt_adapter.data[0]));
-    memset((void *)device, 0, sizeof(*device));
+    memset(bt_adapter.data[dev_id].raw_src_mappings, 0, sizeof(*bt_adapter.data[0].raw_src_mappings) * REPORT_MAX);
+    memset(bt_adapter.data[dev_id].reports, 0, sizeof(*bt_adapter.data[0].reports) * REPORT_MAX);
+    memset(&bt_adapter.data[dev_id].base, 0, sizeof(bt_adapter.data[0].base));
+    memset(device, 0, sizeof(*device));
 
     device->ids.id = dev_id;
     device->ids.out_idx = dev_id;
     device->ids.type = BT_NONE;
     device->ids.subtype = BT_SUBTYPE_DEFAULT;
-    bt_adapter.data[dev_id].pids = &device->ids;
-    bt_adapter.data[dev_id].output = output_ptr;
+    bt_adapter.data[dev_id].base.pids = &device->ids;
 }
 
 void bt_host_q_wait_pkt(uint32_t ms) {
@@ -716,6 +716,7 @@ int32_t bt_host_get_next_accept_le_bdaddr(bt_addr_le_t *le_bdaddr) {
 
 void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
     struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    uint32_t report_type = PAD;
 
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
@@ -725,7 +726,8 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         uint32_t i = 0;
         for (; i < REPORT_MAX; i++) {
             if (bt_data->reports[i].id == report_id) {
-                bt_data->report_type = i;
+                bt_data->base.report_type = i;
+                report_type = i;
                 len = bt_data->reports[i].len;
                 break;
             }
@@ -734,10 +736,10 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
             return;
         }
     }
-    if (atomic_test_bit(&bt_data->flags, BT_INIT) || device->report_cnt > 1) {
-        bt_data->report_id = report_id;
-        bt_data->input = data;
-        bt_data->input_len = len;
+    if (atomic_test_bit(&bt_data->base.flags[report_type], BT_INIT) || device->report_cnt > 1) {
+        bt_data->base.report_id = report_id;
+        bt_data->base.input = data;
+        bt_data->base.input_len = len;
         adapter_bridge(bt_data);
     }
     device->report_cnt++;

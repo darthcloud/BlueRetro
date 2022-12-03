@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -1332,7 +1332,7 @@ void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name)
 
             device->ids.type = bt_name_type[i].type;
             device->ids.subtype = bt_name_type[i].subtype;
-            bt_data->flags = bt_name_type[i].hid_flags;
+            bt_data->base.flags[PAD] = bt_name_type[i].hid_flags;
             break;
         }
     }

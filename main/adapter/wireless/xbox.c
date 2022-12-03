@@ -177,9 +177,9 @@ static const uint32_t gbros_btns_mask[32] = {
 };
 
 static void xbox_pad_init(struct bt_data *bt_data) {
-    struct xb1_map *map = (struct xb1_map *)bt_data->input;
+    struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
 
-    if (bt_data->pids->subtype == BT_XBOX_ADAPTIVE) {
+    if (bt_data->base.pids->subtype == BT_XBOX_ADAPTIVE) {
         memcpy(bt_data->raw_src_mappings[PAD].mask, xb1_adaptive_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, xb1_desc,
@@ -187,7 +187,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, xb1_dinput_btns_mask,
             sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
     }
-    else if (bt_data->pids->subtype == BT_XBOX_XINPUT) {
+    else if (bt_data->base.pids->subtype == BT_XBOX_XINPUT) {
         memcpy(bt_data->raw_src_mappings[PAD].mask, xb1_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, xb1_desc,
@@ -195,7 +195,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, xb1_btns_mask,
             sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
     }
-    else if (bt_data->pids->subtype == BT_XBOX_XS) {
+    else if (bt_data->base.pids->subtype == BT_XBOX_XS) {
         memcpy(bt_data->raw_src_mappings[PAD].mask, xbox_xs_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, xb1_desc,
@@ -203,7 +203,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, xbox_xs_btns_mask,
             sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
     }
-    else if (bt_data->pids->subtype == BT_8BITDO_GBROS) {
+    else if (bt_data->base.pids->subtype == BT_8BITDO_GBROS) {
         memcpy(bt_data->raw_src_mappings[PAD].mask, xb1_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, xb1_desc,
@@ -223,16 +223,16 @@ static void xbox_pad_init(struct bt_data *bt_data) {
     mapping_quirks_apply(bt_data);
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        bt_data->axes_cal[i] = -(map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral);
+        bt_data->base.axes_cal[i] = -(map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral);
     }
 
-    atomic_set_bit(&bt_data->flags, BT_INIT);
+    atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
 }
 
 int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct xb1_map *map = (struct xb1_map *)bt_data->input;
+    struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         xbox_pad_init(bt_data);
     }
 
@@ -241,8 +241,8 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
     ctrl_data->mask = (uint32_t *)bt_data->raw_src_mappings[PAD].mask;
     ctrl_data->desc = (uint32_t *)bt_data->raw_src_mappings[PAD].desc;
 
-    if (bt_data->report_id == 0x01) {
-        if (bt_data->pids->subtype == BT_XBOX_ADAPTIVE) {
+    if (bt_data->base.report_id == 0x01) {
+        if (bt_data->base.pids->subtype == BT_XBOX_ADAPTIVE) {
             for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
                 if (map->extra & xb1_adaptive_btns_mask[i]) {
                     ctrl_data->btns[0].value |= generic_btns_mask[i];
@@ -261,7 +261,7 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
 
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             ctrl_data->axes[i].meta = &xb1_axes_meta[i];
-            int32_t tmp = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->axes_cal[i];
+            int32_t tmp = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->base.axes_cal[i];
 
             if (bt_data->raw_src_mappings[PAD].axes_to_btns[i]) {
                 if (tmp >= xb1_axes_meta[i].abs_max) {
@@ -273,10 +273,10 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
             }
         }
     }
-    else if (bt_data->report_id == 0x02) {
+    else if (bt_data->base.report_id == 0x02) {
         ctrl_data->mask = (uint32_t *)xb1_mask2;
 
-        if (bt_data->input[0] & BIT(XB1_XBOX)) {
+        if (bt_data->base.input[0] & BIT(XB1_XBOX)) {
             ctrl_data->btns[0].value |= BIT(PAD_MT);
         }
     }
@@ -288,7 +288,7 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data)
 }
 
 void xbox_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct xb1_rumble *rumble = (struct xb1_rumble *)bt_data->output;
+    struct xb1_rumble *rumble = (struct xb1_rumble *)bt_data->base.output;
 
     if (fb_data->state) {
         memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_on));

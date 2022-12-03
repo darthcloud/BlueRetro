@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -190,7 +190,7 @@ static const uint32_t wiiu_btns_mask[32] = {
 };
 
 static int32_t wiimote_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    uint16_t *buttons = (uint16_t *)bt_data->input;
+    uint16_t *buttons = (uint16_t *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -207,7 +207,7 @@ static int32_t wiimote_to_generic(struct bt_data *bt_data, struct generic_ctrl *
 }
 
 static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct wiin_map *map = (struct wiin_map *)bt_data->input;
+    struct wiin_map *map = (struct wiin_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -226,23 +226,23 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         }
     }
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
-            bt_data->axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &wiin_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;
 }
 
 static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct wiic_map *map = (struct wiic_map *)bt_data->input;
+    struct wiic_map *map = (struct wiic_map *)bt_data->base.input;
     uint8_t axes[6];
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -269,23 +269,23 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     axes[4] = ((map->axes[2] & 0x60) >> 2) | ((map->axes[3] & 0xE0) >> 5);
     axes[5] = map->axes[3] & 0x1F;
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &wiic_axes_meta[i];
-        ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;
 }
 
 static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct wiiu_map *map = (struct wiiu_map *)bt_data->input;
+    struct wiiu_map *map = (struct wiiu_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -298,23 +298,23 @@ static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         }
     }
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
-            bt_data->axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &wiiu_axes_meta;
-        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;
 }
 
 int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    switch (bt_data->pids->subtype) {
+    switch (bt_data->base.pids->subtype) {
         case BT_WII_NUNCHUCK:
             return wiin_to_generic(bt_data, ctrl_data);
         case BT_WII_CLASSIC:
@@ -328,9 +328,9 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
 
 void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     if (fb_data->state) {
-        bt_data->output[0] = (led_dev_id_map[bt_data->pids->id] << 4) | 0x01;
+        bt_data->base.output[0] = (led_dev_id_map[bt_data->base.pids->id] << 4) | 0x01;
     }
     else {
-        bt_data->output[0] = (led_dev_id_map[bt_data->pids->id] << 4);
+        bt_data->base.output[0] = (led_dev_id_map[bt_data->base.pids->id] << 4);
     }
 }

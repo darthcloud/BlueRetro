@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -209,8 +209,8 @@ void bt_sdp_parser(struct bt_data *bt_data) {
     uint32_t hid_desc_len = 0;
     uint32_t hid_offset = 0;
 
-    hid_desc = memmem(bt_data->sdp_data, bt_data->sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
-    hid_offset = hid_desc - bt_data->sdp_data;
+    hid_desc = memmem(bt_data->base.sdp_data, bt_data->base.sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
+    hid_offset = hid_desc - bt_data->base.sdp_data;
 
     if (hid_desc) {
         hid_desc += 3;
@@ -254,14 +254,14 @@ void bt_sdp_parser(struct bt_data *bt_data) {
                 break;
         }
         printf("# %s HID descriptor size: %lu Usage page: %02X%02X\n", __FUNCTION__, hid_desc_len, hid_desc[0], hid_desc[1]);
-        if ((hid_offset + hid_desc_len) > bt_data->sdp_len) {
-            printf("# %s HID descriptor size exceed buffer size: %ld, trunc\n", __FUNCTION__, bt_data->sdp_len);
-            hid_desc_len = bt_data->sdp_len - hid_offset;
+        if ((hid_offset + hid_desc_len) > bt_data->base.sdp_len) {
+            printf("# %s HID descriptor size exceed buffer size: %ld, trunc\n", __FUNCTION__, bt_data->base.sdp_len);
+            hid_desc_len = bt_data->base.sdp_len - hid_offset;
         }
         hid_parser(bt_data, hid_desc, hid_desc_len);
-        if (bt_data->sdp_data) {
-            free(bt_data->sdp_data);
-            bt_data->sdp_data = NULL;
+        if (bt_data->base.sdp_data) {
+            free(bt_data->base.sdp_data);
+            bt_data->base.sdp_data = NULL;
         }
     }
 }
@@ -292,7 +292,7 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             struct bt_sdp_att_rsp *att_rsp = (struct bt_sdp_att_rsp *)bt_hci_acl_pkt->sdp_data;
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
-            uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->ids.id].sdp_len;
+            uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->ids.id].base.sdp_len;
             uint32_t cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
 
             if (cp_len > free_len) {
@@ -302,15 +302,15 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
 
             switch (device->sdp_state) {
                 case 0:
-                    if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
-                        bt_adapter.data[device->ids.id].sdp_data = malloc(BT_SDP_DATA_SIZE);
-                        if (bt_adapter.data[device->ids.id].sdp_data == NULL) {
+                    if (bt_adapter.data[device->ids.id].base.sdp_data == NULL) {
+                        bt_adapter.data[device->ids.id].base.sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_adapter.data[device->ids.id].base.sdp_data == NULL) {
                             printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
-                    memcpy(bt_adapter.data[device->ids.id].sdp_data + bt_adapter.data[device->ids.id].sdp_len, sdp_data, cp_len);
-                    bt_adapter.data[device->ids.id].sdp_len += cp_len;
+                    memcpy(bt_adapter.data[device->ids.id].base.sdp_data + bt_adapter.data[device->ids.id].base.sdp_len, sdp_data, cp_len);
+                    bt_adapter.data[device->ids.id].base.sdp_len += cp_len;
                     if (*sdp_con_state) {
                         bt_sdp_cmd_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
                     }

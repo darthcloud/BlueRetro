@@ -203,7 +203,7 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
             fb_data.state = 1;
             adapter_fb_stop_timer_start(wired_id, duration_us);
             wireless_fb_from_generic(&fb_data, bt_data);
-            bt_hid_feedback(device, bt_data->output);
+            bt_hid_feedback(device, bt_data->base.output);
         }
     }
 

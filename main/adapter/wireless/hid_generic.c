@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -108,11 +108,11 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
 }
 
 static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[KB];
+    struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[KB];
 
-    if (!atomic_test_bit(&bt_data->reports[KB].flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[KB], BT_INIT)) {
         hid_kb_init(meta, &bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
-        atomic_set_bit(&bt_data->reports[KB].flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[KB], BT_INIT);
     }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -126,7 +126,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
         uint32_t mask = (1 << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
-        uint32_t buttons = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
         for (uint8_t i = 0, mask = 1; mask; i++, mask <<= 1) {
             if (buttons & mask) {
@@ -142,7 +142,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
             uint32_t mask = (1 << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
-            uint32_t key = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+            uint32_t key = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
             if (key > 3 && key < ARRAY_SIZE(hid_kb_key_to_generic)) {
                 ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
@@ -219,11 +219,11 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
 }
 
 static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[MOUSE];
+    struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[MOUSE];
 
-    if (!atomic_test_bit(&bt_data->reports[MOUSE].flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[MOUSE], BT_INIT)) {
         hid_mouse_init(meta, &bt_data->reports[MOUSE], &bt_data->raw_src_mappings[MOUSE]);
-        atomic_set_bit(&bt_data->reports[MOUSE].flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[MOUSE], BT_INIT);
     }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -237,20 +237,13 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
         uint32_t mask = (1 << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
-        uint32_t buttons = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (buttons & bt_data->raw_src_mappings[MOUSE].btns_mask[i]) {
                 ctrl_data->btns[0].value |= generic_btns_mask[i];
             }
         }
-    }
-
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = meta->hid_axes_meta[i].neutral;
-        }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
@@ -262,7 +255,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
             uint32_t bit_shift = offset % 8;
 
             ctrl_data->axes[i].meta = &meta->hid_axes_meta[i];
-            ctrl_data->axes[i].value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+            ctrl_data->axes[i].value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
             if (ctrl_data->axes[i].value & BIT(len - 1)) {
                 ctrl_data->axes[i].value |= ~mask;
             }
@@ -473,12 +466,11 @@ fillup_end:
 }
 
 static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_report_meta *meta = &devices_meta[bt_data->pids->id].reports_meta[PAD];
+    struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
 
-    if (!atomic_test_bit(&bt_data->reports[PAD].flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
         mapping_quirks_apply(bt_data);
-        atomic_set_bit(&bt_data->reports[PAD].flags, BT_INIT);
     }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -492,7 +484,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         uint32_t mask = (1 << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
-        uint32_t buttons = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (buttons & bt_data->raw_src_mappings[PAD].btns_mask[i]) {
@@ -508,7 +500,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         uint32_t mask = (1 << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
-        uint32_t hat = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        uint32_t hat = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
         uint32_t min = bt_data->reports[PAD].usages[meta->hid_hat_idx].logical_min;
 
         ctrl_data->btns[0].value |= hat_to_ld_btns[(hat - min) & 0xF];
@@ -521,62 +513,62 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
             uint32_t mask = (1 << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
-            uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+            uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
-            if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-                bt_data->axes_cal[i] = -(value  - meta->hid_axes_meta[i].neutral);
+            if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+                bt_data->base.axes_cal[i] = -(value  - meta->hid_axes_meta[i].neutral);
             }
 
             ctrl_data->axes[i].meta = &meta->hid_axes_meta[i];
 
             /* Is axis unsign? */
             if (bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].logical_min >= 0) {
-                ctrl_data->axes[i].value = value - meta->hid_axes_meta[i].neutral + bt_data->axes_cal[i];
+                ctrl_data->axes[i].value = value - meta->hid_axes_meta[i].neutral + bt_data->base.axes_cal[i];
             }
             else {
                 ctrl_data->axes[i].value = value;
                 if (ctrl_data->axes[i].value & BIT(len - 1)) {
                     ctrl_data->axes[i].value |= ~mask;
                 }
-                ctrl_data->axes[i].value += bt_data->axes_cal[i];
+                ctrl_data->axes[i].value += bt_data->base.axes_cal[i];
             }
         }
     }
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 }
 
 int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 #ifdef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
-    struct hid_report *report = &bt_data->reports[bt_data->report_type];
+    struct hid_report *report = &bt_data->reports[bt_data->base.report_type];
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         int32_t len = report->usages[i].bit_size;
         uint32_t offset = report->usages[i].bit_offset;
         uint32_t mask = (1 << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
-        uint32_t value = ((*(uint32_t *)(bt_data->input + byte_offset)) >> bit_shift) & mask;
+        uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
         if (report->usages[i].bit_size <= 4) {
-            printf("R%ld %02X%02X: %s%01lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%01lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 8) {
-            printf("R%ld %02X%02X: %s%02lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%02lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 12) {
-            printf("R%ld %02X%02X: %s%03lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%03lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 16) {
-            printf("R%ld %02X%02X: %s%04lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%04lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 32) {
-            printf("R%ld %02X%02X: %s%08lX%s, ", bt_data->report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02X%02X: %s%08lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
     }
     printf("\n");
     return -1;
 #else
-    switch (bt_data->report_type) {
+    switch (bt_data->base.report_type) {
         case KB:
             hid_kb_to_generic(bt_data, ctrl_data);
             break;
@@ -587,7 +579,7 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
             hid_pad_to_generic(bt_data, ctrl_data);
             break;
         default:
-            printf("# Unsupported report type: %02lX\n", bt_data->report_type);
+            printf("# Unsupported report type: %02lX\n", bt_data->base.report_type);
             return -1;
     }
 #endif

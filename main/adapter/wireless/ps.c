@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -101,7 +101,7 @@ static const uint32_t ps4_btns_mask[32] = {
 };
 
 static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct ps4_map *map = (struct ps4_map *)bt_data->input;
+    struct ps4_map *map = (struct ps4_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -117,21 +117,21 @@ static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     /* Convert hat to regular btns */
     ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 }
 
 static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct ps5_map *map = (struct ps5_map *)bt_data->input;
+    struct ps5_map *map = (struct ps5_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -147,21 +147,21 @@ static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     /* Convert hat to regular btns */
     ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = -(map->axes[ps5_axes_idx[i]] - ps4_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[ps5_axes_idx[i]] - ps4_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[ps5_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[ps5_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 }
 
 static void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct hid_map *map = (struct hid_map *)bt_data->input;
+    struct hid_map *map = (struct hid_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -177,25 +177,25 @@ static void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     /* Convert hat to regular btns */
     ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &ps4_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[ps4_axes_idx[i]] - ps4_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 }
 
 static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_data->output;
+    struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_data->base.output;
     memset((void *)set_conf, 0, sizeof(*set_conf));
     set_conf->conf0 = 0xc4;
     set_conf->conf1 = 0x03;
-    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->pids->id];
+    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->base.pids->id];
 
     if (fb_data->state) {
         set_conf->r_rumble = 0x7F;
@@ -204,7 +204,7 @@ static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
 }
 
 static void ps5_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_data->output;
+    struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_data->base.output;
     memset((void *)set_conf, 0, sizeof(*set_conf));
 
     set_conf->conf0 = 0x02;
@@ -216,7 +216,7 @@ static void ps5_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
 }
 
 int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    switch (bt_data->report_id) {
+    switch (bt_data->base.report_id) {
         case 0x01:
             hid_to_generic(bt_data, ctrl_data);
             break;
@@ -227,7 +227,7 @@ int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
             ps5_to_generic(bt_data, ctrl_data);
             break;
         default:
-            printf("# Unknown report type: %02lX\n", bt_data->report_type);
+            printf("# Unknown report type: %02lX\n", bt_data->base.report_type);
             return -1;
     }
 
@@ -235,7 +235,7 @@ int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
 }
 
 void ps_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    switch (bt_data->pids->subtype) {
+    switch (bt_data->base.pids->subtype) {
         case BT_PS5_DS:
             ps5_fb_from_generic(fb_data, bt_data);
             break;

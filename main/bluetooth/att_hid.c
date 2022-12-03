@@ -252,24 +252,24 @@ find_info_rsp_end:
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
                 {
-                    if (bt_data->sdp_data == NULL) {
-                        bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
-                        if (bt_data->sdp_data == NULL) {
+                    if (bt_data->base.sdp_data == NULL) {
+                        bt_data->base.sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_data->base.sdp_data == NULL) {
                             printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
-                    memcpy(bt_data->sdp_data + bt_data->sdp_len, read_rsp->value, att_len - 1);
-                    bt_data->sdp_len += att_len - 1;
+                    memcpy(bt_data->base.sdp_data + bt_data->base.sdp_len, read_rsp->value, att_len - 1);
+                    bt_data->base.sdp_len += att_len - 1;
 
                     if (att_len == device->mtu) {
-                        bt_att_cmd_read_blob_req(device->acl_handle, hid_data->map_hdl, bt_data->sdp_len);
+                        bt_att_cmd_read_blob_req(device->acl_handle, hid_data->map_hdl, bt_data->base.sdp_len);
                     }
                     else {
-                        hid_parser(bt_data, bt_data->sdp_data, bt_data->sdp_len);
-                        if (bt_data->sdp_data) {
-                            free(bt_data->sdp_data);
-                            bt_data->sdp_data = NULL;
+                        hid_parser(bt_data, bt_data->base.sdp_data, bt_data->base.sdp_len);
+                        if (bt_data->base.sdp_data) {
+                            free(bt_data->base.sdp_data);
+                            bt_data->base.sdp_data = NULL;
                         }
                         if (hid_data->reports[hid_data->report_idx].ref_hdl) {
                             device->hid_state = BT_ATT_HID_REPORT_REF;
@@ -319,24 +319,24 @@ find_info_rsp_end:
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
-                    if (bt_data->sdp_data == NULL) {
-                        bt_data->sdp_data = malloc(BT_SDP_DATA_SIZE);
-                        if (bt_data->sdp_data == NULL) {
+                    if (bt_data->base.sdp_data == NULL) {
+                        bt_data->base.sdp_data = malloc(BT_SDP_DATA_SIZE);
+                        if (bt_data->base.sdp_data == NULL) {
                             printf("# dev: %ld Failed to alloc report memory\n", device->ids.id);
                             break;
                         }
                     }
-                    memcpy(bt_data->sdp_data + bt_data->sdp_len, read_blob_rsp->value, att_len - 1);
-                    bt_data->sdp_len += att_len - 1;
+                    memcpy(bt_data->base.sdp_data + bt_data->base.sdp_len, read_blob_rsp->value, att_len - 1);
+                    bt_data->base.sdp_len += att_len - 1;
 
                     if (att_len == device->mtu) {
-                        bt_att_cmd_read_blob_req(device->acl_handle, hid_data->map_hdl, bt_data->sdp_len);
+                        bt_att_cmd_read_blob_req(device->acl_handle, hid_data->map_hdl, bt_data->base.sdp_len);
                     }
                     else {
-                        hid_parser(bt_data, bt_data->sdp_data, bt_data->sdp_len);
-                        if (bt_data->sdp_data) {
-                            free(bt_data->sdp_data);
-                            bt_data->sdp_data = NULL;
+                        hid_parser(bt_data, bt_data->base.sdp_data, bt_data->base.sdp_len);
+                        if (bt_data->base.sdp_data) {
+                            free(bt_data->base.sdp_data);
+                            bt_data->base.sdp_data = NULL;
                         }
                         if (hid_data->reports[hid_data->report_idx].ref_hdl) {
                             device->hid_state = BT_ATT_HID_REPORT_REF;

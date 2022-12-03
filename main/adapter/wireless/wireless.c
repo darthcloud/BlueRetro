@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jacques Gagnon
+ * Copyright (c) 2021-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -33,15 +33,16 @@ static fb_from_generic_t fb_from_generic_func[BT_TYPE_MAX] = {
 int32_t wireless_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     int32_t ret = -1;
 
-    if (to_generic_func[bt_data->pids->type]) {
-        ret = to_generic_func[bt_data->pids->type](bt_data, ctrl_data);
+    if (to_generic_func[bt_data->base.pids->type]) {
+        ret = to_generic_func[bt_data->base.pids->type](bt_data, ctrl_data);
     }
 
     return ret;
 }
 
 void wireless_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    if (fb_from_generic_func[bt_data->pids->type]) {
-        fb_from_generic_func[bt_data->pids->type](fb_data, bt_data);
+    if (fb_from_generic_func[bt_data->base.pids->type]) {
+        fb_from_generic_func[bt_data->base.pids->type](fb_data, bt_data);
     }
 }
+

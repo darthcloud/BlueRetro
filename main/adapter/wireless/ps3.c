@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -87,7 +87,7 @@ static const uint32_t ps3_btns_mask[32] = {
 };
 
 int32_t ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
-    struct ps3_map *map = (struct ps3_map *)bt_data->input;
+    struct ps3_map *map = (struct ps3_map *)bt_data->base.input;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -100,25 +100,25 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         }
     }
 
-    if (!atomic_test_bit(&bt_data->flags, BT_INIT)) {
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            bt_data->axes_cal[i] = -(map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral);
         }
-        atomic_set_bit(&bt_data->flags, BT_INIT);
+        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         ctrl_data->axes[i].meta = &ps3_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral + bt_data->axes_cal[i];
+        ctrl_data->axes[i].value = map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;
 }
 
 void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->output;
+    struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->base.output;
     memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
-    set_conf->leds = (led_dev_id_map[bt_data->pids->id] << 1);
+    set_conf->leds = (led_dev_id_map[bt_data->base.pids->id] << 1);
 
     if (fb_data->state) {
         set_conf->r_rumble_pow = 0x01;

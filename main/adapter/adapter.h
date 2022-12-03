@@ -418,7 +418,6 @@ struct hid_usage {
 };
 
 struct hid_report {
-    atomic_t flags;
     uint32_t id;
     uint32_t len;
     uint32_t usage_cnt;
@@ -439,22 +438,23 @@ struct bt_ids {
     uint32_t subtype;
 } __packed;
 
-struct bt_data {
-    /* Bi-directional */
-    atomic_t flags;
-    /* from adapter */
-    uint8_t *output; /* 128 */
-    /* from wireless */
+struct bt_data_base {
+    atomic_t flags[REPORT_MAX];
     struct bt_ids *pids;
     uint32_t report_id;
     int32_t report_type;
-    struct raw_src_mapping raw_src_mappings[REPORT_MAX];
-    struct hid_report reports[REPORT_MAX];
     uint8_t *input;
     uint32_t input_len;
-    int32_t axes_cal[ADAPTER_MAX_AXES];
-    uint32_t sdp_len;
     uint8_t *sdp_data;
+    uint32_t sdp_len;
+    int32_t axes_cal[ADAPTER_MAX_AXES];
+    uint8_t output[128];
+};
+
+struct bt_data {
+    struct bt_data_base base;
+    struct raw_src_mapping *raw_src_mappings;
+    struct hid_report *reports;
 };
 
 struct wired_data {
@@ -489,7 +489,7 @@ struct wired_adapter {
 };
 
 struct bt_adapter {
-    struct bt_data *data;
+    struct bt_data data[BT_MAX_DEV];
 };
 
 typedef int32_t (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);

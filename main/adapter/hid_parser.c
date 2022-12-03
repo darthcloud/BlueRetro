@@ -254,9 +254,9 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *wip_r
     if (report_type != REPORT_NONE && bt_data->reports[report_type].id == 0) {
         hid_device_fingerprint(wip_report, &dev_type, &dev_subtype);
         memcpy(&bt_data->reports[report_type], wip_report, sizeof(bt_data->reports[0]));
-        if (bt_data->pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-            bt_data->pids->type = dev_type;
-            bt_data->pids->subtype = dev_subtype;
+        if (bt_data->base.pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
+            bt_data->base.pids->type = dev_type;
+            bt_data->base.pids->subtype = dev_subtype;
         }
         printf("rtype: %ld dtype: %ld sub: %ld", report_type, dev_type, dev_subtype);
     }
