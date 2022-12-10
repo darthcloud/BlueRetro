@@ -19,7 +19,7 @@
 #include "adapter/adapter.h"
 #include "bluetooth/host.h"
 #include "bluetooth/hci.h"
-#include "wired/wired_comm.h"
+#include "wired/wired_bare.h"
 #include "tools/util.h"
 #include "system/fs.h"
 #include "system/led.h"
@@ -338,7 +338,7 @@ static void wired_port_hdl(void) {
     }
     if (update) {
         printf("# %s: Update ports state: %04X\n", __FUNCTION__, port_mask);
-        wired_comm_port_cfg(port_mask);
+        wired_bare_port_cfg(port_mask);
         port_state = port_mask;
         if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_SENSE_OUT)) {
             /* Toggle Wii classic sense line to force ctrl reinit */

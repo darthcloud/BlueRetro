@@ -16,7 +16,7 @@
 #include "tools/util.h"
 #include "system/led.h"
 #include "adapter/config.h"
-#include "wired/wired_comm.h"
+#include "wired/wired_bare.h"
 #include "zephyr/uuid.h"
 
 #define BT_INQUIRY_MAX 10

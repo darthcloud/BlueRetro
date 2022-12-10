@@ -19,7 +19,8 @@
 #include "adapter/config.h"
 #include "bluetooth/host.h"
 #include "wired/detect.h"
-#include "wired/wired_comm.h"
+#include "wired/wired_bare.h"
+#include "wired/wired_rtos.h"
 #include "adapter/memory_card.h"
 #include "system/manager.h"
 #include "sdkconfig.h"
@@ -66,7 +67,7 @@ static void wired_init_task(void) {
     adapter_q_fb(&fb_data);
 
     if (wired_adapter.system_id < WIRED_MAX) {
-        wired_comm_init();
+        wired_bare_init();
     }
 }
 
@@ -104,6 +105,10 @@ static void wl_init_task(void *arg) {
 #ifndef CONFIG_BLUERETRO_QEMU
     mc_init();
 
+    if (wired_adapter.system_id < WIRED_MAX) {
+        wired_rtos_init();
+    }
+
     sys_mgr_init();
 #endif
 
@@ -131,4 +136,3 @@ void app_main()
     start_app_cpu(wired_init_task);
     xTaskCreatePinnedToCore(wl_init_task, "wl_init_task", 2560, NULL, 10, NULL, 0);
 }
-

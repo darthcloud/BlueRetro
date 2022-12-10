@@ -11,14 +11,13 @@
 #include "nsi.h"
 #include "maple.h"
 #include "jvs_uart.h"
-#include "parallel.h"
 #include "pcfx_spi.h"
 #include "ps_spi.h"
 #include "real_spi.h"
 #include "jag_io.h"
-#include "sea_io.h"
 #include "wii_i2c.h"
 #include "adapter/adapter.h"
+#include "wired_bare.h"
 
 typedef void (*wired_init_t)(void);
 typedef void (*wired_port_cfg_t)(uint16_t mask);
@@ -52,8 +51,8 @@ static const char *sys_name[WIRED_MAX] = {
 
 static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* WIRED_AUTO */
-    parallel_io_init, /* PARALLEL_1P */
-    parallel_io_init, /* PARALLEL_2P */
+    NULL, /* PARALLEL_1P */
+    NULL, /* PARALLEL_2P */
     npiso_init, /* NES */
     pce_io_init, /* PCE */
     sega_io_init, /* GENESIS */
@@ -72,9 +71,9 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     nsi_init, /* GC */
     wii_i2c_init, /* WII_EXT */
     npiso_init, /* VB */
-    parallel_io_init, /* PARALLEL_1P_OD */
-    parallel_io_init, /* PARALLEL_2P_OD */
-    sea_init, /* SEA_BOARD */
+    NULL, /* PARALLEL_1P_OD */
+    NULL, /* PARALLEL_2P_OD */
+    NULL, /* SEA_BOARD */
 };
 
 static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
@@ -104,13 +103,13 @@ static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
     NULL, /* SEA_BOARD */
 };
 
-void wired_comm_init(void) {
+void wired_bare_init(void) {
     if (wired_init[wired_adapter.system_id]) {
         wired_init[wired_adapter.system_id]();
     }
 }
 
-void wired_comm_port_cfg(uint16_t mask) {
+void wired_bare_port_cfg(uint16_t mask) {
     if (wired_port_cfg[wired_adapter.system_id]) {
         wired_port_cfg[wired_adapter.system_id](mask);
     }
