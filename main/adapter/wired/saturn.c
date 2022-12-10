@@ -338,7 +338,7 @@ static void saturn_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_
     kbmon_update(ctrl_data->index, ctrl_data);
 }
 
-void saturn_kb_id_to_scancode(uint8_t dev_id, uint8_t type, uint8_t id) {
+void saturn_kb_id_to_scancode(uint32_t dev_id, uint8_t type, uint8_t id) {
     uint8_t kb_buf[2] = {0};
     switch (type) {
         case KBMON_TYPE_MAKE:

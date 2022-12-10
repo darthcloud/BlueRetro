@@ -418,7 +418,7 @@ static void cdi_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
     kbmon_update(ctrl_data->index, ctrl_data);
 }
 
-void cdi_kb_id_to_scancode(uint8_t dev_id, uint8_t type, uint8_t id) {
+void cdi_kb_id_to_scancode(uint32_t dev_id, uint8_t type, uint8_t id) {
     if (id < KBM_MAX) {
         uint8_t kb_buf[3] = {0};
         uint8_t scancode, change = 0;

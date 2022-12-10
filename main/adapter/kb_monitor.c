@@ -32,7 +32,7 @@ static void kbmon_typematic_cb(void *arg) {
     esp_timer_start_once(kbmon->tm_timer_hdl, kbmon->tm_rate);
 }
 
-void kbmon_init(uint8_t dev_id, kbmon_id_to_code_t callback) {
+void kbmon_init(uint32_t dev_id, kbmon_id_to_code_t callback) {
     if (dev_id < BT_MAX_DEV) {
         esp_timer_create_args_t tm_timer_args = {
             .callback = &kbmon_typematic_cb,
@@ -45,12 +45,12 @@ void kbmon_init(uint8_t dev_id, kbmon_id_to_code_t callback) {
         kb_monitors[dev_id].callback = callback;
         kb_monitors[dev_id].scq_hdl = queue_bss_init(32, 16);
         if (kb_monitors[dev_id].scq_hdl == NULL) {
-            printf("# Failed to create KBMON:%d ring buffer\n", dev_id);
+            printf("# Failed to create KBMON:%ld ring buffer\n", dev_id);
         }
     }
 }
 
-void kbmon_update(uint8_t dev_id, struct generic_ctrl *ctrl_data) {
+void kbmon_update(uint32_t dev_id, struct generic_ctrl *ctrl_data) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
     uint32_t keys_change[4];
 
@@ -78,20 +78,20 @@ void kbmon_update(uint8_t dev_id, struct generic_ctrl *ctrl_data) {
     }
 }
 
-int32_t kbmon_set_code(uint8_t dev_id, uint8_t *code, uint32_t len) {
+int32_t kbmon_set_code(uint32_t dev_id, uint8_t *code, uint32_t len) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
     int32_t ret = -1;
 
     if (kbmon->scq_hdl) {
         ret = queue_bss_enqueue(kbmon->scq_hdl, code, len);
         if (ret) {
-            printf("# %s KBMON:%d scq full!\n", __FUNCTION__, dev_id);
+            printf("# %s KBMON:%ld scq full!\n", __FUNCTION__, dev_id);
         }
     }
     return ret;
 }
 
-int32_t IRAM_ATTR kbmon_get_code(uint8_t dev_id, uint8_t *code, uint32_t *len) {
+int32_t IRAM_ATTR kbmon_get_code(uint32_t dev_id, uint8_t *code, uint32_t *len) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
     int32_t ret = -1;
     uint32_t *qlen;
@@ -107,7 +107,7 @@ int32_t IRAM_ATTR kbmon_get_code(uint8_t dev_id, uint8_t *code, uint32_t *len) {
     return ret;
 }
 
-void kbmon_set_typematic(uint8_t dev_id, uint8_t state, uint32_t delay, uint32_t rate) {
+void kbmon_set_typematic(uint32_t dev_id, uint8_t state, uint32_t delay, uint32_t rate) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
 
     kbmon->tm_state = state;

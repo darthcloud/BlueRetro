@@ -312,7 +312,7 @@ static void ps_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data
     kbmon_update(ctrl_data->index, ctrl_data);
 }
 
-void ps_kb_id_to_scancode(uint8_t dev_id, uint8_t type, uint8_t id) {
+void ps_kb_id_to_scancode(uint32_t dev_id, uint8_t type, uint8_t id) {
     uint8_t kb_buf[12] = {0};
     uint8_t scancode = ps_kb_scancode[id];
     uint32_t idx = 0;
