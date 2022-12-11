@@ -209,7 +209,7 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
     switch (cmd) {
         case 0x42:
         {
-            if (port->dev_id[id] != 0x41 && config.out_cfg[id].acc_mode == ACC_RUMBLE) {
+            if (port->dev_id[id] != 0x41 && config.out_cfg[id + port->mt_first_port].acc_mode == ACC_RUMBLE) {
                 struct raw_fb fb_data = {0};
                 req++;
                 if (port->rumble_r_state[id]) {
