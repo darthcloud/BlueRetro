@@ -339,7 +339,10 @@ static void n64_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
         }
     }
 
-    if (ctrl_data->map_mask[2] & BIT(KB_HOME & 0x1F)) {
+    /* map_mask is in IRAM but somehow GCC emit an l8ui which crash the ESP32 */
+    /* volatile var force it to use a l32 */
+    volatile uint32_t mask = ctrl_data->map_mask[2];
+    if (mask & BIT(KB_HOME & 0x1F)) {
         if (ctrl_data->btns[2].value & BIT(KB_HOME & 0x1F)) {
             map_tmp.bitfield = 0x01;
         }
