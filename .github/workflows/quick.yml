@@ -51,7 +51,7 @@ jobs:
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.br_version }}_${{ github.event.inputs.hw_version }}_${{ github.event.inputs.br_config }}
         path: |
