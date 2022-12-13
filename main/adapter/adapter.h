@@ -278,6 +278,7 @@ enum {
     BT_QUIRK_SW_LEFT_JOYCON,
     BT_QUIRK_SW_RIGHT_JOYCON,
     BT_QUIRK_8BITDO_N64,
+    BT_QUIRK_8BITDO_M30,
 };
 
 /* Wired flags */
