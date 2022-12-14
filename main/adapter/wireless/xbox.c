@@ -170,7 +170,7 @@ static const uint32_t gbros_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    BIT(XB1_X), BIT(XB1_B), BIT(XB1_A), BIT(XB1_Y),
+    BIT(XB1_B), BIT(XB1_X), BIT(XB1_A), BIT(XB1_Y),
     BIT(XB1_MENU), 0, 0, 0,
     0, 0, BIT(XB1_LB), BIT(XB1_LJ),
     0, BIT(XB1_VIEW), BIT(XB1_RB), BIT(XB1_RJ),
