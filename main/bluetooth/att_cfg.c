@@ -401,6 +401,7 @@ static void bt_att_cfg_cmd_rd_hdlr(uint16_t handle) {
             break;
         default:
             printf("# Invalid read cfg cmd: %02X\n", cfg_cmd);
+            bt_att_cfg_cmd_abi_ver_rsp(handle);
             break;
     }
 }
