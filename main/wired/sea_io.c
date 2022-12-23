@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sea_io.h"
+#include "sdkconfig.h"
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
 #include "soc/io_mux_reg.h"
 #include <hal/clk_gate_ll.h>
 #include "soc/rmt_struct.h"
@@ -12,6 +15,7 @@
 #include "system/gpio.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "system/fpga_config.h"
 
 #define GBAHD_COM_PIN 33
 #define GBAHD_BIT_PERIOD_TICKS 24
@@ -34,8 +38,10 @@ static const uint8_t output_list[] = {
     4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23
 };
 static volatile rmt_symbol_word_t *rmt_items = (volatile rmt_symbol_word_t *)RMTMEM.chan[0].data32;
+#endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 
 void sea_tx_byte(uint8_t data) {
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
     volatile uint32_t *item_ptr = &rmt_items[0].val;
 
     for (uint32_t mask = 0x80; mask; mask >>= 1, ++item_ptr) {
@@ -48,11 +54,16 @@ void sea_tx_byte(uint8_t data) {
     }
     *item_ptr = BIT_STOP;
     rmt_ll_tx_start(&RMT, 0);
+#endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 }
 
 void sea_init(void) {
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
     /* SEA specific build required */
     gpio_config_t io_conf = {0};
+
+    /* Program FPGA with GBAHD bitstream */
+    fpga_config();
 
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT_OD;
@@ -96,4 +107,5 @@ void sea_init(void) {
     rmt_ll_rx_enable(&RMT, 0, 0);
     rmt_ll_rx_reset_pointer(&RMT, 0);
     rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_RX_DONE(0));
+#endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 }

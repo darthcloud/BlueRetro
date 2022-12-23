@@ -11,7 +11,6 @@
 #include "system/bare_metal_app_cpu.h"
 #include "system/core0_stall.h"
 #include "system/delay.h"
-#include "system/fpga_config.h"
 #include "system/fs.h"
 #include "system/led.h"
 #include "adapter/adapter.h"
@@ -88,11 +87,11 @@ static void wl_init_task(void *arg) {
     }
 #endif
 
-#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
-    fpga_config();
-#endif
-
     config_init(DEFAULT_CFG);
+
+    if (wired_adapter.system_id < WIRED_MAX) {
+        wired_rtos_init();
+    }
 
 #ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {
@@ -104,10 +103,6 @@ static void wl_init_task(void *arg) {
 
 #ifndef CONFIG_BLUERETRO_QEMU
     mc_init();
-
-    if (wired_adapter.system_id < WIRED_MAX) {
-        wired_rtos_init();
-    }
 
     sys_mgr_init();
 #endif
