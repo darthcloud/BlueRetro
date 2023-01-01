@@ -550,19 +550,19 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         uint32_t bit_shift = offset % 8;
         uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
         if (report->usages[i].bit_size <= 4) {
-            printf("R%ld %02X%02X: %s%01lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02lX%02lX: %s%01lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 8) {
-            printf("R%ld %02X%02X: %s%02lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02lX%02lX: %s%02lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 12) {
-            printf("R%ld %02X%02X: %s%03lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02lX%02lX: %s%03lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 16) {
-            printf("R%ld %02X%02X: %s%04lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02lX%02lX: %s%04lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
         else if (report->usages[i].bit_size <= 32) {
-            printf("R%ld %02X%02X: %s%08lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
+            printf("R%ld %02lX%02lX: %s%08lX%s, ", bt_data->base.report_type, report->usages[i].usage_page, report->usages[i].usage, BOLD, value, RESET);
         }
     }
     printf("\n");
