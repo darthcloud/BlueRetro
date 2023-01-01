@@ -6,6 +6,7 @@
 #ifndef _ADAPTER_H_
 #define _ADAPTER_H_
 
+#include <stdio.h>
 #include <esp_attr.h>
 #include "zephyr/atomic.h"
 
@@ -446,6 +447,8 @@ struct bt_data_base {
     struct bt_ids *pids;
     uint32_t report_id;
     int32_t report_type;
+    uint32_t report_cnt;
+    uint32_t report_cnt_last;
     uint8_t *input;
     uint32_t input_len;
     uint8_t *sdp_data;
@@ -519,4 +522,20 @@ uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data);
 void adapter_q_fb(struct raw_fb *fb_data);
 void adapter_init(void);
 
+static inline void bt_type_update(int32_t dev_id, int32_t type, uint32_t subtype) {
+    struct bt_data *bt_data = &bt_adapter.data[dev_id];
+
+    if (bt_data->base.pids) {
+        bt_data->base.pids->type = type;
+        bt_data->base.pids->subtype = subtype;
+        bt_data->base.report_cnt = 0;
+        bt_data->base.report_cnt_last = 0;
+        for (uint32_t i = 0; i < REPORT_MAX; i++) {
+            atomic_clear_bit(&bt_data->base.flags[i], BT_INIT);
+        }
+        printf("# %s: dev: %ld type: %ld subtype: %ld\n", __FUNCTION__, dev_id, type, subtype);
+    }
+}
+
 #endif /* _ADAPTER_H_ */
+

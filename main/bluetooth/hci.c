@@ -1332,8 +1332,7 @@ void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name)
         if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
             struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
 
-            device->ids.type = bt_name_type[i].type;
-            device->ids.subtype = bt_name_type[i].subtype;
+            bt_type_update(device->ids.id, bt_name_type[i].type, bt_name_type[i].subtype);
             bt_data->base.flags[PAD] = bt_name_type[i].hid_flags;
             break;
         }

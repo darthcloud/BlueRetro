@@ -283,7 +283,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         struct wiic_8bit_map *map_8bit = (struct wiic_8bit_map *)bt_data->base.input;
         if (map_8bit->buttons != 0x0000) {
-            bt_data->base.pids->subtype = BT_WII_CLASSIC_8BIT;
+            bt_type_update(bt_data->base.pids->id, BT_WII, BT_WII_CLASSIC_8BIT);
             return -1;
         }
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
@@ -322,7 +322,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         if (map->buttons == 0x0000) {
-            bt_data->base.pids->subtype = BT_WII_CLASSIC;
+            bt_type_update(bt_data->base.pids->id, BT_WII, BT_WII_CLASSIC);
             return -1;
         }
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {

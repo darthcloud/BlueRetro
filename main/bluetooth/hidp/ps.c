@@ -122,7 +122,9 @@ void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_PS5_STATUS:
-                    device->ids.subtype = BT_PS5_DS;
+                    if (device->ids.subtype != BT_PS5_DS) {
+                        bt_type_update(device->ids.id, BT_PS, BT_PS5_DS);
+                    }
                     /* Fallthrough */
                 case BT_HIDP_HID_STATUS:
                 case BT_HIDP_PS4_STATUS:

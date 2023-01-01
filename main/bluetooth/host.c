@@ -317,17 +317,17 @@ static void bt_host_task(void *param) {
 
             /* Check if we stopped receiving reports */
             if (atomic_test_bit(&device->flags, BT_DEV_REPORT_MON)) {
-                if (device->report_cnt == device->report_cnt_last) {
+                if (bt_data->base.report_cnt == bt_data->base.report_cnt_last) {
                     device->report_stall_cnt++;
                 }
                 else {
-                    device->report_cnt_last = device->report_cnt;
+                    bt_data->base.report_cnt_last = bt_data->base.report_cnt;
                     device->report_stall_cnt = 0;
                 }
                 if (device->report_stall_cnt > 5) {
                     printf("# %s dev: %ld report stalled\n", __FUNCTION__, device->ids.id);
                     device->report_stall_cnt = 0;
-                    device->report_cnt = 0;
+                    bt_data->base.report_cnt = 0;
 
                     switch (device->ids.type) {
                         case BT_SW:
@@ -736,12 +736,12 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
             return;
         }
     }
-    if (atomic_test_bit(&bt_data->base.flags[report_type], BT_INIT) || device->report_cnt > 1) {
+    if (atomic_test_bit(&bt_data->base.flags[report_type], BT_INIT) || bt_data->base.report_cnt > 1) {
         bt_data->base.report_id = report_id;
         bt_data->base.input = data;
         bt_data->base.input_len = len;
         adapter_bridge(bt_data);
     }
-    device->report_cnt++;
+    bt_data->base.report_cnt++;
 #endif
 }

@@ -153,7 +153,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     struct bt_hidp_wii_status *status = (struct bt_hidp_wii_status *)bt_hci_acl_pkt->hidp_data;
                     printf("# BT_HIDP_WII_STATUS\n");
                     if (device->ids.subtype != BT_WIIU_PRO) {
-                        device->ids.subtype = BT_SUBTYPE_DEFAULT;
+                        bt_type_update(device->ids.id, BT_WII, BT_SUBTYPE_DEFAULT);
                         if (status->flags & BT_HIDP_WII_FLAGS_EXT_CONN) {
                             device->hid_state = WII_EXT_STATE_SET_INIT0;
                             bt_hid_cmd_wii_write(device, (void *)&wii_ext_init0);
@@ -170,7 +170,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     uint32_t subtype = bt_get_subtype_from_wii_ext(rd_data->data);
                     printf("# BT_HIDP_WII_RD_DATA\n");
                     if (subtype > BT_SUBTYPE_DEFAULT) {
-                        device->ids.subtype = subtype;
+                        bt_type_update(device->ids.id, BT_WII, subtype);
                     }
                     printf("# dev: %ld wii ext: %ld\n", device->ids.id, device->ids.subtype);
 
