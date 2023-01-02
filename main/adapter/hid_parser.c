@@ -28,6 +28,7 @@ struct hid_fingerprint {
 };
 
 static const struct hid_fingerprint hid_fp[] = {
+#ifndef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     {
         .dev_type = BT_PS3,
         .dev_subtype = BT_SUBTYPE_DEFAULT,
@@ -58,6 +59,7 @@ static const struct hid_fingerprint hid_fp[] = {
         .fp_len = 12,
         .fp = {0x09, 0x01, 0x01, 0x39, 0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34},
     },
+#endif
 };
 
 /* List of usage we don't care about */
