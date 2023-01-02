@@ -234,7 +234,7 @@ find_info_rsp_end:
                         rsp_len = 31;
                     }
                     memcpy(device_name, read_type_rsp->data[0].value, rsp_len);
-                    bt_hci_set_type_flags_from_name(device, device_name);
+                    bt_hid_set_type_flags_from_name(device, device_name);
                     printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, device_name);
 
                     device->hid_state = BT_ATT_HID_DISCOVERY;

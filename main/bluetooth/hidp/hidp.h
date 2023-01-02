@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2022, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,6 +21,7 @@ struct bt_hidp_hdr {
 
 extern const uint8_t bt_hid_led_dev_id_map[];
 
+void bt_hid_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name);
 void bt_hid_init(struct bt_dev *device);
 void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 void bt_hid_feedback(struct bt_dev *device, void *report);

@@ -23,13 +23,6 @@
 
 typedef void (*bt_cmd_func_t)(void *param);
 
-struct bt_name_type {
-    char name[249];
-    int32_t type;
-    uint32_t subtype;
-    atomic_t hid_flags;
-};
-
 struct bt_hci_cmd_cp {
     bt_cmd_func_t cmd;
     void *cp;
@@ -44,32 +37,6 @@ static const char bt_default_pin[][5] = {
     "0000",
     "1234",
     "1111",
-};
-
-static const struct bt_name_type bt_name_type[] = {
-    {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
-    {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
-    {"Xbox Wireless Controller", BT_XBOX, BT_SUBTYPE_DEFAULT, 0},
-    {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
-    {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
-    {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
-    {"Nintendo RVL-CNT-01", BT_WII, BT_SUBTYPE_DEFAULT, 0},
-    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
-    {"Lic Pro Controller", BT_SW, BT_SW_POWERA, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
-    {"Joy-Con (L)", BT_SW, BT_SW_LEFT_JOYCON, BIT(BT_QUIRK_SW_LEFT_JOYCON)},
-    {"Joy-Con (R)", BT_SW, BT_SW_RIGHT_JOYCON, BIT(BT_QUIRK_SW_RIGHT_JOYCON)},
-    {"HVC Controller", BT_SW, BT_SW_NES, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
-    {"NES Controller", BT_SW, BT_SW_NES, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
-    {"SNES Controller", BT_SW, BT_SW_SNES, BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
-    {"N64 Controller", BT_SW, BT_SW_N64, 0},
-    {"MD/Gen Control Pad", BT_SW, BT_SW_MD_GEN, 0},
-    {"8Bitdo SF30", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_FACE_BTNS_INVERT)},
-    {"8BitDo GBros Adapter", BT_XBOX, BT_8BITDO_GBROS, 0},
-    {"8Bitdo N64 GamePad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_8BITDO_N64)},
-    {"8BitDo M30 gamepad", BT_XBOX, BT_XBOX_XINPUT, BIT(BT_QUIRK_8BITDO_M30)},
-    {"Retro Bit Bluetooth Controller", BT_XBOX, BT_XBOX_XINPUT, BIT(BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
-    {"Joy Controller", BT_XBOX, BT_XBOX_XINPUT, 0},
-    {"BlueN64 Gamepad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_BLUEN64_N64)},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
@@ -1327,18 +1294,6 @@ void bt_hci_le_conn_update(struct hci_cp_le_conn_update *cp) {
     bt_hci_cmd_le_conn_update(cp);
 }
 
-void bt_hci_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name) {
-    for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
-        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
-            struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
-
-            bt_type_update(device->ids.id, bt_name_type[i].type, bt_name_type[i].subtype);
-            bt_data->base.flags[PAD] = bt_name_type[i].hid_flags;
-            break;
-        }
-    }
-}
-
 void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
     struct bt_dev *device = NULL;
 
@@ -1508,7 +1463,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
-                    bt_hci_set_type_flags_from_name(device, remote_name_req_complete->name);
+                    bt_hid_set_type_flags_from_name(device, remote_name_req_complete->name);
                     bt_hci_stop_inquiry();
                     if (device->ids.type == BT_HID_GENERIC || device->ids.type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);
