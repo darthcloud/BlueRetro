@@ -210,10 +210,21 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                     }
                     break;
                 }
-                //case BT_HIDP_SW_STATUS:
+                case BT_HIDP_SW_STATUS:
+                {
+                    if (device->ids.report_type != BT_HIDP_SW_STATUS) {
+                        bt_type_update(device->ids.id, BT_SW, device->ids.subtype);
+                        device->ids.report_type = BT_HIDP_SW_STATUS;
+                    }
+                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+                    break;
+                }
                 case BT_HIDP_SW_STATUS_NATIVE:
                 {
-                    //data_dump(bt_hci_acl_pkt->hidp_data, hidp_data_len);
+                    if (device->ids.report_type != BT_HIDP_SW_STATUS_NATIVE) {
+                        bt_type_update(device->ids.id, BT_SW, device->ids.subtype);
+                        device->ids.report_type = BT_HIDP_SW_STATUS_NATIVE;
+                    }
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
                 }

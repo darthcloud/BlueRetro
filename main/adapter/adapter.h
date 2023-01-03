@@ -440,6 +440,7 @@ struct bt_ids {
     int32_t out_idx;
     int32_t type;
     uint32_t subtype;
+    uint32_t report_type;
 } __packed;
 
 struct bt_data_base {

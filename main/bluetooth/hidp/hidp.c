@@ -12,13 +12,6 @@
 #include "xbox.h"
 #include "sw.h"
 
-struct bt_name_type {
-    char name[249];
-    int32_t type;
-    uint32_t subtype;
-    atomic_t hid_flags;
-};
-
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
 typedef void (*bt_hid_hdlr_t)(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len);
 typedef void (*bt_hid_cmd_t)(struct bt_dev *device, void *report);
@@ -89,6 +82,7 @@ void bt_hid_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name)
 
             bt_type_update(device->ids.id, bt_name_type[i].type, bt_name_type[i].subtype);
             bt_data->base.flags[PAD] = bt_name_type[i].hid_flags;
+            device->name = &bt_name_type[i];
             break;
         }
     }

@@ -35,6 +35,13 @@ enum {
     BT_DEV_REPORT_MON,
 };
 
+struct bt_name_type {
+    char name[249];
+    int32_t type;
+    uint32_t subtype;
+    atomic_t hid_flags;
+};
+
 struct l2cap_chan {
     uint16_t scid;
     uint16_t dcid;
@@ -57,6 +64,7 @@ struct bt_dev {
     void *timer_hdl;
     uint8_t report_stall_cnt;
     uint8_t tid;
+    const struct bt_name_type *name;
     union {
         struct {
             uint32_t sdp_state;
