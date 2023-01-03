@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -148,6 +148,8 @@ static const uint32_t wiin_mask[4] = {0x13770F0F, 0x00000000, 0x00000000, 0x0000
 static const uint32_t wiin_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiic_pro_mask[4] = {0xBBFFFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiic_pro_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiiu_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiiu_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 
@@ -190,6 +192,16 @@ static const uint32_t wiic_btns_mask[32] = {
     BIT(WII_CLASSIC_PLUS), BIT(WII_CLASSIC_MINUS), BIT(WII_CLASSIC_HOME), 0,
     0, BIT(WII_CLASSIC_ZL), BIT(WII_CLASSIC_L), 0,
     0, BIT(WII_CLASSIC_ZR), BIT(WII_CLASSIC_R), 0,
+};
+static const uint32_t wiic_pro_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(WII_CLASSIC_D_LEFT), BIT(WII_CLASSIC_D_RIGHT), BIT(WII_CLASSIC_D_DOWN), BIT(WII_CLASSIC_D_UP),
+    0, 0, 0, 0,
+    BIT(WII_CLASSIC_Y), BIT(WII_CLASSIC_A), BIT(WII_CLASSIC_B), BIT(WII_CLASSIC_X),
+    BIT(WII_CLASSIC_PLUS), BIT(WII_CLASSIC_MINUS), BIT(WII_CLASSIC_HOME), 0,
+    BIT(WII_CLASSIC_ZL), BIT(WII_CLASSIC_L), 0, 0,
+    BIT(WII_CLASSIC_ZR), BIT(WII_CLASSIC_R), 0, 0,
 };
 static const uint32_t wiic_core_btns_mask[32] = {
     0, 0, 0, 0,
@@ -267,6 +279,7 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
 static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiic_map *map = (struct wiic_map *)bt_data->base.input;
     uint8_t axes[6];
+    const uint32_t *btns_mask = wiic_btns_mask;
 
     axes[0] = map->axes[0] & 0x3F;
     axes[1] = map->axes[1] & 0x3F;
@@ -277,13 +290,22 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
-    ctrl_data->mask = (uint32_t *)wiic_mask;
-    ctrl_data->desc = (uint32_t *)wiic_desc;
+    switch (bt_data->base.pids->subtype) {
+        case BT_WII_CLASSIC_PRO:
+            ctrl_data->mask = (uint32_t *)wiic_pro_mask;
+            ctrl_data->desc = (uint32_t *)wiic_pro_desc;
+            btns_mask = wiic_pro_btns_mask;
+            break;
+        default:
+            ctrl_data->mask = (uint32_t *)wiic_mask;
+            ctrl_data->desc = (uint32_t *)wiic_desc;
+            break;
+    }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         struct wiic_8bit_map *map_8bit = (struct wiic_8bit_map *)bt_data->base.input;
         if (map_8bit->buttons != 0x0000) {
-            bt_type_update(bt_data->base.pids->id, BT_WII, BT_WII_CLASSIC_8BIT);
+            bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype + 1);
             return -1;
         }
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
@@ -299,7 +321,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (~map->buttons & wiic_btns_mask[i]) {
+        if (~map->buttons & btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
@@ -314,15 +336,25 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
 
 static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct wiic_8bit_map *map = (struct wiic_8bit_map *)bt_data->base.input;
+    const uint32_t *btns_mask = wiic_btns_mask;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
-    ctrl_data->mask = (uint32_t *)wiic_mask;
-    ctrl_data->desc = (uint32_t *)wiic_desc;
+    switch (bt_data->base.pids->subtype) {
+        case BT_WII_CLASSIC_PRO_8BIT:
+            ctrl_data->mask = (uint32_t *)wiic_pro_mask;
+            ctrl_data->desc = (uint32_t *)wiic_pro_desc;
+            btns_mask = wiic_pro_btns_mask;
+            break;
+        default:
+            ctrl_data->mask = (uint32_t *)wiic_mask;
+            ctrl_data->desc = (uint32_t *)wiic_desc;
+            break;
+    }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         if (map->buttons == 0x0000) {
-            bt_type_update(bt_data->base.pids->id, BT_WII, BT_WII_CLASSIC);
+            bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype - 1);
             return -1;
         }
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
@@ -338,7 +370,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl
     }
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
-        if (~map->buttons & wiic_btns_mask[i]) {
+        if (~map->buttons & btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
     }
@@ -385,8 +417,10 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
         case BT_WII_NUNCHUCK:
             return wiin_to_generic(bt_data, ctrl_data);
         case BT_WII_CLASSIC:
+        case BT_WII_CLASSIC_PRO:
             return wiic_to_generic(bt_data, ctrl_data);
         case BT_WII_CLASSIC_8BIT:
+        case BT_WII_CLASSIC_PRO_8BIT:
             return wiic_8bit_to_generic(bt_data, ctrl_data);
         case BT_WIIU_PRO:
             return wiiu_to_generic(bt_data, ctrl_data);

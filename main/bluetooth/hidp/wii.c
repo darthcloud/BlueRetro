@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -55,9 +55,9 @@ static const struct bt_hidp_wii_rd_mem wii_ext_type = {
 static const struct bt_wii_ext_type bt_wii_ext_type[] = {
     {{0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, BT_WII_NUNCHUCK},
     {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x01}, BT_WII_CLASSIC},
-    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, BT_WII_CLASSIC}, /* Classic Pro */
+    {{0x01, 0x00, 0xA4, 0x20, 0x01, 0x01}, BT_WII_CLASSIC_PRO},
     {{0x00, 0x00, 0xA4, 0x20, 0x03, 0x01}, BT_WII_CLASSIC_8BIT},
-    {{0x01, 0x00, 0xA4, 0x20, 0x03, 0x01}, BT_WII_CLASSIC_8BIT}, /* Classic Pro */
+    {{0x01, 0x00, 0xA4, 0x20, 0x03, 0x01}, BT_WII_CLASSIC_PRO_8BIT},
     {{0x00, 0x00, 0xA4, 0x20, 0x01, 0x20}, BT_WIIU_PRO},
 };
 
@@ -174,7 +174,7 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     }
                     printf("# dev: %ld wii ext: %ld\n", device->ids.id, device->ids.subtype);
 
-                    if (subtype == BT_WII_CLASSIC && device->hid_state < WII_EXT_STATE_SET_8BIT) {
+                    if ((subtype == BT_WII_CLASSIC || subtype == BT_WII_CLASSIC_PRO) && device->hid_state < WII_EXT_STATE_SET_8BIT) {
                         device->hid_state = WII_EXT_STATE_SET_8BIT;
                         bt_wii_exec_next_state(device);
                     }
