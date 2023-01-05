@@ -722,6 +722,13 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
     atomic_set_bit(&bt_flags, BT_HOST_DBG_MODE);
     bt_dbg_init(device->ids.type);
 #else
+#ifdef CONFIG_BLUERETRO_RAW_REPORT_DUMP
+    printf("# ");
+    for (uint32_t i = 0; i < len; i++) {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+#else
     if (device->ids.type == BT_HID_GENERIC) {
         uint32_t i = 0;
         for (; i < REPORT_MAX; i++) {
@@ -743,5 +750,6 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         adapter_bridge(bt_data);
     }
     bt_data->base.report_cnt++;
+#endif
 #endif
 }

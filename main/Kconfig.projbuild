@@ -157,6 +157,11 @@ menu "BlueRetro"
             help
                 Select this to test fallback report.
 
+        config BLUERETRO_RAW_REPORT_DUMP
+            bool "Enable RAW report dump"
+            help
+                Select this to dump RAW report data.
+
         config BLUERETRO_ADAPTER_BTNS_DBG
             bool "Enable adapter buttons debug"
             help
