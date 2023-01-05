@@ -174,11 +174,14 @@ void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     }
                     printf("# dev: %ld wii ext: %ld\n", device->ids.id, device->ids.subtype);
 
+#ifndef CONFIG_BLUERETRO_TEST_FALLBACK_REPORT
                     if ((subtype == BT_WII_CLASSIC || subtype == BT_WII_CLASSIC_PRO) && device->hid_state < WII_EXT_STATE_SET_8BIT) {
                         device->hid_state = WII_EXT_STATE_SET_8BIT;
                         bt_wii_exec_next_state(device);
                     }
-                    else {
+                    else
+#endif
+                    {
                         bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
                     }
                     break;

@@ -48,6 +48,7 @@ void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
 }
 
 void bt_hid_sw_init(struct bt_dev *device) {
+#ifndef CONFIG_BLUERETRO_TEST_FALLBACK_REPORT
     struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
     struct bt_hidp_sw_conf sw_conf = {
         .subcmd = BT_HIDP_SW_SUBCMD_SET_LED,
@@ -58,6 +59,7 @@ void bt_hid_sw_init(struct bt_dev *device) {
     memset((uint8_t *)dev_calib, 0, sizeof(*dev_calib));
 
     bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
+#endif
 }
 
 void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {

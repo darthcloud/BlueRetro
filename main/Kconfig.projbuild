@@ -152,6 +152,11 @@ menu "BlueRetro"
             help
                 Select this to dump HID descriptor.
 
+        config BLUERETRO_TEST_FALLBACK_REPORT
+            bool "Enable testing fallback report"
+            help
+                Select this to test fallback report.
+
         config BLUERETRO_ADAPTER_BTNS_DBG
             bool "Enable adapter buttons debug"
             help
