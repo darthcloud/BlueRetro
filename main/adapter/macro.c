@@ -47,7 +47,7 @@ void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags) {
     int32_t value = ctrl_data->btns[0].value;
     uint32_t map_mask = ctrl_data->map_mask[0];
 
-    if (*ctrl_data->desc & BIT(PAD_LM)) {
+    if (ctrl_data->axes[TRIG_L].meta && *ctrl_data->desc & BIT(PAD_LM)) {
         int32_t threshold = (int32_t)(((float)50.0/100) * ctrl_data->axes[TRIG_L].meta->abs_max);
 
         if (ctrl_data->axes[TRIG_L].value > threshold) {
@@ -56,7 +56,7 @@ void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags) {
         }
     }
 
-    if (*ctrl_data->desc & BIT(PAD_RM)) {
+    if (ctrl_data->axes[TRIG_R].meta && *ctrl_data->desc & BIT(PAD_RM)) {
         int32_t threshold = (int32_t)(((float)50.0/100) * ctrl_data->axes[TRIG_R].meta->abs_max);
 
         if (ctrl_data->axes[TRIG_R].value > threshold) {
