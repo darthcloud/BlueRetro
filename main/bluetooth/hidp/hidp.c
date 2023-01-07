@@ -24,7 +24,7 @@ static const struct bt_name_type bt_name_type[] = {
 #ifndef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
     {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
-    {"Xbox Wireless Controller", BT_XBOX, BT_SUBTYPE_DEFAULT, 0},
+    {"Xbox Wireless Controller", BT_XBOX, BT_XBOX_XINPUT, 0},
     {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
     {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
     {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
