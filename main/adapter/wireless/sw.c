@@ -317,6 +317,21 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
 
     mapping_quirks_apply(bt_data);
 
+    if (bt_data->base.pids->subtype == BT_SW_N64) {
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_LEFT] = BIT(SW_X);
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_RIGHT] = BIT(SW_LJ);
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_DOWN] = BIT(SW_Y);
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_UP] = BIT(SW_RJ);
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_LJ] = 0;
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RJ] = 0;
+        bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_LEFT] = BIT(SW_A);
+
+        memcpy(bt_data->raw_src_mappings[PAD].mask, sw_n64_mask,
+            sizeof(bt_data->raw_src_mappings[PAD].mask));
+        memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
+            sizeof(bt_data->raw_src_mappings[PAD].desc));
+    }
+
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         bt_data->base.axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
     }
