@@ -228,7 +228,7 @@ find_info_rsp_end:
             switch (device->hid_state) {
                 case BT_ATT_HID_DEVICE_NAME:
                 {
-                    uint8_t device_name[32] = {0};
+                    char device_name[32] = {0};
 
                     if (rsp_len > 31) {
                         rsp_len = 31;

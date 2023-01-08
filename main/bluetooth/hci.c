@@ -1463,7 +1463,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     }
                 }
                 else {
-                    bt_hid_set_type_flags_from_name(device, remote_name_req_complete->name);
+                    bt_hid_set_type_flags_from_name(device, (char *)remote_name_req_complete->name);
                     bt_hci_stop_inquiry();
                     if (device->ids.type == BT_HID_GENERIC || device->ids.type == BT_SW) {
                         bt_hci_cmd_read_remote_features(&device->acl_handle);

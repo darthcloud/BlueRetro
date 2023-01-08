@@ -23,14 +23,14 @@ const uint8_t bt_hid_led_dev_id_map[] = {
 static const struct bt_name_type bt_name_type[] = {
 #ifndef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
-    {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
     {"Xbox Wireless Controller", BT_XBOX, BT_XBOX_XINPUT, 0},
     {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
     {"Xbox Wireless Contr", BT_XBOX, BT_XBOX_XS, 0},
+    {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
     {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
     {"Nintendo RVL-CNT-01", BT_WII, BT_SUBTYPE_DEFAULT, 0},
-    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
     {"Lic Pro Controller", BT_SW, BT_SW_POWERA, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT)},
+    {"Pro Controller", BT_SW, BT_SUBTYPE_DEFAULT, 0},
     {"Joy-Con (L)", BT_SW, BT_SW_LEFT_JOYCON, BIT(BT_QUIRK_SW_LEFT_JOYCON)},
     {"Joy-Con (R)", BT_SW, BT_SW_RIGHT_JOYCON, BIT(BT_QUIRK_SW_RIGHT_JOYCON)},
     {"HVC Controller", BT_SW, BT_SW_NES, BIT(BT_QUIRK_FACE_BTNS_ROTATE_RIGHT) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
@@ -76,9 +76,9 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
     bt_hid_cmd_sw_set_conf, /* BT_SW */
 };
 
-void bt_hid_set_type_flags_from_name(struct bt_dev *device, const uint8_t* name) {
+void bt_hid_set_type_flags_from_name(struct bt_dev *device, const char* name) {
     for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
-        if (memcmp(name, bt_name_type[i].name, strlen(bt_name_type[i].name)) == 0) {
+        if (strstr(name, bt_name_type[i].name) != NULL) {
             struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
 
             bt_type_update(device->ids.id, bt_name_type[i].type, bt_name_type[i].subtype);
