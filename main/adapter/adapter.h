@@ -55,6 +55,7 @@ enum {
     BT_SW_N64,
     BT_SW_MD_GEN,
     BT_SW_POWERA,
+    BT_SW_HYPERKIN_ADMIRAL,
     BT_8BITDO_GBROS,
     BT_SUBTYPE_MAX,
 };

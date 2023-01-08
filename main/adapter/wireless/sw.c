@@ -168,6 +168,17 @@ static const uint32_t sw_n64_btns_mask[32] = {
     BIT(SW_N_LJ), BIT(SW_N_R), 0, 0,
 };
 
+static const uint32_t sw_admiral_btns_mask[32] = {
+    0, 0, 0, 0,
+    BIT(SW_MINUS), BIT(SW_RJ), BIT(SW_CAPTURE), BIT(SW_HOME),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(SW_B), 0, BIT(SW_A), 0,
+    BIT(SW_PLUS), 0, 0, 0,
+    BIT(SW_SL), BIT(SW_L), 0, 0,
+    0, BIT(SW_R), 0, 0,
+};
+
 static void sw_native_pad_init(struct bt_data *bt_data) {
     struct bt_hid_sw_ctrl_calib *calib;
     struct ctrl_meta *meta = sw_native_axes_meta[bt_data->base.pids->id];
@@ -331,6 +342,15 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
+    else if (bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
+        memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_admiral_btns_mask,
+            sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+
+        memcpy(bt_data->raw_src_mappings[PAD].mask, sw_n64_mask,
+            sizeof(bt_data->raw_src_mappings[PAD].mask));
+        memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
+            sizeof(bt_data->raw_src_mappings[PAD].desc));
+    }
 
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         bt_data->base.axes_cal[i] = -(map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral);
@@ -358,7 +378,12 @@ static void sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
     }
 
     /* Convert hat to regular btns */
-    ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
+    if (bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
+        ctrl_data->btns[0].value |= hat_to_ld_btns[(map->hat - 1) & 0xF];
+    }
+    else {
+        ctrl_data->btns[0].value |= hat_to_ld_btns[map->hat & 0xF];
+    }
 
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &sw_axes_meta[i];

@@ -179,7 +179,9 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                                     bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
 
                                     /* Enable report stall monitoring */
-                                    atomic_set_bit(&device->flags, BT_DEV_REPORT_MON);
+                                    if (device->ids.subtype != BT_SW_HYPERKIN_ADMIRAL) {
+                                        atomic_set_bit(&device->flags, BT_DEV_REPORT_MON);
+                                    }
 
                                     break;
                                 }
