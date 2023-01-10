@@ -133,6 +133,19 @@ static void n64_bluen64(struct raw_src_mapping *map) {
     map->btns_mask[PAD_MM] = BIT(5);
 }
 
+static void rf_warrior(struct raw_src_mapping *map) {
+    map->mask[0] = 0x337F0FFF;
+    map->desc[0] = 0x000000FF;
+
+    map->btns_mask[PAD_RB_LEFT] = BIT(1);
+    map->btns_mask[PAD_RB_RIGHT] = BIT(2);
+    map->btns_mask[PAD_LM] = BIT(4);
+    map->btns_mask[PAD_LS] = 0;
+    map->btns_mask[PAD_RM] = BIT(5);
+    map->btns_mask[PAD_RS] = BIT(6);
+    map->btns_mask[PAD_MS] = 0;
+}
+
 void mapping_quirks_apply(struct bt_data *bt_data) {
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_FACE_BTNS_INVERT)) {
         face_btns_invert(&bt_data->raw_src_mappings[PAD]);
@@ -160,5 +173,8 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_BLUEN64_N64)) {
         n64_bluen64(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_RF_WARRIOR)) {
+        rf_warrior(&bt_data->raw_src_mappings[PAD]);
     }
 }
