@@ -15,6 +15,7 @@
 #include "system/fs.h"
 #include "system/led.h"
 #include "adapter/adapter.h"
+#include "adapter/adapter_debug.h"
 #include "adapter/config.h"
 #include "bluetooth/host.h"
 #include "wired/detect.h"
@@ -101,6 +102,10 @@ static void wl_init_task(void *arg) {
     mc_init();
 
     sys_mgr_init();
+
+#ifdef CONFIG_BLUERETRO_PKT_INJECTION
+    adapter_debug_injector_init();
+#endif
 
     if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
         if (err) {

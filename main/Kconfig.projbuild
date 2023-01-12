@@ -132,6 +132,11 @@ menu "BlueRetro"
 
     menu "Debug"
 
+        config BLUERETRO_PKT_INJECTION
+            bool "Enable packet injection"
+            help
+                Select this to enable packet injection via UART0..
+
         config BLUERETRO_BT_DISABLE
             bool "Disable Bluetooth init"
             help
