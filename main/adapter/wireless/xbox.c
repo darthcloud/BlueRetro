@@ -120,6 +120,7 @@ static const uint32_t xb1_mask[4] = {0xBB3F0FFF, 0x00000000, 0x00000000, 0x00000
 static const uint32_t xb1_mask2[4] = {0x00400000, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xbox_xs_mask[4] = {0xBBFF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_adaptive_mask[4] = {0xBB3FFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t gbros_mask[4] = {0xFF3F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t xb1_btns_mask[32] = {
     0, 0, 0, 0,
@@ -204,7 +205,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
     }
     else if (bt_data->base.pids->subtype == BT_8BITDO_GBROS) {
-        memcpy(bt_data->raw_src_mappings[PAD].mask, xb1_mask,
+        memcpy(bt_data->raw_src_mappings[PAD].mask, gbros_mask,
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, xb1_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
