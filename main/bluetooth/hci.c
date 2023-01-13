@@ -70,6 +70,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"Retro Bit Bluetooth Controller", BT_XBOX, BT_XBOX_XINPUT, BIT(BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS) | BIT(BT_QUIRK_TRIGGER_PRI_SEC_INVERT)},
     {"Joy Controller", BT_XBOX, BT_XBOX_XINPUT, 0},
     {"BlueN64 Gamepad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_BLUEN64_N64)},
+    {"BluControl Gamepad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, 0},
 };
 
 static const struct bt_hci_cp_set_event_filter clr_evt_filter = {
