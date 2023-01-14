@@ -225,10 +225,12 @@ static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired
                 if (config.out_cfg[ctrl_data->index].acc_mode == ACC_MEM) {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_RUMBLE;
                     n64_acc_toggle_fb(ctrl_data->index, 250000);
+                    printf("# %s: Set rumble pak\n", __FUNCTION__);
                 }
                 else {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_MEM;
                     n64_acc_toggle_fb(ctrl_data->index, 75000);
+                    printf("# %s: Set ctrl pak\n", __FUNCTION__);
                 }
             }
         }
@@ -246,6 +248,7 @@ static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired
                 atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE2);
 
                 config.global_cfg.banksel = (config.global_cfg.banksel + 1) & 0x3;
+                printf("# %s: Set ctrl pak bank to %d\n", __FUNCTION__, config.global_cfg.banksel);
             }
         }
     }
