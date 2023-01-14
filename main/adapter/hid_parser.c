@@ -283,6 +283,14 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
 
     while (desc < end) {
         switch (*desc++) {
+            case 0x00:
+                break;
+            case 0x01:
+                desc++;
+                break;
+            case 0x03:
+                desc += 4;
+                break;
             case HID_GI_USAGE_PAGE: /* 0x05 */
                 hid_stack[hid_stack_idx].usage_page = *desc++;
                 break;
@@ -308,6 +316,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                     usage_list[usage_idx++] = *(uint16_t *)desc;
                 }
                 desc += 2;
+                break;
+            case 0x0D:
+                desc++;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
                 hid_stack[hid_stack_idx].logical_min = *desc++;
@@ -357,6 +368,8 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 break;
             case HID_GI_REPORT_SIZE: /* 0x75 */
                 hid_stack[hid_stack_idx].report_size = *desc++;
+                break;
+            case 0x7C:
                 break;
             case HID_MI_INPUT: /* 0x81 */
                 if (!(*desc & 0x01) && hid_stack[hid_stack_idx].usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
@@ -458,6 +471,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 }
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
+                break;
+            case 0xFF:
+                desc += 4;
                 break;
             default:
                 printf("# Unknown HID marker: %02X\n", *--desc);
