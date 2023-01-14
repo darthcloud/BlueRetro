@@ -437,6 +437,7 @@ struct raw_src_mapping {
     uint32_t desc[4];
     uint32_t btns_mask[32];
     uint32_t axes_to_btns[6];
+    const struct ctrl_meta *meta;
 };
 
 struct bt_ids {

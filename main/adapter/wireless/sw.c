@@ -81,6 +81,14 @@ static const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
     {.neutral = 0x8000, .abs_max = 0x5EEC, .deadzone = 0xB00, .polarity = 1},
 };
 
+static const struct ctrl_meta sw_3rd_axes_meta[SW_AXES_MAX] =
+{
+    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
+    {.neutral = 0x8000, .abs_max = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
+};
+
 static const struct ctrl_meta sw_native_axes_meta_default[SW_AXES_MAX] =
 {
     {.neutral = 0x800, .abs_max = 0x578, .deadzone = 0xAE},
@@ -325,6 +333,7 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
         sizeof(bt_data->raw_src_mappings[PAD].desc));
     memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_btns_mask,
         sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+    bt_data->raw_src_mappings[PAD].meta = sw_axes_meta;
 
     mapping_quirks_apply(bt_data);
 
@@ -341,6 +350,7 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
+        bt_data->raw_src_mappings[PAD].meta = sw_3rd_axes_meta;
     }
     else if (bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_admiral_btns_mask,
@@ -350,6 +360,7 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
+        bt_data->raw_src_mappings[PAD].meta = sw_3rd_axes_meta;
     }
 
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
@@ -365,6 +376,8 @@ static void sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         sw_hid_pad_init(bt_data);
     }
+
+    const struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -386,8 +399,8 @@ static void sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
     }
 
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
-        ctrl_data->axes[i].meta = &sw_axes_meta[i];
-        ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - sw_axes_meta[i].neutral + bt_data->base.axes_cal[i];
+        ctrl_data->axes[i].meta = &meta[i];
+        ctrl_data->axes[i].value = map->axes[sw_axes_idx[i]] - meta[i].neutral + bt_data->base.axes_cal[i];
     }
 }
 
