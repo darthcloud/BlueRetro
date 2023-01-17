@@ -26,3 +26,4 @@ entries:
     sea_io (noflash)
     wii_i2c (noflash)
     memory_card (noflash)
+    devcrypto (noflash)
