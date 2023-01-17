@@ -23,6 +23,7 @@
 #include "zephyr/atomic.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "tools/devcrypto.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/wired/wii.h"
@@ -59,6 +60,8 @@ struct wii_ctrl_port {
     uint8_t scl_in_sig;
     uint8_t module;
     uint8_t *reg;
+    uint8_t tmp[32];
+    wiimote_key key;
 };
 
 static uint8_t wii_registers[WII_PORT_MAX][256] = {
@@ -133,15 +136,20 @@ static struct wii_ctrl_port wii_ctrl_ports[WII_PORT_MAX] = {
     },
 };
 
-static inline void write_fifo(struct wii_ctrl_port *port, const uint8_t *data, uint32_t len, uint32_t debug)
+static inline void write_fifo(struct wii_ctrl_port *port, uint8_t reg, uint32_t len, uint32_t debug)
 {
-    /* TODO Encrypt data if port->reg[0xF0] == 0xAA */
     for (uint32_t i = 0; i < len; i++) {
-        WRITE_PERI_REG(port->fifo_addr, data[i]);
+        port->tmp[i] = port->reg[reg + i];
+    }
+    if (port->reg[0xF0] == 0xAA) {
+        wiimote_encrypt(&port->key, len, port->tmp, reg);
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        WRITE_PERI_REG(port->fifo_addr, port->tmp[i]);
     }
     if (debug) {
         for (uint32_t i = 0; i < len; i++) {
-            ets_printf("%02X ", data[i]);
+            ets_printf("%02X ", port->tmp[i]);
         }
     }
 }
@@ -228,7 +236,11 @@ static void i2c_isr(void* arg) {
             rx_fifo_cnt--;
             if (rx_fifo_cnt) {
                 /* Write registers */
+                uint32_t update_key = 0;
                 ets_printf("W%02X: ", reg);
+                if (reg >= 0x40 && reg < 0x50) {
+                    update_key = 1;
+                }
                 for (uint32_t i = 0; i < rx_fifo_cnt; i++, reg++) {
                     uint8_t val = HAL_FORCE_READ_U32_REG_FIELD(port->hw->fifo_data, data);
                     port->reg[reg] = val;
@@ -238,13 +250,16 @@ static void i2c_isr(void* arg) {
                     }
                 }
                 ets_printf("\n");
+                if (update_key) {
+                    wiimote_gen_key(&port->key, &port->reg[0x40]);
+                }
             }
             else {
                 /* Read registers */
                 if (reg < 0x09) {
                     /* Controller status poll */
                     update_status(port, wired_adapter.data[port->id].output, wired_adapter.data[port->id].output_mask);
-                    write_fifo(port, port->reg + reg, 32, 0);
+                    write_fifo(port, reg, 32, 0);
                     ++wired_adapter.data[port->id].frame_cnt;
                     wii_gen_turbo_mask(&wired_adapter.data[port->id]);
                 }
@@ -254,7 +269,7 @@ static void i2c_isr(void* arg) {
                         len = 32;
                     }
                     ets_printf("R%02X: ", reg);
-                    write_fifo(port, port->reg + reg, len, 1);
+                    write_fifo(port, reg, len, 1);
                     ets_printf("\n");
                 }
             }
