@@ -287,6 +287,7 @@ enum {
     BT_QUIRK_BLUEN64_N64,
     BT_QUIRK_RF_WARRIOR,
     BT_QUIRK_8BITDO_SATURN,
+    BT_QUIRK_STADIA,
 };
 
 /* Wired flags */
