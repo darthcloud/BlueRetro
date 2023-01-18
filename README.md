@@ -14,11 +14,13 @@
 Buying these commercial adapters help the continued development of the BlueRetro firmware!!\
 Thanks to all sponsors!!
 
-&emsp;&emsp;[<img src="https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png" width="400"/>](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
+[<img src="https://www.willsconsolemodifications.co.uk/image/catalog/Logo.png" width="400"/>](https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52)
 * PSUnoRetro by [WillConsole](https://twitter.com/WillConsole): PSX & PS2 single port dongle.\
   https://www.willsconsolemodifications.co.uk/index.php?route=product/product&path=59_67&product_id=52
 
-  [<img src="https://www.humblebazooka.com/images/HB_2021_white_rainbow_1200px.png" width="400"/>](https://www.humblebazooka.com)
+<BR>
+
+[<img src="https://www.humblebazooka.com/images/HB_2021_white_rainbow_1200px.png" width="400"/>](https://www.humblebazooka.com)
 * JagBT by [Humble Bazooka](https://twitter.com/humblebazooka): Atari Jaguar single port dongle.\
   https://www.humblebazooka.com/product/atari-jaguar-bluetooth-adapter/
 * Neo Geo BT by [Humble Bazooka](https://twitter.com/humblebazooka): SNK Neo Geo single port dongle.\
@@ -29,27 +31,37 @@ Thanks to all sponsors!!
   https://www.humblebazooka.com/product/turbo-bt-turbografx-16-bluetooth-adapter/
 * 3DO BT by [Humble Bazooka](https://twitter.com/humblebazooka): 3DO dongle.\
   https://www.humblebazooka.com/products/3do-bt-3do-bluetooth-adapter
+
+<BR>
   
-  [<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
+[<img src="https://i.imgur.com/qsCLN9R.png" width="400"/>](https://www.tindie.com/stores/retrotime/)
 * N64 Bluetooth Controller Receiver by [bixxewoscht](https://twitter.com/bixxewoscht): N64 single port dongle.\
   https://8bitmods.com/n64-blueretro-bt-controller-receiver-with-memory-pak-original-grey/
-  
-  [<img src="https://static.wixstatic.com/media/ce8a57_fe2ccaa817704811aefee7a0bbd74098~mv2.png/v1/fill/w_445,h_60,al_c,q_85,enc_auto/RetroOnyx_logo_primary_grey_RGB60px.png" width="400"/>](https://www.retroonyx.com/)
+
+<BR>
+
+[<img src="https://static.wixstatic.com/media/ce8a57_fe2ccaa817704811aefee7a0bbd74098~mv2.png/v1/fill/w_445,h_60,al_c,q_85,enc_auto/RetroOnyx_logo_primary_grey_RGB60px.png" width="400"/>](https://www.retroonyx.com/)
 * Virtual Boy BlueRetro Adapter by [RetroOnyx](https://twitter.com/mellott124): Virtual Boy dongle.\
   https://www.retroonyx.com/product-page/virtual-boy-blueretro-adapter
+
+<BR>
   
   [<img src="http://www.retroscaler.com/wp-content/uploads/2022/11/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
 * RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
   https://www.aliexpress.com/item/1005004114458491.html
 * RetroScaler BlueRetro Motor Wireless Game Controllers Adapter For Nintendo GameCube by [RetroScaler](https://twitter.com/RetroScaler): GameCube single port dongle.\
   https://www.aliexpress.us/item/1005004917765807.html
+
+<BR>
   
-  [<img src="https://cdn.shopify.com/s/files/1/0550/1855/3556/files/mikegoble2ND_Logo_05_R1A_5f70d3e5-90bb-4e08-a4bc-1e91a60bd833.png" width="400"/>](https://www.laserbear.net/)
+[<img src="https://cdn.shopify.com/s/files/1/0550/1855/3556/files/mikegoble2ND_Logo_05_R1A_5f70d3e5-90bb-4e08-a4bc-1e91a60bd833.png" width="400"/>](https://www.laserbear.net/)
 * GameCube Blue Retro Internal Adapter by [Laser Bear Industries](https://twitter.com/collingall): GameCube controller PCB replacement with integrated BlueRetro.\
   https://www.laserbear.net/products/gamecube-blue-retro-internal-adapter \
   https://8bitmods.com/internal-bluetooth-blueretro-adapter-for-gamecube/
+
+<BR>
   
-  [<img src="https://pbs.twimg.com/profile_banners/1219272912999473153/1637604861" width="400"/>](https://www.tindie.com/stores/grechtech/)
+[<img src="https://pbs.twimg.com/profile_banners/1219272912999473153/1637604861" width="400"/>](https://www.tindie.com/stores/grechtech/)
 * RetroRosetta by [GrechTech](https://twitter.com/GrechTech): BlueRetro universal core and cables.\
   https://www.tindie.com/stores/grechtech/
 
