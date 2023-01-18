@@ -80,7 +80,7 @@
 #ifdef BLUERETRO
 #include "esp_private/system_internal.h"
 #include "esp_private/rtc_ctrl.h"
-#include "hal/brownout_hal.h"
+#include "hal/brownout_ll.h"
 #include "bare_metal_app_cpu.h"
 #endif
 
@@ -281,7 +281,7 @@ static void rtc_brownout_isr_handler(void *arg)
      * handler returns. Since restart is called here, the flag needs to be
      * cleared manually.
      */
-    brownout_hal_intr_clear();
+    brownout_ll_intr_clear();
     /* Stall the other CPU to make sure the code running there doesn't use UART
      * at the same time as the following esp_rom_printf.
      */
@@ -331,7 +331,7 @@ static void do_core_init(void)
 #ifdef BLUERETRO
     rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M, 0);
 
-    brownout_hal_intr_enable(true);
+    brownout_ll_intr_enable(true);
 #endif
 #endif
 

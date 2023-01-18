@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <esp_ota_ops.h>
+#include <esp_system.h>
 #include "host.h"
 #include "hci.h"
 #include "att.h"
@@ -280,7 +281,7 @@ static void bt_att_cfg_cmd_abi_ver_rsp(uint16_t handle) {
 }
 
 static void bt_att_cfg_cmd_fw_ver_rsp(uint16_t handle) {
-    const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+    const esp_app_desc_t *app_desc = esp_app_get_description();
 
     memcpy(bt_hci_pkt_tmp.att_data, app_desc->version, 23);
     bt_hci_pkt_tmp.att_data[23] = 0;
