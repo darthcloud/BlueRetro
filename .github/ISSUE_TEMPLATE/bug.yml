@@ -1,0 +1,110 @@
+name: Bug Report
+description: Always better to ask question first in the discussions forum see link below.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Always better to ask questions first in the [discussions forum](https://github.com/darthcloud/BlueRetro/discussions).
+  - type: input
+    id: version
+    attributes:
+      label: BlueRetro firmware version
+      description: Which version of the BlueRetro firmware is currently installed on your device?
+    validations:
+      required: true
+  - type: dropdown
+    id: spec
+    attributes:
+      label: BlueRetro firmware specification
+      description: What is the hardware specification of the used firmware?
+      options:
+        - HW1
+        - HW2
+    validations:
+      required: true
+  - type: dropdown
+    id: variant
+    attributes:
+      label: BlueRetro firmware variant
+      description: What is the variant of the used firmware?
+      options:
+        - Universal
+        - System specific
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: BlueRetro hardware type
+      description: What type of BlueRetro hardware are you using?
+      options:
+        - External adapter dongle (1 port only)
+        - External adapter with detachable cord
+        - External adapter with multiple hardwired cord
+        - Internal install DIY
+        - Internal install modkit
+    validations:
+      required: true
+  - type: input
+    id: manuf
+    attributes:
+      label: Manufacturer
+      description: Who built your BlueRetro hardware?
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System used
+      description: Which system BlueRetro is used on?
+      options:
+        - Atari 2600
+        - Atari 7800
+        - SEGA MAster System
+        - SNK NeoGeo AES
+        - Supergun
+        - JAMMA
+        - Nintendo Famicom NES
+        - NEC PC-Engine TurboGrafx-16
+        - SEGA MegaDrive Genesis
+        - Nintendo SFC SNES
+        - Philips CD-i
+        - Amiga CD32
+        - 3DO
+        - Atari Jaguar
+        - Sony PlayStation 1
+        - SEGA Saturn
+        - NEC PC-FX
+        - JVS
+        - Nintendo 64
+        - SEGA Dreamcast
+        - Sony PlayStation 2
+        - Nintendo GameCube
+        - Nintendo Wii Extension
+        - Nintendo Mini Classic
+        - Nintendo VirtualBoy
+        - GBAHD
+        - Handheld
+    validations:
+      required: true
+  - type: input
+    id: bluetooth
+    attributes:
+      label: Bluetooth controller brand & name
+      description: Which Bluetooth controller was used?
+  - type: textarea
+    id: bug-desc
+    attributes:
+      label: What is problem?
+    validations:
+      required: true
+  - type: textarea
+    id: expect
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: attachment
+    attributes:
+      label: Attach files like logs or Bluetooth traces here
