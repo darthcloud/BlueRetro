@@ -83,7 +83,7 @@ static const uint32_t hid_pad_default_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, 0, 0, 0,
+    0, BIT(HID_Z), 0, BIT(HID_C),
     BIT(HID_X), BIT(HID_B), BIT(HID_A), BIT(HID_Y),
     BIT(HID_START), BIT(HID_SELECT), BIT(HID_MENU), 0,
     BIT(HID_L), BIT(HID_LB), 0, BIT(HID_LJ),
@@ -446,7 +446,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         uint32_t hid_mask = (1 << report->usages[meta->hid_btn_idx].bit_size) - 1;
 
         /* Use a good default for most modern controller */
-        for (uint32_t i = 16; i < ARRAY_SIZE(generic_btns_mask); i++) {
+        for (uint32_t i = 12; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (hid_pad_default_btns_mask[i] && !(map->mask[0] & BIT(i))) {
                 map->mask[0] |= BIT(i);
                 map->btns_mask[i] = hid_pad_default_btns_mask[i];
@@ -455,7 +455,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         }
 
         /* fillup what is left */
-        for (uint32_t mask = (1U << 16), btn = 0, i = 16; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
+        for (uint32_t mask = (1U << 12), btn = 0, i = 12; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
             while (!(hid_mask & BIT(btn))) {
                 btn++;
                 if (btn >= report->usages[meta->hid_btn_idx].bit_size) {
