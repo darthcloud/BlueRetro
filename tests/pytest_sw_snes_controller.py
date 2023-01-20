@@ -9,7 +9,6 @@ from device_data.gc import GC
 DEVICE_NAME = 'SNES Controller'
 
 
-@pytest.mark.skip(reason="Broken since v1.8.2.")
 def test_sw_snes_controller_default_buttons_mapping(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
     # Connect device
