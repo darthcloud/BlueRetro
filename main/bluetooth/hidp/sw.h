@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -29,9 +29,14 @@ struct bt_hid_sw_ctrl_calib {
 };
 
 #define BT_HIDP_SW_SET_CONF 0x01
+#define BT_HIDP_SW_SUBCMD_READ_INFO 0x02
 #define BT_HIDP_SW_SUBCMD_SET_REP_MODE 0x03
+#define BT_HIDP_SW_SUBCMD_TRIGGER_TIME 0x04
+#define BT_HIDP_SW_SUBCMD_DISABLE_SHIP 0x08
 #define BT_HIDP_SW_SUBCMD_READ_SPI 0x10
+#define BT_HIDP_SW_SUBCMD_SET_MCU_CFG 0x21
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30
+#define BT_HIDP_SW_SUBCMD_ENABLE_IMU 0x40
 #define BT_HIDP_SW_SUBCMD_EN_RUMBLE 0x48
 struct bt_hidp_sw_conf {
     uint8_t tid;
