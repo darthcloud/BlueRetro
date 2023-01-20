@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -50,7 +50,7 @@ struct jvs_map {
     uint8_t test;
 } __packed;
 
-static const uint32_t jvs_mask[4] = {0xBBFF0F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jvs_mask[4] = {0xBBFF0F0F, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t jvs_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t jvs_btns_mask[32] = {
     0, 0, 0, 0,

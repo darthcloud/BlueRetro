@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -85,7 +85,7 @@ struct real_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t real_mask[4] = {0x33370F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t real_mask[4] = {0x33370F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t real_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t real_btns_mask[32] = {
     0, 0, 0, 0,
@@ -98,7 +98,7 @@ static DRAM_ATTR const uint32_t real_btns_mask[32] = {
     BIT(REAL_R), BIT(REAL_R), 0, 0,
 };
 
-static const uint32_t real_fs_mask[4] = {0x333F0FCF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t real_fs_mask[4] = {0x333F0FCF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t real_fs_desc[4] = {0x000000CF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t real_fs_btns_mask[32] = {
     0, 0, 0, 0,
@@ -111,7 +111,7 @@ static DRAM_ATTR const uint32_t real_fs_btns_mask[32] = {
     BIT(REAL_FS_R), BIT(REAL_FS_R), 0, 0,
 };
 
-static const uint32_t real_mouse_mask[4] = {0x190000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t real_mouse_mask[4] = {0x190000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t real_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t real_mouse_btns_mask[32] = {
     0, 0, 0, 0,

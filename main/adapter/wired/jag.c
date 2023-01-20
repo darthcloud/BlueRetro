@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,7 +68,7 @@ struct jag_map {
     uint32_t buttons_s1[3][4];
 } __packed;
 
-static const uint32_t jag_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jag_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t jag_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t jag_btns_mask[][32] = {
     /* Pause, A, Up, Down, Left, Right */
@@ -117,7 +117,7 @@ static DRAM_ATTR const uint32_t jag_btns_mask[][32] = {
     },
 };
 
-static const uint32_t jag_6d_mask[4] = {0xFFFF7FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t jag_6d_mask[4] = {0xFFFF7FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t jag_6d_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t jag_6d_btns_mask[][32] = {
     /* Pause, A, Up, Down, Left, Right */

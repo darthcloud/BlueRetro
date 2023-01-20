@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -341,8 +341,6 @@ void adapter_bridge(struct bt_data *bt_data) {
             return;
         }
 
-        sys_macro_hdl(ctrl_input, &bt_data->base.flags[PAD]);
-
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
 #ifdef CONFIG_BLUERETRO_JSON_DBG
         printf("{\"log_type\": \"generic_input\"");
@@ -372,6 +370,7 @@ void adapter_bridge(struct bt_data *bt_data) {
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
                     ctrl_output[i].index = i;
+                    sys_macro_hdl(&ctrl_output[i], &bt_data->base.flags[PAD]);
                     wired_from_generic(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -75,7 +75,7 @@ struct pce_mouse_map {
     uint8_t relative[2];
 } __packed;
 
-static const uint32_t pce_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pce_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -88,7 +88,7 @@ static const uint32_t pce_mouse_btns_mask[32] = {
     P1_R_II_MASK, 0, 0, 0,
 };
 
-static const uint32_t pce_mask[4] = {0x00350F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_mask[4] = {0x00350F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pce_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t pce_btns_mask[][32] = {
     /* URDL */
@@ -126,7 +126,7 @@ static DRAM_ATTR const uint32_t pce_btns_mask[][32] = {
     },
 };
 
-static const uint32_t pce_6btns_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pce_6btns_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pce_6btns_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t pce_6btns_btns_mask[][32] = {
     /* URDL */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -44,7 +44,7 @@ struct para_2p_map {
     uint32_t buttons_high;
 } __packed;
 
-static const uint32_t para_2p_mask[4] = {0x00050F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t para_2p_mask[4] = {0x00050F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t para_2p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t para_2p_btns_mask[2][32] = {
     {

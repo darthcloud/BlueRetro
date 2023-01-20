@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,8 +11,9 @@
 #define CONFIG_MAGIC_V0 0xA5A5A5A5
 #define CONFIG_MAGIC_V1 0xF380D824
 #define CONFIG_MAGIC_V2 0x1782DB8A
-#define CONFIG_MAGIC CONFIG_MAGIC_V2
-#define CONFIG_VERSION 2
+#define CONFIG_MAGIC_V3 0xAB89C69A
+#define CONFIG_MAGIC CONFIG_MAGIC_V3
+#define CONFIG_VERSION 3
 #define ADAPTER_MAPPING_MAX 128
 
 enum {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,6 +19,10 @@ static uint32_t config_version_magic[] = {
     CONFIG_MAGIC_V0,
     CONFIG_MAGIC_V1,
     CONFIG_MAGIC_V2,
+    CONFIG_MAGIC_V3,
+};
+static uint8_t config_default_combo[BR_COMBO_CNT] = {
+    PAD_LM, PAD_RM, PAD_MM, PAD_RB_UP, PAD_RB_LEFT, PAD_RB_RIGHT, PAD_RB_DOWN, PAD_LD_UP, PAD_LD_DOWN
 };
 
 static void config_init_struct(struct config *data);
@@ -26,10 +30,12 @@ static int32_t config_load_from_file(struct config *data, char *filename);
 static int32_t config_store_on_file(struct config *data, char *filename);
 static int32_t config_v0_update(struct config *data, char *filename);
 static int32_t config_v1_update(struct config *data, char *filename);
+static int32_t config_v2_update(struct config *data, char *filename);
 
 static int32_t (*config_ver_update[])(struct config *data, char *filename) = {
     config_v0_update,
     config_v1_update,
+    config_v2_update,
     NULL,
 };
 
@@ -85,6 +91,27 @@ static int32_t config_get_version(uint32_t magic) {
     return -1;
 }
 
+static int32_t config_v2_update(struct config *data, char *filename) {
+    data->magic = CONFIG_MAGIC;
+
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+        uint32_t j = data->in_cfg[i].map_size;
+        data->in_cfg[i].map_size += BR_COMBO_CNT;
+        for (uint32_t k = 0; k < BR_COMBO_CNT; j++, k++) {
+            data->in_cfg[i].map_cfg[j].src_btn = config_default_combo[k];
+            data->in_cfg[i].map_cfg[j].dst_btn = k + BR_COMBO_BASE_1;
+            data->in_cfg[i].map_cfg[j].dst_id = i;
+            data->in_cfg[i].map_cfg[j].perc_max = 100;
+            data->in_cfg[i].map_cfg[j].perc_threshold = 50;
+            data->in_cfg[i].map_cfg[j].perc_deadzone = 135;
+            data->in_cfg[i].map_cfg[j].turbo = 0;
+            data->in_cfg[i].map_cfg[j].algo = 0;
+        }
+    }
+
+    return config_store_on_file(data, filename);
+}
+
 static void config_init_struct(struct config *data) {
     data->magic = CONFIG_MAGIC;
     data->global_cfg.system_cfg = WIRED_AUTO;
@@ -97,10 +124,21 @@ static void config_init_struct(struct config *data) {
         data->out_cfg[i].acc_mode = ACC_NONE;
         data->in_cfg[i].bt_dev_id = 0x00; /* Not used placeholder */
         data->in_cfg[i].bt_subdev_id = 0x00;  /* Not used placeholder */
-        data->in_cfg[i].map_size = KBM_MAX;
-        for (uint32_t j = 0; j < KBM_MAX; j++) {
+        data->in_cfg[i].map_size = KBM_MAX + BR_COMBO_CNT;
+        uint32_t j = 0;
+        for (; j < KBM_MAX; j++) {
             data->in_cfg[i].map_cfg[j].src_btn = j;
             data->in_cfg[i].map_cfg[j].dst_btn = j;
+            data->in_cfg[i].map_cfg[j].dst_id = i;
+            data->in_cfg[i].map_cfg[j].perc_max = 100;
+            data->in_cfg[i].map_cfg[j].perc_threshold = 50;
+            data->in_cfg[i].map_cfg[j].perc_deadzone = 135;
+            data->in_cfg[i].map_cfg[j].turbo = 0;
+            data->in_cfg[i].map_cfg[j].algo = 0;
+        }
+        for (uint32_t k = 0; k < BR_COMBO_CNT; j++, k++) {
+            data->in_cfg[i].map_cfg[j].src_btn = config_default_combo[k];
+            data->in_cfg[i].map_cfg[j].dst_btn = k + BR_COMBO_BASE_1;
             data->in_cfg[i].map_cfg[j].dst_id = i;
             data->in_cfg[i].map_cfg[j].perc_max = 100;
             data->in_cfg[i].map_cfg[j].perc_threshold = 50;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,12 +8,14 @@
 #include "system/manager.h"
 #include "macro.h"
 
-#define MACRO_BASE (BIT(PAD_MM) | BIT(PAD_LM) | BIT(PAD_RM))
-#define SYS_RESET (MACRO_BASE | BIT(PAD_RB_LEFT))
-#define BT_INQUIRY (MACRO_BASE | BIT(PAD_RB_RIGHT))
-#define SYS_POWER_OFF (MACRO_BASE | BIT(PAD_RB_DOWN))
-#define FACTORY_RESET (MACRO_BASE | BIT(PAD_LD_UP) | BIT(PAD_RB_UP))
-#define DEEP_SLEEP (MACRO_BASE | BIT(PAD_LD_DOWN) | BIT(PAD_RB_UP))
+#define BIT32(n) (1UL << ((n) & 0x1F))
+
+#define MACRO_BASE (BIT32(BR_COMBO_BASE_1) | BIT32(BR_COMBO_BASE_2) | BIT32(BR_COMBO_BASE_3))
+#define SYS_RESET (MACRO_BASE | BIT32(BR_COMBO_SYS_RESET))
+#define BT_INQUIRY (MACRO_BASE | BIT32(BR_COMBO_BT_INQUIRY))
+#define SYS_POWER_OFF (MACRO_BASE | BIT32(BR_COMBO_SYS_POWER_OFF))
+#define FACTORY_RESET (MACRO_BASE | BIT32(BR_COMBO_BASE_4) | BIT32(BR_COMBO_FACTORY_RESET))
+#define DEEP_SLEEP (MACRO_BASE | BIT32(BR_COMBO_BASE_4) | BIT32(BR_COMBO_DEEP_SLEEP))
 
 struct macro {
     uint32_t macro;
@@ -43,24 +45,8 @@ static void check_macro(int32_t value, struct macro *macro, atomic_t *flags) {
     }
 }
 
-void sys_macro_hdl(struct wireless_ctrl *ctrl_data, atomic_t *flags) {
-    int32_t value = ctrl_data->btns[0].value;
-
-    if (ctrl_data->axes[TRIG_L].meta && *ctrl_data->desc & BIT(PAD_LM)) {
-        int32_t threshold = (int32_t)(((float)50.0/100) * ctrl_data->axes[TRIG_L].meta->abs_max);
-
-        if (ctrl_data->axes[TRIG_L].value > threshold) {
-            value |= BIT(PAD_LM);
-        }
-    }
-
-    if (ctrl_data->axes[TRIG_R].meta && *ctrl_data->desc & BIT(PAD_RM)) {
-        int32_t threshold = (int32_t)(((float)50.0/100) * ctrl_data->axes[TRIG_R].meta->abs_max);
-
-        if (ctrl_data->axes[TRIG_R].value > threshold) {
-            value |= BIT(PAD_RM);
-        }
-    }
+void sys_macro_hdl(struct wired_ctrl *ctrl_data, atomic_t *flags) {
+    int32_t value = ctrl_data->btns[3].value;
 
     for (uint32_t i = 0; i < sizeof(macros)/sizeof(macros[0]); i++) {
         struct macro *macro = &macros[i];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, Jacques Gagnon
+ * Copyright (c) 2020-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -103,7 +103,7 @@ struct sega_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t sega_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sega_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -122,7 +122,7 @@ struct genesis_map {
     uint16_t twh_buttons;
 } __packed;
 
-static const uint32_t genesis_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t genesis_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t genesis_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t genesis_btns_mask[2][3][32] = {
     {

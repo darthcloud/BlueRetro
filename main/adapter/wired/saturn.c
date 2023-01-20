@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -84,9 +84,9 @@ struct sega_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t saturn_mask[4] = {0x331F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_mask[4] = {0x331F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t saturn_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t saturn_3d_mask[4] = {0x331F0F0F, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t saturn_3d_mask[4] = {0x331F0F0F, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t saturn_3d_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t saturn_btns_mask[32] = {
     0, 0, 0, 0,
@@ -99,7 +99,7 @@ static DRAM_ATTR const uint32_t saturn_btns_mask[32] = {
     BIT(SATURN_R), BIT(SATURN_Z), 0, 0,
 };
 
-static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sega_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t sega_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sega_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -112,7 +112,7 @@ static const uint32_t sega_mouse_btns_mask[32] = {
     BIT(SATURN_B), 0, 0, 0,
 };
 
-static const uint32_t saturn_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
+static const uint32_t saturn_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF | BR_COMBO_MASK};
 static const uint32_t saturn_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint8_t saturn_kb_scancode[KBM_MAX] = {
  /* Source: https://plutiedev.com/saturn-keyboard */

@@ -49,7 +49,7 @@ static DRAM_ATTR const uint8_t wiic_axes_idx[ADAPTER_MAX_AXES] =
     0,       2,       1,       3,       4,      5
 };
 
-static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t wiic_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t wiic_pro_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t wiic_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t wiic_btns_mask[32] = {

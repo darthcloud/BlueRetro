@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -53,7 +53,7 @@ struct gc_kb_map {
     uint8_t xor;
 } __packed;
 
-static const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t gc_btns_mask[32] = {
     0, 0, 0, 0,
@@ -66,7 +66,7 @@ static DRAM_ATTR const uint32_t gc_btns_mask[32] = {
     0, BIT(GC_Z), BIT(GC_R), 0,
 };
 
-static const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000};
+static const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000 | BR_COMBO_MASK};
 static const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint8_t gc_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */

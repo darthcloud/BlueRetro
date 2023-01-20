@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -77,7 +77,7 @@ struct npiso_trackball_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t npiso_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
@@ -90,7 +90,7 @@ static DRAM_ATTR const uint32_t npiso_btns_mask[32] = {
     BIT(NPISO_R), BIT(NPISO_R), 0, 0,
 };
 
-static const uint32_t npiso_vb_mask[4] = {0xBBF50FF0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_vb_mask[4] = {0xBBF50FF0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t npiso_vb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t npiso_vb_btns_mask[32] = {
     0, 0, 0, 0,
@@ -103,7 +103,7 @@ static DRAM_ATTR const uint32_t npiso_vb_btns_mask[32] = {
     BIT(NPISO_R), BIT(NPISO_R), 0, 0,
 };
 
-static const uint32_t npiso_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t npiso_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -116,7 +116,7 @@ static const uint32_t npiso_mouse_btns_mask[32] = {
     BIT(NPISO_Y), 0, 0, 0,
 };
 
-static const uint32_t npiso_trackball_mask[4] = {0x1907C0F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_trackball_mask[4] = {0x1907C0F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t npiso_trackball_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t npiso_trackball_btns_mask[32] = {
     0, 0, 0, 0,

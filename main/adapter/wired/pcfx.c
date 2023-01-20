@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -62,7 +62,7 @@ struct pcfx_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t pcfx_mask[4] = {0xBB3F0F00, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pcfx_mask[4] = {0xBB3F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pcfx_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t pcfx_btns_mask[32] = {
     0, 0, 0, 0,
@@ -75,7 +75,7 @@ static DRAM_ATTR const uint32_t pcfx_btns_mask[32] = {
     BIT(PCFX_VI), BIT(PCFX_VI), 0, 0,
 };
 
-static const uint32_t pcfx_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t pcfx_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pcfx_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pcfx_mouse_btns_mask[32] = {
     0, 0, 0, 0,

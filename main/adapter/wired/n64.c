@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -64,7 +64,7 @@ struct n64_kb_map {
     uint8_t bitfield;
 } __packed;
 
-static const uint32_t n64_mask[4] = {0x33DFAFFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_mask[4] = {0x33DFAFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
@@ -77,7 +77,7 @@ static DRAM_ATTR const uint32_t n64_btns_mask[32] = {
     BIT(N64_Z), BIT(N64_R), 0, 0,
 };
 
-static const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t n64_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t n64_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -90,7 +90,7 @@ static const uint32_t n64_mouse_btns_mask[32] = {
     BIT(N64_A), 0, 0, 0,
 };
 
-static const uint32_t n64_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x2D7FFFFF, 0x0007C000};
+static const uint32_t n64_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x2D7FFFFF, 0x0007C000 | BR_COMBO_MASK};
 static const uint32_t n64_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint16_t n64_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */

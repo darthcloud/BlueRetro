@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -80,7 +80,7 @@ struct ps_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t ps_btns_mask[32] = {
     0, 0, 0, 0,
@@ -103,7 +103,7 @@ static const uint8_t ps_btns_idx[32] = {
     15, 13, 0, 0,
 };
 
-static const uint32_t ps_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t ps_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps_mouse_btns_mask[32] = {
     0, 0, 0, 0,
@@ -116,7 +116,7 @@ static const uint32_t ps_mouse_btns_mask[32] = {
     BIT(PS_R1), 0, 0, 0,
 };
 
-static const uint32_t ps_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF};
+static const uint32_t ps_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF | BR_COMBO_MASK};
 static const uint32_t ps_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static const uint8_t ps_kb_scancode[KBM_MAX] = {
  /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
