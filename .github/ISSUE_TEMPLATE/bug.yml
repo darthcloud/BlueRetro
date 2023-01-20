@@ -1,10 +1,10 @@
 name: Bug Report
-description: Always better to ask question first in the discussions forum see link below.
+description: File a bug report. For questions use discussions forum.
 body:
   - type: markdown
     attributes:
       value: |
-        Always better to ask questions first in the [discussions forum](https://github.com/darthcloud/BlueRetro/discussions).
+        For a single bug report only. For questions use the [discussions forum](https://github.com/darthcloud/BlueRetro/discussions).
   - type: input
     id: version
     attributes:
@@ -18,6 +18,7 @@ body:
       label: BlueRetro firmware specification
       description: What is the hardware specification of the used firmware?
       options:
+        - Select a spec
         - HW1
         - HW2
     validations:
@@ -28,6 +29,7 @@ body:
       label: BlueRetro firmware variant
       description: What is the variant of the used firmware?
       options:
+        - Select a variant
         - Universal
         - System specific
     validations:
@@ -38,6 +40,7 @@ body:
       label: BlueRetro hardware type
       description: What type of BlueRetro hardware are you using?
       options:
+        - Select a type
         - External adapter dongle (1 port only)
         - External adapter with detachable cord
         - External adapter with multiple hardwired cord
@@ -58,6 +61,7 @@ body:
       label: System used
       description: Which system BlueRetro is used on?
       options:
+        - Select a system
         - Atari 2600
         - Atari 7800
         - SEGA MAster System
@@ -95,7 +99,7 @@ body:
   - type: textarea
     id: bug-desc
     attributes:
-      label: What is problem?
+      label: What is problem? (only list ONE problem per report)
     validations:
       required: true
   - type: textarea
