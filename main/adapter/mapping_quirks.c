@@ -156,6 +156,42 @@ static void rf_warrior(struct raw_src_mapping *map) {
     map->btns_mask[PAD_MS] = 0;
 }
 
+enum {
+    STADIA_CAPTURE = 0,
+    STADIA_ASSISTANT,
+    STADIA_LT_L2,
+    STADIA_RT_R2,
+    STADIA_STADIA,
+    STADIA_MENU,
+    STADIA_OPTIONS,
+    STADIA_R3,
+    STADIA_L3,
+    STADIA_RB_R1,
+    STADIA_LB_L1,
+    STADIA_Y,
+    STADIA_X,
+    STADIA_B,
+    STADIA_A,
+};
+
+static void stadia(struct raw_src_mapping *map) {
+    map->btns_mask[PAD_RD_LEFT] = BIT(STADIA_CAPTURE);
+    map->btns_mask[PAD_RB_LEFT] = BIT(STADIA_X);
+    map->btns_mask[PAD_RB_RIGHT] = BIT(STADIA_B);
+    map->btns_mask[PAD_RB_DOWN] = BIT(STADIA_A);
+    map->btns_mask[PAD_RB_UP] = BIT(STADIA_Y);
+    map->btns_mask[PAD_MM] = BIT(STADIA_MENU);
+    map->btns_mask[PAD_MS] = BIT(STADIA_OPTIONS);
+    map->btns_mask[PAD_MT] = BIT(STADIA_STADIA);
+    map->btns_mask[PAD_MQ] = BIT(STADIA_ASSISTANT);
+    map->btns_mask[PAD_LM] = 0;
+    map->btns_mask[PAD_LS] = BIT(STADIA_LB_L1);
+    map->btns_mask[PAD_LJ] = BIT(STADIA_L3);
+    map->btns_mask[PAD_RM] = 0;
+    map->btns_mask[PAD_RS] = BIT(STADIA_RB_R1);
+    map->btns_mask[PAD_RJ] = BIT(STADIA_R3);
+}
+
 void mapping_quirks_apply(struct bt_data *bt_data) {
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_FACE_BTNS_INVERT)) {
         face_btns_invert(&bt_data->raw_src_mappings[PAD]);
@@ -192,5 +228,8 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_RF_WARRIOR)) {
         rf_warrior(&bt_data->raw_src_mappings[PAD]);
+    }
+        if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_STADIA)) {
+        stadia(&bt_data->raw_src_mappings[PAD]);
     }
 }
