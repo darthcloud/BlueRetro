@@ -229,7 +229,7 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_RF_WARRIOR)) {
         rf_warrior(&bt_data->raw_src_mappings[PAD]);
     }
-        if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_STADIA)) {
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_STADIA)) {
         stadia(&bt_data->raw_src_mappings[PAD]);
     }
 }
