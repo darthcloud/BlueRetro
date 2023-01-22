@@ -294,13 +294,13 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
 
     if (pGPIOConfig->pin_bit_mask == 0 ||
         pGPIOConfig->pin_bit_mask & ~SOC_GPIO_VALID_GPIO_MASK) {
-        ets_printf("GPIO_PIN mask error\n");
+        ets_printf("# GPIO_PIN mask error\n");
         return ESP_ERR_INVALID_ARG;
     }
 
     if (pGPIOConfig->mode & GPIO_MODE_DEF_OUTPUT &&
         pGPIOConfig->pin_bit_mask & ~SOC_GPIO_VALID_OUTPUT_GPIO_MASK) {
-        ets_printf("GPIO can only be used as input mode\n");
+        ets_printf("# GPIO can only be used as input mode\n");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -345,7 +345,7 @@ int32_t gpio_config_iram(const gpio_config_t *pGPIOConfig)
                 gpio_pulldown_dis_iram(io_num);
             }
 
-            ets_printf("GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d\n",
+            ets_printf("# GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d\n",
                 io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_ll_set_intr_type(&GPIO, io_num, pGPIOConfig->intr_type);
 
