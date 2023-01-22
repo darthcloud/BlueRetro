@@ -558,7 +558,7 @@ int32_t bt_host_init(void) {
 
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     gpio_config_t io_conf = {0};
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;

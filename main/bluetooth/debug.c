@@ -43,7 +43,7 @@ void bt_dbg(uint8_t *data, uint16_t len) {
         std_dev = getStdDev(interval)/1000;
         printf("\e[1;1H\e[2J");
 
-        printf("Samples: %d\n", counter);
+        printf("Samples: %ld\n", counter);
         printf("Average: %.6f ms\n", average);
         printf("Max:     %.6f ms\n", max);
         printf("Min:     %.6f ms\n", min);
