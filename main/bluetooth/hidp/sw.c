@@ -84,7 +84,12 @@ void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
-    *cal = &calib[dev_id];
+    struct bt_dev *device = NULL;
+    bt_host_get_dev_from_id(dev_id, &device);
+
+    if (device && device->hid_state > SW_INIT_STATE_EN_RUMBLE) {
+        *cal = &calib[dev_id];
+    }
 }
 
 static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
