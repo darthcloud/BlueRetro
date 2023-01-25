@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -280,8 +280,6 @@ enum {
     BT_QUIRK_FACE_BTNS_ROTATE_RIGHT,
     BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS,
     BT_QUIRK_TRIGGER_PRI_SEC_INVERT,
-    BT_QUIRK_SW_LEFT_JOYCON,
-    BT_QUIRK_SW_RIGHT_JOYCON,
     BT_QUIRK_8BITDO_N64,
     BT_QUIRK_8BITDO_M30,
     BT_QUIRK_BLUEN64_N64,

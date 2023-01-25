@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -51,46 +51,6 @@ static void trigger_pri_sec_invert(struct raw_src_mapping *map) {
     tmp = map->btns_mask[PAD_RM];
     map->btns_mask[PAD_RM] = map->btns_mask[PAD_RS];
     map->btns_mask[PAD_RS] = tmp;
-}
-
-static void sw_left_joycon(struct raw_src_mapping *map) {
-    map->btns_mask[PAD_MM] = map->btns_mask[PAD_MQ];
-    map->btns_mask[PAD_MQ] = 0;
-
-    map->btns_mask[PAD_RM] = map->btns_mask[PAD_RT];
-    map->btns_mask[PAD_RS] = map->btns_mask[PAD_LS];
-    map->btns_mask[PAD_RT] = 0;
-
-    map->btns_mask[PAD_LS] = map->btns_mask[PAD_LM];
-    map->btns_mask[PAD_LM] = map->btns_mask[PAD_LT];
-    map->btns_mask[PAD_LT] = 0;
-
-    map->btns_mask[PAD_RB_UP] = map->btns_mask[PAD_LD_RIGHT];
-    map->btns_mask[PAD_RB_LEFT] = map->btns_mask[PAD_LD_UP];
-    map->btns_mask[PAD_RB_DOWN] = map->btns_mask[PAD_LD_LEFT];
-    map->btns_mask[PAD_RB_RIGHT] = map->btns_mask[PAD_LD_DOWN];
-
-    map->btns_mask[PAD_LD_LEFT] = 0;
-    map->btns_mask[PAD_LD_DOWN] = 0;
-    map->btns_mask[PAD_LD_RIGHT] = 0;
-    map->btns_mask[PAD_LD_UP] = 0;
-}
-
-static void sw_right_joycon(struct raw_src_mapping *map) {
-    map->btns_mask[PAD_MS] = map->btns_mask[PAD_MT];
-    map->btns_mask[PAD_MT] = 0;
-
-    map->btns_mask[PAD_LM] = map->btns_mask[PAD_LT];
-    map->btns_mask[PAD_LS] = map->btns_mask[PAD_RS];
-    map->btns_mask[PAD_LT] = 0;
-    map->btns_mask[PAD_LJ] = map->btns_mask[PAD_RJ];
-
-    map->btns_mask[PAD_RS] = map->btns_mask[PAD_RM];
-    map->btns_mask[PAD_RM] = map->btns_mask[PAD_RT];
-    map->btns_mask[PAD_RT] = 0;
-    map->btns_mask[PAD_RJ] = 0;
-
-    face_btns_rotate_right(map);
 }
 
 static void n64_8bitdo(struct raw_src_mapping *map) {
@@ -204,12 +164,6 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_TRIGGER_PRI_SEC_INVERT)) {
         trigger_pri_sec_invert(&bt_data->raw_src_mappings[PAD]);
-    }
-    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_SW_LEFT_JOYCON)) {
-        sw_left_joycon(&bt_data->raw_src_mappings[PAD]);
-    }
-    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_SW_RIGHT_JOYCON)) {
-        sw_right_joycon(&bt_data->raw_src_mappings[PAD]);
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_N64)) {
         n64_8bitdo(&bt_data->raw_src_mappings[PAD]);
