@@ -112,6 +112,10 @@ static void config_init_struct(struct config *data) {
 }
 
 static int32_t config_load_from_file(struct config *data, char *filename) {
+#ifdef CONFIG_BLUERETRO_QEMU
+    config_init_struct(data);
+    return 0;
+#else
     struct stat st;
     int32_t ret = -1;
 
@@ -152,6 +156,7 @@ static int32_t config_load_from_file(struct config *data, char *filename) {
     }
 
     return ret;
+#endif /* CONFIG_BLUERETRO_QEMU */
 }
 
 static int32_t config_store_on_file(struct config *data, char *filename) {

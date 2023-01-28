@@ -132,10 +132,15 @@ menu "BlueRetro"
 
     menu "Debug"
 
+        config BLUERETRO_QEMU
+            bool "Enable QEMU friendly config"
+            help
+                Select this to make an image for QEMU.
+
         config BLUERETRO_PKT_INJECTION
             bool "Enable packet injection"
             help
-                Select this to enable packet injection via UART0..
+                Select this to enable packet injection via UART0.
 
         config BLUERETRO_BT_DISABLE
             bool "Disable Bluetooth init"

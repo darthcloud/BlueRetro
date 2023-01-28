@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -79,11 +79,13 @@ static void wl_init_task(void *arg) {
 
     core0_stall_init();
 
+#ifndef CONFIG_BLUERETRO_QEMU
     if (fs_init()) {
         err_led_set();
         err = 1;
         printf("FS init fail!\n");
     }
+#endif
 
 #ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
     fpga_config();
@@ -99,9 +101,11 @@ static void wl_init_task(void *arg) {
     }
 #endif
 
+#ifndef CONFIG_BLUERETRO_QEMU
     mc_init();
 
     sys_mgr_init();
+#endif
 
 #ifdef CONFIG_BLUERETRO_PKT_INJECTION
     adapter_debug_injector_init();

@@ -73,6 +73,7 @@ static void adapter_debug_task(void *arg) {
     struct bt_dev *device = NULL;
     struct bt_data * bt_data = NULL;
 
+    printf("# %s: ready\n", __FUNCTION__);
     while (1) {
         rx_len = uart_read_bytes(UART_NUM_0, uart_buffer, 4, portMAX_DELAY);
         if (rx_len) {
