@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import struct
-from serial import Serial
+from serial import serial_for_url
 from time import sleep
 
 
 class BlueRetroInjector:
-    def __init__(self, dev="/dev/ttyUSB1", handle=0):
-        self.fd = Serial(port=dev, baudrate=921600, timeout=1)
+    def __init__(self, dev="socket://localhost:5555", handle=0):
+        self.fd = serial_for_url(url=dev, baudrate=921600, timeout=1)
         self.handle = handle
 
     def __write(self, cmd, handle, data=b''):
@@ -62,7 +62,7 @@ def main():
                '8103c0'
     hid_report = 'a1010000500000000000'
 
-    bri = BlueRetroInjector()
+    bri = BlueRetroInjector(dev="/dev/ttyUSB1")
 
     bri.connect()
 
