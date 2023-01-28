@@ -1,0 +1,66 @@
+name: pytest
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Install ESP-IDF prerequisite
+      run: |
+        sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
+        sudo apt-get update -y -qq
+        sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+    - name: Set python3 default
+      run: sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
+    - name: Clone BlueRetroRoot
+      run: git clone https://github.com/darthcloud/BlueRetroRoot.git .
+    - name: Fetch submodules
+      run: git submodule update --init --recursive
+    - name: Checkout main repo
+      working-directory: ./BlueRetro
+      run: |
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "+refs/heads/*:refs/remotes/origin/*"
+        git fetch --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "+refs/pull/*:refs/remotes/origin/pr/*"
+        git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
+        git submodule update --init --recursive
+    - name: Install ESP-IDF
+      working-directory: ./esp-idf
+      run: sh ./install.sh
+      env:
+        IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
+    - name: Build with ESP-IDF
+      working-directory: ./BlueRetro
+      run: |
+        . ../esp-idf/export.sh
+        echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
+        echo "$(git describe --always --tags --dirty) hw1 dbg_qemu" | cut -c -31 > version.txt
+        cat version.txt
+        cp configs/hw1/dbg_qemu sdkconfig
+        idf.py build
+      env:
+        IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
+    - name: Setup QEMU
+      working-directory: /home/runner/work
+      run: |
+        wget https://github.com/espressif/qemu/releases/download/esp-develop-20220919/qemu-esp-develop-20220919.tar.bz2
+        tar xf qemu-esp-develop-20220919.tar.bz2
+        echo "/home/runner/work/qemu/bin" >> $GITHUB_PATH
+    - name: Run pytest
+      working-directory: ./BlueRetro
+      run: |
+        . ../esp-idf/export.sh
+        (cd build; esptool.py --chip esp32 merge_bin --fill-flash-size 4MB -o flash_image.bin @flash_args)
+        pip install pytest-embedded
+        pip install pytest-embedded-serial
+        pip install pytest-embedded-serial-esp
+        pip install pytest-embedded-idf
+        pip install pytest-embedded-qemu
+        pytest
+      env:
+        IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
