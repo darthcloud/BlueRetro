@@ -85,27 +85,16 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 
 #ifdef CONFIG_BLUERETRO_BT_H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
-    uint8_t col;
-    uint16_t byte, line;
-    uint16_t line_max = len/16;
-
-    if (len % 16)
-        line_max++;
-
     if (dir)
         printf("I ");
     else
         printf("O ");
 
-    printf("%.6f ", (float)esp_timer_get_time()/1000000);
-
-    for (byte = 0, line = 0; line < line_max; line++) {
-        printf("%06X", byte);
-        for (col = 0; col < 16 && byte < len; col++, byte++) {
-            printf(" %02X", data[byte]);
-        }
-        printf("\n");
+    printf("%06X", 0);
+    for (uint32_t i = 0; i < len; i++) {
+        printf(" %02X", data[i]);
     }
+    printf("\n");
 }
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
