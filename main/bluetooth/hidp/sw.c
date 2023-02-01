@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <esp_timer.h>
 #include "bluetooth/host.h"
 #include "tools/util.h"
 #include "sw.h"
@@ -189,14 +190,30 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
     }
 }
 
+static void bt_hid_sw_init_callback(void *arg) {
+    struct bt_dev *device = (struct bt_dev *)arg;
+
+    printf("# %s\n", __FUNCTION__);
+    bt_hid_sw_exec_next_state(device);
+
+    esp_timer_delete(device->timer_hdl);
+    device->timer_hdl = NULL;
+}
+
 void bt_hid_sw_init(struct bt_dev *device) {
 #ifndef CONFIG_BLUERETRO_TEST_FALLBACK_REPORT
+    const esp_timer_create_args_t sw_timer_args = {
+        .callback = &bt_hid_sw_init_callback,
+        .arg = (void *)device,
+        .name = "sw_init_timer"
+    };
     struct bt_hid_sw_ctrl_calib *dev_calib = &calib[device->ids.id];
     printf("# %s\n", __FUNCTION__);
 
     memset((uint8_t *)dev_calib, 0, sizeof(*dev_calib));
 
-    bt_hid_sw_exec_next_state(device);
+    esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
+    esp_timer_start_once(device->timer_hdl, 300000);
 #endif
 }
 
