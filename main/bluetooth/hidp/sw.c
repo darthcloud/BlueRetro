@@ -366,10 +366,6 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                         {
                             printf("# BT_HIDP_SW_SUBCMD_SET_LED\n");
                             /* init done */
-                            /* Enable report stall monitoring */
-                            if (device->ids.subtype != BT_SW_HYPERKIN_ADMIRAL) {
-                                atomic_set_bit(&device->flags, BT_DEV_REPORT_MON);
-                            }
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_ENABLE_IMU:

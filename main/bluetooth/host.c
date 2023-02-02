@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -301,28 +301,6 @@ static void bt_host_task(void *param) {
                         }
                     }
                     atomic_clear_bit(&device->flags, BT_DEV_SDP_DATA);
-                }
-            }
-
-            /* Check if we stopped receiving reports */
-            if (atomic_test_bit(&device->flags, BT_DEV_REPORT_MON)) {
-                if (bt_data->base.report_cnt == bt_data->base.report_cnt_last) {
-                    device->report_stall_cnt++;
-                }
-                else {
-                    bt_data->base.report_cnt_last = bt_data->base.report_cnt;
-                    device->report_stall_cnt = 0;
-                }
-                if (device->report_stall_cnt > 5) {
-                    printf("# %s dev: %ld report stalled\n", __FUNCTION__, device->ids.id);
-                    device->report_stall_cnt = 0;
-                    bt_data->base.report_cnt = 0;
-
-                    switch (device->ids.type) {
-                        case BT_SW:
-                            bt_hci_exit_sniff_mode(device);
-                            break;
-                    }
                 }
             }
         }

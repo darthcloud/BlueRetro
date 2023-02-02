@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -32,7 +32,6 @@ enum {
     BT_DEV_ROLE_SW_FAIL,
     BT_DEV_IS_BLE,
     BT_DEV_FB_DELAY,
-    BT_DEV_REPORT_MON,
 };
 
 struct bt_name_type {
@@ -62,7 +61,6 @@ struct bt_dev {
     uint16_t acl_handle;
     uint32_t hid_state;
     void *timer_hdl;
-    uint8_t report_stall_cnt;
     uint8_t tid;
     const struct bt_name_type *name;
     union {
