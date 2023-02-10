@@ -61,9 +61,9 @@ Thanks to all sponsors!!
 
 <BR>
   
-[<img src="https://pbs.twimg.com/profile_banners/1219272912999473153/1637604861" width="400"/>](https://www.tindie.com/stores/grechtech/)
+[<img src="https://raw.githubusercontent.com/GrechTech/RetroRosetta/main/Marketing/cover2.png" width="400"/>](http://www.grechtech.co.uk/)
 * RetroRosetta by [GrechTech](https://twitter.com/GrechTech): BlueRetro universal core and cables.\
-  https://www.tindie.com/stores/grechtech/
+  http://www.grechtech.co.uk/
 
 ## Community Contribution
 * BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
