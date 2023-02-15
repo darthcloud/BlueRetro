@@ -648,6 +648,7 @@ void sys_mgr_init(void) {
     io_conf.pin_bit_mask = 1ULL << power_off_pin;
     gpio_config(&io_conf);
 
+    gpio_set_level(RESET_PIN, 1);
     io_conf.mode = GPIO_MODE_OUTPUT_OD;
     io_conf.pin_bit_mask = 1ULL << RESET_PIN;
     gpio_config(&io_conf);
