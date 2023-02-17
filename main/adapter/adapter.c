@@ -319,13 +319,13 @@ void adapter_bridge(struct bt_data *bt_data) {
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
         adapter_debug_print(ctrl_input);
+#endif
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
         if (ctrl_input->btns[0].value & BIT(PAD_RB_DOWN)) {
             uint8_t tmp = 0;
             adapter_q_fb(&tmp, 1);
         }
 #endif
-#else
         if (wired_adapter.system_id != WIRED_AUTO) {
             if (wired_meta_init(ctrl_output)) {
                 /* Unsupported system */
@@ -336,16 +336,14 @@ void adapter_bridge(struct bt_data *bt_data) {
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
             adapter_debug_print(&ctrl_output[0]);
-#else
+#endif
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
                     ctrl_output[i].index = i;
                     wired_from_generic(config.out_cfg[i].dev_mode, &ctrl_output[i], &wired_adapter.data[i]);
                 }
             }
-#endif /* CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG */
         }
-#endif /* CONFIG_BLUERETRO_ADAPTER_INPUT_DBG */
     }
 }
 
