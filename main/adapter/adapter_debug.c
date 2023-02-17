@@ -166,14 +166,20 @@ static void adapter_debug_task(void *arg) {
 #endif
 
 void adapter_debug_print(struct generic_ctrl *ctrl_input) {
-        printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
-            BOLD, ctrl_input->axes[0].value, RESET, BOLD, ctrl_input->axes[1].value, RESET, BOLD, ctrl_input->axes[2].value, RESET, BOLD, ctrl_input->axes[3].value, RESET,
-            BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET, BOLD, ctrl_input->btns[0].value, RESET, BOLD, ctrl_input->btns[1].value, RESET,
-            BOLD, ctrl_input->btns[2].value, RESET, BOLD, ctrl_input->btns[3].value, RESET);
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+    printf(", \"axes\": [%ld, %ld, %ld, %ld, %lu, %lu], \"btns\": [%lu, %lu, %lu, %lu]}\n",
+        ctrl_input->axes[0].value, ctrl_input->axes[1].value, ctrl_input->axes[2].value, ctrl_input->axes[3].value, ctrl_input->axes[4].value, ctrl_input->axes[5].value,
+        ctrl_input->btns[0].value, ctrl_input->btns[1].value, ctrl_input->btns[2].value, ctrl_input->btns[3].value);
+#else
+    printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
+        BOLD, ctrl_input->axes[0].value, RESET, BOLD, ctrl_input->axes[1].value, RESET, BOLD, ctrl_input->axes[2].value, RESET, BOLD, ctrl_input->axes[3].value, RESET,
+        BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET, BOLD, ctrl_input->btns[0].value, RESET, BOLD, ctrl_input->btns[1].value, RESET,
+        BOLD, ctrl_input->btns[2].value, RESET, BOLD, ctrl_input->btns[3].value, RESET);
 #ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
-        adapter_debug_btns(ctrl_input->btns[0].value);
+    adapter_debug_btns(ctrl_input->btns[0].value);
 #endif
-        printf("\n");
+    printf("\n");
+#endif
 }
 
 void adapter_debug_injector_init(void) {

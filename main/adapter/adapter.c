@@ -318,6 +318,9 @@ void adapter_bridge(struct bt_data *bt_data) {
         sys_macro_hdl(ctrl_input, &bt_data->base.flags[PAD]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+        printf("{\"log_type\": \"generic_input\"");
+#endif
         adapter_debug_print(ctrl_input);
 #endif
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
@@ -335,6 +338,9 @@ void adapter_bridge(struct bt_data *bt_data) {
             out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+            printf("{\"log_type\": \"mapped_input\"");
+#endif
             adapter_debug_print(&ctrl_output[0]);
 #endif
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {

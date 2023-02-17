@@ -192,6 +192,11 @@ menu "BlueRetro"
             help
                 Select this to enable adapter input mapping debug.
 
+        config BLUERETRO_JSON_DBG
+            bool "Display debug in JSON format"
+            help
+                Select this to display debug in JSON format.
+
         config BLUERETRO_WIRED_TRACE
             bool "Enable wired trace"
             help
