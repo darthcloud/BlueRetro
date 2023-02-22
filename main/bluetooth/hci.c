@@ -633,6 +633,16 @@ static void bt_hci_cmd_write_hold_mode_act(void *cp) {
     bt_hci_cmd(BT_HCI_OP_WRITE_HOLD_MODE_ACT, sizeof(*write_hold_mode_act));
 }
 
+static void bt_hci_cmd_write_link_supervision_to(void *handle) {
+    struct bt_hci_cp_write_link_supervision_to *cp = (struct bt_hci_cp_write_link_supervision_to *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    cp->handle = *(uint16_t *)handle;
+    cp->timeout = 3200;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_LINK_SUPERVISION_TO, sizeof(*cp));
+}
+
 static void bt_hci_cmd_read_num_supported_iac(void *cp) {
     printf("# %s\n", __FUNCTION__);
 
@@ -1244,6 +1254,10 @@ void bt_hci_disconnect(struct bt_dev *device) {
 
 void bt_hci_exit_sniff_mode(struct bt_dev *device) {
     bt_hci_cmd_exit_sniff_mode((void *)&device->acl_handle);
+}
+
+void bt_hci_write_link_supervision_timeout(struct bt_dev *device) {
+    bt_hci_cmd_write_link_supervision_to((void *)&device->acl_handle);
 }
 
 void bt_hci_get_le_local_addr(bt_addr_le_t *le_local) {

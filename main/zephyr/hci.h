@@ -797,6 +797,12 @@ struct bt_hci_cp_host_num_completed_packets {
 } __packed;
 
 #ifdef BLUERETRO
+#define BT_HCI_OP_WRITE_LINK_SUPERVISION_TO     BT_OP(BT_OGF_BASEBAND, 0x0037)
+struct bt_hci_cp_write_link_supervision_to {
+	u16_t handle;
+	u16_t timeout;
+} __packed;
+
 #define BT_HCI_OP_READ_NUM_SUPPORTED_IAC        BT_OP(BT_OGF_BASEBAND, 0x0038)
 #define BT_HCI_OP_READ_CURRENT_IAC_LAP          BT_OP(BT_OGF_BASEBAND, 0x0039)
 #endif

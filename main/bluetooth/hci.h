@@ -16,6 +16,7 @@ uint32_t bt_hci_get_inquiry(void);
 void bt_hci_inquiry_override(uint32_t state);
 void bt_hci_disconnect(struct bt_dev *device);
 void bt_hci_exit_sniff_mode(struct bt_dev *device);
+void bt_hci_write_link_supervision_timeout(struct bt_dev *device);
 void bt_hci_get_le_local_addr(bt_addr_le_t *le_local);
 int32_t bt_hci_get_random(struct bt_dev *device, bt_hci_le_cb_t cb);
 int32_t bt_hci_get_encrypt(struct bt_dev *device, bt_hci_le_cb_t cb, const uint8_t *key, uint8_t *plaintext);
