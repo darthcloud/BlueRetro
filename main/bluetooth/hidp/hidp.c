@@ -71,7 +71,7 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_TYPE_MAX] = {
 };
 
 static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
-    NULL, /* BT_HID_GENERIC */
+    bt_hid_cmd_generic_rumble, /* BT_HID_GENERIC */
     bt_hid_cmd_ps3_set_conf, /* BT_PS3 */
     bt_hid_cmd_wii_set_feedback, /* BT_WII */
     bt_hid_cmd_xbox_rumble, /* BT_XBOX */

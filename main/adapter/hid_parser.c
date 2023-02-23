@@ -192,6 +192,28 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
                 case USAGE_GEN_BUTTON:
                     type = PAD;
                     break;
+                case USAGE_GEN_PHYS_INPUT:
+                    if ((report->usages[i].usage >= 0x95 && report->usages[i].usage <= 0x9C) ||
+                         report->usages[i].usage == 0x50 || report->usages[i].usage == 0x70 ||
+                         report->usages[i].usage == 0x7C || report->usages[i].usage == 0xA7) {
+                        /*
+                            0x50: Duration
+                            0x70: Magnitude
+                            0x7C: Loop count
+                            0xA7: Start Delay
+                            0x95: PID Device Control Report
+                            0x96: PID Device Control
+                            0x97: Enable Actuators
+                            0x98: Disable Actuators
+                            0x99: Stop all effects
+                            0x9A: Device Reset
+                            0x9B: Device Pause
+                            0x9C: Device Continue
+                            More info: https://www.usb.org/sites/default/files/hut1_4.pdf#page=213
+                        */
+                        return RUMBLE;
+                    }
+                    break;
                 case 0x0C: /* CONSUMER */
                     if (type == REPORT_NONE) {
                         type = EXTRA;
@@ -213,6 +235,7 @@ static void hid_device_fingerprint(struct hid_report *report, int32_t *type, uin
     switch (hid_report_fingerprint(report)) {
         case KB:
         case MOUSE:
+        case RUMBLE:
             *type = BT_HID_GENERIC;
             *subtype = BT_SUBTYPE_DEFAULT;
             return;
@@ -372,6 +395,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
             case 0x7C:
                 break;
             case HID_MI_INPUT: /* 0x81 */
+            case HID_MI_OUTPUT: /* 0x91 */
                 if (!(*desc & 0x01) && hid_stack[hid_stack_idx].usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx < REPORT_MAX_USAGE) {
                     if (hid_stack[hid_stack_idx].report_size == 1) {
                         wip_report.usages[report_usage_idx].usage_page = hid_stack[hid_stack_idx].usage_page;
@@ -430,10 +454,6 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 report_usage_idx = 0;
                 report_bit_offset = 0;
                 printf("# %d ", report_id);
-                break;
-            case HID_MI_OUTPUT: /* 0x91 */
-                usage_idx = 0;
-                desc++;
                 break;
             case HID_GI_REPORT_COUNT: /* 0x95 */
                 hid_stack[hid_stack_idx].report_cnt = *desc++;
