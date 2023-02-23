@@ -22,7 +22,7 @@ static to_generic_t to_generic_func[BT_TYPE_MAX] = {
 };
 
 static fb_from_generic_t fb_from_generic_func[BT_TYPE_MAX] = {
-    NULL, /* BT_HID_GENERIC */
+    hid_fb_from_generic, /* BT_HID_GENERIC */
     ps3_fb_from_generic, /* BT_PS3 */
     wii_fb_from_generic, /* BT_WII */
     xbox_fb_from_generic, /* BT_XBOX */

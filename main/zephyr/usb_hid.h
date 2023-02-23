@@ -151,6 +151,7 @@ struct hid_ops {
 #define USAGE_GEN_KEYBOARD		0x07
 #define USAGE_GEN_LEDS			0x08
 #define USAGE_GEN_BUTTON		0x09
+#define USAGE_GEN_PHYS_INPUT	0x0F
 
 /* Generic Desktop Page usages */
 #define USAGE_GEN_DESKTOP_UNDEFINED	0x00

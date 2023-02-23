@@ -96,8 +96,8 @@ enum {
     MOUSE,
     PAD,
     EXTRA,
+    RUMBLE,
     REPORT_MAX,
-    //RUMBLE,
     //LEDS,
 };
 
