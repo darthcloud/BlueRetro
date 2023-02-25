@@ -43,5 +43,5 @@ def test_injector_sanity(dut, redirect):
 
     dut.expect('# DBG handle: 0 dev: 0 type: 0', timeout=1)
     dut.expect('# dev: 0 type: 0:0 BlueRetro Test', timeout=1)
-    dut.expect('# 1 07E0 0 8 0700 16 8, 0700 24 8, 0700 32 8, 0700 40 8, 0700 48 8, 0700 56 8, rtype: 0 dtype: 0 sub: 0', timeout=1)
+    dut.expect('# 1 07E0 0 8 0801 16 5 0700 24 8, 0700 32 8, 0700 40 8, 0700 48 8, 0700 56 8, 0700 64 8, rtype: 0 dtype: 0 sub: 0', timeout=1)
     dut.expect('# DBG DISCONN from handle: 0 dev: 0', timeout=1)
