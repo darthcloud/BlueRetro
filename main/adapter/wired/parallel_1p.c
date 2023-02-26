@@ -104,6 +104,11 @@ void para_1p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
         GPIO.out1.val = map_tmp.buttons_high | turbo_map_mask->buttons_high;
 
         memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+        printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld]}\n",
+            map_tmp.buttons, map_tmp.buttons_high);
+#endif
     }
 }
 

@@ -268,6 +268,11 @@ static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld, %ld, %ld]}\n",
+        map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2], map_tmp.buttons[3]);
+#endif
 }
 
 static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
@@ -325,6 +330,11 @@ static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld, %ld, %ld]}\n",
+        map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2], map_tmp.buttons[3]);
+#endif
 }
 
 void jag_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

@@ -284,6 +284,12 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld, %ld, %ld, %ld, %ld]}\n",
+        map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2],
+        map_tmp.buttons_high[0], map_tmp.buttons_high[1], map_tmp.buttons_high[2]);
+#endif
 }
 
 static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

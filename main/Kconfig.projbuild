@@ -197,6 +197,11 @@ menu "BlueRetro"
             help
                 Select this to enable JSON raw input debug.
 
+        config BLUERETRO_RAW_OUTPUT
+            bool "Enable JSON raw output debug"
+            help
+                Select this to enable JSON raw output debug.
+
         config BLUERETRO_JSON_DBG
             bool "Display debug in JSON format"
             help

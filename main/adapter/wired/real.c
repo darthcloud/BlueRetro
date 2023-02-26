@@ -210,6 +210,10 @@ void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": %d}\n", map_tmp.buttons);
+#endif
 }
 
 /* I didn't RE this one my self, base on : */
@@ -271,6 +275,12 @@ void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d, %d, %d], \"btns\": %d}\n",
+        map_tmp.axes[0], map_tmp.axes[1], map_tmp.axes[2], map_tmp.axes[3],
+        map_tmp.buttons);
+#endif
 }
 
 static void real_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

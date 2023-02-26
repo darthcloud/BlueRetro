@@ -260,6 +260,10 @@ static void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": %d}\n", map_tmp.buttons);
+#endif
 }
 
 static void npiso_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

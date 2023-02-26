@@ -189,6 +189,10 @@ void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"btns\": %d}\n", map_tmp.buttons);
+#endif
 }
 
 static void pcfx_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {

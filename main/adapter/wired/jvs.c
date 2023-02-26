@@ -153,6 +153,12 @@ void jvs_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct w
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d], \"btns\": %d, \"COINS\": %d, \"TEST\": %d}\n",
+        map_tmp.axes[jvs_axes_idx[0]], map_tmp.axes[jvs_axes_idx[1]],
+        map_tmp.buttons, map_tmp.coins, map_tmp.test);
+#endif
 }
 
 void IRAM_ATTR jvs_gen_turbo_mask(struct wired_data *wired_data) {

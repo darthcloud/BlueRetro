@@ -132,6 +132,11 @@ void para_2p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, stru
 
         GPIO.out = (map1->buttons | map1_mask->buttons) & (map2->buttons | map2_mask->buttons);
         GPIO.out1.val = (map1->buttons_high | map1_mask->buttons_high) & (map2->buttons_high | map2_mask->buttons_high);
+
+#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
+        printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld]}\n",
+            map_tmp.buttons, map_tmp.buttons_high);
+#endif
     }
 }
 
