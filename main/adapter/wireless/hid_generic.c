@@ -476,6 +476,10 @@ fillup_end:
 static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld", bt_data->base.report_id);
+#endif
+
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
         mapping_quirks_apply(bt_data);
@@ -494,6 +498,10 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+        printf(", \"btns\": %lu", buttons);
+#endif
+
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (buttons & bt_data->raw_src_mappings[PAD].btns_mask[i]) {
                 ctrl_data->btns[0].value |= generic_btns_mask[i];
@@ -511,8 +519,16 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         uint32_t hat = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
         uint32_t min = bt_data->reports[PAD].usages[meta->hid_hat_idx].logical_min;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+        printf(", \"hat\": %lu", hat);
+#endif
+
         ctrl_data->btns[0].value |= hat_to_ld_btns[(hat - min) & 0xF];
     }
+
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf(", \"axes\": [");
+#endif
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (meta->hid_axes_idx[i] > -1) {
@@ -523,6 +539,12 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
             uint32_t bit_shift = offset % 8;
             uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+                if (i) {
+                    printf(", ");
+                }
+#endif
+
             if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
                 bt_data->base.axes_cal[i] = -(value  - meta->hid_axes_meta[i].neutral);
             }
@@ -532,12 +554,18 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
             /* Is axis unsign? */
             if (bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].logical_min >= 0) {
                 ctrl_data->axes[i].value = value - meta->hid_axes_meta[i].neutral + bt_data->base.axes_cal[i];
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+                printf("%lu", value);
+#endif
             }
             else {
                 ctrl_data->axes[i].value = value;
                 if (ctrl_data->axes[i].value & BIT(len - 1)) {
                     ctrl_data->axes[i].value |= ~mask;
                 }
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+                printf("%ld", ctrl_data->axes[i].value);
+#endif
                 ctrl_data->axes[i].value += bt_data->base.axes_cal[i];
             }
         }
@@ -545,6 +573,10 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("]}\n");
+#endif
+
 }
 
 int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {

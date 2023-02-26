@@ -318,6 +318,11 @@ static void sw_native_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
         axes[3] = (map->axes[4] >> 4) | (map->axes[5] << 4);
     }
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"axes\": [%u, %u, %u, %u], \"btns\": %lu}\n",
+        axes[0], axes[1], axes[2], axes[3], map->buttons);
+#endif
+
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = axes[i] - meta[i].neutral + bt_data->base.axes_cal[i];
@@ -372,6 +377,12 @@ static void sw_hid_pad_init(struct bt_data *bt_data) {
 
 static void sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct sw_map *map = (struct sw_map *)bt_data->base.input;
+
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u], \"btns\": %u, \"hat\": %u}\n",
+        bt_data->base.report_id, map->axes[sw_axes_idx[0]], map->axes[sw_axes_idx[1]],
+        map->axes[sw_axes_idx[2]], map->axes[sw_axes_idx[3]], map->buttons, map->hat);
+#endif
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         sw_hid_pad_init(bt_data);

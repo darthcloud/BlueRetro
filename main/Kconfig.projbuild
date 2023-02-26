@@ -192,6 +192,11 @@ menu "BlueRetro"
             help
                 Select this to enable adapter input mapping debug.
 
+        config BLUERETRO_RAW_INPUT
+            bool "Enable JSON raw input debug"
+            help
+                Select this to enable JSON raw input debug.
+
         config BLUERETRO_JSON_DBG
             bool "Display debug in JSON format"
             help

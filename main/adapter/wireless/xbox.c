@@ -233,6 +233,12 @@ static void xbox_pad_init(struct bt_data *bt_data) {
 int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+        bt_data->base.report_id, map->axes[xb1_axes_idx[0]], map->axes[xb1_axes_idx[1]], map->axes[xb1_axes_idx[2]],
+        map->axes[xb1_axes_idx[3]], map->axes[xb1_axes_idx[4]], map->axes[xb1_axes_idx[5]], map->buttons, map->hat & 0xF);
+#endif
+
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         xbox_pad_init(bt_data);
     }

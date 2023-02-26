@@ -89,6 +89,12 @@ static const uint32_t ps3_btns_mask[32] = {
 int32_t ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct ps3_map *map = (struct ps3_map *)bt_data->base.input;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu}\n",
+        bt_data->base.report_id, map->axes[ps3_axes_idx[0]], map->axes[ps3_axes_idx[1]], map->axes[ps3_axes_idx[2]],
+        map->axes[ps3_axes_idx[3]], map->axes[ps3_axes_idx[4]], map->axes[ps3_axes_idx[5]], map->buttons);
+#endif
+
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
     ctrl_data->mask = (uint32_t *)ps3_mask;

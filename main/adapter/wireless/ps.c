@@ -103,6 +103,12 @@ static const uint32_t ps4_btns_mask[32] = {
 static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct ps4_map *map = (struct ps4_map *)bt_data->base.input;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+        bt_data->base.report_id, map->axes[ps4_axes_idx[0]], map->axes[ps4_axes_idx[1]], map->axes[ps4_axes_idx[2]],
+        map->axes[ps4_axes_idx[3]], map->axes[ps4_axes_idx[4]], map->axes[ps4_axes_idx[5]], map->buttons, map->hat & 0xF);
+#endif
+
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
     ctrl_data->mask = (uint32_t *)ps4_mask;
@@ -133,6 +139,12 @@ static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
 static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct ps5_map *map = (struct ps5_map *)bt_data->base.input;
 
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+        bt_data->base.report_id, map->axes[ps5_axes_idx[0]], map->axes[ps5_axes_idx[1]], map->axes[ps5_axes_idx[2]],
+        map->axes[ps5_axes_idx[3]], map->axes[ps5_axes_idx[4]], map->axes[ps5_axes_idx[5]], map->buttons, map->hat & 0xF);
+#endif
+
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
     ctrl_data->mask = (uint32_t *)ps4_mask;
@@ -162,6 +174,12 @@ static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
 
 static void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
     struct hid_map *map = (struct hid_map *)bt_data->base.input;
+
+#ifdef CONFIG_BLUERETRO_RAW_INPUT
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+        bt_data->base.report_id, map->axes[ps4_axes_idx[0]], map->axes[ps4_axes_idx[1]], map->axes[ps4_axes_idx[2]],
+        map->axes[ps4_axes_idx[3]], map->axes[ps4_axes_idx[4]], map->axes[ps4_axes_idx[5]], map->buttons, map->hat & 0xF);
+#endif
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
