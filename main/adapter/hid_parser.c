@@ -282,9 +282,18 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *wip_r
         if (bt_data->base.pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
             bt_type_update(bt_data->base.pids->id, dev_type, dev_subtype);
         }
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+        printf("], \"report_type\": %ld, \"device_type\": %ld, \"device_subtype\": %ld",
+            report_type, dev_type, dev_subtype);
+#else
         printf("rtype: %ld dtype: %ld sub: %ld", report_type, dev_type, dev_subtype);
+#endif
     }
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+    printf("}\n");
+#else
     printf("\n");
+#endif
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
@@ -405,7 +414,20 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                         wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
                         wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
                         wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
-                        printf("%02X%02X %lu %lu ", hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset, hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                        if (report_usage_idx) {
+                            printf(", ");
+                        }
+                        else if (!report_id) {
+                            printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": 1, \"usages\": [");
+                        }
+                        printf("{\"usage_page\": %d, \"usage\": %d, \"bit_offset\": %lu, \"bit_size\": %lu}",
+                            hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset,
+                            hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
+#else
+                        printf("%02X%02X %lu %lu ", hid_stack[hid_stack_idx].usage_page, usage_list[0], report_bit_offset,
+                            hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size);
+#endif
                         report_bit_offset += hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
                         ++report_usage_idx;
                     }
@@ -416,21 +438,44 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                         }
                         for (uint32_t i = 0; report_usage_idx < idx_end; ++i, ++report_usage_idx) {
                             wip_report.usages[report_usage_idx].usage_page = hid_stack[hid_stack_idx].usage_page;
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                            if (report_usage_idx) {
+                                printf(", ");
+                            }
+                            else if (!report_id) {
+                                printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": 1, \"usages\": [");
+                            }
+                            printf("{\"usage_page\": %d", hid_stack[hid_stack_idx].usage_page);
+#else
                             printf("%02X", hid_stack[hid_stack_idx].usage_page);
+#endif
                             if (usage_idx < 2) {
                                 wip_report.usages[report_usage_idx].usage = usage_list[0];
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                                printf(", \"usage\": %d", usage_list[0]);
+#else
                                 printf("%02X ", usage_list[0]);
+#endif
                             }
                             else {
                                 wip_report.usages[report_usage_idx].usage = usage_list[i];
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                                printf(", \"usage\": %d", usage_list[i]);
+#else
                                 printf("%02X ", usage_list[i]);
+#endif
                             }
                             wip_report.usages[report_usage_idx].flags = *desc;
                             wip_report.usages[report_usage_idx].bit_offset = report_bit_offset;
                             wip_report.usages[report_usage_idx].bit_size = hid_stack[hid_stack_idx].report_size;
                             wip_report.usages[report_usage_idx].logical_min = hid_stack[hid_stack_idx].logical_min;
                             wip_report.usages[report_usage_idx].logical_max = hid_stack[hid_stack_idx].logical_max;
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                            printf(", \"bit_offset\": %lu, \"bit_size\": %lu}",
+                                report_bit_offset, hid_stack[hid_stack_idx].report_size);
+#else
                             printf("%lu %lu, ", report_bit_offset, hid_stack[hid_stack_idx].report_size);
+#endif
                             report_bit_offset += hid_stack[hid_stack_idx].report_size;
                         }
                     }
@@ -453,7 +498,11 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 wip_report.id = report_id;
                 report_usage_idx = 0;
                 report_bit_offset = 0;
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+                printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": %d, \"usages\": [", report_id);
+#else
                 printf("# %d ", report_id);
+#endif
                 break;
             case HID_GI_REPORT_COUNT: /* 0x95 */
                 hid_stack[hid_stack_idx].report_cnt = *desc++;
@@ -471,7 +520,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                     hid_stack_idx++;
                 }
                 else {
-                    printf("%s HID stack overflow\n", __FUNCTION__);
+                    printf("# %s HID stack overflow\n", __FUNCTION__);
                 }
                 break;
             case 0xB1: /* FEATURE */
@@ -487,7 +536,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                     hid_stack_idx--;
                 }
                 else {
-                    printf("%s HID stack underrun\n", __FUNCTION__);
+                    printf("# %s HID stack underrun\n", __FUNCTION__);
                 }
                 break;
             case HID_MI_COLLECTION_END: /* 0xC0 */
