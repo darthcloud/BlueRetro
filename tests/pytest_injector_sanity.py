@@ -1,4 +1,5 @@
 import pytest
+import json
 from time import sleep
 from injector import BlueRetroInjector
 
@@ -37,11 +38,24 @@ def test_injector_sanity(dut, redirect):
     bri.send_hid_desc(hid_desc)
     bri.disconnect()
 
-    sleep(2)
+    sleep(3)
     with redirect():
         bri.get_logs()
 
-    dut.expect('# DBG handle: 0 dev: 0 type: 0', timeout=1)
     dut.expect('# dev: 0 type: 0:0 BlueRetro Test', timeout=1)
-    dut.expect('# 1 07E0 0 8 0801 16 5 0700 24 8, 0700 32 8, 0700 40 8, 0700 48 8, 0700 56 8, 0700 64 8, rtype: 0 dtype: 0 sub: 0', timeout=1)
-    dut.expect('# DBG DISCONN from handle: 0 dev: 0', timeout=1)
+
+    report = json.loads(dut.expect('({.*?parsed_hid_report.*?)\n', timeout=1).group(1))
+    assert report["report_id"] == 1
+    assert report["usages"][7]["bit_offset"] == 64
+    assert report["report_type"] == 0
+    assert report["device_type"] == 0
+    assert report["device_subtype"] == 0
+
+    report = json.loads(dut.expect('({.*?parsed_hid_report.*?)\n', timeout=1).group(1))
+    assert report["report_id"] == 2
+    assert report["usages"][0]["usage_page"] == 0x0C
+    assert report["usages"][0]["usage"] == 0x1B1
+    assert report["report_type"] == 3
+    assert report["device_type"] == -1
+    assert report["device_subtype"] == 0
+
