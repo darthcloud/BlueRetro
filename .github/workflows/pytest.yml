@@ -48,9 +48,9 @@ jobs:
     - name: Setup QEMU
       working-directory: /home/runner/work
       run: |
-        wget https://github.com/espressif/qemu/releases/download/esp-develop-20220919/qemu-esp-develop-20220919.tar.bz2
-        tar xf qemu-esp-develop-20220919.tar.bz2
+        curl -L $(curl -s https://api.github.com/repos/espressif/qemu/releases/latest | jq '.assets[] | select(.name|match(".tar.bz2$")) | .browser_download_url' | tr -d '"') | tar xj
         echo "/home/runner/work/qemu/bin" >> $GITHUB_PATH
+        sudo apt-get install libslirp0
     - name: Run pytest
       working-directory: ./BlueRetro
       run: |
