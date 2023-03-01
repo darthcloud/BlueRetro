@@ -42,10 +42,13 @@ class BlueRetroInjector:
         self.__write(0x07, self.handle, bytes.fromhex(cfg))
 
     def send_out_cfg(self, index, cfg):
-        self.__write(0x08, self.handle, index.to_bytes + bytes.fromhex(cfg))
+        self.__write(0x08, self.handle, index.to_bytes(1, 'big') + bytes.fromhex(cfg))
 
     def send_in_cfg(self, index, cfg):
-        self.__write(0x09, self.handle, index.to_bytes + bytes.fromhex(cfg))
+        self.__write(0x09, self.handle, index.to_bytes(1, 'big') + bytes.fromhex(cfg))
+
+    def send_system_id(self, system_id):
+        self.__write(0x0A, self.handle, system_id.to_bytes(1, 'big'))
 
 
 def main():

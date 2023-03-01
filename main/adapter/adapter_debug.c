@@ -26,6 +26,7 @@ enum {
     DBG_CMD_GLOBAL_CFG,
     DBG_CMD_OUT_CFG,
     DBG_CMD_IN_CFG,
+    DBG_CMD_SYSTEM_ID,
 };
 
 struct adapter_debug_pkt {
@@ -154,6 +155,10 @@ static void adapter_debug_task(void *arg) {
                 case DBG_CMD_IN_CFG:
                     /* Input config */
                     memcpy(&config.in_cfg[pkt->data[0]], &pkt->data[1], pkt->data_len - 1);
+                    break;
+                case DBG_CMD_SYSTEM_ID:
+                    /* Set System ID */
+                    wired_adapter.system_id = pkt->data[0];
                     break;
                 default:
                     printf("# %s invalid cmd: 0x%02X\n", __FUNCTION__, pkt->cmd);
