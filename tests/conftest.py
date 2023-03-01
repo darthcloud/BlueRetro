@@ -1,4 +1,5 @@
 import pytest
+from serial import SerialException
 from time import sleep
 from injector import BlueRetroInjector
 
@@ -20,5 +21,14 @@ class BlueRetroDut(BlueRetroInjector):
 
 @pytest.fixture
 def blueretro(dut, redirect):
-    sleep(2) # Wait for QEMU image to boot
-    return BlueRetroDut(dut, redirect)
+    retry = 0
+    while True:
+        try:
+            blueretro = BlueRetroDut(dut, redirect)
+            break
+        except SerialException:
+            sleep(1) # Wait for QEMU
+            retry += 1
+            if retry == 3:
+                raise
+    return blueretro
