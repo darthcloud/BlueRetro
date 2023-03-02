@@ -455,17 +455,17 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         }
 
         /* fillup what is left */
-        for (uint32_t mask = (1ULL << 12), btn = 0, i = 12; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
-            while (!(hid_mask & BIT(btn))) {
-                btn++;
-                if (btn >= report->usages[meta->hid_btn_idx].bit_size) {
+        for (uint32_t hid_btn = 15, i = 12; hid_btn < report->usages[meta->hid_btn_idx].bit_size; hid_btn++) {
+            while (map->btns_mask[i]) {
+                i++;
+                if (i > 32) {
                     goto fillup_end;
                 }
             }
-            if (!(map->mask[0] & mask)) {
-                map->mask[0] |= mask;
-                map->btns_mask[i] = BIT(btn);
-                btn++;
+            if (!(map->mask[0] & BIT(i))) {
+                map->mask[0] |= BIT(i);
+                map->btns_mask[i] = BIT(hid_btn);
+                hid_mask &= ~BIT(hid_btn);
             }
         }
 fillup_end:
