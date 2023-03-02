@@ -300,7 +300,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     struct hid_stack_element hid_stack[HID_STACK_MAX] = {0};
     uint8_t hid_stack_idx = 0;
     uint8_t usage_idx = 0;
-    struct hid_report wip_report;
+    struct hid_report wip_report = {0};
     uint16_t usage_list[REPORT_MAX_USAGE] = {0};
     uint8_t *end = data + len;
     uint8_t *desc = data;
@@ -549,8 +549,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 return;
         }
     }
-    if (report_cnt == 0) {
+    if (report_cnt == 0 && wip_report.id == 0) {
         report_id = 1;
+        wip_report.id = 1;
     }
     if (report_id) {
         hid_process_report(bt_data, &wip_report, report_bit_offset, report_usage_idx);
