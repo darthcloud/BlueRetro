@@ -187,6 +187,7 @@ void n64_meta_init(struct generic_ctrl *ctrl_data) {
 }
 
 static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
+#ifndef CONFIG_BLUERETRO_QEMU
     struct bt_dev *device = NULL;
     struct bt_data *bt_data = NULL;
 
@@ -206,7 +207,7 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
             bt_hid_feedback(device, bt_data->base.output);
         }
     }
-
+#endif
 }
 
 static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
