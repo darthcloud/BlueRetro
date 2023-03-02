@@ -131,7 +131,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
     if (meta->hid_btn_idx > -1) {
         uint32_t len = bt_data->reports[KB].usages[meta->hid_btn_idx].bit_size;
         uint32_t offset = bt_data->reports[KB].usages[meta->hid_btn_idx].bit_offset;
-        uint32_t mask = (1 << len) - 1;
+        uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -147,7 +147,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl
         if (meta->hid_axes_idx[i] > -1) {
             int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
             uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
-            uint32_t mask = (1 << len) - 1;
+            uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
             uint32_t key = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -242,7 +242,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
     if (meta->hid_btn_idx > -1) {
         uint32_t len = bt_data->reports[MOUSE].usages[meta->hid_btn_idx].bit_size;
         uint32_t offset = bt_data->reports[MOUSE].usages[meta->hid_btn_idx].bit_offset;
-        uint32_t mask = (1 << len) - 1;
+        uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -258,7 +258,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
         if (meta->hid_axes_idx[i] > -1) {
             int32_t len = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_size;
             uint32_t offset = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_offset;
-            uint32_t mask = (1 << len) - 1;
+            uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
 
@@ -455,7 +455,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         }
 
         /* fillup what is left */
-        for (uint32_t mask = (1U << 12), btn = 0, i = 12; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
+        for (uint32_t mask = (1ULL << 12), btn = 0, i = 12; mask && btn < report->usages[meta->hid_btn_idx].bit_size; mask <<= 1, i++) {
             while (!(hid_mask & BIT(btn))) {
                 btn++;
                 if (btn >= report->usages[meta->hid_btn_idx].bit_size) {
@@ -493,7 +493,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     if (meta->hid_btn_idx > -1) {
         uint32_t len = bt_data->reports[PAD].usages[meta->hid_btn_idx].bit_size;
         uint32_t offset = bt_data->reports[PAD].usages[meta->hid_btn_idx].bit_offset;
-        uint32_t mask = (1 << len) - 1;
+        uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -513,7 +513,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     if (meta->hid_hat_idx > -1) {
         uint32_t len = bt_data->reports[PAD].usages[meta->hid_hat_idx].bit_size;
         uint32_t offset = bt_data->reports[PAD].usages[meta->hid_hat_idx].bit_offset;
-        uint32_t mask = (1 << len) - 1;
+        uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t hat = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -534,7 +534,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
         if (meta->hid_axes_idx[i] > -1) {
             int32_t len = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_size;
             uint32_t offset = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_offset;
-            uint32_t mask = (1 << len) - 1;
+            uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
             uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
@@ -585,7 +585,7 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) 
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         int32_t len = report->usages[i].bit_size;
         uint32_t offset = report->usages[i].bit_offset;
-        uint32_t mask = (1 << len) - 1;
+        uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
