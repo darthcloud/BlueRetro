@@ -3,6 +3,7 @@ from bit_helper import bit, swap32
 from device_data.hid import hid
 from device_data.br import pad
 from device_data.n64 import n64
+from device_data.gc import GC
 
 
 DEVICE_NAME = 'HID Generic'
@@ -43,6 +44,7 @@ buttons_wireless_to_n64 = {
 def test_hid_controller_descriptor(blueretro):
     # Check device is connected
     blueretro.disconnect()
+    blueretro.send_system_id(GC)
     blueretro.connect()
     blueretro.send_name(DEVICE_NAME)
 
@@ -68,6 +70,7 @@ def test_hid_controller_descriptor(blueretro):
 def test_hid_controller_default_buttons_mapping(blueretro):
     # Connect device
     blueretro.disconnect()
+    blueretro.send_system_id(GC)
     blueretro.connect()
     blueretro.send_name(DEVICE_NAME)
     blueretro.send_hid_desc(HID_DESC)

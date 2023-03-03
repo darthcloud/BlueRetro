@@ -1,4 +1,6 @@
+''' Tests for generic HID keyboard. '''
 import json
+from device_data.gc import GC
 
 
 DEVICE_NAME = 'HID Keyboard'
@@ -16,6 +18,7 @@ HID_DESC = '05010906a101850175019508050719e0' \
 
 def test_hid_keyboard_descriptor(blueretro):
     blueretro.disconnect()
+    blueretro.send_system_id(GC)
     blueretro.connect()
     blueretro.send_name(DEVICE_NAME)
     blueretro.send_hid_desc(HID_DESC)

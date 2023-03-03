@@ -1,4 +1,7 @@
 from enum import IntEnum, auto
+from collections import namedtuple
+
+AxesData = namedtuple('AxesData', ['wireless', 'generic', 'mapped', 'wired'])
 
 class pad(IntEnum):
     LX_LEFT = 0
@@ -33,3 +36,11 @@ class pad(IntEnum):
     RS = auto()
     RT = auto()
     RJ = auto()
+
+class axis(IntEnum):
+    LX = 0
+    LY = auto()
+    RX = auto()
+    RY = auto()
+    LM = auto()
+    RM = auto()

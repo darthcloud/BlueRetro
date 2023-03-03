@@ -1,4 +1,5 @@
 import pytest
+import json
 from serial import SerialException
 from time import sleep
 from injector import BlueRetroInjector
@@ -17,6 +18,9 @@ class BlueRetroDut(BlueRetroInjector):
     def flush_logs(self):
         sleep(0.1)
         super(BlueRetroDut, self).get_logs()
+
+    def expect_json(self, log_type):
+        return json.loads(self.expect('({.*?' + log_type + '.*?)\n', timeout=1).group(1))
 
 
 @pytest.fixture()
