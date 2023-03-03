@@ -122,6 +122,16 @@ void bt_att_cmd_write_req(uint16_t handle, uint16_t att_handle, uint8_t *data, u
     bt_att_cmd(handle, BT_ATT_OP_WRITE_REQ, sizeof(write_req->handle) + len);
 }
 
+void bt_att_cmd_write_cmd(uint16_t handle, uint16_t att_handle, uint8_t *data, uint32_t len) {
+    struct bt_att_write_cmd *write_cmd = (struct bt_att_write_cmd *)bt_hci_pkt_tmp.att_data;
+    printf("# %s\n", __FUNCTION__);
+
+    write_cmd->handle = att_handle;
+    memcpy(write_cmd->value, data, len);
+
+    bt_att_cmd(handle, BT_ATT_OP_WRITE_CMD, sizeof(write_cmd->handle) + len);
+}
+
 void bt_att_cmd_wr_rsp(uint16_t handle) {
     printf("# %s\n", __FUNCTION__);
 

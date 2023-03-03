@@ -18,6 +18,7 @@ void bt_att_cmd_read_req(uint16_t handle, uint16_t att_handle);
 void bt_att_cmd_read_blob_req(uint16_t handle, uint16_t att_handle, uint16_t offset);
 void bt_att_cmd_read_group_req_uuid16(uint16_t handle, uint16_t start, uint16_t uuid);
 void bt_att_cmd_write_req(uint16_t handle, uint16_t att_handle, uint8_t *data, uint32_t len);
+void bt_att_cmd_write_cmd(uint16_t handle, uint16_t att_handle, uint8_t *data, uint32_t len);
 void bt_att_cmd_wr_rsp(uint16_t handle);
 void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, uint32_t data_len);
 void bt_att_cmd_exec_wr_rsp(uint16_t handle);

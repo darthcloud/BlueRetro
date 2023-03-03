@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,10 +18,18 @@
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
     BT_ATT_HID_DISCOVERY,
+    BT_ATT_HID_CHAR_PROP,
     BT_ATT_HID_REPORT_MAP,
     BT_ATT_HID_REPORT_REF,
     BT_ATT_HID_REPORT_CFG,
 };
+
+struct bt_att_read_type_data {
+    uint16_t handle;
+    uint8_t char_prop;
+    uint16_t char_value_handle;
+    uint16_t uuid;
+} __packed;
 
 struct bt_att_report_ref {
     uint8_t report_id;
@@ -37,6 +45,7 @@ struct bt_att_group_data_uuid16 {
 struct bt_att_hid_report {
     uint8_t id;
     uint8_t type;
+    uint8_t char_prop;
     uint16_t report_hdl;
     uint16_t cfg_hdl;
     uint16_t ref_hdl;
@@ -65,10 +74,10 @@ static int32_t bt_att_is_report_required(struct bt_att_hid_report *att_hid, stru
     return 0;
 }
 
-static uint16_t bt_att_get_report_handle(struct bt_att_hid *hid_data, uint8_t report_id) {
+static uint32_t bt_att_get_report_index(struct bt_att_hid *hid_data, uint8_t report_id) {
     for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
         if (hid_data->reports[i].id == report_id) {
-            return hid_data->reports[i].report_hdl;
+            return i;
         }
     }
     return 0;
@@ -81,10 +90,18 @@ void bt_att_hid_init(struct bt_dev *device) {
 }
 
 void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
-    uint16_t att_handle = bt_att_get_report_handle(&att_hid[device->ids.id], report_id);
+    struct bt_att_hid *hid_data = &att_hid[device->ids.id];
+    uint32_t index = bt_att_get_report_index(hid_data, report_id);
+    uint16_t att_handle = hid_data->reports[index].report_hdl;
+    uint8_t char_prop = hid_data->reports[index].char_prop;
 
     if (att_handle) {
-        bt_att_cmd_write_req(device->acl_handle, att_handle, data, len);
+        if (char_prop | BT_GATT_CHRC_WRITE) {
+            bt_att_cmd_write_req(device->acl_handle, att_handle, data, len);
+        }
+        else {
+            bt_att_cmd_write_cmd(device->acl_handle, att_handle, data, len);
+        }
     }
 }
 
@@ -106,8 +123,9 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     break;
                 case BT_ATT_OP_FIND_INFO_REQ:
                     printf("# BT_ATT_OP_FIND_INFO_REQ\n");
-                    device->hid_state = BT_ATT_HID_REPORT_MAP;
-                    bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                    device->hid_state = BT_ATT_HID_CHAR_PROP;
+                    bt_att_cmd_read_type_req_uuid16(device->acl_handle,
+                        hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
                     break;
             }
             break;
@@ -240,6 +258,23 @@ find_info_rsp_end:
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
                     break;
+                }
+                case BT_ATT_HID_CHAR_PROP:
+                {
+                    const uint32_t elem_cnt = (att_len - 2) / sizeof(read_type_rsp->len);
+
+                    for (uint32_t i = 0; i < elem_cnt; i++) {
+                        struct bt_att_read_type_data *data = (struct bt_att_read_type_data *)read_type_rsp->data;
+
+                        for (uint32_t j = 0; j < HID_MAX_REPORT; j++) {
+                            if (hid_data->reports[j].report_hdl == data[i].handle) {
+                                hid_data->reports[j].char_prop = data[i].char_prop;
+                            }
+                        }
+                    }
+
+                    device->hid_state = BT_ATT_HID_REPORT_MAP;
+                    bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
                 }
             }
             break;
@@ -385,7 +420,7 @@ find_info_rsp_end:
                             break;
                         }
                     }
-                    if (i >= HID_MAX_REPORT) {
+                    if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY) && i >= HID_MAX_REPORT) {
                         atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
                         bt_hid_init(device);
                     }
