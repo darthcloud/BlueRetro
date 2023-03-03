@@ -1,5 +1,8 @@
 import json
-import struct
+from bit_helper import bit, swap32
+from device_data.hid import hid
+from device_data.br import pad
+from device_data.n64 import n64
 
 
 DEVICE_NAME = 'HID Generic'
@@ -9,26 +12,32 @@ HID_DESC = '05010905a1010901a100093009311500' \
            'c0'
 buttons_wireless_to_generic = {
     0: 0,
-    (1 << 0): (1 << 18), (1 << 1): (1 << 17), (1 << 2): (1 << 15),(1 << 3): (1 << 16),
-    (1 << 4): (1 << 19), (1 << 5): (1 << 13), (1 << 6): (1 << 25), (1 << 7): (1 << 29),
-    (1 << 8): (1 << 24), (1 << 9): (1 << 28), (1 << 10): (1 << 21), (1 << 11): (1 << 20),
-    (1 << 12): (1 << 22), (1 << 13): (1 << 27), (1 << 14): (1 << 31), (1 << 15): (1 << 12),
-    (1 << 16): (1 << 14), (1 << 17): (1 << 23), (1 << 18): (1 << 26), (1 << 19): (1 << 30),
+    bit(hid.A): bit(pad.RB_DOWN), bit(hid.B): bit(pad.RB_RIGHT),
+    bit(hid.C): bit(pad.RD_UP), bit(hid.X): bit(pad.RB_LEFT),
+    bit(hid.Y): bit(pad.RB_UP), bit(hid.Z): bit(pad.RD_RIGHT),
+    bit(hid.LB): bit(pad.LS), bit(hid.RB): bit(pad.RS),
+    bit(hid.L): bit(pad.LM), bit(hid.R): bit(pad.RM),
+    bit(hid.SELECT): bit(pad.MS), bit(hid.START): bit(pad.MM),
+    bit(hid.MENU): bit(pad.MT), bit(hid.LJ): bit(pad.LJ),
+    bit(hid.RJ): bit(pad.RJ), bit(15): bit(pad.RD_LEFT),
+    bit(16): bit(pad.RD_DOWN), bit(17): bit(pad.MQ),
+    bit(18): bit(pad.LT), bit(19): bit(pad.RT),
     0xFFFFFFFF: 0xFFFFF000,
 }
 buttons_wireless_to_n64 = {
     0: 0,
-    (1 << 0): (1 << 7), (1 << 1): (1 << 10), (1 << 2): (1 << 11),(1 << 3): (1 << 6),
-    (1 << 4): (1 << 9), (1 << 5): (1 << 8), (1 << 6): (1 << 13), (1 << 7): (1 << 12),
-    (1 << 8): (1 << 5), (1 << 9): (1 << 5), (1 << 10): 0, (1 << 11): (1 << 4),
-    (1 << 12): 0, (1 << 13): 0, (1 << 14): 0, (1 << 15): 0,
-    (1 << 16): 0, (1 << 17): 0, (1 << 18): 0, (1 << 19): 0,
+    bit(hid.A): bit(n64.A), bit(hid.B): bit(n64.C_DOWN),
+    bit(hid.C): bit(n64.C_UP), bit(hid.X): bit(n64.B),
+    bit(hid.Y): bit(n64.C_LEFT), bit(hid.Z): bit(n64.C_RIGHT),
+    bit(hid.LB): bit(n64.L), bit(hid.RB): bit(n64.R),
+    bit(hid.L): bit(n64.Z), bit(hid.R): bit(n64.Z),
+    bit(hid.SELECT): 0, bit(hid.START): bit(n64.START),
+    bit(hid.MENU): 0, bit(hid.LJ): 0,
+    bit(hid.RJ): 0, bit(15): 0,
+    bit(16): 0, bit(17): 0,
+    bit(18): 0, bit(19): 0,
     0xFFFFFFFF: 0x3FF0,
 }
-
-
-def swap32(i):
-    return struct.unpack("<I", struct.pack(">I", i))[0]
 
 
 def test_hid_controller_descriptor(blueretro):

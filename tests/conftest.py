@@ -19,7 +19,7 @@ class BlueRetroDut(BlueRetroInjector):
         super(BlueRetroDut, self).get_logs()
 
 
-@pytest.fixture
+@pytest.fixture()
 def blueretro(dut, redirect):
     retry = 0
     while True:
