@@ -1,7 +1,11 @@
+''' Common constants for GameCube devices. '''
 from enum import IntEnum, auto
 from .br import axis
 
+GC = 18
+
 class gc(IntEnum):
+    ''' Buttons bitfield definition for controllers. '''
     A = 0
     B = auto()
     X = auto()

@@ -1,7 +1,9 @@
+''' Common constants for Switch devices. '''
 from enum import IntEnum, auto
 from .br import axis
 
 class sw_n(IntEnum):
+    ''' Buttons bitfield definition for native reports. '''
     Y = 0
     X = auto()
     B = auto()

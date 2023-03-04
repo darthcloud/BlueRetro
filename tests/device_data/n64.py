@@ -1,7 +1,11 @@
+''' Common constants for N64 devices. '''
 from enum import IntEnum, auto
 from .br import axis
 
+N64 = 15
+
 class n64(IntEnum):
+    ''' Buttons bitfield definition for controllers. '''
     LD_RIGHT = 0
     LD_LEFT = auto()
     LD_DOWN = auto()

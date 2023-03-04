@@ -1,6 +1,8 @@
+''' Common constants for HID devices. '''
 from enum import IntEnum, auto
 
 class hid(IntEnum):
+    ''' Buttons bitfield definition for a typical HID controllers. '''
     A = 0
     B = auto()
     C = auto()

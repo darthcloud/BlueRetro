@@ -1,9 +1,11 @@
+''' Common constants for BlueRetro adapter. '''
 from enum import IntEnum, auto
 from collections import namedtuple
 
 AxesData = namedtuple('AxesData', ['wireless', 'generic', 'mapped', 'wired'])
 
 class pad(IntEnum):
+    ''' Buttons bitfield definition for controllers. '''
     LX_LEFT = 0
     LX_RIGHT = auto()
     LY_DOWN = auto()
@@ -38,6 +40,7 @@ class pad(IntEnum):
     RJ = auto()
 
 class axis(IntEnum):
+    ''' Axes index definition for controllers. '''
     LX = 0
     LY = auto()
     RX = auto()
