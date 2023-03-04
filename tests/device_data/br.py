@@ -1,8 +1,5 @@
 ''' Common constants for BlueRetro adapter. '''
 from enum import IntEnum, auto
-from collections import namedtuple
-
-AxesData = namedtuple('AxesData', ['wireless', 'generic', 'mapped', 'wired'])
 
 class pad(IntEnum):
     ''' Buttons bitfield definition for controllers. '''

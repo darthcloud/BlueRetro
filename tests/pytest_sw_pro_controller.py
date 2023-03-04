@@ -1,8 +1,9 @@
 ''' Tests for the Switch Pro controller. '''
 from bit_helper import bit, swap24
 from device_data.sw import sw_n, sw_n_axes
-from device_data.br import AxesData, pad, axis
+from device_data.br import pad, axis
 from device_data.gc import GC, gc_axes
+from device_data.test_data_generator import axes_test_data_generator
 
 
 DEVICE_NAME = 'Pro Controller'
@@ -21,45 +22,6 @@ buttons_wireless_to_generic = {
     bit(sw_n.L): bit(pad.LS), bit(sw_n.ZL): bit(pad.LM),
     0xFFFFFF: 0xFFFF0F00,
 }
-axes_wireless_to_generic = [
-    {
-        axis.LX: AxesData(sw_n_axes[axis.LX]['neutral'], 0, 0, gc_axes[axis.LX]['neutral']),
-        axis.LY: AxesData(sw_n_axes[axis.LY]['neutral'], 0, 0, gc_axes[axis.LY]['neutral']),
-        axis.RX: AxesData(sw_n_axes[axis.RX]['neutral'], 0, 0, gc_axes[axis.RX]['neutral']),
-        axis.RY: AxesData(sw_n_axes[axis.RY]['neutral'], 0, 0, gc_axes[axis.RY]['neutral']),
-    },
-    {
-        axis.LX: AxesData(
-            sw_n_axes[axis.LX]['neutral'] + sw_n_axes[axis.LX]['abs_max'],
-            sw_n_axes[axis.LX]['abs_max'],
-            (gc_axes[axis.LX]['abs_max'] / sw_n_axes[axis.LX]['abs_max'])
-                * sw_n_axes[axis.LX]['abs_max'],
-            ((gc_axes[axis.LX]['abs_max'] / sw_n_axes[axis.LX]['abs_max'])
-                * sw_n_axes[axis.LX]['abs_max']) + gc_axes[axis.LX]['neutral']),
-        axis.LY: AxesData(
-            sw_n_axes[axis.LY]['neutral'] - sw_n_axes[axis.LY]['abs_max'],
-            -sw_n_axes[axis.LY]['abs_max'],
-            -(gc_axes[axis.LY]['abs_max'] / sw_n_axes[axis.LY]['abs_max'])
-                * sw_n_axes[axis.LY]['abs_max'],
-            (-(gc_axes[axis.LY]['abs_max'] / sw_n_axes[axis.LY]['abs_max'])
-                * sw_n_axes[axis.LY]['abs_max']) + gc_axes[axis.LY]['neutral']),
-        axis.RX: AxesData(
-            sw_n_axes[axis.RX]['neutral'] - sw_n_axes[axis.RX]['abs_max'],
-            -sw_n_axes[axis.RX]['abs_max'],
-            -(gc_axes[axis.RX]['abs_max'] / sw_n_axes[axis.RX]['abs_max'])
-                * sw_n_axes[axis.RX]['abs_max'],
-            (-(gc_axes[axis.RX]['abs_max'] / sw_n_axes[axis.RX]['abs_max'])
-                * sw_n_axes[axis.RX]['abs_max']) + gc_axes[axis.RX]['neutral']),
-        axis.RY: AxesData(
-            sw_n_axes[axis.RY]['neutral'] + sw_n_axes[axis.RY]['abs_max'],
-            sw_n_axes[axis.RY]['abs_max'],
-            (gc_axes[axis.RY]['abs_max'] / sw_n_axes[axis.RY]['abs_max'])
-                * sw_n_axes[axis.RY]['abs_max'],
-            ((gc_axes[axis.RY]['abs_max'] / sw_n_axes[axis.RY]['abs_max'])
-                * sw_n_axes[axis.RY]['abs_max']) + gc_axes[axis.RY]['neutral']),
-    },
-]
-
 
 def test_sw_pro_controller_default_buttons_mapping(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
@@ -137,12 +99,12 @@ def test_sw_pro_controller_axes_default_scaling(blueretro):
     blueretro.flush_logs()
 
     # Validate axes default scaling
-    for axes in axes_wireless_to_generic:
+    for axes in axes_test_data_generator(sw_n_axes, gc_axes, 0.0135):
         blueretro.send_hid_report(
             'a1300180'
             '000000'
-            f'{swap24(axes[axis.LX].wireless | axes[axis.LY].wireless << 12):06x}'
-            f'{swap24(axes[axis.RX].wireless | axes[axis.RY].wireless << 12):06x}'
+            f'{swap24(axes[axis.LX]["wireless"] | axes[axis.LY]["wireless"] << 12):06x}'
+            f'{swap24(axes[axis.RX]["wireless"] | axes[axis.RY]["wireless"] << 12):06x}'
             '00000000000000000000000000'
             '00000000000000000000000000'
             '0000000000000000000000'
@@ -155,24 +117,24 @@ def test_sw_pro_controller_axes_default_scaling(blueretro):
         br_mapped = blueretro.expect_json('mapped_input')
         wired = blueretro.expect_json('wired_output')
 
-        assert wireless['axes'][axis.LX] == axes[axis.LX].wireless
-        assert wireless['axes'][axis.LY] == axes[axis.LY].wireless
-        assert wireless['axes'][axis.RX] == axes[axis.RX].wireless
-        assert wireless['axes'][axis.RY] == axes[axis.RY].wireless
+        assert wireless['axes'][axis.LX] == axes[axis.LX]['wireless']
+        assert wireless['axes'][axis.LY] == axes[axis.LY]['wireless']
+        assert wireless['axes'][axis.RX] == axes[axis.RX]['wireless']
+        assert wireless['axes'][axis.RY] == axes[axis.RY]['wireless']
 
-        assert br_generic['axes'][axis.LX] == axes[axis.LX].generic
-        assert br_generic['axes'][axis.LY] == axes[axis.LY].generic
-        assert br_generic['axes'][axis.RX] == axes[axis.RX].generic
-        assert br_generic['axes'][axis.RY] == axes[axis.RY].generic
+        assert br_generic['axes'][axis.LX] == axes[axis.LX]['generic']
+        assert br_generic['axes'][axis.LY] == axes[axis.LY]['generic']
+        assert br_generic['axes'][axis.RX] == axes[axis.RX]['generic']
+        assert br_generic['axes'][axis.RY] == axes[axis.RY]['generic']
 
-        assert br_mapped['axes'][axis.LX] == axes[axis.LX].mapped
-        assert br_mapped['axes'][axis.LY] == axes[axis.LY].mapped
-        assert br_mapped['axes'][axis.RX] == axes[axis.RX].mapped
-        assert br_mapped['axes'][axis.RY] == axes[axis.RY].mapped
+        assert br_mapped['axes'][axis.LX] == axes[axis.LX]['mapped']
+        assert br_mapped['axes'][axis.LY] == axes[axis.LY]['mapped']
+        assert br_mapped['axes'][axis.RX] == axes[axis.RX]['mapped']
+        assert br_mapped['axes'][axis.RY] == axes[axis.RY]['mapped']
 
-        assert wired['axes'][axis.LX] == axes[axis.LX].wired
-        assert wired['axes'][axis.LY] == axes[axis.LY].wired
-        assert wired['axes'][axis.RX] == axes[axis.RX].wired
-        assert wired['axes'][axis.RY] == axes[axis.RY].wired
+        assert wired['axes'][axis.LX] == axes[axis.LX]['wired']
+        assert wired['axes'][axis.LY] == axes[axis.LY]['wired']
+        assert wired['axes'][axis.RX] == axes[axis.RX]['wired']
+        assert wired['axes'][axis.RY] == axes[axis.RY]['wired']
 
     blueretro.disconnect()
