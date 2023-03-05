@@ -618,11 +618,15 @@ int32_t bt_host_init(void) {
 }
 
 int32_t bt_host_txq_add(uint8_t *packet, uint32_t packet_len) {
+#ifdef CONFIG_BLUERETRO_QEMU
+    return 0;
+#else
     UBaseType_t ret = xRingbufferSend(txq_hdl, (void *)packet, packet_len, portMAX_DELAY);
     if (ret != pdTRUE) {
         printf("# %s txq full!\n", __FUNCTION__);
     }
     return (ret == pdTRUE ? 0 : -1);
+#endif
 }
 
 int32_t bt_host_load_link_key(struct bt_hci_cp_link_key_reply *link_key_reply) {
