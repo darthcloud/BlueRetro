@@ -1,6 +1,6 @@
 ''' Generator function that create test data base on source and destination. '''
-from .br import axis as ax, pad
 from bit_helper import bit
+from .br import axis as ax
 
 
 def btns_generic_test_data(src):
@@ -9,7 +9,7 @@ def btns_generic_test_data(src):
     src_all = 0
     br_all = 0
     for br_btns, src_btns in enumerate(src):
-        if (src_btns):
+        if src_btns:
             test_data[src_btns] = bit(br_btns)
             src_all |= src_btns
             br_all |= bit(br_btns)
@@ -25,7 +25,7 @@ def btns_generic_to_wired_test_data(src, dst):
     src_all = 0
     dst_all = 0
     for br_btns, src_btns in enumerate(src):
-        if (src_btns):
+        if src_btns:
             test_data[src_btns] = dst[br_btns]
             src_all |= src_btns
             dst_all |= dst[br_btns]
@@ -37,6 +37,10 @@ def btns_generic_to_wired_test_data(src, dst):
 
 def axes_test_data_generator(src, dst, dz):
     ''' Generate test data for axes. '''
+    def value(sign, src_value, deadzone, scale):
+        ''' Compute scaled axes value. '''
+        return int(sign * (src_value - deadzone) * scale)
+
     test_data = [{}, {}, {}, {}]
     for axis, _ in src.items():
         if axis in dst:
@@ -45,13 +49,16 @@ def axes_test_data_generator(src, dst, dz):
             else:
                 sign = 1
 
-            scale = dst[axis]['abs_max'] / src[axis]['abs_max']
             one = int(src[axis]['abs_max'] / dst[axis]['abs_max'])
             half = int(one / 2)
             src_neutral = src[axis]['neutral']
             dst_neutral = dst[axis]['neutral']
             src_max = src[axis]['abs_max']
+            dst_max = dst[axis]['abs_max']
             src_dz = src[axis]['deadzone']
+
+            deadzone = int(dz * src_max) + src_dz
+            scale = dst_max / (src_max - deadzone)
 
             # Test neutral value
             test_data[0][axis] = {
@@ -64,20 +71,20 @@ def axes_test_data_generator(src, dst, dz):
             test_data[1][axis] = {
                 'wireless': src_neutral + sign * src_max,
                 'generic': sign * src_max,
-                'mapped': sign * scale * src_max,
-                'wired': sign * scale * src_max + dst_neutral,
+                'mapped': value(sign, src_max, deadzone, scale),
+                'wired': value(sign, src_max, deadzone, scale) + dst_neutral,
             }
             # Test deadzone threshold+
             test_data[2][axis] = {
-                'wireless': src_neutral + sign * (int(src_max * dz) + src_dz + one),
-                'generic': sign * (int(src_max * dz) + src_dz + one),
-                'mapped': sign * 1,
-                'wired': dst_neutral + sign * 1,
+                'wireless': src_neutral + sign * (deadzone + one),
+                'generic': sign * (deadzone + one),
+                'mapped': value(sign, (deadzone + one), deadzone, scale),
+                'wired': value(sign, (deadzone + one), deadzone, scale) + dst_neutral,
             }
             # Test deadzone threshold-
             test_data[3][axis] = {
-                'wireless': src_neutral + sign * (int(src_max * dz) + src_dz + half),
-                'generic': sign * (int(src_max * dz) + src_dz + half),
+                'wireless': src_neutral + sign * (deadzone + half),
+                'generic': sign * (deadzone + half),
                 'mapped': 0,
                 'wired': dst_neutral,
             }
