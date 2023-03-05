@@ -78,7 +78,7 @@ static void adapter_debug_task(void *arg) {
     while (1) {
         rx_len = uart_read_bytes(UART_NUM_0, uart_buffer, 4, portMAX_DELAY);
         if (rx_len) {
-            rx_len = uart_read_bytes(UART_NUM_0, pkt->data, pkt->data_len, 20 / portTICK_PERIOD_MS);
+            rx_len = uart_read_bytes(UART_NUM_0, pkt->data, pkt->data_len, 50 / portTICK_PERIOD_MS);
 
             if (rx_len != pkt->data_len) {
                 printf("# %s data RX timeout\n", __FUNCTION__);
