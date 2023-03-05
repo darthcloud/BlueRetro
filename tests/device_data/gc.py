@@ -1,8 +1,11 @@
 ''' Common constants for GameCube devices. '''
 from enum import IntEnum, auto
 from .br import axis
+from bit_helper import bit
+
 
 GC = 18
+
 
 class gc(IntEnum):
     ''' Buttons bitfield definition for controllers. '''
@@ -18,6 +21,19 @@ class gc(IntEnum):
     Z = auto()
     R = auto()
     L = auto()
+
+
+gc_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(gc.LD_LEFT), bit(gc.LD_RIGHT), bit(gc.LD_DOWN), bit(gc.LD_UP),
+    0, 0, 0, 0,
+    bit(gc.B), bit(gc.X), bit(gc.A), bit(gc.Y),
+    bit(gc.START), 0, 0, 0,
+    0, bit(gc.Z), bit(gc.L), 0,
+    0, bit(gc.Z), bit(gc.R), 0,
+]
+
 
 gc_axes = {
     axis.LX: {'size_min': -128, 'size_max': 127, 'neutral': 0x80, 'abs_max': 0x64},

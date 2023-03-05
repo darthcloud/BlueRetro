@@ -1,27 +1,14 @@
 ''' Tests for the Switch Pro controller. '''
+from device_data.test_data_generator import btns_generic_test_data
+from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import bit, swap24
-from device_data.sw import sw_n, sw_n_axes
+from device_data.sw import sw_n, sw_n_btns_mask, sw_n_axes
 from device_data.br import pad, axis
 from device_data.gc import GC, gc_axes
-from device_data.test_data_generator import axes_test_data_generator
 
 
 DEVICE_NAME = 'Pro Controller'
-buttons_wireless_to_generic = {
-    0: 0,
-    bit(sw_n.Y): bit(pad.RB_LEFT), bit(sw_n.X): bit(pad.RB_UP),
-    bit(sw_n.B): bit(pad.RB_DOWN),bit(sw_n.A): bit(pad.RB_RIGHT),
-    bit(sw_n.R_SR): bit(pad.RT), bit(sw_n.R_SL): bit(pad.LT),
-    bit(sw_n.R): bit(pad.RS), bit(sw_n.ZR): bit(pad.RM),
-    bit(sw_n.MINUS): bit(pad.MS), bit(sw_n.PLUS): bit(pad.MM),
-    bit(sw_n.RJ): bit(pad.RJ), bit(sw_n.LJ): bit(pad.LJ),
-    bit(sw_n.HOME): bit(pad.MT), bit(sw_n.CAPTURE): bit(pad.MQ),
-    bit(sw_n.DOWN): bit(pad.LD_DOWN), bit(sw_n.UP): bit(pad.LD_UP),
-    bit(sw_n.RIGHT): bit(pad.LD_RIGHT), bit(sw_n.LEFT): bit(pad.LD_LEFT),
-    bit(sw_n.L_SR): bit(pad.RT), bit(sw_n.L_SL): bit(pad.LT),
-    bit(sw_n.L): bit(pad.LS), bit(sw_n.ZL): bit(pad.LM),
-    0xFFFFFF: 0xFFFF0F00,
-}
+
 
 def test_sw_pro_controller_default_buttons_mapping(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
@@ -49,7 +36,7 @@ def test_sw_pro_controller_default_buttons_mapping(blueretro):
     blueretro.flush_logs()
 
     # Validate buttons default mapping
-    for sw_btns, br_btns in buttons_wireless_to_generic.items():
+    for sw_btns, br_btns in btns_generic_test_data(sw_n_btns_mask):
         blueretro.send_hid_report(
             'a1300180'
             f'{swap24(sw_btns):06x}'
