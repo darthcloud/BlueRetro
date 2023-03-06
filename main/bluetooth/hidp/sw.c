@@ -24,6 +24,17 @@ static void bt_hid_sw_set_calib(struct bt_hid_sw_ctrl_calib *calib, uint8_t *dat
 }
 
 static void bt_hid_sw_print_calib(struct bt_hid_sw_ctrl_calib *calib) {
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+    printf("{\"log_type\": \"calib_data\", ");
+    printf("\"rel_min\": [%u, %u, %u, %u], ", calib->sticks[0].axes[0].rel_min, calib->sticks[0].axes[1].rel_min,
+        calib->sticks[1].axes[0].rel_min, calib->sticks[1].axes[1].rel_min);
+    printf("\"rel_max\": [%u, %u, %u, %u], ", calib->sticks[0].axes[0].rel_max, calib->sticks[0].axes[1].rel_max,
+        calib->sticks[1].axes[0].rel_max, calib->sticks[1].axes[1].rel_max);
+    printf("\"neutral\": [%u, %u, %u, %u], ", calib->sticks[0].axes[0].neutral, calib->sticks[0].axes[1].neutral,
+        calib->sticks[1].axes[0].neutral, calib->sticks[1].axes[1].neutral);
+    printf("\"deadzone\": [%u, %u, %u, %u]}\n", calib->sticks[0].deadzone, calib->sticks[0].deadzone,
+        calib->sticks[1].deadzone, calib->sticks[1].deadzone);
+#else
     printf("# rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
     printf("# neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
     printf("# rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
@@ -31,6 +42,7 @@ static void bt_hid_sw_print_calib(struct bt_hid_sw_ctrl_calib *calib) {
     printf("# neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
     printf("# rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
     printf("#         LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
+#endif
 }
 
 void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
