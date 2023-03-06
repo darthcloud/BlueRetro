@@ -26,7 +26,7 @@ class BlueRetroDut(BlueRetroInjector):
 
     def expect_json(self, log_type):
         ''' Expect a log formatted in json and parse it. '''
-        return json.loads(self.expect('({.*?' + log_type + '.*?)\n', timeout=1).group(1))
+        return json.loads(self.expect('({.{13}' + log_type + '.*?)\n', timeout=1).group(1))
 
 
 @pytest.fixture()

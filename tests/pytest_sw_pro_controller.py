@@ -52,8 +52,6 @@ def test_sw_pro_controller_default_buttons_mapping(blueretro):
 
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
-        _br_mapped = blueretro.expect_json('mapped_input')
-        _wired = blueretro.expect_json('wired_output')
 
         assert wireless['btns'] >> 8 == sw_btns
         assert br_generic['btns'][0] == br_btns

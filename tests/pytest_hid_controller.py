@@ -68,8 +68,6 @@ def test_hid_controller_default_buttons_mapping(blueretro):
 
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
-        _br_mapped = blueretro.expect_json('mapped_input')
-        _wired = blueretro.expect_json('wired_output')
 
         assert wireless['btns'] == hid_btns
         assert br_generic['btns'][0] == br_btns
@@ -102,8 +100,6 @@ def test_hid_controller_n64_buttons_mapping(blueretro):
         blueretro.get_logs()
 
         wireless = blueretro.expect_json('wireless_input')
-        _br_generic = blueretro.expect_json('generic_input')
-        _br_mapped = blueretro.expect_json('mapped_input')
         wired = blueretro.expect_json('wired_output')
 
         assert wireless['btns'] == hid_btns
