@@ -66,3 +66,9 @@ sw_n_ljc_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE, 'polarity': 1},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
 }
+
+
+sw_n_rjc_axes = {
+    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
+    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE, 'polarity': 1},
+}
