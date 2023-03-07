@@ -49,6 +49,11 @@ def axes_test_data_generator(src, dst, dz):
             else:
                 sign = 1
 
+            if 'polarity' in src[axis] and src[axis]['polarity']:
+                src_sign = sign * -1
+            else:
+                src_sign = sign
+
             one = int(src[axis]['abs_max'] / dst[axis]['abs_max'])
             half = int(one / 2)
             src_neutral = src[axis]['neutral']
@@ -69,22 +74,22 @@ def axes_test_data_generator(src, dst, dz):
             }
             # Test maximum value
             test_data[1][axis] = {
-                'wireless': src_neutral + sign * src_max,
-                'generic': sign * src_max,
+                'wireless': src_neutral + src_sign * src_max,
+                'generic': src_sign * src_max,
                 'mapped': value(sign, src_max, deadzone, scale),
                 'wired': value(sign, src_max, deadzone, scale) + dst_neutral,
             }
             # Test deadzone threshold+
             test_data[2][axis] = {
-                'wireless': src_neutral + sign * (deadzone + one),
-                'generic': sign * (deadzone + one),
+                'wireless': src_neutral + src_sign * (deadzone + one),
+                'generic': src_sign * (deadzone + one),
                 'mapped': value(sign, (deadzone + one), deadzone, scale),
                 'wired': value(sign, (deadzone + one), deadzone, scale) + dst_neutral,
             }
             # Test deadzone threshold-
             test_data[3][axis] = {
-                'wireless': src_neutral + sign * (deadzone + half),
-                'generic': sign * (deadzone + half),
+                'wireless': src_neutral + src_sign * (deadzone + half),
+                'generic': src_sign * (deadzone + half),
                 'mapped': 0,
                 'wired': dst_neutral,
             }
