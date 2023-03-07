@@ -119,6 +119,7 @@ static void adapter_debug_task(void *arg) {
                     if (device) {
                         bt_hid_set_type_flags_from_name(device, (char *)pkt->data);
                         printf("# dev: %ld type: %ld:%ld %s\n", device->ids.id, device->ids.type, device->ids.subtype, pkt->data);
+                        bt_hid_init(device);
                     }
                     break;
                 case DBG_CMD_HID_DESC:
