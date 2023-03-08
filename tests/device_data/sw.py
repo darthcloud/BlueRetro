@@ -54,6 +54,18 @@ sw_n_jc_btns_mask = [
 ]
 
 
+sw_n_gen_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw_n.LEFT), bit(sw_n.RIGHT), bit(sw_n.DOWN), bit(sw_n.UP),
+    0, 0, 0, 0,
+    bit(sw_n.A), bit(sw_n.R), bit(sw_n.B), bit(sw_n.Y),
+    bit(sw_n.PLUS), bit(sw_n.ZR), bit(sw_n.HOME), bit(sw_n.CAPTURE),
+    0, bit(sw_n.X), 0, 0,
+    0, bit(sw_n.L), 0, 0,
+]
+
+
 sw_n_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
