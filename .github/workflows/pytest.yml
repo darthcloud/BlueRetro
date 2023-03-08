@@ -56,6 +56,7 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         (cd build; esptool.py --chip esp32 merge_bin --fill-flash-size 4MB -o flash_image.bin @flash_args)
+        pip install numpy
         pip install pytest-embedded
         pip install pytest-embedded-serial
         pip install pytest-embedded-serial-esp

@@ -1,4 +1,5 @@
 ''' Generator function that create test data base on source and destination. '''
+import numpy as np
 from bit_helper import bit
 from .br import axis as ax
 
@@ -39,7 +40,7 @@ def axes_test_data_generator(src, dst, dz):
     ''' Generate test data for axes. '''
     def value(sign, src_value, deadzone, scale):
         ''' Compute scaled axes value. '''
-        return int(sign * (src_value - deadzone) * scale)
+        return int(np.single(sign * (src_value - deadzone) * scale))
 
     test_data = [{}, {}, {}, {}]
     for axis, _ in src.items():
@@ -54,16 +55,16 @@ def axes_test_data_generator(src, dst, dz):
             else:
                 src_sign = sign
 
-            one = int(src[axis]['abs_max'] / dst[axis]['abs_max'])
-            half = int(one / 2)
+            one = int(np.single(src[axis]['abs_max'] / dst[axis]['abs_max']))
+            half = int(np.single(one / 2))
             src_neutral = src[axis]['neutral']
             dst_neutral = dst[axis]['neutral']
             src_max = src[axis]['abs_max']
             dst_max = dst[axis]['abs_max']
             src_dz = src[axis]['deadzone']
 
-            deadzone = int(dz * src_max) + src_dz
-            scale = dst_max / (src_max - deadzone)
+            deadzone = int(np.single(dz * src_max)) + src_dz
+            scale = np.single(dst_max / (src_max - deadzone))
 
             # Test neutral value
             test_data[0][axis] = {
