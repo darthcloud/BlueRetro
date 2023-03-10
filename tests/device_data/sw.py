@@ -90,6 +90,18 @@ sw_n_snes_btns_mask = [
 ]
 
 
+sw_n_nes_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw_n.LEFT), bit(sw_n.RIGHT), bit(sw_n.DOWN), bit(sw_n.UP),
+    0, 0, 0, 0,
+    bit(sw_n.B), 0, bit(sw_n.A), 0,
+    bit(sw_n.PLUS), bit(sw_n.MINUS), 0, 0,
+    bit(sw_n.L), 0, 0, 0,
+    bit(sw_n.R), 0, 0, 0,
+]
+
+
 sw_n_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
