@@ -11,7 +11,10 @@ def btns_generic_test_data(src):
     br_all = 0
     for br_btns, src_btns in enumerate(src):
         if src_btns:
-            test_data[src_btns] = bit(br_btns)
+            if src_btns in test_data:
+                test_data[src_btns] |= bit(br_btns)
+            else:
+                test_data[src_btns] = bit(br_btns)
             src_all |= src_btns
             br_all |= bit(br_btns)
     test_data[src_all] = br_all

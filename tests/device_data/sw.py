@@ -4,6 +4,26 @@ from bit_helper import bit
 from .br import axis
 
 
+class sw(IntEnum):
+    ''' Buttons bitfield definition for default reports. '''
+    B = 0
+    A = auto()
+    Y = auto()
+    X = auto()
+    L = auto()
+    R = auto()
+    ZL = auto()
+    ZR = auto()
+    MINUS = auto()
+    PLUS = auto()
+    LJ = auto()
+    RJ = auto()
+    HOME = auto()
+    CAPTURE = auto()
+    SL = auto()
+    SR = auto()
+
+
 class sw_n(IntEnum):
     ''' Buttons bitfield definition for native reports. '''
     Y = 0
@@ -114,6 +134,18 @@ sw_n_pwa_gc_btns_mask = [
 ]
 
 
+sw_rf_brawler64_btns_mask = [
+    0, 0, 0, 0,
+    bit(sw.X), bit(sw.LJ), bit(sw.Y), bit(sw.RJ),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.A), bit(sw.A), bit(sw.B), bit(sw.X),
+    bit(sw.PLUS), bit(sw.MINUS), bit(sw.HOME), bit(sw.CAPTURE),
+    bit(sw.ZL), bit(sw.L), 0, 0,
+    bit(sw.ZR), bit(sw.R), 0, 0,
+]
+
+
 sw_n_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
@@ -137,4 +169,10 @@ sw_n_rjc_axes = {
 sw_n_n64_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
+}
+
+
+sw_rf_brawler64_axes = {
+    axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0, 'polarity': 1},
 }
