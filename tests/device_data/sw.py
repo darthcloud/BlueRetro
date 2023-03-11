@@ -146,6 +146,18 @@ sw_rf_brawler64_btns_mask = [
 ]
 
 
+sw_hk_admiral_btns_mask = [
+    0, 0, 0, 0,
+    bit(sw.MINUS), bit(sw.RJ), bit(sw.CAPTURE), bit(sw.HOME),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.B), 0, bit(sw.A), 0,
+    bit(sw.PLUS), 0, 0, 0,
+    bit(sw.SL), bit(sw.L), 0, 0,
+    0, bit(sw.R), 0, 0,
+]
+
+
 sw_n_axes = {
     axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
     axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
@@ -173,6 +185,12 @@ sw_n_n64_axes = {
 
 
 sw_rf_brawler64_axes = {
+    axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0, 'polarity': 1},
+}
+
+
+sw_hk_admiral_axes = {
     axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
     axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0, 'polarity': 1},
 }
