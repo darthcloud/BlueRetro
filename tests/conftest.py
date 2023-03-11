@@ -40,6 +40,6 @@ def blueretro(dut, redirect):
         except SerialException:
             sleep(1) # Wait for QEMU
             retry += 1
-            if retry == 3:
+            if retry == 10:
                 raise
     return ret
