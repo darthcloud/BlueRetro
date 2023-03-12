@@ -192,5 +192,5 @@ sw_rf_brawler64_axes = {
 
 sw_hk_admiral_axes = {
     axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
-    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0, 'polarity': 1},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
 }
