@@ -215,8 +215,8 @@ static const uint32_t sw_jc_btns_mask[2][32] = {
         0, 0, 0, 0,
         BIT(SW_N_B) | BIT(SW_N_UP), BIT(SW_N_X) | BIT(SW_N_DOWN), BIT(SW_N_A) | BIT(SW_N_LEFT), BIT(SW_N_Y) | BIT(SW_N_RIGHT),
         BIT(SW_N_CAPTURE) | BIT(SW_N_PLUS), BIT(SW_N_MINUS) | BIT(SW_N_HOME), 0, 0,
-        BIT(SW_N_L_SL) | BIT(SW_N_R_SL), BIT(SW_N_L) | BIT(SW_N_R), 0, BIT(SW_N_LJ) | BIT(SW_N_RJ),
-        BIT(SW_N_L_SR) | BIT(SW_N_R_SR), BIT(SW_N_ZL) | BIT(SW_N_ZR), 0, 0,
+        BIT(SW_N_L_SL) | BIT(SW_N_R_SL), BIT(SW_N_ZL) | BIT(SW_N_ZR), 0, BIT(SW_N_LJ) | BIT(SW_N_RJ),
+        BIT(SW_N_L_SR) | BIT(SW_N_R_SR), BIT(SW_N_L) | BIT(SW_N_R), 0, 0,
     },
 };
 
