@@ -281,17 +281,29 @@ static const uint32_t sw_admiral_btns_mask[32] = {
     0, BIT(SW_PRO_R), 0, 0,
 };
 
+static const uint32_t sw_brawler64_btns_mask[32] = {
+    0, 0, 0, 0,
+    BIT(SW_PRO_X), BIT(SW_PRO_LJ), BIT(SW_PRO_Y), BIT(SW_PRO_RJ),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(SW_PRO_A), 0, BIT(SW_PRO_B), 0,
+    BIT(SW_PRO_PLUS), BIT(SW_PRO_MINUS), BIT(SW_PRO_HOME), BIT(SW_PRO_CAPTURE),
+    BIT(SW_PRO_ZL), BIT(SW_PRO_L), 0, 0,
+    BIT(SW_PRO_ZR), BIT(SW_PRO_R), 0, 0,
+};
+
 static int32_t sw_pad_init(struct bt_data *bt_data) {
     struct bt_hid_sw_ctrl_calib *calib = NULL;
     const uint8_t *axes_idx = sw_axes_idx;
     struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
     uint8_t report_type = (bt_data->base.report_id == 0x30) ? 1 : 0;
-    uint8_t calib_set = 0;
 
     memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_pro_btns_mask[report_type],
         sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
 
     mapping_quirks_apply(bt_data);
+
+    bt_hid_sw_get_calib(bt_data->base.pids->id, &calib);
 
     if (bt_data->base.pids->subtype == BT_SW_LEFT_JOYCON) {
         const uint32_t *desc = (report_type) ? sw_jc_native_desc : sw_jc_desc;
@@ -343,8 +355,16 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
     else if (bt_data->base.pids->subtype == BT_SW_N64) {
-        memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_n64_btns_mask[report_type],
-            sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+        if (calib == NULL) {
+            /* RF Brawler64 HID mapping is wrong, if no calib data provided */
+            /* while using the N64 name we assume it's the RF Brawler64 */
+            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_brawler64_btns_mask[report_type],
+                sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+        }
+        else {
+            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_n64_btns_mask[report_type],
+                sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+        }
 
         meta[0].polarity = 0;
         meta[1].polarity = 0;
@@ -353,22 +373,6 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
-        if (!calib_set) {
-            /* RF Brawler64 HID mapping is wrong, if no calib data provided */
-            /* while using the N64 name we assume it's the RF Brawler64 */
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_LEFT] = BIT(SW_PRO_X);
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RX_RIGHT] = BIT(SW_PRO_LJ);
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_DOWN] = BIT(SW_PRO_Y);
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RY_UP] = BIT(SW_PRO_RJ);
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_LJ] = 0;
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RJ] = 0;
-            bt_data->raw_src_mappings[PAD].btns_mask[PAD_RB_LEFT] = BIT(SW_PRO_A);
-            for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
-                meta[axes_idx[i]].neutral = sw_unlic_axes_meta[i].neutral;
-                meta[axes_idx[i]].abs_max = sw_unlic_axes_meta[i].abs_max;
-                meta[axes_idx[i]].deadzone = sw_unlic_axes_meta[i].deadzone;
-            }
-        }
     }
     else if (bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
         memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw_admiral_btns_mask,
@@ -378,11 +382,6 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].mask));
         memcpy(bt_data->raw_src_mappings[PAD].desc, sw_n64_desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
-        for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
-            meta[axes_idx[i]].neutral = sw_unlic_axes_meta[i].neutral;
-            meta[axes_idx[i]].abs_max = sw_unlic_axes_meta[i].abs_max;
-            meta[axes_idx[i]].deadzone = sw_unlic_axes_meta[i].deadzone;
-        }
     }
     else {
         meta[0].polarity = 0;
@@ -394,14 +393,19 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
 
-    bt_hid_sw_get_calib(bt_data->base.pids->id, &calib);
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         if (calib && calib->sticks[i / 2].axes[i % 2].neutral) {
             meta[axes_idx[i]].neutral = calib->sticks[i / 2].axes[i % 2].neutral;
             meta[axes_idx[i]].abs_max = MIN(calib->sticks[i / 2].axes[i % 2].rel_min, calib->sticks[i / 2].axes[i % 2].rel_max);
             meta[axes_idx[i]].deadzone = calib->sticks[i / 2].deadzone;
-            calib_set = 1;
             printf("# %s: controller calib loaded\n", __FUNCTION__);
+        }
+        else if (bt_data->base.pids->subtype == BT_SW_N64 ||
+                bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
+            meta[axes_idx[i]].neutral = sw_unlic_axes_meta[i].neutral;
+            meta[axes_idx[i]].abs_max = sw_unlic_axes_meta[i].abs_max;
+            meta[axes_idx[i]].deadzone = sw_unlic_axes_meta[i].deadzone;
+            printf("# %s: no calib, using full range\n", __FUNCTION__);
         }
         else {
             meta[axes_idx[i]].neutral = sw_axes_meta[i].neutral;
