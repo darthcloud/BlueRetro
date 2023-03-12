@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <esp32/rom/crc.h>
 #include <esp_timer.h>
+#include "adapter/adapter.h"
+#include "adapter/config.h"
 #include "bluetooth/host.h"
 #include "ps.h"
 
@@ -45,6 +47,78 @@ static void bt_hid_cmd_ps5_rumble_init(struct bt_dev *device) {
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
 }
 
+static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
+    int32_t perc_threshold_l = -1;
+    int32_t perc_threshold_r = -1;
+    int32_t dev = bt_host_get_dev_from_out_idx(device->ids.out_idx, &device);
+    uint32_t map_cnt_l = 0;
+    uint32_t map_cnt_r = 0;
+
+    /* Go through the list of mappings, looking for PAD_RM and PAD_LM */
+    for (uint32_t i = 0; i < config.in_cfg->map_size; i++) {
+        uint8_t is_axis = btn_is_axis(config.in_cfg[dev].map_cfg[i].dst_id, config.in_cfg[dev].map_cfg[i].dst_btn);
+        if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_RM) {
+            map_cnt_r++;
+            if (is_axis) {
+                continue;
+            }
+            if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_r) {
+                perc_threshold_r = config.in_cfg[dev].map_cfg[i].perc_threshold;
+            }
+        }
+        else if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_LM) {
+            map_cnt_l++;
+            if (is_axis) {
+                continue;
+            }
+            if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_l) {
+                perc_threshold_l = config.in_cfg[dev].map_cfg[i].perc_threshold;
+            }
+        }
+    }
+    /* If only one mapping exist do not set resistance */
+    if (map_cnt_r < 2) {
+        perc_threshold_r = -1;
+    }
+    if (map_cnt_l < 2) {
+        perc_threshold_l = -1;
+    }
+
+    uint8_t r2_start_resistance_value = (perc_threshold_r * 255) / 100;
+    uint8_t l2_start_resistance_value = (perc_threshold_l * 255) / 100;
+
+    uint8_t r2_trigger_start_resistance = (uint8_t)(0x94 * (r2_start_resistance_value / 255.0));
+    uint8_t r2_trigger_effect_force =
+        (uint8_t)((0xb4 - r2_trigger_start_resistance) * (r2_start_resistance_value / 255.0) + r2_trigger_start_resistance);
+
+    uint8_t l2_trigger_start_resistance = (uint8_t)(0x94 * (l2_start_resistance_value / 255.0));
+    uint8_t l2_trigger_effect_force =
+        (uint8_t)((0xb4 - l2_trigger_start_resistance) * (l2_start_resistance_value / 255.0) + l2_trigger_start_resistance);
+
+    struct bt_hidp_ps5_set_conf ps5_set_conf = {
+        .conf0 = 0x02,
+        .cmd = 0x0c,
+        .r2_trigger_motor_mode = perc_threshold_r > -1 ? 0x02 : 0x00,
+        .r2_trigger_start_resistance = r2_trigger_start_resistance,
+        .r2_trigger_effect_force = r2_trigger_effect_force,
+        .r2_trigger_range_force = 0xff,
+        .r2_trigger_near_release_str = 0x00,
+        .r2_trigger_near_middle_str = 0x00,
+        .r2_trigger_pressed_str = 0x00,
+        .r2_trigger_actuation_freq = 0x00,
+        .l2_trigger_motor_mode = perc_threshold_l > -1 ? 0x02 : 0x00,
+        .l2_trigger_start_resistance = l2_trigger_start_resistance,
+        .l2_trigger_effect_force = l2_trigger_effect_force,
+        .l2_trigger_range_force = 0xff,
+        .l2_trigger_near_release_str = 0x00,
+        .l2_trigger_near_middle_str = 0x00,
+        .l2_trigger_pressed_str = 0x00,
+        .l2_trigger_actuation_freq = 0x00,
+    };
+
+    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
+}
+
 static void bt_hid_ps5_init_callback(void *arg) {
     struct bt_dev *device = (struct bt_dev *)arg;
     struct bt_hidp_ps5_set_conf ps5_set_conf = {
@@ -60,6 +134,10 @@ static void bt_hid_ps5_init_callback(void *arg) {
 
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
+    /* Set trigger "click" haptic effect when rumble is on */
+    if (config.out_cfg[device->ids.out_idx].acc_mode == ACC_RUMBLE || config.out_cfg[device->ids.out_idx].acc_mode == ACC_BOTH) {
+        bt_hid_cmd_ps5_trigger_init(device);
+    }
 
     esp_timer_delete(device->timer_hdl);
     device->timer_hdl = NULL;

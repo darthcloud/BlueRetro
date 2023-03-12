@@ -237,6 +237,16 @@ int32_t btn_id_to_axis(uint8_t btn_id) {
     return AXIS_NONE;
 }
 
+uint8_t btn_is_axis(uint8_t dst_id, uint8_t dst_btn) {
+    struct generic_ctrl *out = &ctrl_output[dst_id];
+    uint32_t dst_mask = BIT(dst_btn & 0x1F);
+    uint32_t dst_btn_idx = btn_id_to_btn_idx(dst_btn);
+    if (dst_mask & out->desc[dst_btn_idx]) {
+        return 1;
+    }
+    return 0;
+}
+
 uint32_t axis_to_btn_mask(uint8_t axis) {
     switch (axis) {
         case AXIS_LX:

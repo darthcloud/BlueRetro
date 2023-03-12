@@ -44,9 +44,33 @@ struct bt_hidp_ps5_set_conf {
     uint8_t l_rumble;
     uint8_t tbd0[4];
     uint8_t mic_led;
-    uint8_t tbd1[35];
+    uint8_t tbd1; // Mic/audio mute
+    uint8_t r2_trigger_motor_mode;
+    uint8_t r2_trigger_start_resistance;
+    uint8_t r2_trigger_effect_force;
+    uint8_t r2_trigger_range_force;
+    uint8_t r2_trigger_near_release_str;
+    uint8_t r2_trigger_near_middle_str;
+    uint8_t r2_trigger_pressed_str;
+    uint8_t tbd2[2];
+    uint8_t r2_trigger_actuation_freq;
+    uint8_t tbd3;
+    uint8_t l2_trigger_motor_mode;
+    uint8_t l2_trigger_start_resistance;
+    uint8_t l2_trigger_effect_force;
+    uint8_t l2_trigger_range_force;
+    uint8_t l2_trigger_near_release_str;
+    uint8_t l2_trigger_near_middle_str;
+    uint8_t l2_trigger_pressed_str;
+    uint8_t tbd4[2];
+    uint8_t l2_trigger_actuation_freq;
+    uint8_t tbd5[5];
+    uint8_t l2_haptic_power_level;
+    uint8_t tbd6; // Internal speaker volume
+    uint8_t use_accurate_rumble;
+    uint8_t tbd7[5];
     uint32_t leds;
-    uint8_t tbd2[24];
+    uint8_t tbd8[24];
     uint32_t crc;
 } __packed;
 
