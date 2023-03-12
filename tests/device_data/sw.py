@@ -139,7 +139,7 @@ sw_rf_brawler64_btns_mask = [
     bit(sw.X), bit(sw.LJ), bit(sw.Y), bit(sw.RJ),
     0, 0, 0, 0,
     0, 0, 0, 0,
-    bit(sw.A), bit(sw.A), bit(sw.B), bit(sw.X),
+    bit(sw.A), 0, bit(sw.B), 0,
     bit(sw.PLUS), bit(sw.MINUS), bit(sw.HOME), bit(sw.CAPTURE),
     bit(sw.ZL), bit(sw.L), 0, 0,
     bit(sw.ZR), bit(sw.R), 0, 0,
@@ -186,7 +186,7 @@ sw_n_n64_axes = {
 
 sw_rf_brawler64_axes = {
     axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
-    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0, 'polarity': 1},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
 }
 
 
