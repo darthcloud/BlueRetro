@@ -528,7 +528,7 @@ static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
         for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
             ctrl_data->axes[i].meta = &meta[i];
             if (i & 0x1) {
-                ctrl_data->axes[i].value = (~(map->axes[sw_axes_idx[i]] >> 4) & 0xFFF) - meta[i].neutral;
+                ctrl_data->axes[i].value = (~(map->axes[sw_axes_idx[i]] >> 4) & 0xFFF) + 1 - meta[i].neutral;
             }
             else {
                 ctrl_data->axes[i].value = (map->axes[sw_axes_idx[i]] >> 4) - meta[i].neutral;
