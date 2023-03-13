@@ -95,7 +95,7 @@ void bt_hid_set_type_flags_from_name(struct bt_dev *device, const char* name) {
 
 void bt_hid_init(struct bt_dev *device) {
     bt_hci_write_link_supervision_timeout(device);
-    bt_hci_sniff_mode(device);
+    //bt_hci_sniff_mode(device);
     if (device->ids.type > BT_NONE && bt_hid_init_list[device->ids.type]) {
         bt_hid_init_list[device->ids.type](device);
     }
