@@ -355,10 +355,10 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
     else if (bt_data->base.pids->subtype == BT_SW_N64) {
-        if (calib == NULL) {
+        if (bt_data->base.report_id == 0x3F) {
             /* RF Brawler64 HID mapping is wrong, if no calib data provided */
             /* while using the N64 name we assume it's the RF Brawler64 */
-            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_brawler64_btns_mask[report_type],
+            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_brawler64_btns_mask,
                 sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
         }
         else {
@@ -400,7 +400,7 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             meta[axes_idx[i]].deadzone = calib->sticks[i / 2].deadzone;
             printf("# %s: controller calib loaded\n", __FUNCTION__);
         }
-        else if (bt_data->base.pids->subtype == BT_SW_N64 ||
+        else if ((bt_data->base.report_id == 0x3F && bt_data->base.pids->subtype == BT_SW_N64) ||
                 bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
             meta[axes_idx[i]].neutral = sw_unlic_axes_meta[i].neutral;
             meta[axes_idx[i]].abs_max = sw_unlic_axes_meta[i].abs_max;
