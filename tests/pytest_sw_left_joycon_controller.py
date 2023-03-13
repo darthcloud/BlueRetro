@@ -38,9 +38,6 @@ def test_sw_left_joycon_controller_default_buttons_mapping(blueretro):
 
     # Validate buttons default mapping
     for sw_btns, br_btns in btns_generic_test_data(sw_n_jc_btns_mask):
-        if br_btns in (2097152, 134217728, 993984512):
-            # Skip failing case until rework merged
-            continue
         blueretro.send_hid_report(
             'a1300180'
             f'{swap24(sw_btns):06x}'
