@@ -32,6 +32,7 @@ enum {
     BT_DEV_ROLE_SW_FAIL,
     BT_DEV_IS_BLE,
     BT_DEV_FB_DELAY,
+    BT_DEV_CALIB_SET,
 };
 
 struct bt_name_type {

@@ -88,7 +88,7 @@ void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
     struct bt_dev *device = NULL;
     bt_host_get_dev_from_id(dev_id, &device);
 
-    if (device && device->hid_state > SW_INIT_STATE_EN_RUMBLE) {
+    if (device && atomic_test_bit(&device->flags, BT_DEV_CALIB_SET)) {
         *cal = &calib[dev_id];
     }
 }
@@ -348,6 +348,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                                     }
 
                                     bt_hid_sw_print_calib(dev_calib);
+                                    atomic_set_bit(&device->flags, BT_DEV_CALIB_SET);
                                     /* Force reinit once calib available */
                                     bt_type_update(device->ids.id, BT_SW, device->ids.subtype);
                                     bt_hid_sw_exec_next_state(device);
