@@ -119,7 +119,7 @@ sw_d_btns_mask = [
     bit(sw.Y), bit(sw.A), bit(sw.B), bit(sw.X),
     bit(sw.PLUS), bit(sw.MINUS), bit(sw.HOME), bit(sw.CAPTURE),
     bit(sw.ZL), bit(sw.L), 0, bit(sw.LJ),
-    bit(sw.ZR) | bit(sw.SR), bit(sw.R), 0, bit(sw.RJ),
+    bit(sw.ZR), bit(sw.R), 0, bit(sw.RJ),
 ]
 
 
@@ -204,6 +204,18 @@ sw_n_n64_btns_mask = [
     bit(sw_n.PLUS), 0, bit(sw_n.HOME), bit(sw_n.CAPTURE),
     bit(sw_n.ZL), bit(sw_n.L), 0, 0,
     bit(sw_n.LJ), bit(sw_n.R), 0, 0,
+]
+
+
+sw_d_snes_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.Y), bit(sw.A), bit(sw.B), bit(sw.X),
+    bit(sw.PLUS), bit(sw.MINUS), 0, 0,
+    bit(sw.L), bit(sw.ZL), 0, 0,
+    bit(sw.R), bit(sw.SR), 0, 0,
 ]
 
 
