@@ -1,5 +1,7 @@
 ''' Common constants for BlueRetro adapter. '''
 from enum import IntEnum, auto
+from bit_helper import bit
+
 
 class pad(IntEnum):
     ''' Buttons bitfield definition for controllers. '''
@@ -36,6 +38,7 @@ class pad(IntEnum):
     RT = auto()
     RJ = auto()
 
+
 class axis(IntEnum):
     ''' Axes index definition for controllers. '''
     LX = 0
@@ -44,3 +47,12 @@ class axis(IntEnum):
     RY = auto()
     LM = auto()
     RM = auto()
+
+
+hat_to_ld_btns = [
+    bit(pad.LD_UP), bit(pad.LD_UP) | bit(pad.LD_RIGHT),
+    bit(pad.LD_RIGHT), bit(pad.LD_DOWN) | bit(pad.LD_RIGHT),
+    bit(pad.LD_DOWN), bit(pad.LD_DOWN) | bit(pad.LD_LEFT),
+    bit(pad.LD_LEFT), bit(pad.LD_UP) | bit(pad.LD_LEFT),
+    0, 0, 0, 0, 0, 0, 0, 0,
+]

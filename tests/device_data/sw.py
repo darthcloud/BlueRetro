@@ -50,6 +50,18 @@ class sw_n(IntEnum):
     ZL = auto()
 
 
+sw_d_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.Y), bit(sw.A), bit(sw.B), bit(sw.X),
+    bit(sw.PLUS), bit(sw.MINUS), bit(sw.HOME), bit(sw.CAPTURE),
+    bit(sw.ZL), bit(sw.L), 0, bit(sw.LJ),
+    bit(sw.ZR) | bit(sw.SR), bit(sw.R), 0, bit(sw.RJ),
+]
+
+
 sw_n_btns_mask = [
     0, 0, 0, 0,
     0, 0, 0, 0,
