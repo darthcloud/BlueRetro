@@ -219,6 +219,18 @@ sw_n_snes_btns_mask = [
 ]
 
 
+sw_d_nes_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.B), 0, bit(sw.A), 0,
+    bit(sw.PLUS), bit(sw.MINUS), 0, 0,
+    bit(sw.L), 0, 0, 0,
+    bit(sw.R), 0, 0, 0,
+]
+
+
 sw_n_nes_btns_mask = [
     0, 0, 0, 0,
     0, 0, 0, 0,
