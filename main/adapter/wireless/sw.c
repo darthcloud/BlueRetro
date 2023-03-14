@@ -502,19 +502,7 @@ static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
 
     if (bt_data->base.pids->subtype == BT_SW_LEFT_JOYCON || bt_data->base.pids->subtype == BT_SW_RIGHT_JOYCON) {
         uint32_t hat = hat_to_ld_btns[map->hat & 0xF];
-        for (uint32_t i = 0; i < 2; i++) {
-            ctrl_data->axes[i].meta = &meta[i];
-
-            if (hat & BIT(i * 2 + PAD_LD_LEFT)) {
-                ctrl_data->axes[i].value = -meta[i].abs_max;
-            }
-            else if (hat & BIT(i * 2 + PAD_LD_LEFT + 1)) {
-                ctrl_data->axes[i].value = meta[i].abs_max;
-            }
-            else {
-                ctrl_data->axes[i].value = meta[i].neutral;
-            }
-        }
+        ctrl_data->btns[0].value |= hat >> 8;
     }
     else {
         /* Convert hat to regular btns */
