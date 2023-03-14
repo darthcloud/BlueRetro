@@ -255,6 +255,18 @@ sw_n_nes_btns_mask = [
 ]
 
 
+sw_d_pwa_gc_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw.B), bit(sw.X), bit(sw.A), bit(sw.Y),
+    bit(sw.PLUS), bit(sw.MINUS), bit(sw.HOME), bit(sw.CAPTURE),
+    bit(sw.ZL), bit(sw.L), 0, bit(sw.LJ),
+    bit(sw.ZR), bit(sw.R), 0, bit(sw.RJ),
+]
+
+
 sw_n_pwa_gc_btns_mask = [
     0, 0, 0, 0,
     0, 0, 0, 0,
