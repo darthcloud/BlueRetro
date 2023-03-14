@@ -54,6 +54,23 @@ class sw_rjc(IntEnum):
     ZR = auto()
 
 
+class sw_n64(IntEnum):
+    ''' Buttons bitfield definition for N64 default reports. '''
+    B = 0
+    A = auto()
+    C_UP = auto()
+    C_LEFT = auto()
+    L = auto()
+    R = auto()
+    Z = auto()
+    C_DOWN = auto()
+    C_RIGHT = auto()
+    START = auto()
+    ZR = auto()
+    HOME = 12
+    CAPTURE = auto()
+
+
 class sw_n(IntEnum):
     ''' Buttons bitfield definition for native reports. '''
     Y = 0
@@ -137,6 +154,18 @@ sw_n_gen_btns_mask = [
     bit(sw_n.PLUS), bit(sw_n.ZR), bit(sw_n.HOME), bit(sw_n.CAPTURE),
     0, bit(sw_n.X), 0, 0,
     0, bit(sw_n.L), 0, 0,
+]
+
+
+sw_d_n64_btns_mask = [
+    0, 0, 0, 0,
+    bit(sw_n64.C_LEFT), bit(sw_n64.C_RIGHT), bit(sw_n64.C_DOWN), bit(sw_n64.C_UP),
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw_n64.B), 0, bit(sw_n64.A), 0,
+    bit(sw_n64.START), 0, bit(sw_n64.HOME), bit(sw_n64.CAPTURE),
+    bit(sw_n64.Z), bit(sw_n64.L), 0, 0,
+    bit(sw_n64.ZR), bit(sw_n64.R), 0, 0,
 ]
 
 
