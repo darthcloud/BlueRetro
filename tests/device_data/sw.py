@@ -24,6 +24,36 @@ class sw(IntEnum):
     SR = auto()
 
 
+class sw_ljc(IntEnum):
+    ''' Buttons bitfield definition for Left Joycon default reports. '''
+    DOWN = 0
+    RIGHT = auto()
+    LEFT = auto()
+    UP = auto()
+    SL = auto()
+    SR = auto()
+    MINUS = 8
+    LJ = 10
+    CAPTURE = 13
+    L = auto()
+    ZL = auto()
+
+
+class sw_rjc(IntEnum):
+    ''' Buttons bitfield definition for Right Joycon default reports. '''
+    A = 0
+    X = auto()
+    B = auto()
+    Y = auto()
+    SL = auto()
+    SR = auto()
+    PLUS = 9
+    RJ = 11
+    HOME = auto()
+    R = 14
+    ZR = auto()
+
+
 class sw_n(IntEnum):
     ''' Buttons bitfield definition for native reports. '''
     Y = 0
@@ -71,6 +101,18 @@ sw_n_btns_mask = [
     bit(sw_n.PLUS), bit(sw_n.MINUS), bit(sw_n.HOME), bit(sw_n.CAPTURE),
     bit(sw_n.ZL), bit(sw_n.L), bit(sw_n.L_SL) | bit(sw_n.R_SL), bit(sw_n.LJ),
     bit(sw_n.ZR), bit(sw_n.R), bit(sw_n.L_SR) | bit(sw_n.R_SR), bit(sw_n.RJ),
+]
+
+
+sw_d_jc_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw_ljc.LEFT), bit(sw_ljc.RIGHT), bit(sw_ljc.DOWN), bit(sw_ljc.UP),
+    bit(sw_ljc.CAPTURE) | bit(sw_rjc.PLUS), bit(sw_ljc.MINUS) | bit(sw_rjc.HOME), 0, 0,
+    bit(sw_ljc.SL), bit(sw_ljc.L) | bit(sw_rjc.R), 0, bit(sw_ljc.LJ) | bit(sw_rjc.RJ),
+    bit(sw_ljc.SR), bit(sw_ljc.ZL) | bit(sw_rjc.ZR), 0, 0,
 ]
 
 
