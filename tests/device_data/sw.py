@@ -54,6 +54,20 @@ class sw_rjc(IntEnum):
     ZR = auto()
 
 
+class sw_gen(IntEnum):
+    ''' Buttons bitfield definition for Genesis default reports. '''
+    B = 0
+    A = auto()
+    Y = auto()
+    Z = 4
+    C = auto()
+    X = auto()
+    MODE = auto()
+    START = 9
+    HOME = 12
+    CAPTURE = auto()
+
+
 class sw_n64(IntEnum):
     ''' Buttons bitfield definition for N64 default reports. '''
     B = 0
@@ -142,6 +156,18 @@ sw_n_jc_btns_mask = [
     bit(sw_n.CAPTURE) | bit(sw_n.PLUS), bit(sw_n.MINUS) | bit(sw_n.HOME), 0, 0,
     bit(sw_n.L_SL) | bit(sw_n.R_SL), bit(sw_n.ZL) | bit(sw_n.ZR), 0, bit(sw_n.LJ) | bit(sw_n.RJ),
     bit(sw_n.L_SR) | bit(sw_n.R_SR), bit(sw_n.L) | bit(sw_n.R), 0, 0,
+]
+
+
+sw_d_gen_btns_mask = [
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    bit(sw_gen.A), bit(sw_gen.C), bit(sw_gen.B), bit(sw_gen.Y),
+    bit(sw_gen.START), bit(sw_gen.MODE), bit(sw_gen.HOME), bit(sw_gen.CAPTURE),
+    0, bit(sw_gen.X), 0, 0,
+    0, bit(sw_gen.Z), 0, 0,
 ]
 
 
