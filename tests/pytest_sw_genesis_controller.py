@@ -11,14 +11,9 @@ DEVICE_NAME = 'MD/Gen Control Pad'
 
 def test_sw_genesis_controller_default_buttons_mapping_native_report(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:16 MD/Gen Control Pad', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:16 MD/Gen Control Pad')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -46,27 +41,18 @@ def test_sw_genesis_controller_default_buttons_mapping_native_report(blueretro):
             '0000000000000000000000'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
 
         assert wireless['btns'] >> 8 == sw_btns
         assert br_generic['btns'][0] == br_btns
 
-    blueretro.disconnect()
-
 
 def test_sw_genesis_controller_default_buttons_mapping_default_report(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:16 MD/Gen Control Pad', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:16 MD/Gen Control Pad')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -88,8 +74,6 @@ def test_sw_genesis_controller_default_buttons_mapping_default_report(blueretro)
             '0080008000800080'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
 
@@ -105,12 +89,8 @@ def test_sw_genesis_controller_default_buttons_mapping_default_report(blueretro)
             '0080008000800080'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
 
         assert wireless['hat'] == hat_value
         assert br_generic['btns'][0] == br_btns
-
-    blueretro.disconnect()

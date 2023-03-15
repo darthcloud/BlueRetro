@@ -58,11 +58,7 @@ jobs:
         (cd build; esptool.py --chip esp32 merge_bin --fill-flash-size 4MB -o flash_image.bin @flash_args)
         qemu-system-xtensa -machine esp32 -drive file=build/flash_image.bin,if=mtd,format=raw -serial tcp::5555,server,nowait -daemonize
         pip install numpy
-        pip install pytest-embedded
-        pip install pytest-embedded-serial
-        pip install pytest-embedded-serial-esp
-        pip install pytest-embedded-idf
-        pip install pytest-embedded-qemu
+        pip install pytest
         pytest
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"

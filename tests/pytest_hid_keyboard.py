@@ -1,5 +1,4 @@
 ''' Tests for generic HID keyboard. '''
-from device_data.gc import GC
 
 
 DEVICE_NAME = 'HID Keyboard'
@@ -17,16 +16,10 @@ HID_DESC = ('05010906a101850175019508050719e0'
 
 def test_hid_keyboard_descriptor(blueretro):
     ''' Load a HID descriptor and check if it's parsed right. '''
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
     blueretro.send_name(DEVICE_NAME)
     blueretro.send_hid_desc(HID_DESC)
-    blueretro.disconnect()
 
-    blueretro.get_logs()
-
-    blueretro.expect('# dev: 0 type: 0:0 HID Keyboard', timeout=1)
+    blueretro.expect('# dev: 0 type: 0:0 HID Keyboard')
 
     report = blueretro.expect_json('parsed_hid_report')
     assert report["report_id"] == 1

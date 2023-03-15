@@ -5,7 +5,7 @@ from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap16, swap24
 from device_data.sw import sw_d_jc_btns_mask, sw_n_jc_btns_mask, sw_n_ljc_axes
 from device_data.br import axis, hat_to_ld_btns
-from device_data.gc import GC, gc_axes
+from device_data.gc import gc_axes
 
 
 DEVICE_NAME = 'Joy-Con (L)'
@@ -13,14 +13,9 @@ DEVICE_NAME = 'Joy-Con (L)'
 
 def test_sw_left_joycon_controller_default_buttons_mapping_native_report(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -48,27 +43,18 @@ def test_sw_left_joycon_controller_default_buttons_mapping_native_report(blueret
             '0000000000000000000000'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
 
         assert wireless['btns'] >> 8 == sw_btns
         assert br_generic['btns'][0] == br_btns
 
-    blueretro.disconnect()
-
 
 def test_sw_left_joycon_controller_axes_default_scaling_native_report(blueretro):
     ''' Set the various axes and check if the scaling is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -96,38 +82,23 @@ def test_sw_left_joycon_controller_axes_default_scaling_native_report(blueretro)
             '0000000000000000000000'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
         br_mapped = blueretro.expect_json('mapped_input')
         wired = blueretro.expect_json('wired_output')
 
-        assert wireless['axes'][axis.LX] == axes[axis.LX]['wireless']
-        assert wireless['axes'][axis.LY] == axes[axis.LY]['wireless']
-
-        assert br_generic['axes'][axis.LX] == axes[axis.LX]['generic']
-        assert br_generic['axes'][axis.LY] == axes[axis.LY]['generic']
-
-        assert br_mapped['axes'][axis.LX] == axes[axis.LX]['mapped']
-        assert br_mapped['axes'][axis.LY] == axes[axis.LY]['mapped']
-
-        assert wired['axes'][axis.LX] == axes[axis.LX]['wired']
-        assert wired['axes'][axis.LY] == axes[axis.LY]['wired']
-
-    blueretro.disconnect()
+        for ax in islice(axis, 0, 2):
+            assert wireless['axes'][ax] == axes[ax]['wireless']
+            assert br_generic['axes'][ax] == axes[ax]['generic']
+            assert br_mapped['axes'][ax] == axes[ax]['mapped']
+            assert wired['axes'][ax] == axes[ax]['wired']
 
 
 def test_sw_left_joycon_controller_axes_scaling_with_calib_native_report(blueretro):
     ''' Set the various axes and check if the scaling is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)')
 
     # Send calibration data
     blueretro.send_hid_report(
@@ -154,7 +125,6 @@ def test_sw_left_joycon_controller_axes_scaling_with_calib_native_report(blueret
         'ffffffffffffffffffffff0000000000'
         '0000'
     )
-    blueretro.get_logs()
     calib = blueretro.expect_json("calib_data")
     sw_calib_axes = {axis.LX: {'polarity': 1}, axis.LY: {}}
     for ax in islice(axis, 0, 2):
@@ -188,38 +158,23 @@ def test_sw_left_joycon_controller_axes_scaling_with_calib_native_report(blueret
             '0000000000000000000000'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
         br_mapped = blueretro.expect_json('mapped_input')
         wired = blueretro.expect_json('wired_output')
 
-        assert wireless['axes'][axis.LX] == axes[axis.LX]['wireless']
-        assert wireless['axes'][axis.LY] == axes[axis.LY]['wireless']
-
-        assert br_generic['axes'][axis.LX] == axes[axis.LX]['generic']
-        assert br_generic['axes'][axis.LY] == axes[axis.LY]['generic']
-
-        assert br_mapped['axes'][axis.LX] == axes[axis.LX]['mapped']
-        assert br_mapped['axes'][axis.LY] == axes[axis.LY]['mapped']
-
-        assert wired['axes'][axis.LX] == axes[axis.LX]['wired']
-        assert wired['axes'][axis.LY] == axes[axis.LY]['wired']
-
-    blueretro.disconnect()
+        for ax in islice(axis, 0, 2):
+            assert wireless['axes'][ax] == axes[ax]['wireless']
+            assert br_generic['axes'][ax] == axes[ax]['generic']
+            assert br_mapped['axes'][ax] == axes[ax]['mapped']
+            assert wired['axes'][ax] == axes[ax]['wired']
 
 
 def test_sw_left_joycon_controller_default_buttons_mapping_default_report(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)', timeout=1)
+    blueretro.expect('# dev: 0 type: 5:11 Joy-Con \\(L\\)')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -240,8 +195,6 @@ def test_sw_left_joycon_controller_default_buttons_mapping_default_report(bluere
             '0f'
             '0080008000800080'
         )
-
-        blueretro.get_logs()
 
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
@@ -264,8 +217,6 @@ def test_sw_left_joycon_controller_default_buttons_mapping_default_report(bluere
             '0080008000800080'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
         br_mapped = blueretro.expect_json('mapped_input')
@@ -274,5 +225,3 @@ def test_sw_left_joycon_controller_default_buttons_mapping_default_report(bluere
         assert br_generic['btns'][0] == br_btns >> 8
         assert br_mapped['axes'][axis.LX] == mapped_result[hat_value][axis.LX]
         assert br_mapped['axes'][axis.LY] == mapped_result[hat_value][axis.LY]
-
-    blueretro.disconnect()

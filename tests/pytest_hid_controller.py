@@ -1,11 +1,10 @@
 ''' Tests for generic HID controller. '''
+import pytest
 from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import btns_generic_to_wired_test_data
-from bit_helper import bit, swap32
-from device_data.hid import hid, hid_btns_mask
-from device_data.n64 import N64, n64, n64_btns_mask
-from device_data.br import pad
-from device_data.gc import GC
+from bit_helper import swap32
+from device_data.hid import hid_btns_mask
+from device_data.n64 import N64, n64_btns_mask
 
 
 DEVICE_NAME = 'HID Generic'
@@ -17,19 +16,12 @@ HID_DESC = ('05010905a1010901a100093009311500'
 
 def test_hid_controller_descriptor(blueretro):
     ''' Load a HID descriptor and check if it's parsed right. '''
-    # Check device is connected
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
-
-    blueretro.get_logs()
-    blueretro.expect('# dev: 0 type: 0:0 HID Generic', timeout=1)
+    blueretro.expect('# dev: 0 type: 0:0 HID Generic')
 
     # Validate HID descriptor
     blueretro.send_hid_desc(HID_DESC)
-
-    blueretro.get_logs()
     report = blueretro.expect_json('parsed_hid_report')
 
     assert report["report_id"] == 1
@@ -39,15 +31,10 @@ def test_hid_controller_descriptor(blueretro):
     assert report["device_type"] == 0
     assert report["device_subtype"] == 0
 
-    blueretro.disconnect()
-
 
 def test_hid_controller_default_buttons_mapping(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(GC)
-    blueretro.connect()
+    # Set device name
     blueretro.send_name(DEVICE_NAME)
     blueretro.send_hid_desc(HID_DESC)
 
@@ -64,23 +51,16 @@ def test_hid_controller_default_buttons_mapping(blueretro):
             f'{swap32(hid_btns):08x}'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         br_generic = blueretro.expect_json('generic_input')
 
         assert wireless['btns'] == hid_btns
         assert br_generic['btns'][0] == br_btns
 
-    blueretro.disconnect()
 
-
+@pytest.mark.parametrize('blueretro', [N64], indirect=True)
 def test_hid_controller_n64_buttons_mapping(blueretro):
     ''' Press each buttons and check if N64 mapping is right. '''
-    # Connect device
-    blueretro.disconnect()
-    blueretro.send_system_id(N64)
-    blueretro.connect()
     blueretro.send_name(DEVICE_NAME)
     blueretro.send_hid_desc(HID_DESC)
 
@@ -97,12 +77,8 @@ def test_hid_controller_n64_buttons_mapping(blueretro):
             f'{swap32(hid_btns):08x}'
         )
 
-        blueretro.get_logs()
-
         wireless = blueretro.expect_json('wireless_input')
         wired = blueretro.expect_json('wired_output')
 
         assert wireless['btns'] == hid_btns
         assert wired['btns'] == n64_btns
-
-    blueretro.disconnect()
