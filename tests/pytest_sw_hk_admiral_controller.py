@@ -4,7 +4,7 @@ from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap16
 from device_data.sw import sw_hk_admiral_btns_mask, sw_hk_admiral_axes
-from device_data.br import axis
+from device_data.br import axis, hat_to_ld_btns
 from device_data.gc import GC, gc_axes
 
 
@@ -27,7 +27,7 @@ def test_sw_hk_admiral_controller_default_buttons_mapping(blueretro):
         blueretro.send_hid_report(
             'a13f'
             '0000'
-            '0f'
+            '00'
             '0080008000800080'
         )
 
@@ -38,7 +38,7 @@ def test_sw_hk_admiral_controller_default_buttons_mapping(blueretro):
         blueretro.send_hid_report(
             'a13f'
             f'{swap16(sw_btns):04x}'
-            '0f'
+            '00'
             '0080008000800080'
         )
 
@@ -48,6 +48,24 @@ def test_sw_hk_admiral_controller_default_buttons_mapping(blueretro):
         br_generic = blueretro.expect_json('generic_input')
 
         assert wireless['btns'] == sw_btns
+        assert br_generic['btns'][0] == br_btns
+
+    # Validate hat default mapping
+    shifted_hat = hat_to_ld_btns[-1:] + hat_to_ld_btns[:-1]
+    for hat_value, br_btns in enumerate(shifted_hat):
+        blueretro.send_hid_report(
+            'a13f'
+            '0000'
+            f'0{hat_value:01x}'
+            '0080008000800080'
+        )
+
+        blueretro.get_logs()
+
+        wireless = blueretro.expect_json('wireless_input')
+        br_generic = blueretro.expect_json('generic_input')
+
+        assert wireless['hat'] == hat_value
         assert br_generic['btns'][0] == br_btns
 
     blueretro.disconnect()
