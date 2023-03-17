@@ -114,7 +114,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                 /* Dst is a button */
                 int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input->axes[src_axis_idx].meta->abs_max);
                 /* Check if axis over threshold */
-                if (abs_src_value > threshold) {
+                if (abs_src_value >= threshold) {
                     out->btns[dst_btn_idx].value |= dst_mask;
                     out->btns[dst_btn_idx].cnt_mask[dst & 0x1F] = map_cfg->turbo;
                 }
