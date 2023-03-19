@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -106,6 +106,8 @@ static uint8_t rumble_state[4] = {0};
 static uint8_t ctrl_acc_mode[4] = {0};
 static uint8_t ctrl_acc_update[4] = {0};
 static uint8_t ctrl_mem_banksel = 0;
+static uint32_t gc_l_trig_prev_state = 0;
+static uint32_t gc_r_trig_prev_state = 0;
 
 static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
@@ -449,6 +451,15 @@ static void gc_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
                 buf[i] = (wired_adapter.data[port].output_mask[i - 4]) ?
                     wired_adapter.data[port].output_mask[i - 4] : wired_adapter.data[port].output[i - 4];
             }
+
+            /* Delay Digital trigger state until analog part is set at least 2 frames */
+            if (gc_r_trig_prev_state < 2) {
+                buf[5] &= ~0x20;
+            }
+            if (gc_l_trig_prev_state < 2) {
+                buf[5] &= ~0x40;
+            }
+
             /* A & B buttons pressure is zeroed like release controller */
             if (buf[0] == 0x43) {
                 len = 10;
@@ -490,6 +501,23 @@ static void gc_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
             }
             nsi_bytes_to_items_crc(channel * RMT_MEM_ITEM_NUM, &buf[4], len, &crc, STOP_BIT_2US);
             RMT.conf_ch[channel].conf1.tx_start = 1;
+
+            if (buf[10] > 0x30) {
+                if (gc_l_trig_prev_state < 2) {
+                    gc_l_trig_prev_state++;
+                }
+            }
+            else {
+                gc_l_trig_prev_state = 0;
+            }
+            if (buf[11] > 0x30) {
+                if (gc_l_trig_prev_state < 2) {
+                    gc_r_trig_prev_state++;
+                }
+            }
+            else {
+                gc_r_trig_prev_state = 0;
+            }
 
             if (config.out_cfg[port].acc_mode == ACC_RUMBLE) {
                 struct raw_fb fb_data = {0};
