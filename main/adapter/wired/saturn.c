@@ -41,22 +41,22 @@ static DRAM_ATTR const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta saturn_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80}, //NA
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1}, //NA
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80}, //NA
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1}, //NA
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
 };
 
 static DRAM_ATTR const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
 };
 
 struct saturn_map {

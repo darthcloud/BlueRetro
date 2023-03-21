@@ -73,12 +73,12 @@ static const uint8_t xb1_axes_idx[ADAPTER_MAX_AXES] =
 
 static const struct ctrl_meta xb1_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.neutral = 0x8000, .abs_max = 0x8000},
-    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
-    {.neutral = 0x8000, .abs_max = 0x8000},
-    {.neutral = 0x8000, .abs_max = 0x8000, .polarity = 1},
-    {.neutral = 0x0000, .abs_max = 0x3FF},
-    {.neutral = 0x0000, .abs_max = 0x3FF},
+    {.neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000, .polarity = 1},
+    {.neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000},
+    {.neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000, .polarity = 1},
+    {.neutral = 0x0000, .abs_max = 0x3FF, .abs_min = 0x000},
+    {.neutral = 0x0000, .abs_max = 0x3FF, .abs_min = 0x000},
 };
 
 struct xb1_map {

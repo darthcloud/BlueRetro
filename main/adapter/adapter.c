@@ -77,6 +77,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input->axes[src_axis_idx].value);
         int32_t src_sign = btn_sign(ctrl_input->axes[src_axis_idx].meta->polarity, src);
+        int32_t src_abs_max = (src_sign > 0) ? ctrl_input->axes[src_axis_idx].meta->abs_max : ctrl_input->axes[src_axis_idx].meta->abs_min;
         int32_t sign_check = src_sign * ctrl_input->axes[src_axis_idx].value;
 
         /* Check if the srv value sign match the src mapping sign */
@@ -86,18 +87,19 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
                 /* Keep track of source axis type */
                 out->axes[dst_axis_idx].relative = ctrl_input->axes[src_axis_idx].meta->relative;
                 /* Dst is an axis */
-                int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone/10000) * ctrl_input->axes[src_axis_idx].meta->abs_max) + ctrl_input->axes[src_axis_idx].meta->deadzone;
+                int32_t deadzone = (int32_t)(((float)map_cfg->perc_deadzone / 10000) * src_abs_max) + ctrl_input->axes[src_axis_idx].meta->deadzone;
                 /* Check if axis over deadzone */
                 if (abs_src_value > deadzone) {
                     int32_t value = abs_src_value - deadzone;
                     int32_t dst_sign = btn_sign(out->axes[dst_axis_idx].meta->polarity, dst);
+                    int32_t dst_abs_max = (dst_sign > 0) ? out->axes[dst_axis_idx].meta->abs_max : out->axes[dst_axis_idx].meta->abs_min;
                     float scale, fvalue;
                     switch (map_cfg->algo & 0xF) {
                         case LINEAR:
-                            scale = ((float)out->axes[dst_axis_idx].meta->abs_max / (ctrl_input->axes[src_axis_idx].meta->abs_max - deadzone)) * (((float)map_cfg->perc_max)/100);
+                            scale = ((float)dst_abs_max / (src_abs_max - deadzone)) * (((float)map_cfg->perc_max) / 100);
                             break;
                         default:
-                            scale = ((float)map_cfg->perc_max)/100;
+                            scale = ((float)map_cfg->perc_max) / 100;
                             break;
 
                     }
@@ -112,7 +114,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
             }
             else {
                 /* Dst is a button */
-                int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold/100) * ctrl_input->axes[src_axis_idx].meta->abs_max);
+                int32_t threshold = (int32_t)(((float)map_cfg->perc_threshold / 100) * src_abs_max);
                 /* Check if axis over threshold */
                 if (abs_src_value >= threshold) {
                     out->btns[dst_btn_idx].value |= dst_mask;
@@ -147,9 +149,9 @@ static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask
                     return 0;
                 }
                 else {
-                    float fvalue = out->axes[axis_id].meta->abs_max
-                                * btn_sign(out->axes[axis_id].meta->polarity, dst)
-                                * (((float)map_cfg->perc_max)/100);
+                    int32_t dst_sign = btn_sign(out->axes[axis_id].meta->polarity, dst);
+                    int32_t dst_abs_max = (dst_sign > 0) ? out->axes[axis_id].meta->abs_max : out->axes[axis_id].meta->abs_min;
+                    float fvalue = dst_sign * dst_abs_max * (((float)map_cfg->perc_max) / 100);
                     int32_t value = (int32_t)fvalue;
 
                     if (abs(value) > abs(out->axes[axis_id].value)) {

@@ -30,12 +30,12 @@ enum {
 
 static DRAM_ATTR const struct ctrl_meta wiic_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66},
-    {.size_min = 0, .size_max = 255, .neutral = 0x16, .abs_max = 0xDA},
-    {.size_min = 0, .size_max = 255, .neutral = 0x16, .abs_max = 0xDA},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.size_min = 0, .size_max = 255, .neutral = 0x16, .abs_max = 0xDA, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x16, .abs_max = 0xDA, .abs_min = 0x00},
 };
 
 struct wiic_map {

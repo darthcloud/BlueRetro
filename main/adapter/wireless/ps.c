@@ -42,12 +42,12 @@ static const uint8_t ps5_axes_idx[ADAPTER_MAX_AXES] =
 
 static const struct ctrl_meta ps4_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.neutral = 0x80, .abs_max = 0x80},
-    {.neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.neutral = 0x00, .abs_max = 0xFF},
-    {.neutral = 0x00, .abs_max = 0xFF},
+    {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
+    {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
+    {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
 };
 
 struct hid_map {

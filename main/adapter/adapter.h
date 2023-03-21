@@ -362,9 +362,8 @@ enum {
 struct ctrl_meta {
     int32_t neutral;
     int32_t deadzone;
-    int32_t abs_btn_thrs;
     int32_t abs_max;
-    int32_t sign;
+    int32_t abs_min;
     int32_t polarity;
     int32_t size_min;
     int32_t size_max;

@@ -50,22 +50,22 @@ static DRAM_ATTR const uint8_t real_mouse_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta real_fs_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 512},
-    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 512, .polarity = 1},
-    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 512}, //NA
-    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 512, .polarity = 1},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF}, //NA
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF}, //NA
+    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 511, .abs_min = 512},
+    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 511, .abs_min = 512, .polarity = 1},
+    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 511, .abs_min = 512}, //NA
+    {.size_min = -512, .size_max = 511, .neutral = 512, .abs_max = 511, .abs_min = 512, .polarity = 1},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0}, //NA
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0}, //NA
 };
 
 static DRAM_ATTR const struct ctrl_meta real_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512},
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512, .polarity = 1},
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512},
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512, .polarity = 1},
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512},
-    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 512},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512, .polarity = 1},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512, .polarity = 1},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512},
+    {.size_min = -512, .size_max = 511, .neutral = 0x00, .abs_max = 511, .abs_min = 512},
 };
 
 struct real_map {

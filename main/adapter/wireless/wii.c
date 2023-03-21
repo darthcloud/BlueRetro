@@ -112,34 +112,35 @@ static const uint8_t wiiu_axes_idx[WIIU_AXES_MAX] =
 
 static const struct ctrl_meta wiin_axes_meta[NUNCHUCK_AXES_MAX] =
 {
-    {.neutral = 0x80, .abs_max = 0x63},
-    {.neutral = 0x80, .abs_max = 0x63},
+    {.neutral = 0x80, .abs_max = 0x63, .abs_min = 0x63},
+    {.neutral = 0x80, .abs_max = 0x63, .abs_min = 0x63},
 };
 
 static const struct ctrl_meta wiic_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.neutral = 0x20, .abs_max = 0x1B},
-    {.neutral = 0x20, .abs_max = 0x1B},
-    {.neutral = 0x10, .abs_max = 0x0D},
-    {.neutral = 0x10, .abs_max = 0x0D},
-    {.neutral = 0x02, .abs_max = 0x1D},
-    {.neutral = 0x02, .abs_max = 0x1D},
+    {.neutral = 0x20, .abs_max = 0x1B, .abs_min = 0x1B},
+    {.neutral = 0x20, .abs_max = 0x1B, .abs_min = 0x1B},
+    {.neutral = 0x10, .abs_max = 0x0D, .abs_min = 0x0D},
+    {.neutral = 0x10, .abs_max = 0x0D, .abs_min = 0x0D},
+    {.neutral = 0x02, .abs_max = 0x1D, .abs_min = 0x00},
+    {.neutral = 0x02, .abs_max = 0x1D, .abs_min = 0x00},
 };
 
 static const struct ctrl_meta wiic_8bit_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.neutral = 0x80, .abs_max = 0x66},
-    {.neutral = 0x80, .abs_max = 0x66},
-    {.neutral = 0x80, .abs_max = 0x66},
-    {.neutral = 0x80, .abs_max = 0x66},
-    {.neutral = 0x16, .abs_max = 0xDA},
-    {.neutral = 0x16, .abs_max = 0xDA},
+    {.neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.neutral = 0x80, .abs_max = 0x66, .abs_min = 0x66},
+    {.neutral = 0x16, .abs_max = 0xDA, .abs_min = 0x00},
+    {.neutral = 0x16, .abs_max = 0xDA, .abs_min = 0x00},
 };
 
 static const struct ctrl_meta wiiu_axes_meta =
 {
     .neutral = 0x800,
     .abs_max = 0x44C,
+    .abs_min = 0x44C,
 };
 
 static const uint32_t wii_mask[4] = {0x007F0F00, 0x00000000, 0x00000000, 0x00000000};

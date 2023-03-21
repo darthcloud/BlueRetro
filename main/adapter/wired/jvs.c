@@ -39,8 +39,8 @@ static DRAM_ATTR const uint8_t jvs_axes_idx[JVS_AXES_MAX] =
 
 static DRAM_ATTR const struct ctrl_meta jvs_axes_meta[JVS_AXES_MAX] =
 {
-    {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
-    {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x8000},
+    {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000},
+    {.size_min = -32768, .size_max = 32767, .neutral = 0x8000, .abs_max = 0x7FFF, .abs_min = 0x8000},
 };
 
 struct jvs_map {

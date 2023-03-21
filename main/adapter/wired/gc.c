@@ -33,12 +33,12 @@ static DRAM_ATTR const uint8_t gc_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta gc_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C},
-    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0},
-    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64, .abs_min = 0x64},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x64, .abs_min = 0x64},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C, .abs_min = 0x5C},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x5C, .abs_min = 0x5C},
+    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x20, .abs_max = 0xD0, .abs_min = 0x00},
 };
 
 struct gc_map {

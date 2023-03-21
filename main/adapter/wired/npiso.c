@@ -41,22 +41,22 @@ static DRAM_ATTR const uint8_t npiso_mouse_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta npiso_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80, .polarity = 1},
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80, .polarity = 1},
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x00, .abs_max = 0x7F, .abs_min = 0x80},
 };
 
 static DRAM_ATTR const struct ctrl_meta npiso_trackball_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8},
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8, .polarity = 1},
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8},
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8, .polarity = 1},
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8},
-    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x8},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8, .polarity = 1},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8, .polarity = 1},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8},
+    {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8},
 };
 
 struct npiso_map {

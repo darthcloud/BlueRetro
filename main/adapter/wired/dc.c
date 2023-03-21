@@ -53,22 +53,22 @@ static const uint8_t dc_kb_keycode_idx[] =
 
 static DRAM_ATTR const struct ctrl_meta dc_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80},
-    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x80, .polarity = 1},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
+    {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
 };
 
 static DRAM_ATTR const struct ctrl_meta dc_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200, .polarity = 1},
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
-    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200, .polarity = 1},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200},
+    {.size_min = -512, .size_max = 511, .neutral = 0x200, .abs_max = 0x1FF, .abs_min = 0x200},
 };
 
 struct dc_map {

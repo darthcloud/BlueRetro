@@ -81,12 +81,12 @@ static DRAM_ATTR const uint8_t sega_mouse_axes_idx[ADAPTER_MAX_AXES] =
 
 static DRAM_ATTR const struct ctrl_meta sega_mouse_axes_meta[ADAPTER_MAX_AXES] =
 {
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
-    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
+    {.size_min = -256, .size_max = 255, .neutral = 0x00, .abs_max = 255, .abs_min = 256},
 };
 
 struct sega_mouse_map {
