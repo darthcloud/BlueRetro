@@ -77,11 +77,25 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     if (dst_mask & out->mask[dst_btn_idx]) {
         int32_t abs_src_value = abs(ctrl_input->axes[src_axis_idx].value);
         int32_t src_sign = btn_sign(ctrl_input->axes[src_axis_idx].meta->polarity, src);
-        int32_t src_abs_max = (src_sign > 0) ? ctrl_input->axes[src_axis_idx].meta->abs_max : ctrl_input->axes[src_axis_idx].meta->abs_min;
         int32_t sign_check = src_sign * ctrl_input->axes[src_axis_idx].value;
 
         /* Check if the srv value sign match the src mapping sign */
         if (sign_check >= 0) {
+            /* Get proper abs_max base on sign and update max if current value is over */
+            int32_t src_abs_max;
+            if (src_sign > 0) {
+                if (abs_src_value > ctrl_input->axes[src_axis_idx].meta->abs_max) {
+                    ctrl_input->axes[src_axis_idx].meta->abs_max = abs_src_value;
+                }
+                src_abs_max = ctrl_input->axes[src_axis_idx].meta->abs_max;
+            }
+            else {
+                if (abs_src_value > ctrl_input->axes[src_axis_idx].meta->abs_min) {
+                    ctrl_input->axes[src_axis_idx].meta->abs_min = abs_src_value;
+                }
+                src_abs_max = ctrl_input->axes[src_axis_idx].meta->abs_min;
+            }
+
             /* Check if dst is an axis */
             if (dst_mask & out->desc[dst_btn_idx]) {
                 /* Keep track of source axis type */

@@ -295,7 +295,7 @@ static const uint32_t sw_brawler64_btns_mask[32] = {
 static int32_t sw_pad_init(struct bt_data *bt_data) {
     struct bt_hid_sw_ctrl_calib *calib = NULL;
     const uint8_t *axes_idx = sw_axes_idx;
-    struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     uint8_t report_type = (bt_data->base.report_id == 0x30) ? 1 : 0;
 
     memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_pro_btns_mask[report_type],
@@ -425,7 +425,7 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
 
 static int32_t sw_native_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct sw_native_map *map = (struct sw_native_map *)bt_data->base.input;
-    struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     uint16_t axes[4];
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
@@ -478,7 +478,7 @@ static int32_t sw_native_to_generic(struct bt_data *bt_data, struct wireless_ctr
 
 static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct sw_map *map = (struct sw_map *)bt_data->base.input;
-    struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u], \"btns\": %u, \"hat\": %u}\n",

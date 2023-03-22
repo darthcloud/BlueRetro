@@ -179,6 +179,9 @@ static const uint32_t gbros_btns_mask[32] = {
 
 static void xbox_pad_init(struct bt_data *bt_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
+
+    memcpy(meta, xb1_axes_meta, sizeof(xb1_axes_meta));
 
     if (bt_data->base.pids->subtype == BT_XBOX_ADAPTIVE) {
         memcpy(bt_data->raw_src_mappings[PAD].mask, xb1_adaptive_mask,
@@ -232,6 +235,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
 
 int32_t xbox_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
@@ -267,7 +271,7 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data
         ctrl_data->btns[0].value |= hat_to_ld_btns[(map->hat - 1) & 0xF];
 
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-            ctrl_data->axes[i].meta = &xb1_axes_meta[i];
+            ctrl_data->axes[i].meta = &meta[i];
             int32_t tmp = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->base.axes_cal[i];
 
             if (bt_data->raw_src_mappings[PAD].axes_to_btns[i]) {

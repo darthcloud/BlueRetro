@@ -11,14 +11,14 @@
 #include "zephyr/atomic.h"
 
 #ifndef __packed
-#define __packed    __attribute__((__packed__))
+#define __packed __attribute__((__packed__))
 #endif
 
-#define RESET   "\033[0m"
-#define BOLD   "\033[1m\033[37m"
-#define GREEN  "\033[1;32m"
+#define RESET "\033[0m"
+#define BOLD "\033[1m\033[37m"
+#define GREEN "\033[1;32m"
 
-#define BT_MAX_DEV   7 /* BT limitation */
+#define BT_MAX_DEV 7 /* BT limitation */
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 #define ADAPTER_MAX_AXES 6
 #define REPORT_MAX_USAGE 16
@@ -448,8 +448,8 @@ struct raw_src_mapping {
     uint32_t mask[4];
     uint32_t desc[4];
     uint32_t btns_mask[32];
-    uint32_t axes_to_btns[6];
-    struct ctrl_meta meta;
+    uint32_t axes_to_btns[ADAPTER_MAX_AXES];
+    struct ctrl_meta meta[ADAPTER_MAX_AXES];
 };
 
 struct bt_ids {

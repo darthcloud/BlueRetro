@@ -136,11 +136,12 @@ static const struct ctrl_meta wiic_8bit_axes_meta[ADAPTER_MAX_AXES] =
     {.neutral = 0x16, .abs_max = 0xDA, .abs_min = 0x00},
 };
 
-static const struct ctrl_meta wiiu_axes_meta =
+static const struct ctrl_meta wiiu_axes_meta[WIIU_AXES_MAX] =
 {
-    .neutral = 0x800,
-    .abs_max = 0x44C,
-    .abs_min = 0x44C,
+    {.neutral = 0x800, .abs_max = 0x44C, .abs_min = 0x44C},
+    {.neutral = 0x800, .abs_max = 0x44C, .abs_min = 0x44C},
+    {.neutral = 0x800, .abs_max = 0x44C, .abs_min = 0x44C},
+    {.neutral = 0x800, .abs_max = 0x44C, .abs_min = 0x44C},
 };
 
 static const uint32_t wii_mask[4] = {0x007F0F00, 0x00000000, 0x00000000, 0x00000000};
@@ -249,6 +250,7 @@ static int32_t wiimote_to_generic(struct bt_data *bt_data, struct wireless_ctrl 
 
 static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiin_map *map = (struct wiin_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u], \"btns\": %u}\n",
@@ -273,6 +275,7 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        memcpy(meta, wiin_axes_meta, sizeof(wiin_axes_meta));
         for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
             bt_data->base.axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
         }
@@ -280,7 +283,7 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
-        ctrl_data->axes[i].meta = &wiin_axes_meta[i];
+        ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = map->axes[i] - wiin_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
@@ -289,6 +292,7 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
 static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiic_map *map = (struct wiic_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     uint8_t axes[6];
     const uint32_t *btns_mask = wiic_btns_mask;
 
@@ -319,6 +323,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        memcpy(meta, wiic_axes_meta, sizeof(wiic_axes_meta));
         struct wiic_8bit_map *map_8bit = (struct wiic_8bit_map *)bt_data->base.input;
         if (map_8bit->buttons != 0x0000) {
             bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype + 1);
@@ -343,7 +348,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        ctrl_data->axes[i].meta = &wiic_axes_meta[i];
+        ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = axes[i] - wiic_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
@@ -352,6 +357,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
 static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiic_8bit_map *map = (struct wiic_8bit_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     const uint32_t *btns_mask = wiic_btns_mask;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -376,6 +382,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctr
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        memcpy(meta, wiic_8bit_axes_meta, sizeof(wiic_8bit_axes_meta));
         if (map->buttons == 0x0000) {
             bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype - 1);
             return -1;
@@ -399,7 +406,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctr
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        ctrl_data->axes[i].meta = &wiic_8bit_axes_meta[i];
+        ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = map->axes[wiic_8bit_axes_idx[i]] - wiic_8bit_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
@@ -408,6 +415,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctr
 
 static int32_t wiiu_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u], \"btns\": %lu}\n",
@@ -427,15 +435,16 @@ static int32_t wiiu_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        memcpy(meta, wiiu_axes_meta, sizeof(wiiu_axes_meta));
         for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
-            bt_data->base.axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral);
+            bt_data->base.axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
     for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
-        ctrl_data->axes[i].meta = &wiiu_axes_meta;
-        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta.neutral + bt_data->base.axes_cal[i];
+        ctrl_data->axes[i].meta = &meta[i];
+        ctrl_data->axes[i].value = map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
     return 0;

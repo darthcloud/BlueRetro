@@ -88,6 +88,7 @@ static const uint32_t ps3_btns_mask[32] = {
 
 int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct ps3_map *map = (struct ps3_map *)bt_data->base.input;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu}\n",
@@ -107,6 +108,7 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        memcpy(meta, ps3_axes_meta, sizeof(ps3_axes_meta));
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
             bt_data->base.axes_cal[i] = -(map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral);
         }
@@ -114,7 +116,7 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        ctrl_data->axes[i].meta = &ps3_axes_meta[i];
+        ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
 
