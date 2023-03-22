@@ -420,7 +420,7 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
     return 0;
 }
 
-static int32_t sw_native_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t sw_native_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct sw_native_map *map = (struct sw_native_map *)bt_data->base.input;
     struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
     uint16_t axes[4];
@@ -473,7 +473,7 @@ static int32_t sw_native_to_generic(struct bt_data *bt_data, struct generic_ctrl
     return 0;
 }
 
-static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct sw_map *map = (struct sw_map *)bt_data->base.input;
     struct ctrl_meta *meta = &bt_data->raw_src_mappings[PAD].meta;
 
@@ -526,7 +526,7 @@ static int32_t sw_hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *c
     return 0;
 }
 
-int32_t sw_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t sw_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     if (bt_data->base.report_id == 0x30) {
         return sw_native_to_generic(bt_data, ctrl_data);
     }

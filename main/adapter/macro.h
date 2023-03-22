@@ -8,6 +8,6 @@
 
 #include "adapter/adapter.h"
 
-void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags);
+void sys_macro_hdl(struct wireless_ctrl *ctrl_data, atomic_t *flags);
 
 #endif /* _SYS_MACRO_H_ */

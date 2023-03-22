@@ -80,7 +80,7 @@ void IRAM_ATTR wii_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     }
 }
 
-void wii_meta_init(struct generic_ctrl *ctrl_data) {
+void wii_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -101,7 +101,7 @@ void wii_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void wii_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void wii_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct wiic_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 

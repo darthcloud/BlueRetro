@@ -319,7 +319,7 @@ void IRAM_ATTR cdi_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     }
 }
 
-void cdi_meta_init(struct generic_ctrl *ctrl_data) {
+void cdi_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -346,7 +346,7 @@ exit_axes_loop:
     }
 }
 
-void cdi_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void cdi_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct cdi_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 8);
 
@@ -381,7 +381,7 @@ void cdi_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wi
 #endif
 }
 
-static void cdi_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void cdi_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct cdi_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 8);
 
@@ -414,7 +414,7 @@ static void cdi_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-static void cdi_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void cdi_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     if (!atomic_test_bit(&wired_data->flags, WIRED_KBMON_INIT)) {
         kbmon_init(ctrl_data->index, cdi_kb_id_to_scancode);
         kbmon_set_typematic(ctrl_data->index, 1, 500000, 90000);
@@ -545,7 +545,7 @@ void cdi_kb_id_to_scancode(uint32_t dev_id, uint8_t type, uint8_t id) {
     }
 }
 
-void cdi_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void cdi_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
             cdi_kb_from_generic(ctrl_data, wired_data);

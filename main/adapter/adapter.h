@@ -374,6 +374,12 @@ struct ctrl_meta {
 struct ctrl_axis {
     int32_t value;
     int32_t relative;
+    struct ctrl_meta *meta;
+};
+
+struct ctrl_axis_wired {
+    int32_t value;
+    int32_t relative;
     const struct ctrl_meta *meta;
     uint32_t cnt_mask;
 };
@@ -383,13 +389,20 @@ struct ctrl_btn {
     uint32_t cnt_mask[32];
 };
 
-struct generic_ctrl {
+struct wireless_ctrl {
+    const uint32_t *mask;
+    const uint32_t *desc;
+    struct ctrl_btn btns[4];
+    struct ctrl_axis axes[ADAPTER_MAX_AXES];
+};
+
+struct wired_ctrl {
     uint32_t index;
     const uint32_t *mask;
     const uint32_t *desc;
     uint32_t map_mask[4];
     struct ctrl_btn btns[4];
-    struct ctrl_axis axes[ADAPTER_MAX_AXES];
+    struct ctrl_axis_wired axes[ADAPTER_MAX_AXES];
 };
 
 struct generic_fb {
@@ -504,11 +517,11 @@ struct bt_adapter {
     struct bt_data data[BT_MAX_DEV];
 };
 
-typedef int32_t (*to_generic_t)(struct bt_data *bt_data, struct generic_ctrl *ctrl_data);
-typedef void (*from_generic_t)(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
+typedef int32_t (*to_generic_t)(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data);
+typedef void (*from_generic_t)(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data);
 typedef void (*fb_to_generic_t)(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data);
 typedef void (*fb_from_generic_t)(struct generic_fb *fb_data, struct bt_data *bt_data);
-typedef void (*meta_init_t)(struct generic_ctrl *ctrl_data);
+typedef void (*meta_init_t)(struct wired_ctrl *ctrl_data);
 typedef void (*buffer_init_t)(int32_t dev_mode, struct wired_data *wired_data);
 
 extern const uint32_t hat_to_ld_btns[16];

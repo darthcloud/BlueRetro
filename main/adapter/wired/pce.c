@@ -164,7 +164,7 @@ static DRAM_ATTR const uint32_t pce_6btns_btns_mask[][32] = {
     },
 };
 
-static void pce_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void pce_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pce_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output);
 
@@ -197,7 +197,7 @@ static void pce_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
     memcpy(wired_data->output + 8, (uint8_t *)&map_tmp + 8, sizeof(map_tmp) - 8);
 }
 
-static void pce_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void pce_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pce_map map_tmp;
     uint32_t map_mask[3];
     const uint32_t (*btns_mask)[32] = (config.out_cfg[0].dev_mode == DEV_PAD_ALT) ? pce_6btns_btns_mask : pce_btns_mask;
@@ -260,7 +260,7 @@ void IRAM_ATTR pce_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     }
 }
 
-void pce_meta_init(struct generic_ctrl *ctrl_data) {
+void pce_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -283,7 +283,7 @@ void pce_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void pce_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void pce_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_MOUSE:
             pce_mouse_from_generic(ctrl_data, wired_data);

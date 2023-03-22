@@ -224,7 +224,7 @@ static const uint32_t wiiu_btns_mask[32] = {
     BIT(WIIU_ZR), BIT(WIIU_R), 0, BIT(WIIU_RJ),
 };
 
-static int32_t wiimote_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiimote_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     uint16_t *buttons = (uint16_t *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -246,7 +246,7 @@ static int32_t wiimote_to_generic(struct bt_data *bt_data, struct generic_ctrl *
     return 0;
 }
 
-static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiin_map *map = (struct wiin_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -286,7 +286,7 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     return 0;
 }
 
-static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiic_map *map = (struct wiic_map *)bt_data->base.input;
     uint8_t axes[6];
     const uint32_t *btns_mask = wiic_btns_mask;
@@ -349,7 +349,7 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     return 0;
 }
 
-static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiic_8bit_map *map = (struct wiic_8bit_map *)bt_data->base.input;
     const uint32_t *btns_mask = wiic_btns_mask;
 
@@ -405,7 +405,7 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct generic_ctrl
     return 0;
 }
 
-static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static int32_t wiiu_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct wiiu_map *map = (struct wiiu_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -440,7 +440,7 @@ static int32_t wiiu_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
     return 0;
 }
 
-int32_t wii_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t wii_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     switch (bt_data->base.pids->subtype) {
         case BT_WII_NUNCHUCK:
             return wiin_to_generic(bt_data, ctrl_data);

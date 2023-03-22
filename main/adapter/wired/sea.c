@@ -76,7 +76,7 @@ void IRAM_ATTR sea_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     map_mask->buttons_high = 0;
 }
 
-void sea_meta_init(struct generic_ctrl *ctrl_data) {
+void sea_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -85,7 +85,7 @@ void sea_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void sea_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     if (ctrl_data->index < 1) {
         struct sea_map map_tmp;
         uint32_t map_mask = 0xFFFFFFFF;

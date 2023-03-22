@@ -131,7 +131,7 @@ static DRAM_ATTR buffer_init_t buffer_init_func[WIRED_MAX] = {
     sea_init_buffer, /* SEA_BOARD */
 };
 
-int32_t wired_meta_init(struct generic_ctrl *ctrl_data) {
+int32_t wired_meta_init(struct wired_ctrl *ctrl_data) {
     if (meta_init_func[wired_adapter.system_id]) {
         meta_init_func[wired_adapter.system_id](ctrl_data);
         return 0;
@@ -145,7 +145,7 @@ void IRAM_ATTR wired_init_buffer(int32_t dev_mode, struct wired_data *wired_data
     }
 }
 
-void wired_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void wired_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     if (from_generic_func[wired_adapter.system_id]) {
         from_generic_func[wired_adapter.system_id](dev_mode, ctrl_data, wired_data);
     }

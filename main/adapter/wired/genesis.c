@@ -208,7 +208,7 @@ static DRAM_ATTR const uint32_t genesis_twh_btns_mask[32] = {
     BIT(GENESIS_Z), BIT(GENESIS_Z), 0, 0,
 };
 
-static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void sega_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct sega_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 28);
 
@@ -241,7 +241,7 @@ static void sega_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void genesis_std_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
     uint32_t map_mask[3];
     uint32_t map_mask_high[3];
@@ -292,7 +292,7 @@ static void genesis_std_from_generic(struct generic_ctrl *ctrl_data, struct wire
 #endif
 }
 
-static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void genesis_twh_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -315,7 +315,7 @@ static void genesis_twh_from_generic(struct generic_ctrl *ctrl_data, struct wire
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-static void genesis_ea_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void genesis_ea_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct genesis_map map_tmp;
     uint32_t map_mask[3];
 
@@ -431,7 +431,7 @@ void IRAM_ATTR genesis_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     }
 }
 
-void genesis_meta_init(struct generic_ctrl *ctrl_data) {
+void genesis_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -455,7 +455,7 @@ exit_axes_loop:
     }
 }
 
-void genesis_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void genesis_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         //case DEV_KB:
         //    break;

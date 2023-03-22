@@ -100,7 +100,7 @@ static const uint32_t ps4_btns_mask[32] = {
     0, BIT(PS4_R1), 0, BIT(PS4_R3),
 };
 
-static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void ps4_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct ps4_map *map = (struct ps4_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -136,7 +136,7 @@ static void ps4_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     }
 }
 
-static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void ps5_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct ps5_map *map = (struct ps5_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -172,7 +172,7 @@ static void ps5_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_da
     }
 }
 
-static void hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_map *map = (struct hid_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -233,7 +233,7 @@ static void ps5_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
     }
 }
 
-int32_t ps_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t ps_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     switch (bt_data->base.report_id) {
         case 0x01:
             hid_to_generic(bt_data, ctrl_data);

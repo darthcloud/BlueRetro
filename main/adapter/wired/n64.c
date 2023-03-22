@@ -160,7 +160,7 @@ void IRAM_ATTR n64_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     }
 }
 
-void n64_meta_init(struct generic_ctrl *ctrl_data) {
+void n64_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -208,7 +208,7 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
     }
 }
 
-static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     /* Memory / Rumble toggle */
     if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
         if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
@@ -253,7 +253,7 @@ static void n64_ctrl_special_action(struct generic_ctrl *ctrl_data, struct wired
     }
 }
 
-static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -298,7 +298,7 @@ static void n64_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
 #endif
 }
 
-static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 4);
 
@@ -331,7 +331,7 @@ static void n64_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-static void n64_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void n64_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct n64_kb_map map_tmp = {0};
     uint32_t code_idx = 0;
 
@@ -358,7 +358,7 @@ static void n64_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void n64_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void n64_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
             n64_kb_from_generic(ctrl_data, wired_data);

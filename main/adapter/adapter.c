@@ -38,8 +38,8 @@ const uint32_t generic_btns_mask[32] = {
     BIT(PAD_RM), BIT(PAD_RS), BIT(PAD_RT), BIT(PAD_RJ),
 };
 
-struct generic_ctrl *ctrl_input;
-struct generic_ctrl *ctrl_output;
+struct wireless_ctrl *ctrl_input;
+struct wired_ctrl *ctrl_output;
 struct generic_fb fb_input;
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
@@ -61,7 +61,7 @@ static uint32_t btn_id_to_btn_idx(uint8_t btn_id) {
 
 static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
     uint32_t out_mask = BIT(map_cfg->dst_id);
-    struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
+    struct wired_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t src = map_cfg->src_btn;
     uint8_t dst = map_cfg->dst_btn;
     uint32_t dst_mask = BIT(dst & 0x1F);
@@ -129,7 +129,7 @@ static uint32_t adapter_map_from_axis(struct map_cfg * map_cfg) {
 
 static uint32_t adapter_map_from_btn(struct map_cfg * map_cfg, uint32_t src_mask, uint32_t src_btn_idx) {
     uint32_t out_mask = BIT(map_cfg->dst_id);
-    struct generic_ctrl *out = &ctrl_output[map_cfg->dst_id];
+    struct wired_ctrl *out = &ctrl_output[map_cfg->dst_id];
     uint8_t dst = map_cfg->dst_btn;
     uint32_t dst_mask = BIT(dst & 0x1F);
     uint32_t dst_btn_idx = btn_id_to_btn_idx(dst);
@@ -238,7 +238,7 @@ int32_t btn_id_to_axis(uint8_t btn_id) {
 }
 
 uint8_t btn_is_axis(uint8_t dst_id, uint8_t dst_btn) {
-    struct generic_ctrl *out = &ctrl_output[dst_id];
+    struct wired_ctrl *out = &ctrl_output[dst_id];
     uint32_t dst_mask = BIT(dst_btn & 0x1F);
     uint32_t dst_btn_idx = btn_id_to_btn_idx(dst_btn);
     if (dst_mask & out->desc[dst_btn_idx]) {
@@ -331,7 +331,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 #ifdef CONFIG_BLUERETRO_JSON_DBG
         printf("{\"log_type\": \"generic_input\"");
 #endif
-        adapter_debug_print(ctrl_input);
+        adapter_debug_wireless_print(ctrl_input);
 #endif
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
         if (ctrl_input->btns[0].value & BIT(PAD_RB_DOWN)) {
@@ -351,7 +351,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 #ifdef CONFIG_BLUERETRO_JSON_DBG
             printf("{\"log_type\": \"mapped_input\"");
 #endif
-            adapter_debug_print(&ctrl_output[0]);
+            adapter_debug_wired_print(&ctrl_output[0]);
 #endif
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
@@ -409,11 +409,11 @@ void adapter_init(void) {
     wired_adapter.system_id = WIRED_AUTO;
 
     /* Save regular DRAM by allocating big sruct w/ only 32bits access in IRAM */
-    ctrl_input = heap_caps_malloc(sizeof(struct generic_ctrl), MALLOC_CAP_32BIT);
+    ctrl_input = heap_caps_malloc(sizeof(struct wireless_ctrl), MALLOC_CAP_32BIT);
     if (ctrl_input == NULL) {
         printf("# %s ctrl_input alloc fail\n", __FUNCTION__);
     }
-    ctrl_output = heap_caps_malloc(sizeof(struct generic_ctrl) * WIRED_MAX_DEV, MALLOC_CAP_32BIT);
+    ctrl_output = heap_caps_malloc(sizeof(struct wired_ctrl) * WIRED_MAX_DEV, MALLOC_CAP_32BIT);
     if (ctrl_output == NULL) {
         printf("# %s ctrl_output alloc fail\n", __FUNCTION__);
     }

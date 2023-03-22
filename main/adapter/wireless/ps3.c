@@ -86,7 +86,7 @@ static const uint32_t ps3_btns_mask[32] = {
     0, BIT(PS3_R1), 0, BIT(PS3_R3),
 };
 
-int32_t ps3_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct ps3_map *map = (struct ps3_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT

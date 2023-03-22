@@ -127,7 +127,7 @@ void IRAM_ATTR gc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     }
 }
 
-void gc_meta_init(struct generic_ctrl *ctrl_data) {
+void gc_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -148,7 +148,7 @@ void gc_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-static void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void gc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct gc_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -192,7 +192,7 @@ static void gc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
 #endif
 }
 
-static void gc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void gc_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct gc_kb_map map_tmp = {0};
     uint32_t code_idx = 0;
 
@@ -210,7 +210,7 @@ static void gc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void gc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void gc_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
             gc_kb_from_generic(ctrl_data, wired_data);

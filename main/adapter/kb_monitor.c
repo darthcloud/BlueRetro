@@ -50,7 +50,7 @@ void kbmon_init(uint32_t dev_id, kbmon_id_to_code_t callback) {
     }
 }
 
-void kbmon_update(uint32_t dev_id, struct generic_ctrl *ctrl_data) {
+void kbmon_update(uint32_t dev_id, struct wired_ctrl *ctrl_data) {
     struct kb_monitor *kbmon = &kb_monitors[dev_id];
     uint32_t keys_change[4];
 

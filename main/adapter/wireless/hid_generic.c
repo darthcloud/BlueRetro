@@ -115,7 +115,7 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
     }
 }
 
-static void hid_kb_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[KB];
 
     if (!atomic_test_bit(&bt_data->base.flags[KB], BT_INIT)) {
@@ -226,7 +226,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
     }
 }
 
-static void hid_mouse_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[MOUSE];
 
     if (!atomic_test_bit(&bt_data->base.flags[MOUSE], BT_INIT)) {
@@ -473,7 +473,7 @@ fillup_end:
     }
 }
 
-static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
@@ -579,7 +579,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctr
 
 }
 
-int32_t hid_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
 #ifdef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     struct hid_report *report = &bt_data->reports[bt_data->base.report_type];
     for (uint32_t i = 0; i < report->usage_cnt; i++) {

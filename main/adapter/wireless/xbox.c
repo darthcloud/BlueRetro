@@ -230,7 +230,7 @@ static void xbox_pad_init(struct bt_data *bt_data) {
     atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
 }
 
-int32_t xbox_to_generic(struct bt_data *bt_data, struct generic_ctrl *ctrl_data) {
+int32_t xbox_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct xb1_map *map = (struct xb1_map *)bt_data->base.input;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT

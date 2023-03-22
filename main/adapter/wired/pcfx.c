@@ -116,7 +116,7 @@ void IRAM_ATTR pcfx_init_buffer(int32_t dev_mode, struct wired_data *wired_data)
     }
 }
 
-void pcfx_meta_init(struct generic_ctrl *ctrl_data) {
+void pcfx_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -136,7 +136,7 @@ void pcfx_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void pcfx_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pcfx_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -195,7 +195,7 @@ void pcfx_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
 #endif
 }
 
-static void pcfx_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void pcfx_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pcfx_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 8);
 
@@ -228,7 +228,7 @@ static void pcfx_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-void pcfx_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void pcfx_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_MOUSE:
             pcfx_mouse_from_generic(ctrl_data, wired_data);

@@ -78,7 +78,7 @@ void IRAM_ATTR jvs_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     map_mask->axes[1] = 0x0000;
 }
 
-void jvs_meta_init(struct generic_ctrl *ctrl_data) {
+void jvs_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -90,7 +90,7 @@ void jvs_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void jvs_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void jvs_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct jvs_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 

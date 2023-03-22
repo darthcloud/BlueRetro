@@ -7,9 +7,9 @@
 #define _WIRED_H_
 #include "adapter/adapter.h"
 
-int32_t wired_meta_init(struct generic_ctrl *ctrl_data);
+int32_t wired_meta_init(struct wired_ctrl *ctrl_data);
 void wired_init_buffer(int32_t dev_mode, struct wired_data *wired_data);
-void wired_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data);
+void wired_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data);
 void wired_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data);
 void wired_para_turbo_mask_hdlr(void);
 void wired_gen_turbo_mask_btns16_pos(struct wired_data *wired_data, uint16_t *buttons, const uint32_t btns_mask[32]);

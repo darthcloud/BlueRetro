@@ -164,7 +164,7 @@ void IRAM_ATTR real_init_buffer(int32_t dev_mode, struct wired_data *wired_data)
     }
 }
 
-void real_meta_init(struct generic_ctrl *ctrl_data) {
+void real_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -189,7 +189,7 @@ void real_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void real_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct real_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -218,7 +218,7 @@ void real_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *w
 
 /* I didn't RE this one my self, base on : */
 /* https://github.com/libretro/opera-libretro/blob/068c69ff784f2abaea69cdf1b8d3d9d39ac4826e/libopera/opera_pbus.c#L89 */
-void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void real_fs_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct real_fs_map map_tmp;
     uint32_t map_mask = 0xFFFF;
 
@@ -283,7 +283,7 @@ void real_fs_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wir
 #endif
 }
 
-static void real_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void real_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct real_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 4);
 
@@ -316,7 +316,7 @@ static void real_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-void real_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void real_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_MOUSE:
             real_mouse_from_generic(ctrl_data, wired_data);

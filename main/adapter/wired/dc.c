@@ -202,7 +202,7 @@ void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     }
 }
 
-void dc_meta_init(struct generic_ctrl *ctrl_data) {
+void dc_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*4);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -229,7 +229,7 @@ exit_axes_loop:
     }
 }
 
-static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void dc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -271,7 +271,7 @@ static void dc_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_da
 #endif
 }
 
-static void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void dc_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 8);
 
@@ -304,7 +304,7 @@ static void dc_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 16);
 }
 
-static void dc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void dc_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct dc_kb_map map_tmp = {0};
     uint32_t code_idx = 0;
 
@@ -346,7 +346,7 @@ static void dc_kb_from_generic(struct generic_ctrl *ctrl_data, struct wired_data
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
-void dc_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void dc_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
             dc_kb_from_generic(ctrl_data, wired_data);

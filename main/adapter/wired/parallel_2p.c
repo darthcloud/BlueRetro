@@ -86,7 +86,7 @@ void IRAM_ATTR para_2p_init_buffer(int32_t dev_mode, struct wired_data *wired_da
     map2_mask->buttons_high = 0;
 }
 
-void para_2p_meta_init(struct generic_ctrl *ctrl_data) {
+void para_2p_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -95,7 +95,7 @@ void para_2p_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-void para_2p_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void para_2p_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     if (ctrl_data->index < 2) {
         struct para_2p_map map_tmp;
         struct para_2p_map *map1 = (struct para_2p_map *)wired_adapter.data[0].output;

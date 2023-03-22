@@ -221,7 +221,7 @@ void IRAM_ATTR jag_init_buffer(int32_t dev_mode, struct wired_data *wired_data) 
     }
 }
 
-void jag_meta_init(struct generic_ctrl *ctrl_data) {
+void jag_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -240,7 +240,7 @@ void jag_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void jag_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct jag_map map_tmp;
     uint32_t map_mask[4];
 
@@ -275,7 +275,7 @@ static void jag_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_d
 #endif
 }
 
-static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void jag_6d_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct jag_map map_tmp;
 
     memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
@@ -337,7 +337,7 @@ static void jag_6d_from_generic(struct generic_ctrl *ctrl_data, struct wired_dat
 #endif
 }
 
-void jag_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void jag_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_PAD_ALT:
             jag_6d_from_generic(ctrl_data, wired_data);

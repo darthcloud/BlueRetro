@@ -172,7 +172,7 @@ void IRAM_ATTR npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data
     }
 }
 
-void npiso_meta_init(struct generic_ctrl *ctrl_data) {
+void npiso_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
@@ -205,7 +205,7 @@ void npiso_meta_init(struct generic_ctrl *ctrl_data) {
     }
 }
 
-static void npiso_vtap_gpio(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void npiso_vtap_gpio(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     /* Palette */
     if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_LJ]) {
         if (ctrl_data->btns[0].value & generic_btns_mask[PAD_LJ]) {
@@ -238,7 +238,7 @@ static void npiso_vtap_gpio(struct generic_ctrl *ctrl_data, struct wired_data *w
     }
 }
 
-static void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void npiso_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct npiso_map map_tmp;
     uint32_t map_mask = 0xFFFF;
     const uint32_t *btns_mask = (wired_adapter.system_id == VBOY) ? npiso_vb_btns_mask : npiso_btns_mask;
@@ -266,7 +266,7 @@ static void npiso_ctrl_from_generic(struct generic_ctrl *ctrl_data, struct wired
 #endif
 }
 
-static void npiso_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void npiso_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct npiso_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 4);
 
@@ -299,7 +299,7 @@ static void npiso_mouse_from_generic(struct generic_ctrl *ctrl_data, struct wire
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-static void npiso_trackball_from_generic(struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+static void npiso_trackball_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct npiso_trackball_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 4);
 
@@ -332,7 +332,7 @@ static void npiso_trackball_from_generic(struct generic_ctrl *ctrl_data, struct 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 }
 
-void npiso_from_generic(int32_t dev_mode, struct generic_ctrl *ctrl_data, struct wired_data *wired_data) {
+void npiso_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_MOUSE:
             if (wired_adapter.system_id == SNES) {

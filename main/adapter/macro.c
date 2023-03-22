@@ -29,7 +29,7 @@ static struct macro macros[] = {
     {.macro = DEEP_SLEEP, .sys_mgr_cmd = SYS_MGR_CMD_DEEP_SLEEP, .flag_mask = BT_WAITING_FOR_RELEASE_MACRO5},
 };
 
-static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, atomic_t *flags) {
+static void check_macro(int32_t value, struct macro *macro, atomic_t *flags) {
     if (value == macro->macro) {
         if (!atomic_test_bit(flags, macro->flag_mask)) {
             atomic_set_bit(flags, macro->flag_mask);
@@ -43,16 +43,14 @@ static void check_macro(int32_t value, uint32_t map_mask, struct macro *macro, a
     }
 }
 
-void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags) {
+void sys_macro_hdl(struct wireless_ctrl *ctrl_data, atomic_t *flags) {
     int32_t value = ctrl_data->btns[0].value;
-    uint32_t map_mask = ctrl_data->map_mask[0];
 
     if (ctrl_data->axes[TRIG_L].meta && *ctrl_data->desc & BIT(PAD_LM)) {
         int32_t threshold = (int32_t)(((float)50.0/100) * ctrl_data->axes[TRIG_L].meta->abs_max);
 
         if (ctrl_data->axes[TRIG_L].value > threshold) {
             value |= BIT(PAD_LM);
-            map_mask |= BIT(PAD_LM);
         }
     }
 
@@ -61,13 +59,12 @@ void sys_macro_hdl(struct generic_ctrl *ctrl_data, atomic_t *flags) {
 
         if (ctrl_data->axes[TRIG_R].value > threshold) {
             value |= BIT(PAD_RM);
-            map_mask |= BIT(PAD_RM);
         }
     }
 
     for (uint32_t i = 0; i < sizeof(macros)/sizeof(macros[0]); i++) {
         struct macro *macro = &macros[i];
 
-        check_macro(value, map_mask, macro, flags);
+        check_macro(value, macro, flags);
     }
 }
