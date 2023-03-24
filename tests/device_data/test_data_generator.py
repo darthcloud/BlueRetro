@@ -45,7 +45,7 @@ def axes_test_data_generator(src, dst, dz):
         ''' Compute scaled axes value. '''
         return int(np.single(sign * (src_value - deadzone) * scale))
 
-    test_data = [{}, {}, {}, {}, {}, {}]
+    test_data = [{}, {}, {}, {}, {}, {}, {}]
     for axis, _ in src.items():
         if axis in dst:
             if axis in (ax.LY, ax.RX):
@@ -78,6 +78,10 @@ def axes_test_data_generator(src, dst, dz):
             scale = [np.single(dst_max[0] / (src_max[0] - deadzone[0])),
                      np.single(dst_max[1] / (src_max[1] - deadzone[1]))]
 
+            pull_back = int(np.single(src_max[0] * 0.95))
+            pb_dz = int(np.single(dz * pull_back)) + src_dz
+            pb_scale = np.single(dst_max[0] / (pull_back - pb_dz))
+
             id = 0
             # Test neutral value at default max
             test_data[id][axis] = {
@@ -85,6 +89,14 @@ def axes_test_data_generator(src, dst, dz):
                 'generic': 0,
                 'mapped': 0,
                 'wired': dst_neutral,
+            }
+            id += 1
+            # Test pull-back value
+            test_data[id][axis] = {
+                'wireless': src_neutral + src_sign[0] * pull_back,
+                'generic': src_sign[0] * pull_back,
+                'mapped': value(sign[0], pull_back, pb_dz, pb_scale),
+                'wired': value(sign[0], pull_back, pb_dz, pb_scale) + dst_neutral,
             }
             id += 1
             # Test maximum value
