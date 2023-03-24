@@ -388,15 +388,15 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
     for (uint32_t i = 0; i < SW_AXES_MAX; i++) {
         if (calib && calib->sticks[i / 2].axes[i % 2].neutral) {
             meta[axes_idx[i]].neutral = calib->sticks[i / 2].axes[i % 2].neutral;
-            meta[axes_idx[i]].abs_max = calib->sticks[i / 2].axes[i % 2].rel_max;
-            meta[axes_idx[i]].abs_min = calib->sticks[i / 2].axes[i % 2].rel_min;
+            meta[axes_idx[i]].abs_max = calib->sticks[i / 2].axes[i % 2].rel_max * MAX_PULL_BACK;
+            meta[axes_idx[i]].abs_min = calib->sticks[i / 2].axes[i % 2].rel_min * MAX_PULL_BACK;
             meta[axes_idx[i]].deadzone = calib->sticks[i / 2].deadzone;
             printf("# %s: controller calib loaded\n", __FUNCTION__);
         }
         else {
             meta[axes_idx[i]].neutral = sw_axes_meta[i].neutral;
-            meta[axes_idx[i]].abs_max = sw_axes_meta[i].abs_max;
-            meta[axes_idx[i]].abs_min = sw_axes_meta[i].abs_min;
+            meta[axes_idx[i]].abs_max = sw_axes_meta[i].abs_max * MAX_PULL_BACK;
+            meta[axes_idx[i]].abs_min = sw_axes_meta[i].abs_min * MAX_PULL_BACK;
             meta[axes_idx[i]].deadzone = sw_axes_meta[i].deadzone;
             printf("# %s: no calib, using default\n", __FUNCTION__);
         }

@@ -227,6 +227,8 @@ static void xbox_pad_init(struct bt_data *bt_data) {
     mapping_quirks_apply(bt_data);
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        meta[i].abs_max *= MAX_PULL_BACK;
+        meta[i].abs_min *= MAX_PULL_BACK;
         bt_data->base.axes_cal[i] = -(map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral);
     }
 

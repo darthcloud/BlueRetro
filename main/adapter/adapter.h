@@ -22,6 +22,7 @@
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 #define ADAPTER_MAX_AXES 6
 #define REPORT_MAX_USAGE 16
+#define MAX_PULL_BACK 0.95
 
 /* BT device type ID */
 enum {

@@ -277,6 +277,8 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         memcpy(meta, wiin_axes_meta, sizeof(wiin_axes_meta));
         for (uint32_t i = 0; i < NUNCHUCK_AXES_MAX; i++) {
+            meta[i].abs_max *= MAX_PULL_BACK;
+            meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(map->axes[i] - wiin_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
@@ -323,13 +325,15 @@ static int32_t wiic_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
-        memcpy(meta, wiic_axes_meta, sizeof(wiic_axes_meta));
         struct wiic_8bit_map *map_8bit = (struct wiic_8bit_map *)bt_data->base.input;
         if (map_8bit->buttons != 0x0000) {
             bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype + 1);
             return -1;
         }
+        memcpy(meta, wiic_axes_meta, sizeof(wiic_axes_meta));
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            meta[i].abs_max *= MAX_PULL_BACK;
+            meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(axes[i] - wiic_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
@@ -382,12 +386,14 @@ static int32_t wiic_8bit_to_generic(struct bt_data *bt_data, struct wireless_ctr
     }
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
-        memcpy(meta, wiic_8bit_axes_meta, sizeof(wiic_8bit_axes_meta));
         if (map->buttons == 0x0000) {
             bt_type_update(bt_data->base.pids->id, BT_WII, bt_data->base.pids->subtype - 1);
             return -1;
         }
+        memcpy(meta, wiic_8bit_axes_meta, sizeof(wiic_8bit_axes_meta));
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            meta[i].abs_max *= MAX_PULL_BACK;
+            meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(map->axes[wiic_8bit_axes_idx[i]] - wiic_8bit_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
@@ -437,6 +443,8 @@ static int32_t wiiu_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         memcpy(meta, wiiu_axes_meta, sizeof(wiiu_axes_meta));
         for (uint32_t i = 0; i < WIIU_AXES_MAX; i++) {
+            meta[i].abs_max *= MAX_PULL_BACK;
+            meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(map->axes[wiiu_axes_idx[i]] - wiiu_axes_meta[i].neutral);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);

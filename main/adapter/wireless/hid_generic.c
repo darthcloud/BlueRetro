@@ -468,6 +468,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         }
     }
 
+    /* Add a little pull-back on axis max */
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        meta->hid_axes_meta[i].abs_max *= MAX_PULL_BACK;
+        meta->hid_axes_meta[i].abs_min *= MAX_PULL_BACK;
+    }
+
     /* HID buttons order is from most important to the less in HID spec. */
     if (meta->hid_btn_idx > -1) {
         uint32_t hid_mask = (1 << report->usages[meta->hid_btn_idx].bit_size) - 1;
