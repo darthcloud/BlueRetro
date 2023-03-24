@@ -22,7 +22,7 @@ class BlueRetroDut(BlueRetroInjector):
                     return match
             retry -= 1
             sleep(0.01)
-        return None
+        assert retry < 10
 
     def flush_logs(self):
         ''' Fetch the logs and discard them. '''
