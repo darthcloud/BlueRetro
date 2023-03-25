@@ -131,10 +131,10 @@ static const uint8_t sw_jc_axes_idx[SW_AXES_MAX] =
 
 static const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
 {
-    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578, .deadzone = 0xAE},
-    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578, .deadzone = 0xAE},
-    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578, .deadzone = 0xAE},
-    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578, .deadzone = 0xAE},
+    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578},
+    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578},
+    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578},
+    {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578},
 };
 
 struct sw_map {
