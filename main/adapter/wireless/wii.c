@@ -253,8 +253,8 @@ static int32_t wiin_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u], \"btns\": %u}\n",
-        bt_data->base.report_id, map->axes[0], map->axes[1], map->buttons);
+    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u], \"btns\": [%u, %u]}\n",
+        bt_data->base.report_id, map->axes[0], map->axes[1], map->core, map->buttons);
 #endif
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
