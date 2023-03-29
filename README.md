@@ -51,6 +51,8 @@ Thanks to all sponsors!!
   https://www.aliexpress.com/item/1005004114458491.html
 * RetroScaler BlueRetro Motor Wireless Game Controllers Adapter For Nintendo GameCube by [RetroScaler](https://twitter.com/RetroScaler): GameCube single port dongle.\
   https://www.aliexpress.us/item/1005004917765807.html
+* RetroScaler BlueRetro Wireless Game Controller Adapter For SEGA DreamCast by [RetroScaler](https://twitter.com/RetroScaler): Dreamcast 4 players adapter.\
+  https://www.aliexpress.com/item/1005005362930850.html
 
 <BR>
   
