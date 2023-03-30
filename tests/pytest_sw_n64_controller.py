@@ -129,7 +129,8 @@ def test_sw_n64_controller_axes_scaling_with_calib_native_report(blueretro):
     sw_calib_axes = {axis.LX: {}, axis.LY: {}}
     for ax in islice(axis, 0, 2):
         sw_calib_axes[ax]['neutral'] = calib['neutral'][ax]
-        sw_calib_axes[ax]['abs_max'] = min(calib['rel_min'][ax], calib['rel_max'][ax])
+        sw_calib_axes[ax]['abs_max'] = calib['rel_max'][ax]
+        sw_calib_axes[ax]['abs_min'] = calib['rel_min'][ax]
         sw_calib_axes[ax]['deadzone'] = calib['deadzone'][ax]
 
     # Init adapter with a few neutral state report
@@ -348,7 +349,8 @@ def test_sw_n64_controller_axes_scaling_with_calib_default_report(blueretro):
     sw_calib_axes = {axis.LX: {}, axis.LY: {}}
     for ax in islice(axis, 0, 2):
         sw_calib_axes[ax]['neutral'] = calib['neutral'][ax]
-        sw_calib_axes[ax]['abs_max'] = min(calib['rel_min'][ax], calib['rel_max'][ax])
+        sw_calib_axes[ax]['abs_max'] = calib['rel_max'][ax]
+        sw_calib_axes[ax]['abs_min'] = calib['rel_min'][ax]
         sw_calib_axes[ax]['deadzone'] = calib['deadzone'][ax]
 
     # Init adapter with a few neutral state report

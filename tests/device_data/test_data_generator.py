@@ -58,12 +58,19 @@ def axes_test_data_generator(src, dst, dz):
             else:
                 src_sign = sign
 
-            one = int(np.single(src[axis]['abs_max'] / dst[axis]['abs_max']))
+            if src_sign > 0:
+                src_max = src[axis]['abs_max']
+            else:
+                src_max = src[axis]['abs_min']
+            if sign > 0:
+                dst_max = dst[axis]['abs_max']
+            else:
+                dst_max = dst[axis]['abs_min']
+
+            one = int(np.single(src_max / dst_max))
             half = int(np.single(one / 2))
             src_neutral = src[axis]['neutral']
             dst_neutral = dst[axis]['neutral']
-            src_max = src[axis]['abs_max']
-            dst_max = dst[axis]['abs_max']
             src_dz = src[axis]['deadzone']
 
             deadzone = int(np.single(dz * src_max)) + src_dz

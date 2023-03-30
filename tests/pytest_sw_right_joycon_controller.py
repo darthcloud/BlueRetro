@@ -129,7 +129,8 @@ def test_sw_right_joycon_controller_axes_scaling_with_calib_native_report(bluere
     sw_calib_axes = {axis.LX: {}, axis.LY: {'polarity': 1}}
     for ax in islice(axis, 0, 2):
         sw_calib_axes[ax ^ 1]['neutral'] = calib['neutral'][ax]
-        sw_calib_axes[ax ^ 1]['abs_max'] = min(calib['rel_min'][ax], calib['rel_max'][ax])
+        sw_calib_axes[ax ^ 1]['abs_max'] = calib['rel_max'][ax]
+        sw_calib_axes[ax ^ 1]['abs_min'] = calib['rel_min'][ax]
         sw_calib_axes[ax ^ 1]['deadzone'] = calib['deadzone'][ax]
 
     # Init adapter with a few neutral state report
