@@ -304,38 +304,38 @@ sw_hk_admiral_btns_mask = [
 
 
 sw_n_axes = {
-    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
-    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
-    axis.RX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
-    axis.RY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
+    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
+    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
+    axis.RX: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
+    axis.RY: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
 }
 
 
 sw_n_ljc_axes = {
-    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE, 'polarity': 1},
-    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
+    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE, 'polarity': 1},
+    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
 }
 
 
 sw_n_rjc_axes = {
-    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
-    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE, 'polarity': 1},
+    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
+    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE, 'polarity': 1},
 }
 
 
 sw_n_n64_axes = {
-    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
-    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'deadzone': 0xAE},
+    axis.LX: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
+    axis.LY: {'neutral': 0x800, 'abs_max': 0x578, 'abs_min': 0x578, 'deadzone': 0xAE},
 }
 
 
 sw_rf_brawler64_axes = {
-    axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
-    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
+    axis.LX: {'neutral': 0x8000, 'abs_max': 0x7FFF, 'abs_min': 0x8000, 'deadzone': 0},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'abs_min': 0x7FFF, 'deadzone': 0},
 }
 
 
 sw_hk_admiral_axes = {
-    axis.LX: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
-    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'deadzone': 0},
+    axis.LX: {'neutral': 0x8000, 'abs_max': 0x7FFF, 'abs_min': 0x8000, 'deadzone': 0},
+    axis.LY: {'neutral': 0x8000, 'abs_max': 0x8000, 'abs_min': 0x7FFF, 'deadzone': 0},
 }

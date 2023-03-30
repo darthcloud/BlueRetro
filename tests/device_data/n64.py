@@ -38,6 +38,6 @@ n64_btns_mask = [
 
 
 n64_axes = {
-    axis.LX: {'size_min': -128, 'size_max': 127, 'neutral': 0x00, 'abs_max': 0x54},
-    axis.LY: {'size_min': -128, 'size_max': 127, 'neutral': 0x00, 'abs_max': 0x54},
+    axis.LX: {'size_min': -128, 'size_max': 127, 'neutral': 0x00, 'abs_max': 0x54, 'abs_min': 0x54},
+    axis.LY: {'size_min': -128, 'size_max': 127, 'neutral': 0x00, 'abs_max': 0x54, 'abs_min': 0x54},
 }
