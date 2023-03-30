@@ -137,14 +137,6 @@ static const struct ctrl_meta sw_axes_meta[SW_AXES_MAX] =
     {.neutral = 0x800, .abs_max = 0x578, .abs_min = 0x578, .deadzone = 0xAE},
 };
 
-static const struct ctrl_meta sw_unlic_axes_meta[SW_AXES_MAX] =
-{
-    {.neutral = 0x800, .abs_max = 0x7FF, .abs_min = 0x800},
-    {.neutral = 0x800, .abs_max = 0x800, .abs_min = 0x7FF},
-    {.neutral = 0x800, .abs_max = 0x7FF, .abs_min = 0x800},
-    {.neutral = 0x800, .abs_max = 0x800, .abs_min = 0x7FF},
-};
-
 struct sw_map {
     uint16_t buttons;
     uint8_t hat;
@@ -400,14 +392,6 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
             meta[axes_idx[i]].abs_min = calib->sticks[i / 2].axes[i % 2].rel_min;
             meta[axes_idx[i]].deadzone = calib->sticks[i / 2].deadzone;
             printf("# %s: controller calib loaded\n", __FUNCTION__);
-        }
-        else if ((calib == NULL && bt_data->base.report_id == 0x3F && bt_data->base.pids->subtype == BT_SW_N64) ||
-                bt_data->base.pids->subtype == BT_SW_HYPERKIN_ADMIRAL) {
-            meta[axes_idx[i]].neutral = sw_unlic_axes_meta[i].neutral;
-            meta[axes_idx[i]].abs_max = sw_unlic_axes_meta[i].abs_max;
-            meta[axes_idx[i]].abs_min = sw_unlic_axes_meta[i].abs_min;
-            meta[axes_idx[i]].deadzone = sw_unlic_axes_meta[i].deadzone;
-            printf("# %s: no calib, using full range\n", __FUNCTION__);
         }
         else {
             meta[axes_idx[i]].neutral = sw_axes_meta[i].neutral;
