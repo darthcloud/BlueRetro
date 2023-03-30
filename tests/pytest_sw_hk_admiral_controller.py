@@ -97,14 +97,7 @@ def test_sw_hk_admiral_controller_axes_default_scaling(blueretro):
         wireless_value = (axes[axis.LX]['wireless'], ly_inverted)
 
         for ax in islice(axis, 0, 2):
-            if wireless_value[ax] >= (2 ** 16):
-                # When type size is max out, positive value max is one unit lower
-                assert wireless['axes'][ax] == approx(wireless_value[ax], 1)
-                assert br_generic['axes'][ax] == approx(int(axes[ax]['generic'] / 16), 1)
-                assert br_mapped['axes'][ax] == approx(axes[ax]['mapped'], 1)
-                assert wired['axes'][ax] == approx(axes[ax]['wired'], 1)
-            else:
-                assert wireless['axes'][ax] == wireless_value[ax]
-                assert br_generic['axes'][ax] == int(axes[ax]['generic'] / 16)
-                assert br_mapped['axes'][ax] == axes[ax]['mapped']
-                assert wired['axes'][ax] == axes[ax]['wired']
+            assert wireless['axes'][ax] == wireless_value[ax]
+            assert br_generic['axes'][ax] == int(axes[ax]['generic'] / 16)
+            assert br_mapped['axes'][ax] == axes[ax]['mapped']
+            assert wired['axes'][ax] == axes[ax]['wired']
