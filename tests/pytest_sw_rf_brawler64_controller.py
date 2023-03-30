@@ -79,7 +79,12 @@ def test_sw_rf_brawler64_controller_axes_default_scaling(blueretro):
 
     # Validate axes default scaling
     for axes in axes_test_data_generator(sw_rf_brawler64_axes, gc_axes, 0.0135):
-        ly_inverted = (axes[axis.LY]["wireless"] ^ 0xFFFF) + 1
+        ly = axes[axis.LY]["wireless"]
+        if ly == 2 ** 16:
+            ly -= 1
+
+        ly_inverted = (ly ^ 0xFFFF) + 1
+
         blueretro.send_hid_report(
             'a13f'
             '0000'
