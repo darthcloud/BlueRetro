@@ -45,62 +45,84 @@ def axes_test_data_generator(src, dst, dz):
         ''' Compute scaled axes value. '''
         return int(np.single(sign * (src_value - deadzone) * scale))
 
-    test_data = [{}, {}, {}, {}]
+    test_data = [{}, {}, {}, {}, {}, {}]
     for axis, _ in src.items():
         if axis in dst:
             if axis in (ax.LY, ax.RX):
-                sign = -1
+                sign = [-1, 1]
             else:
-                sign = 1
+                sign = [1, -1]
 
             if 'polarity' in src[axis] and src[axis]['polarity']:
-                src_sign = sign * -1
+                src_sign = [sign[1], sign[0]]
             else:
-                src_sign = sign
+                src_sign = [sign[0], sign[1]]
 
-            if src_sign > 0:
-                src_max = src[axis]['abs_max']
+            if src_sign[0] > 0:
+                src_max = [src[axis]['abs_max'], src[axis]['abs_min']]
             else:
-                src_max = src[axis]['abs_min']
-            if sign > 0:
-                dst_max = dst[axis]['abs_max']
+                src_max = [src[axis]['abs_min'], src[axis]['abs_max']]
+            if sign[0] > 0:
+                dst_max = [dst[axis]['abs_max'], dst[axis]['abs_min']]
             else:
-                dst_max = dst[axis]['abs_min']
+                dst_max = [dst[axis]['abs_min'], dst[axis]['abs_max']]
 
-            one = int(np.single(src_max / dst_max))
+            one = int(np.single(src_max[0] / dst_max[0]))
             half = int(np.single(one / 2))
             src_neutral = src[axis]['neutral']
             dst_neutral = dst[axis]['neutral']
             src_dz = src[axis]['deadzone']
 
-            deadzone = int(np.single(dz * src_max)) + src_dz
-            scale = np.single(dst_max / (src_max - deadzone))
+            deadzone = [int(np.single(dz * src_max[0])) + src_dz,
+                        int(np.single(dz * src_max[1])) + src_dz]
+            scale = [np.single(dst_max[0] / (src_max[0] - deadzone[0])),
+                     np.single(dst_max[1] / (src_max[1] - deadzone[1]))]
 
-            # Test neutral value
-            test_data[0][axis] = {
+            id = 0
+            # Test neutral value at default max
+            test_data[id][axis] = {
                 'wireless': src_neutral,
                 'generic': 0,
                 'mapped': 0,
                 'wired': dst_neutral,
             }
+            id += 1
             # Test maximum value
-            test_data[1][axis] = {
-                'wireless': src_neutral + src_sign * src_max,
-                'generic': src_sign * src_max,
-                'mapped': value(sign, src_max, deadzone, scale),
-                'wired': value(sign, src_max, deadzone, scale) + dst_neutral,
+            test_data[id][axis] = {
+                'wireless': src_neutral + src_sign[0] * src_max[0],
+                'generic': src_sign[0] * src_max[0],
+                'mapped': value(sign[0], src_max[0], deadzone[0], scale[0]),
+                'wired': value(sign[0], src_max[0], deadzone[0], scale[0]) + dst_neutral,
             }
+            id += 1
+            # Test maximum value with reverse polarity
+            test_data[id][axis] = {
+                'wireless': src_neutral + src_sign[1] * src_max[1],
+                'generic': src_sign[1] * src_max[1],
+                'mapped': value(sign[1], src_max[1], deadzone[1], scale[1]),
+                'wired': value(sign[1], src_max[1], deadzone[1], scale[1]) + dst_neutral,
+            }
+            id += 1
+            # Test neutral value at true max
+            test_data[id][axis] = {
+                'wireless': src_neutral,
+                'generic': 0,
+                'mapped': 0,
+                'wired': dst_neutral,
+            }
+            id += 1
             # Test deadzone threshold+
-            test_data[2][axis] = {
-                'wireless': src_neutral + src_sign * (deadzone + one),
-                'generic': src_sign * (deadzone + one),
-                'mapped': value(sign, (deadzone + one), deadzone, scale),
-                'wired': value(sign, (deadzone + one), deadzone, scale) + dst_neutral,
+            test_data[id][axis] = {
+                'wireless': src_neutral + src_sign[0] * (deadzone[0] + one),
+                'generic': src_sign[0] * (deadzone[0] + one),
+                'mapped': value(sign[0], (deadzone[0] + one), deadzone[0], scale[0]),
+                'wired': value(sign[0], (deadzone[0] + one), deadzone[0], scale[0]) + dst_neutral,
             }
+            id += 1
             # Test deadzone threshold-
-            test_data[3][axis] = {
-                'wireless': src_neutral + src_sign * (deadzone + half),
-                'generic': src_sign * (deadzone + half),
+            test_data[id][axis] = {
+                'wireless': src_neutral + src_sign[0] * (deadzone[0] + half),
+                'generic': src_sign[0] * (deadzone[0] + half),
                 'mapped': 0,
                 'wired': dst_neutral,
             }
