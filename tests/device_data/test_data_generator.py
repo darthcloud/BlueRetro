@@ -69,6 +69,10 @@ def axes_test_data_generator(src, dst, dz):
 
             one = int(np.single(src_max[0] / dst_max[0]))
             half = int(np.single(one / 2))
+
+            if half == 0:
+                half = 1
+
             src_neutral = src[axis]['neutral']
             dst_neutral = dst[axis]['neutral']
             src_dz = src[axis]['deadzone']
@@ -130,10 +134,10 @@ def axes_test_data_generator(src, dst, dz):
             id += 1
             # Test deadzone threshold+
             test_data[id][axis] = {
-                'wireless': src_neutral + src_sign[0] * (deadzone[0] + one),
-                'generic': src_sign[0] * (deadzone[0] + one),
-                'mapped': value(sign[0], (deadzone[0] + one), deadzone[0], scale[0]),
-                'wired': value(sign[0], (deadzone[0] + one), deadzone[0], scale[0]) + dst_neutral,
+                'wireless': src_neutral + src_sign[0] * (deadzone[0] + one + half),
+                'generic': src_sign[0] * (deadzone[0] + one + half),
+                'mapped': sign[0],
+                'wired': sign[0] + dst_neutral,
             }
             id += 1
             # Test deadzone threshold-
