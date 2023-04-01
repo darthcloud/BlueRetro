@@ -75,8 +75,13 @@ def axes_test_data_generator(src, dst, dz):
 
             deadzone = [int(np.single(dz * src_max[0])) + src_dz,
                         int(np.single(dz * src_max[1])) + src_dz]
-            scale = [np.single(dst_max[0] / (src_max[0] - deadzone[0])),
-                     np.single(dst_max[1] / (src_max[1] - deadzone[1]))]
+
+            if axis in (ax.LM, ax.RM):
+                scale = [np.single(dst_max[0] / (src_max[0] - deadzone[0])),
+                        np.single(dst_max[0] / (src_max[0] - deadzone[0]))]
+            else:
+                scale = [np.single(dst_max[0] / (src_max[0] - deadzone[0])),
+                        np.single(dst_max[1] / (src_max[1] - deadzone[1]))]
 
             pull_back = int(np.single(src_max[0] * 0.95))
             pb_dz = int(np.single(dz * pull_back)) + src_dz
