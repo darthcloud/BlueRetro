@@ -4,13 +4,13 @@ from bit_helper import bit
 from .br import axis as ax
 
 
-def btns_generic_test_data(src):
+def btns_generic_test_data(src, mask=0xFFFFFFFF):
     ''' Generate test data for btns. '''
     test_data = {0: 0}
     src_all = 0
     br_all = 0
     for br_btns, src_btns in enumerate(src):
-        if src_btns:
+        if (mask & bit(br_btns)) and src_btns:
             if src_btns in test_data:
                 test_data[src_btns] |= bit(br_btns)
             else:
@@ -23,13 +23,13 @@ def btns_generic_test_data(src):
         yield (src_btns, br_btns)
 
 
-def btns_generic_to_wired_test_data(src, dst):
+def btns_generic_to_wired_test_data(src, dst, mask=0xFFFFFFFF):
     ''' Generate test data for btns. '''
     test_data = {0: 0}
     src_all = 0
     dst_all = 0
     for br_btns, src_btns in enumerate(src):
-        if src_btns:
+        if (mask & bit(br_btns)) and src_btns:
             test_data[src_btns] = dst[br_btns]
             src_all |= src_btns
             dst_all |= dst[br_btns]
