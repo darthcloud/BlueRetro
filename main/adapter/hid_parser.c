@@ -50,7 +50,7 @@ static const struct hid_fingerprint hid_fp[] = {
     {
         .dev_type = BT_XBOX,
         .dev_subtype = BT_XBOX_XS,
-        .fp_len = 16,
+        .fp_len = 18,
         .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35, 0x02, 0xC5, 0x02, 0xC4, 0x01, 0x39, 0x09, 0x01, 0x0C, 0xB2},
     },
     {
@@ -250,7 +250,7 @@ static void hid_device_fingerprint(struct hid_report *report, int32_t *type, uin
                 }
             }
             for (uint32_t i = 0; i < sizeof(hid_fp)/sizeof(hid_fp[0]); i++) {
-                if (memcmp(hid_fp[i].fp, fp, fp_len) == 0) {
+                if (fp_len == hid_fp[i].fp_len && memcmp(hid_fp[i].fp, fp, fp_len) == 0) {
                     *type = hid_fp[i].dev_type;
                     *subtype = hid_fp[i].dev_subtype;
                     return;
