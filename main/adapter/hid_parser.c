@@ -279,21 +279,23 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *wip_r
     if (report_type != REPORT_NONE && bt_data->reports[report_type].id == 0) {
         hid_device_fingerprint(wip_report, &dev_type, &dev_subtype);
         memcpy(&bt_data->reports[report_type], wip_report, sizeof(bt_data->reports[0]));
+#ifdef CONFIG_BLUERETRO_JSON_DBG
+        printf("], \"report_type\": %ld, \"device_type\": %ld, \"device_subtype\": %ld}\n",
+            report_type, dev_type, dev_subtype);
+#else
+        printf("rtype: %ld dtype: %ld sub: %ld\n", report_type, dev_type, dev_subtype);
+#endif
         if (bt_data->base.pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
             bt_type_update(bt_data->base.pids->id, dev_type, dev_subtype);
         }
+    }
+    else {
 #ifdef CONFIG_BLUERETRO_JSON_DBG
-        printf("], \"report_type\": %ld, \"device_type\": %ld, \"device_subtype\": %ld",
-            report_type, dev_type, dev_subtype);
+        printf("}\n");
 #else
-        printf("rtype: %ld dtype: %ld sub: %ld", report_type, dev_type, dev_subtype);
+        printf("\n");
 #endif
     }
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-    printf("}\n");
-#else
-    printf("\n");
-#endif
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
