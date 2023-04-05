@@ -358,6 +358,9 @@ struct bt_hci_cmd_hdr {
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_STATUS                           0x05
+#ifdef BLUERETRO
+#define BT_OGF_TEST                             0x06
+#endif /* BLUERETRO */
 #define BT_OGF_LE                               0x08
 #define BT_OGF_VS                               0x3f
 
@@ -963,6 +966,13 @@ struct bt_hci_rp_read_encryption_key_size {
 	u16_t handle;
 	u8_t  key_size;
 } __packed;
+
+#ifdef BLUERETRO
+#define BT_HCI_OP_WRITE_SSP_DBG_MODE            BT_OP(BT_OGF_TEST, 0x0004)
+struct bt_hci_cp_write_ssp_dbg_mode {
+	u8_t mode;
+} __packed;
+#endif
 
 /* BLE */
 

@@ -152,6 +152,11 @@ menu "BlueRetro"
             help
                 Select this to enable Bluetooth H4 tracing.
 
+        config BLUERETRO_BT_SSP_DBG
+            bool "Enable Bluetooth SSP debug mode"
+            help
+                Select this to enable Bluetooth SSP debug mode.
+
         config BLUERETRO_GENERIC_HID_DEBUG
             bool "Enable Generic HID report debug"
             help

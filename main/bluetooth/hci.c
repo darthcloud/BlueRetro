@@ -128,6 +128,9 @@ static void bt_hci_cmd_read_bd_addr(void *cp);
 //static void bt_hci_cmd_read_data_block_size(void *cp);
 //static void bt_hci_cmd_read_local_codecs(void *cp);
 //static void bt_hci_cmd_read_local_sp_options(void *cp);
+#ifdef CONFIG_BLUERETRO_BT_SSP_DBG
+static void bt_hci_cmd_write_ssp_dbg_mode(void *cp);
+#endif
 static void bt_hci_cmd_le_read_buffer_size(void *cp);
 static void bt_hci_cmd_le_set_adv_param(void *cp);
 static void bt_hci_cmd_le_set_adv_data(void *cp);
@@ -191,6 +194,9 @@ static const struct bt_hci_cmd_cp bt_hci_config[] = {
     {bt_hci_cmd_write_hold_mode_act, NULL},
     {bt_hci_cmd_write_scan_enable, NULL},
     {bt_hci_cmd_write_default_link_policy, NULL},
+#ifdef CONFIG_BLUERETRO_BT_SSP_DBG
+    {bt_hci_cmd_write_ssp_dbg_mode, NULL},
+#endif
     {bt_hci_cmd_le_read_buffer_size, NULL},
     {bt_hci_cmd_le_set_adv_param, NULL},
     {bt_hci_cmd_le_set_adv_data, NULL},
@@ -774,6 +780,17 @@ static void bt_hci_cmd_read_local_sp_options(void *cp) {
     printf("# %s\n", __FUNCTION__);
 
     bt_hci_cmd(BT_HCI_OP_READ_LOCAL_SP_OPTIONS, 0);
+}
+#endif
+
+#ifdef CONFIG_BLUERETRO_BT_SSP_DBG
+static void bt_hci_cmd_write_ssp_dbg_mode(void *cp) {
+    struct bt_hci_cp_write_ssp_dbg_mode *write_ssp_dbg_mode = (struct bt_hci_cp_write_ssp_dbg_mode *)&bt_hci_pkt_tmp.cp;
+    printf("# %s\n", __FUNCTION__);
+
+    write_ssp_dbg_mode->mode = 0x01;
+
+    bt_hci_cmd(BT_HCI_OP_WRITE_SSP_DBG_MODE, sizeof(*write_ssp_dbg_mode));
 }
 #endif
 
