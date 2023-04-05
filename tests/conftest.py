@@ -6,7 +6,7 @@ from time import sleep
 import pytest
 from serial import SerialException
 from injector import BlueRetroInjector
-from device_data.gc import GC
+from device_data.br import system, dev_mode
 
 class BlueRetroDut(BlueRetroInjector):
     ''' BlueRetro injector with a few extra for pytest. '''
@@ -56,7 +56,10 @@ def blueretro_dut():
 def blueretro(blueretro_dut, request):
     ''' Create and teardown a BT device on BlueRetro DUT. '''
     blueretro_dut.disconnect()
-    blueretro_dut.send_system_id(getattr(request, 'param', GC))
+
+    param = getattr(request, 'param', [system.GC, dev_mode.PAD])
+    blueretro_dut.send_out_cfg(0, f"{param[1]:02x}00")
+    blueretro_dut.send_system_id(param[0])
     blueretro_dut.connect()
     blueretro_dut.expect('# DBG handle: 0 dev: 0 type: 0')
 
