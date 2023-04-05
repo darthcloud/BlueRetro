@@ -237,7 +237,7 @@ void saturn_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *w
                 map_tmp.buttons &= ~saturn_btns_mask[i];
                 wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
-            else {
+            else if (!(config.out_cfg[ctrl_data->index].dev_mode == DEV_PAD_ALT && (i == PAD_LM || i == PAD_RM))) {
                 map_tmp.buttons |= saturn_btns_mask[i];
                 wired_data->cnt_mask[i] = 0;
             }
@@ -264,16 +264,16 @@ void saturn_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *w
         }
 
         if (map_tmp.axes[saturn_axes_idx[TRIG_L]] < 0x56) {
-            map_tmp.buttons &= ~BIT(SATURN_L);
-        }
-        else if (map_tmp.axes[saturn_axes_idx[TRIG_L]] > 0x8D) {
             map_tmp.buttons |= BIT(SATURN_L);
         }
+        else if (map_tmp.axes[saturn_axes_idx[TRIG_L]] > 0x8D) {
+            map_tmp.buttons &= ~BIT(SATURN_L);
+        }
         if (map_tmp.axes[saturn_axes_idx[TRIG_R]] < 0x56) {
-            map_tmp.buttons &= ~BIT(SATURN_R);
+            map_tmp.buttons |= BIT(SATURN_R);
         }
         else if (map_tmp.axes[saturn_axes_idx[TRIG_R]] > 0x8D) {
-            map_tmp.buttons |= BIT(SATURN_R);
+            map_tmp.buttons &= ~BIT(SATURN_R);
         }
     }
 
