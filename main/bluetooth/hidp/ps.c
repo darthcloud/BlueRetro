@@ -175,22 +175,31 @@ void bt_hid_cmd_ps_set_conf(struct bt_dev *device, void *report) {
 
 void bt_hid_ps_init(struct bt_dev *device) {
 #ifndef CONFIG_BLUERETRO_TEST_FALLBACK_REPORT
-    const esp_timer_create_args_t ps5_timer_args = {
-        .callback = &bt_hid_ps5_init_callback,
-        .arg = (void *)device,
-        .name = "ps5_init_timer"
-    };
-    struct bt_hidp_ps4_set_conf ps4_set_conf = {
-        .conf0 = 0xc0,
-        .conf1 = 0x07,
-    };
-    ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
+    switch (device->ids.subtype) {
+        case BT_PS5_DS:
+            bt_hid_ps5_init_callback((void *)device);
+            break;
+        default:
+        {
+            const esp_timer_create_args_t ps5_timer_args = {
+                .callback = &bt_hid_ps5_init_callback,
+                .arg = (void *)device,
+                .name = "ps5_init_timer"
+            };
+            struct bt_hidp_ps4_set_conf ps4_set_conf = {
+                .conf0 = 0xc0,
+                .conf1 = 0x07,
+            };
+            ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
 
-    printf("# %s\n", __FUNCTION__);
+            printf("# %s\n", __FUNCTION__);
 
-    esp_timer_create(&ps5_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
-    esp_timer_start_once(device->timer_hdl, 1000000);
-    bt_hid_cmd_ps4_set_conf(device, (void *)&ps4_set_conf);
+            esp_timer_create(&ps5_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
+            esp_timer_start_once(device->timer_hdl, 1000000);
+            bt_hid_cmd_ps4_set_conf(device, (void *)&ps4_set_conf);
+            break;
+        }
+    }
 #endif
 }
 
