@@ -1,6 +1,11 @@
 name: new_idf
 on:
   workflow_dispatch:
+    inputs:
+      hw_version:
+        description: 'hardware version'
+        required: true
+        default: 'hw1'
   schedule:
     - cron:  '0 0 * * 0'
 
@@ -42,13 +47,13 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
-        for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        for file in configs/${{ github.event.inputs.hw_version || 'hw1' }}/*; do echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version || 'hw1' }} $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/${{ github.event.inputs.hw_version || 'hw1' }}/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.br_version }}_hw2_newidf
+        name: ${{ env.br_version }}_${{ github.event.inputs.hw_version || 'hw1' }}_newidf
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
