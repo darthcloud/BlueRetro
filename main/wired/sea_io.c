@@ -36,7 +36,7 @@ static const uint8_t output_list[] = {
 static volatile rmt_symbol_word_t *rmt_items = (volatile rmt_symbol_word_t *)RMTMEM.chan[0].data32;
 
 void sea_tx_byte(uint8_t data) {
-    volatile unsigned *item_ptr = &rmt_items[0].val;
+    volatile uint32_t *item_ptr = &rmt_items[0].val;
 
     for (uint32_t mask = 0x80; mask; mask >>= 1, ++item_ptr) {
         if (data & mask) {

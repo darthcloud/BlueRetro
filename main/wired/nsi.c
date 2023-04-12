@@ -137,7 +137,7 @@ static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
 static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *crc, uint32_t stop_bit) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
-    volatile unsigned *item_ptr = &rmt_items[item].val;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
     for (; item < bit_len; ++data) {
@@ -160,7 +160,7 @@ static uint16_t nsi_bytes_to_items_crc(uint32_t item, const uint8_t *data, uint3
 
 static uint16_t nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint32_t len, uint8_t *xor, uint32_t stop_bit) {
     uint32_t bit_len = item + len * 8;
-    volatile unsigned *item_ptr = &rmt_items[item].val;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     *xor = 0x00;
     for (; item < bit_len; ++data) {
@@ -182,7 +182,7 @@ static uint16_t nsi_bytes_to_items_xor(uint32_t item, const uint8_t *data, uint3
 
 static uint16_t nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
     uint32_t bit_len = item + len * 8;
-    volatile unsigned *item_ptr = &rmt_items[item].val;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     for (; item < bit_len; ++data) {
         do {
@@ -202,7 +202,7 @@ static uint16_t nsi_items_to_bytes(uint32_t item, uint8_t *data, uint32_t len) {
 static uint16_t nsi_items_to_bytes_crc(uint32_t item, uint8_t *data, uint32_t len, uint8_t *crc) {
     const uint8_t *crc_table = nsi_crc_table;
     uint32_t bit_len = item + len * 8;
-    volatile unsigned *item_ptr = &rmt_items[item].val;
+    volatile uint32_t *item_ptr = &rmt_items[item].val;
 
     *crc = 0xFF;
     for (; item < bit_len; ++data) {
