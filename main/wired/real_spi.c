@@ -20,6 +20,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/wired/real.h"
+#include "wired_bare.h"
 #include "real_spi.h"
 
 enum {
@@ -48,15 +49,26 @@ enum {
 #define P1_CS_IN_MASK (1 << P1_CS_IN_PIN)
 #define P1_SCK_MASK (1 << P1_SCK_PIN)
 
-#define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
-#define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
-
 #define REAL_MAX_DEVICE 8
 #define CLK_IDLE_TIMEOUT 1000
 
 static uint32_t cs_state = 1;
 static uint32_t idx = 0;
 static uint8_t buffer[72];
+static struct spi_cfg cfg = {
+    .hw = &SPI2,
+    .write_bit_order = 0,
+    .read_bit_order = 0,
+    .clk_idle_edge = 0,
+    .clk_i_edge = 1,
+    .miso_delay_mode = 1,
+    .miso_delay_num = 0,
+    .mosi_delay_mode = 0,
+    .mosi_delay_num = 0,
+    .write_bit_len = 0,
+    .read_bit_len = 1600 - 1,
+    .inten = 0,
+};
 
 static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
@@ -214,50 +226,6 @@ void real_spi_init(void) {
 
     periph_ll_enable_clk_clear_rst(PERIPH_HSPI_MODULE);
 
-    SPI2.clock.val = 0;
-    SPI2.user.val = 0;
-    SPI2.ctrl.val = 0;
-    SPI2.slave.wr_rd_buf_en = 1; //no sure if needed
-    SPI2.user.doutdin = 1; //we only support full duplex
-    SPI2.user.sio = 0;
-    SPI2.slave.slave_mode = 1;
-    SPI2.dma_conf.val |= SPI_LL_RST_MASK;
-    SPI2.dma_out_link.start = 0;
-    SPI2.dma_in_link.start = 0;
-    SPI2.dma_conf.val &= ~SPI_LL_RST_MASK;
-    SPI2.slave.sync_reset = 1;
-    SPI2.slave.sync_reset = 0;
-
-    //use all 64 bytes of the buffer
-    SPI2.user.usr_miso_highpart = 0;
-    SPI2.user.usr_mosi_highpart = 0;
-
-    //Disable unneeded ints
-    SPI2.slave.val &= ~SPI_LL_UNUSED_INT_MASK;
-
-    SPI2.ctrl.wr_bit_order = 0;
-    SPI2.ctrl.rd_bit_order = 0;
-
-    /* Set Mode 3 as per ESP32 TRM, except ck_i_edge that need to be 1 for original PSX! */
-    SPI2.pin.ck_idle_edge = 0;
-    SPI2.user.ck_i_edge = 1;
-    SPI2.ctrl2.miso_delay_mode = 1;
-    SPI2.ctrl2.miso_delay_num = 0;
-    SPI2.ctrl2.mosi_delay_mode = 0;
-    SPI2.ctrl2.mosi_delay_num = 0;
-
-    SPI2.slave.sync_reset = 1;
-    SPI2.slave.sync_reset = 0;
-
-    SPI2.slv_wrbuf_dlen.bit_len = 0;
-    SPI2.slv_rdbuf_dlen.bit_len = 1600 - 1;
-
-    SPI2.user.usr_miso = 1;
-    SPI2.user.usr_mosi = 1;
-
-    SPI2.slave.trans_inten = 0;
-    SPI2.slave.trans_done = 0;
-    SPI2.cmd.usr = 1;
-
+    spi_init(&cfg);
     cs_generator();
 }

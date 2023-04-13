@@ -6,6 +6,8 @@
 #ifndef _WIRED_BARE_H_
 #define _WIRED_BARE_H_
 
+#include <soc/spi_periph.h>
+
 #if defined(CONFIG_BLUERETRO_SYSTEM_PARALLEL_1P)
 #define HARDCODED_SYS PARALLEL_1P
 #elif defined(CONFIG_BLUERETRO_SYSTEM_PARALLEL_2P)
@@ -57,5 +59,25 @@
 void wired_bare_init(void);
 void wired_bare_port_cfg(uint16_t mask);
 const char *wired_get_sys_name(void);
+
+struct spi_cfg {
+    spi_dev_t *hw;
+    uint32_t write_bit_order;
+    uint32_t read_bit_order;
+    uint32_t clk_idle_edge;
+    uint32_t clk_i_edge;
+    uint32_t miso_delay_mode;
+    uint32_t miso_delay_num;
+    uint32_t mosi_delay_mode;
+    uint32_t mosi_delay_num;
+    uint32_t write_bit_len;
+    uint32_t read_bit_len;
+    uint32_t inten;
+};
+
+void wired_bare_init(void);
+void wired_bare_port_cfg(uint16_t mask);
+const char *wired_get_sys_name(void);
+void spi_init(struct spi_cfg *cfg);
 
 #endif /* _WIRED_BARE_H_ */

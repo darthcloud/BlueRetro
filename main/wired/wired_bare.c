@@ -19,6 +19,9 @@
 #include "adapter/adapter.h"
 #include "wired_bare.h"
 
+#define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
+#define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
+
 typedef void (*wired_init_t)(void);
 typedef void (*wired_port_cfg_t)(uint16_t mask);
 
@@ -117,4 +120,52 @@ void wired_bare_port_cfg(uint16_t mask) {
 
 const char *wired_get_sys_name(void) {
     return sys_name[wired_adapter.system_id];
+}
+
+void spi_init(struct spi_cfg *cfg) {
+    cfg->hw->clock.val = 0;
+    cfg->hw->user.val = 0;
+    cfg->hw->ctrl.val = 0;
+    cfg->hw->slave.wr_rd_buf_en = 1; //no sure if needed
+    cfg->hw->user.doutdin = 1; //we only support full duplex
+    cfg->hw->user.sio = 0;
+    cfg->hw->slave.slave_mode = 1;
+    cfg->hw->dma_conf.val |= SPI_LL_RST_MASK;
+    cfg->hw->dma_out_link.start = 0;
+    cfg->hw->dma_in_link.start = 0;
+    cfg->hw->dma_conf.val &= ~SPI_LL_RST_MASK;
+    cfg->hw->slave.sync_reset = 1;
+    cfg->hw->slave.sync_reset = 0;
+
+    //use all 64 bytes of the buffer
+    cfg->hw->user.usr_miso_highpart = 0;
+    cfg->hw->user.usr_mosi_highpart = 0;
+
+    //Disable unneeded ints
+    cfg->hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
+
+    cfg->hw->ctrl.wr_bit_order = cfg->write_bit_order;
+    cfg->hw->ctrl.rd_bit_order = cfg->read_bit_order;
+
+    cfg->hw->pin.ck_idle_edge = cfg->clk_idle_edge;
+    cfg->hw->user.ck_i_edge = cfg->clk_i_edge;
+    cfg->hw->ctrl2.miso_delay_mode = cfg->miso_delay_mode;
+    cfg->hw->ctrl2.miso_delay_num = cfg->miso_delay_num;
+    cfg->hw->ctrl2.mosi_delay_mode = cfg->mosi_delay_mode;
+    cfg->hw->ctrl2.mosi_delay_num = cfg->mosi_delay_num;
+
+    cfg->hw->slave.sync_reset = 1;
+    cfg->hw->slave.sync_reset = 0;
+
+    cfg->hw->slv_wrbuf_dlen.bit_len = cfg->write_bit_len;
+    cfg->hw->slv_rdbuf_dlen.bit_len = cfg->read_bit_len;
+
+    cfg->hw->user.usr_miso = 1;
+    cfg->hw->user.usr_mosi = 1;
+
+    cfg->hw->data_buf[0] = 0xFF;
+
+    cfg->hw->slave.trans_inten = cfg->inten;
+    cfg->hw->slave.trans_done = 0;
+    cfg->hw->cmd.usr = 1;
 }

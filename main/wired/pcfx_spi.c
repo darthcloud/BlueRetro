@@ -20,6 +20,7 @@
 #include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/wired/pcfx.h"
+#include "wired_bare.h"
 #include "pcfx_spi.h"
 
 #define GPIO_INTR_NUM 19
@@ -38,12 +39,10 @@
 #define P2_CLK_MASK (1 << P2_CLK_PIN)
 #define P2_DATA_MASK (1 << P2_DATA_PIN)
 
-#define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
-#define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
-
 #define PCFX_PORT_MAX 2
 
 struct pcfx_ctrl_port {
+    struct spi_cfg cfg;
     spi_dev_t *hw;
     uint32_t latch_pin;
     uint32_t clk_pin;
@@ -59,6 +58,21 @@ struct pcfx_ctrl_port {
 
 static struct pcfx_ctrl_port pcfx_ctrl_ports[PCFX_PORT_MAX] = {
     {
+        .cfg = {
+            .hw = &SPI2,
+            .write_bit_order = 1,
+            .read_bit_order = 1,
+            /* Set Mode 0 as per ESP32 TRM, cause that work well for PCFX! */
+            .clk_idle_edge = 1,
+            .clk_i_edge = 0,
+            .miso_delay_mode = 0,
+            .miso_delay_num = 0,
+            .mosi_delay_mode = 2,
+            .mosi_delay_num = 2,
+            .write_bit_len = 0,
+            .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
+            .inten = 0,
+        },
         .hw = &SPI2,
         .latch_pin = P1_LATCH_PIN,
         .clk_pin = P1_CLK_PIN,
@@ -72,6 +86,21 @@ static struct pcfx_ctrl_port pcfx_ctrl_ports[PCFX_PORT_MAX] = {
         .spi_mod = PERIPH_HSPI_MODULE,
     },
     {
+        .cfg = {
+            .hw = &SPI3,
+            .write_bit_order = 1,
+            .read_bit_order = 1,
+            /* Set Mode 0 as per ESP32 TRM, cause that work well for PCFX! */
+            .clk_idle_edge = 1,
+            .clk_i_edge = 0,
+            .miso_delay_mode = 0,
+            .miso_delay_num = 0,
+            .mosi_delay_mode = 2,
+            .mosi_delay_num = 2,
+            .write_bit_len = 0,
+            .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
+            .inten = 0,
+        },
         .hw = &SPI3,
         .latch_pin = P2_LATCH_PIN,
         .clk_pin = P2_CLK_PIN,
@@ -205,51 +234,7 @@ void pcfx_spi_init(void) {
 
         periph_ll_enable_clk_clear_rst(p->spi_mod);
 
-        p->hw->clock.val = 0;
-        p->hw->user.val = 0;
-        p->hw->ctrl.val = 0;
-        p->hw->slave.wr_rd_buf_en = 1; //no sure if needed
-        p->hw->user.doutdin = 1; //we only support full duplex
-        p->hw->user.sio = 0;
-        p->hw->slave.slave_mode = 1;
-        p->hw->dma_conf.val |= SPI_LL_RST_MASK;
-        p->hw->dma_out_link.start = 0;
-        p->hw->dma_in_link.start = 0;
-        p->hw->dma_conf.val &= ~SPI_LL_RST_MASK;
-        p->hw->slave.sync_reset = 1;
-        p->hw->slave.sync_reset = 0;
-
-        //use all 64 bytes of the buffer
-        p->hw->user.usr_miso_highpart = 0;
-        p->hw->user.usr_mosi_highpart = 0;
-
-        //Disable unneeded ints
-        p->hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
-
-        /* PCFX is LSB first */
-        p->hw->ctrl.wr_bit_order = 1;
-        p->hw->ctrl.rd_bit_order = 1;
-
-        /* Set Mode 0 as per ESP32 TRM, cause that work well for PCFX! */
-        p->hw->pin.ck_idle_edge = 1;
-        p->hw->user.ck_i_edge = 0;
-        p->hw->ctrl2.miso_delay_mode = 0;
-        p->hw->ctrl2.miso_delay_num = 0;
-        p->hw->ctrl2.mosi_delay_mode = 2;
-        p->hw->ctrl2.mosi_delay_num = 2;
-
-        p->hw->slave.sync_reset = 1;
-        p->hw->slave.sync_reset = 0;
-
-        p->hw->slv_wrbuf_dlen.bit_len = 0;
-        p->hw->slv_rdbuf_dlen.bit_len = 33 - 1; // Extra bit to remove small gitch on packet end
-
-        p->hw->user.usr_miso = 1;
-        p->hw->user.usr_mosi = 1;
-
-        p->hw->slave.trans_inten = 0;
-        p->hw->slave.trans_done = 0;
-        p->hw->cmd.usr = 1;
+        spi_init(&p->cfg);
     }
 
     intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, latch_isr);

@@ -22,6 +22,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/ps.h"
+#include "wired_bare.h"
 #include "ps_spi.h"
 #include "sdkconfig.h"
 
@@ -73,10 +74,8 @@ enum {
 #define PS_PORT_MAX 2
 #define MT_PORT_MAX 4
 
-#define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
-#define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
-
 struct ps_ctrl_port {
+    struct spi_cfg cfg;
     spi_dev_t *spi_hw;
     uint8_t id;
     uint8_t root_dev_type;
@@ -102,7 +101,46 @@ struct ps_ctrl_port {
     uint32_t game_id_len;
 };
 
-static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {0};
+static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
+    {
+        .cfg = {
+            .hw = &SPI2,
+            .write_bit_order = 1,
+            .read_bit_order = 1,
+            /* Set Mode 3 as per ESP32 TRM, except ck_i_edge that need to be 1 for original PSX! */
+            .clk_idle_edge = 0,
+            .clk_i_edge = 1,
+            .miso_delay_mode = 1,
+            .miso_delay_num = 0,
+            .mosi_delay_mode = 0,
+            .mosi_delay_num = 0,
+            .write_bit_len = 8 - 1,
+            .read_bit_len = 8 - 1,
+            .inten = 1,
+        },
+        .id = 0,
+        .spi_hw = &SPI2,
+    },
+    {
+        .cfg = {
+            .hw = &SPI3,
+            .write_bit_order = 1,
+            .read_bit_order = 1,
+            /* Set Mode 3 as per ESP32 TRM, except ck_i_edge that need to be 1 for original PSX! */
+            .clk_idle_edge = 0,
+            .clk_i_edge = 1,
+            .miso_delay_mode = 1,
+            .miso_delay_num = 0,
+            .mosi_delay_mode = 0,
+            .mosi_delay_num = 0,
+            .write_bit_len = 8 - 1,
+            .read_bit_len = 8 - 1,
+            .inten = 1,
+        },
+        .id = 1,
+        .spi_hw = &SPI3,
+    }
+};
 
 static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 2);
@@ -628,11 +666,6 @@ static unsigned isr_dispatch(unsigned cause) {
 }
 
 void ps_spi_init(void) {
-    ps_ctrl_ports[0].id = 0;
-    ps_ctrl_ports[1].id = 1;
-    ps_ctrl_ports[0].spi_hw = &SPI2;
-    ps_ctrl_ports[1].spi_hw = &SPI3;
-
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
         memset(ps_ctrl_ports[i].dev_id, 0x41, sizeof(ps_ctrl_ports[0].dev_id));
         memset(ps_ctrl_ports[i].pend_dev_id, 0x41, sizeof(ps_ctrl_ports[0].pend_dev_id));
@@ -760,55 +793,7 @@ inner_break:
     periph_ll_enable_clk_clear_rst(PERIPH_VSPI_MODULE);
 
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
-        spi_dev_t *spi_hw = ps_ctrl_ports[i].spi_hw;
-
-        spi_hw->clock.val = 0;
-        spi_hw->user.val = 0;
-        spi_hw->ctrl.val = 0;
-        spi_hw->slave.wr_rd_buf_en = 1; //no sure if needed
-        spi_hw->user.doutdin = 1; //we only support full duplex
-        spi_hw->user.sio = 0;
-        spi_hw->slave.slave_mode = 1;
-        spi_hw->dma_conf.val |= SPI_LL_RST_MASK;
-        spi_hw->dma_out_link.start = 0;
-        spi_hw->dma_in_link.start = 0;
-        spi_hw->dma_conf.val &= ~SPI_LL_RST_MASK;
-        spi_hw->slave.sync_reset = 1;
-        spi_hw->slave.sync_reset = 0;
-
-        //use all 64 bytes of the buffer
-        spi_hw->user.usr_miso_highpart = 0;
-        spi_hw->user.usr_mosi_highpart = 0;
-
-        //Disable unneeded ints
-        spi_hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
-
-        /* PS is LSB first */
-        spi_hw->ctrl.wr_bit_order = 1;
-        spi_hw->ctrl.rd_bit_order = 1;
-
-        /* Set Mode 3 as per ESP32 TRM, except ck_i_edge that need to be 1 for original PSX! */
-        spi_hw->pin.ck_idle_edge = 0;
-        spi_hw->user.ck_i_edge = 1;
-        spi_hw->ctrl2.miso_delay_mode = 1;
-        spi_hw->ctrl2.miso_delay_num = 0;
-        spi_hw->ctrl2.mosi_delay_mode = 0;
-        spi_hw->ctrl2.mosi_delay_num = 0;
-
-        spi_hw->slave.sync_reset = 1;
-        spi_hw->slave.sync_reset = 0;
-
-        spi_hw->slv_wrbuf_dlen.bit_len = 8 - 1;
-        spi_hw->slv_rdbuf_dlen.bit_len = 8 - 1;
-
-        spi_hw->user.usr_miso = 1;
-        spi_hw->user.usr_mosi = 1;
-
-        spi_hw->data_buf[0] = 0xFF;
-
-        spi_hw->slave.trans_inten = 1;
-        spi_hw->slave.trans_done = 0;
-        spi_hw->cmd.usr = 1;
+        spi_init(&ps_ctrl_ports[i].cfg);
     }
 
     intexc_alloc_iram(ETS_SPI2_INTR_SOURCE, SPI2_HSPI_INTR_NUM, isr_dispatch);
