@@ -430,7 +430,7 @@ static void bt_hci_cmd_sniff_mode(void *handle) {
     sniff_mode->max_interval = 24;
     sniff_mode->min_interval = 24;
     sniff_mode->attempt = 1;
-    sniff_mode->timeout = 0;
+    sniff_mode->timeout = 1;
 
     bt_hci_cmd(BT_HCI_OP_SNIFF_MODE, sizeof(*sniff_mode));
 }
