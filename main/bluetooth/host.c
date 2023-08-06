@@ -35,7 +35,7 @@
 
 enum {
     /* BT CTRL flags */
-    BT_CTRL_READY= 0,
+    BT_CTRL_READY = 0,
     BT_HOST_DBG_MODE,
 };
 
@@ -411,6 +411,69 @@ static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
 #endif
 
     return 0;
+}
+
+void bt_host_update_sniff_interval(void) {
+    uint16_t sniff_interval = 0;
+    uint32_t bt_dev_cnt = bt_host_get_flag_dev_cnt(BT_DEV_HID_INTR_READY);
+
+    switch (bt_dev_cnt) {
+        case 0:
+            return;
+        case 1:
+            /* Do not set sniff mode if this is 1st device, exept Switch */
+            struct bt_dev *device = NULL;
+            bt_host_get_active_dev(&device);
+
+            if (device->ids.type == BT_SW) {
+                sniff_interval = 8;
+            }
+            else {
+                sniff_interval = 0;
+            }
+            break;
+        default:
+            sniff_interval = 16;
+            break;
+    }
+
+    printf("# %s bt_dev_cnt: %ld interval: %d\n", __FUNCTION__, bt_dev_cnt, sniff_interval);
+
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        struct bt_dev *device = &bt_dev[i];
+
+        if (atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+
+            if ((sniff_interval && sniff_interval == device->sniff_interval &&
+                device->sniff_state == BT_SNIFF_SET) ||
+                (sniff_interval == 0 && device->sniff_state == BT_SNIFF_DISABLE)) {
+                continue;
+            }
+
+            switch(device->sniff_state) {
+                case BT_SNIFF_SET:
+                    bt_hci_exit_sniff_mode(device);
+                    device->sniff_state = BT_SNIFF_EXIT_PENDING;
+                    break;
+                case BT_SNIFF_DISABLE:
+                    bt_hci_sniff_mode(device, sniff_interval);
+                    device->sniff_state = BT_SNIFF_SET_PENDING;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+uint32_t bt_host_get_flag_dev_cnt(uint32_t flag) {
+    uint32_t cnt = 0;
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, flag)) {
+            cnt++;
+        }
+    }
+    return cnt;
 }
 
 void bt_host_disconnect_all(void) {

@@ -1727,6 +1727,22 @@ struct bt_hci_evt_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+#ifdef BLUERETRO
+
+/* BT Modes */
+#define BT_MODE_ACTIVE                          0x00
+#define BT_MODE_HOLD                            0x01
+#define BT_MODE_SNIFF                           0x02
+
+#define BT_HCI_EVT_MODE_CHANGE                  0x14
+struct bt_hci_evt_mode_change {
+	u8_t status;
+	u16_t handle;
+	u8_t mode;
+	u16_t interval;
+} __packed;
+#endif /* BLUERETRO */
+
 #define BT_HCI_EVT_PIN_CODE_REQ                 0x16
 struct bt_hci_evt_pin_code_req {
 	bt_addr_t bdaddr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -86,7 +86,7 @@ static void bt_hci_cmd_read_remote_ext_features(void *handle);
 //static void bt_hci_cmd_read_remote_version_info(uint16_t handle);
 static void bt_hci_cmd_io_capability_reply(void *bdaddr);
 static void bt_hci_cmd_user_confirm_reply(void *bdaddr);
-static void bt_hci_cmd_sniff_mode(void *handle);
+static void bt_hci_cmd_sniff_mode(void *handle, uint16_t interval);
 static void bt_hci_cmd_exit_sniff_mode(void *handle);
 static void bt_hci_cmd_switch_role(void *cp);
 //static void bt_hci_cmd_read_link_policy(void *handle);
@@ -422,13 +422,13 @@ static void bt_hci_cmd_user_confirm_reply(void *bdaddr) {
     bt_hci_cmd(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*user_confirm_reply));
 }
 
-static void bt_hci_cmd_sniff_mode(void *handle) {
+static void bt_hci_cmd_sniff_mode(void *handle, uint16_t interval) {
     struct bt_hci_cp_sniff_mode *sniff_mode = (struct bt_hci_cp_sniff_mode *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     sniff_mode->handle = *(uint16_t *)handle;
-    sniff_mode->max_interval = 24;
-    sniff_mode->min_interval = 24;
+    sniff_mode->max_interval = interval;
+    sniff_mode->min_interval = interval;
     sniff_mode->attempt = 1;
     sniff_mode->timeout = 1;
 
@@ -1283,8 +1283,8 @@ void bt_hci_disconnect(struct bt_dev *device) {
     }
 }
 
-void bt_hci_sniff_mode(struct bt_dev *device) {
-    bt_hci_cmd_sniff_mode((void *)&device->acl_handle);
+void bt_hci_sniff_mode(struct bt_dev *device, uint16_t interval) {
+    bt_hci_cmd_sniff_mode((void *)&device->acl_handle, interval);
 }
 
 void bt_hci_exit_sniff_mode(struct bt_dev *device) {
@@ -1652,6 +1652,13 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                             bt_hci_q_conf(0);
                         }
                         break;
+                    /* Sniff mode is best efforts no retry */
+                    case BT_HCI_OP_SNIFF_MODE:
+                        device->sniff_state = BT_SNIFF_DISABLE;
+                        break;
+                    case BT_HCI_OP_EXIT_SNIFF_MODE:
+                        device->sniff_state = BT_SNIFF_SET;
+                        break;
                 }
             }
             else {
@@ -1786,6 +1793,25 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             }
             else {
                 printf("# dev NULL!\n");
+            }
+            break;
+        }
+        case BT_HCI_EVT_MODE_CHANGE:
+        {
+            struct bt_hci_evt_mode_change *evt = (struct bt_hci_evt_mode_change *)bt_hci_evt_pkt->evt_data;
+            bt_host_get_dev_from_handle(evt->handle, &device);
+            printf("# BT_HCI_EVT_MODE_CHANGE dev: %ld status: %d mode: %d interval %d\n", device->ids.id, evt->status, evt->mode, evt->interval);
+            if (evt->status == BT_HCI_ERR_SUCCESS) {
+                if (evt->mode == BT_MODE_ACTIVE) {
+                    device->sniff_interval = 0;
+                    device->sniff_state = BT_SNIFF_DISABLE;
+                    bt_host_update_sniff_interval();
+                }
+                else {
+                    device->sniff_interval = evt->interval;
+                    device->sniff_state = BT_SNIFF_SET;
+                    bt_host_update_sniff_interval();
+                }
             }
             break;
         }
