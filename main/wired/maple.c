@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include <esp_timer.h>
 #include <esp32/rom/ets_sys.h>
+#include <soc/efuse_reg.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/adapter.h"
@@ -149,6 +150,7 @@ static uint32_t cur_us = 0, pre_us = 0;
 static struct maple_pkt pkt;
 static uint32_t rumble_max = 0x00020013;
 static uint32_t rumble_val = 0x10E0073B;
+static uint32_t port_cnt = ARRAY_SIZE(gpio_pin);
 
 static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 4);
@@ -608,8 +610,13 @@ maple_abort:
     return 0;
 }
 
-void maple_init(void)
+void maple_init(uint32_t package)
 {
+#ifdef CONFIG_BLUERETRO_SYSTEM_DC
+    if (package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
+        port_cnt = 1;
+    }
+#endif
     maple_port_cfg(0x0);
     intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, maple_rx);
 }
@@ -621,7 +628,7 @@ void maple_port_cfg(uint16_t mask) {
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(gpio_pin); i++) {
+    for (uint32_t i = 0; i < port_cnt; i++) {
 
         if (mask & 0x1) {
             for (uint32_t j = 0; j < ARRAY_SIZE(gpio_pin[0]); j++) {

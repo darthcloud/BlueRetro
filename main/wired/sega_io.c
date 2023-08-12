@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -935,7 +935,7 @@ static void ea_genesis_task(void) {
     }
 }
 
-void sega_io_init(void) {
+void sega_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
     uint8_t port_cnt = 0;
 

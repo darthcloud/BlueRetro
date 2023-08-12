@@ -665,7 +665,7 @@ static unsigned gc_isr(unsigned cause) {
     return 0;
 }
 
-void nsi_init(void) {
+void nsi_init(uint32_t package) {
     uint32_t system = (wired_adapter.system_id == N64) ? 0 : 1;
 
     periph_ll_enable_clk_clear_rst(PERIPH_RMT_MODULE);

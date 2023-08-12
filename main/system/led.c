@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "soc/efuse_reg.h"
-#include "esp_efuse.h"
+#include <soc/efuse_reg.h>
 #include "zephyr/atomic.h"
 #include "system/gpio.h"
 #include "driver/ledc.h"
@@ -47,7 +46,7 @@ static void err_led_task(void *param) {
     }
 }
 
-void err_led_init(void) {
+void err_led_init(uint32_t package) {
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_13_BIT,
         .freq_hz = 5000,
@@ -64,7 +63,6 @@ void err_led_init(void) {
         .timer_sel  = LEDC_TIMER_0,
     };
 
-    uint32_t package = esp_efuse_get_pkg_ver();
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         ledc_channel.gpio_num = PICO_ERR_LED_PIN;
         err_led_pin = PICO_ERR_LED_PIN;

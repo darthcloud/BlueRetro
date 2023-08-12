@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -264,7 +264,7 @@ static unsigned isr_dispatch(unsigned cause) {
     return 0;
 }
 
-void cdi_uart_init(void) {
+void cdi_uart_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
     for (uint32_t i = 0; i < CDI_PORT_MAX; i++) {

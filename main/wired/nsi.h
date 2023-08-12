@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-void nsi_init(void);
+void nsi_init(uint32_t package);
 void nsi_port_cfg(uint16_t mask);
 
 #endif  /* _NSI_H_ */

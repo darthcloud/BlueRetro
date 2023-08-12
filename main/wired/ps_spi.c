@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -665,7 +665,7 @@ static unsigned isr_dispatch(unsigned cause) {
     return 0;
 }
 
-void ps_spi_init(void) {
+void ps_spi_init(uint32_t package) {
     for (uint32_t i = 0; i < PS_PORT_MAX; i++) {
         memset(ps_ctrl_ports[i].dev_id, 0x41, sizeof(ps_ctrl_ports[0].dev_id));
         memset(ps_ctrl_ports[i].pend_dev_id, 0x41, sizeof(ps_ctrl_ports[0].pend_dev_id));

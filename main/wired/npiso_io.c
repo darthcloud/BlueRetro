@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -498,7 +498,7 @@ static unsigned npiso_sfc_snes_5p_isr(unsigned cause) {
     return 0;
 }
 
-void npiso_init(void)
+void npiso_init(uint32_t package)
 {
     gpio_config_t io_conf = {0};
 

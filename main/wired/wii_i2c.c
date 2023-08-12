@@ -292,7 +292,7 @@ static unsigned isr_dispatch(unsigned cause) {
 }
 #endif /* defined(CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL) */
 
-void wii_i2c_init(void) {
+void wii_i2c_init(uint32_t package) {
 #if defined (CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL)
     for (uint32_t i = 0; i < WII_PORT_MAX; i++) {
         struct wii_ctrl_port *p = &wii_ctrl_ports[i];

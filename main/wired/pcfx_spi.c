@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -202,7 +202,7 @@ exit:
     return 0;
 }
 
-void pcfx_spi_init(void) {
+void pcfx_spi_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
     for (uint32_t i = 0; i < PCFX_PORT_MAX; i++) {

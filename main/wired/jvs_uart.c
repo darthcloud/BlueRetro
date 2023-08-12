@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include "jvs_uart.h"
 #include "sdkconfig.h"
 #if defined (CONFIG_BLUERETRO_SYSTEM_JVS)
@@ -283,7 +284,7 @@ static unsigned uart_rx(unsigned cause) {
 }
 #endif /* defined (CONFIG_BLUERETRO_SYSTEM_JVS */
 
-void jvs_init(void) {
+void jvs_init(uint32_t package) {
 #if defined (CONFIG_BLUERETRO_SYSTEM_JVS)
     gpio_config_t jvs_sense_conf = {
         .intr_type = GPIO_INTR_DISABLE,

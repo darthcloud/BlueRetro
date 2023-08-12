@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -56,10 +56,6 @@
 #define HARDCODED_SYS SPI
 #endif
 
-void wired_bare_init(void);
-void wired_bare_port_cfg(uint16_t mask);
-const char *wired_get_sys_name(void);
-
 struct spi_cfg {
     spi_dev_t *hw;
     uint32_t write_bit_order;
@@ -75,7 +71,7 @@ struct spi_cfg {
     uint32_t inten;
 };
 
-void wired_bare_init(void);
+void wired_bare_init(uint32_t package);
 void wired_bare_port_cfg(uint16_t mask);
 const char *wired_get_sys_name(void);
 void spi_init(struct spi_cfg *cfg);

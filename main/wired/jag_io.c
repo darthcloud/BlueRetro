@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include "jag_io.h"
 #include "sdkconfig.h"
 #if defined (CONFIG_BLUERETRO_SYSTEM_JAG)
@@ -448,7 +449,7 @@ void jag_io_force_update(void) {
 #endif /* defined (CONFIG_BLUERETRO_SYSTEM_JAG */
 }
 
-void jag_io_init(void) {
+void jag_io_init(uint32_t package) {
 #if defined (CONFIG_BLUERETRO_SYSTEM_JAG)
     gpio_config_t io_conf = {0};
     uint8_t inputs[] = {P1_J0_PIN, P1_J1_PIN, P1_J2_PIN, P1_J3_PIN};

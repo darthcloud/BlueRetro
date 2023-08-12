@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -294,7 +294,7 @@ static unsigned pce_mouse_oe_isr(unsigned cause) {
     return 0;
 }
 
-void pce_io_init(void) {
+void pce_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
     /* SEL */

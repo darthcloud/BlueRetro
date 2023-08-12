@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -190,7 +190,7 @@ static void cs_generator(void) {
     }
 }
 
-void real_spi_init(void) {
+void real_spi_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
     /* CS Generator loopback */

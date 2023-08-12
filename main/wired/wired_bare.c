@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <stddef.h>
 #include "npiso_io.h"
 #include "cdi_uart.h"
@@ -22,7 +23,7 @@
 #define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
 
-typedef void (*wired_init_t)(void);
+typedef void (*wired_init_t)(uint32_t package);
 typedef void (*wired_port_cfg_t)(uint16_t mask);
 
 static const char *sys_name[WIRED_MAX] = {
@@ -106,9 +107,9 @@ static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
     NULL, /* SEA_BOARD */
 };
 
-void wired_bare_init(void) {
+void wired_bare_init(uint32_t package) {
     if (wired_init[wired_adapter.system_id]) {
-        wired_init[wired_adapter.system_id]();
+        wired_init[wired_adapter.system_id](package);
     }
 }
 
