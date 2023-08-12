@@ -449,3 +449,9 @@ void adapter_init(void) {
         ets_printf("# %s: Failed to create fb queue\n", __FUNCTION__);
     }
 }
+
+void adapter_meta_init(void) {
+    if (wired_adapter.system_id != WIRED_AUTO) {
+        wired_meta_init(ctrl_output);
+    }
+}

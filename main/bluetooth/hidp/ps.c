@@ -54,8 +54,18 @@ static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
     uint32_t map_cnt_l = 0;
     uint32_t map_cnt_r = 0;
 
+    if (wired_adapter.system_id == WIRED_AUTO) {
+        /* Can't configure feature if target system is unknown */
+        return;
+    }
+
+    printf("# %s\n", __FUNCTION__);
+
+    /* Make sure meta desc is init */
+    adapter_meta_init();
+
     /* Go through the list of mappings, looking for PAD_RM and PAD_LM */
-    for (uint32_t i = 0; i < config.in_cfg->map_size; i++) {
+    for (uint32_t i = 0; i < config.in_cfg[dev].map_size; i++) {
         uint8_t is_axis = btn_is_axis(config.in_cfg[dev].map_cfg[i].dst_id, config.in_cfg[dev].map_cfg[i].dst_btn);
         if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_RM) {
             map_cnt_r++;
@@ -134,8 +144,10 @@ static void bt_hid_ps5_init_callback(void *arg) {
 
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
+
     /* Set trigger "click" haptic effect when rumble is on */
-    if (config.out_cfg[device->ids.out_idx].acc_mode == ACC_RUMBLE || config.out_cfg[device->ids.out_idx].acc_mode == ACC_BOTH) {
+    if (config.out_cfg[device->ids.out_idx].acc_mode == ACC_RUMBLE
+            || config.out_cfg[device->ids.out_idx].acc_mode == ACC_BOTH) {
         bt_hid_cmd_ps5_trigger_init(device);
     }
 
