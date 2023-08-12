@@ -511,7 +511,7 @@ static void gc_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
                 gc_l_trig_prev_state = 0;
             }
             if (buf[11] > 0x30) {
-                if (gc_l_trig_prev_state < 2) {
+                if (gc_r_trig_prev_state < 2) {
                     gc_r_trig_prev_state++;
                 }
             }
