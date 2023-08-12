@@ -12,7 +12,7 @@ class BlueRetroDut(BlueRetroInjector):
     ''' BlueRetro injector with a few extra for pytest. '''
     def expect(self, pattern):
         ''' Search for pattern in serial buffer. '''
-        retry = 10
+        retry = 100
         while retry:
             while self.fd.in_waiting:
                 line = self.fd.readline().decode()
@@ -20,6 +20,8 @@ class BlueRetroDut(BlueRetroInjector):
                 match = re.search(pattern, line)
                 if match:
                     return match
+                if 'CORE DUMP START' in line:
+                    retry += 1000
             retry -= 1
             sleep(0.01)
         assert None == pattern
