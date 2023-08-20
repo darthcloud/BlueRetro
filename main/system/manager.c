@@ -48,14 +48,14 @@
 #define LED_P3_PIN 12
 #define LED_P4_PIN 15
 
-#define RELAY_PULSE_MS 20
+#define RELAY_PULSE_MS 2000
 #define DUTY_CYCLE_HALF 0x80000
 #define DUTY_CYCLE_FULL 0xFFFFF
 
 typedef void (*sys_mgr_cmd_t)(void);
 
 enum {
-    SYS_MGR_POWER_ON_HOLD = 0,
+    SYS_MGR_POWER_ON_HOLD = 1,
     SYS_MGR_SENSE_NEG,
     SYS_MGR_POWER_NEG,
     SYS_MGR_EXTERNAL,
@@ -125,23 +125,26 @@ static inline uint32_t sense_port_is_empty(uint32_t index) {
 #endif
 }
 
+// Methylene OK
 static inline void set_power_on(uint32_t state) {
-    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+    // if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
         gpio_set_level(POWER_ON_PIN, !state);
-    }
-    else {
-        gpio_set_level(POWER_ON_PIN, state);
-    }
+    // }
+    // else {
+    //     gpio_set_level(POWER_ON_PIN, state);
+    // }
 }
 
 static inline void set_power_off(uint32_t state) {
-    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+    // Methylene OK
+    // if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
         gpio_set_level(power_off_pin, !state);
-    }
-    else {
-        gpio_set_level(power_off_pin, state);
-    }
+    // }
+    // else {
+    //     gpio_set_level(power_off_pin, state);
+    // }
 }
+
 
 static inline void set_port_led(uint32_t index, uint32_t state) {
     gpio_set_level(led_list[index], state);
@@ -153,16 +156,22 @@ static inline uint32_t get_port_led_pin(uint32_t index) {
 
 static void internal_flag_init(void) {
 #ifdef CONFIG_BLUERETRO_HW2
-    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
-        if (!gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
-            atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
-        }
+    
+    // Methylene
+    if (sys_mgr_get_power()) {
+        atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
     }
-    else {
-        if (gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
-            atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
-        }
-    }
+
+    // if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_NEG)) {
+    //     if (!gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
+    //         atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
+    //     }
+    // }
+    // else {
+    //     if (gpio_get_level(POWER_ON_PIN) && gpio_get_level(RESET_PIN)) {
+    //         atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
+    //     }
+    // }
 #else
     atomic_set_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL);
 #endif
@@ -221,6 +230,9 @@ static void power_on_hdl(void) {
     if (curr) {
         /* System is power on */
         bt_hci_inquiry_override(0);
+
+        /* Methylene - CONSOLE ON - so stop starting attempt */
+        set_power_on(0);
 
         if (bt_host_get_active_dev(&not_used) < 0) {
             /* No Bt device */
@@ -453,24 +465,48 @@ static void sys_mgr_inquiry_toggle(void) {
 }
 
 static void sys_mgr_power_on(void) {
-    set_power_on(1);
-    if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
-        vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
-        set_power_on(0);
+
+    // Methylene OK
+    if (!sys_mgr_get_power()) {
+        // sys_mgr_power_on();
+
+        set_power_on(1);
+        return;
     }
+
+
+    // set_power_on(1);
+    // if (!atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
+    //     vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
+    //     set_power_on(0);
+    // }
 }
 
 static void sys_mgr_power_off(void) {
     bt_host_disconnect_all();
 #ifdef CONFIG_BLUERETRO_HW2
-    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
+
+    // Methylene OK
+    if (sys_mgr_get_power()) {
+        // sys_mgr_power_on();
+
+        //set_power_off(1);
+
+        // Methylene Send signal
+        set_power_on(1);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         set_power_on(0);
+        return;
     }
-    else {
-        set_power_off(1);
-        vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
-        set_power_off(0);
-    }
+
+    // if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_POWER_ON_HOLD)) {
+    //     set_power_on(0);
+    // }
+    // else {
+    //     set_power_off(1);
+    //     vTaskDelay(RELAY_PULSE_MS / portTICK_PERIOD_MS);
+    //     set_power_off(0);
+    // }
 #endif
 }
 
@@ -478,12 +514,12 @@ static int32_t sys_mgr_get_power(void) {
 #ifdef CONFIG_BLUERETRO_SYSTEM_UNIVERSAL
     return 1;
 #else
-    if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL)) {
-        return 1;
-    }
-    else {
+    // if (atomic_test_bit(&sys_mgr_flags, SYS_MGR_EXTERNAL)) {
+    //     return 1;
+    // }
+    // else {
         return gpio_get_level(POWER_SENSE_PIN);
-    }
+    // }
 #endif
 }
 
@@ -540,7 +576,7 @@ void sys_mgr_init(void) {
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_20_BIT,
         .freq_hz = 2,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .speed_mode = LEDC_SPEED_MODE_MAX,
         .timer_num = LEDC_TIMER_1,
         .clk_cfg = LEDC_AUTO_CLK,
     };
@@ -548,7 +584,7 @@ void sys_mgr_init(void) {
         .channel    = LEDC_CHANNEL_1,
         .duty       = DUTY_CYCLE_FULL,
         .gpio_num   = LED_P1_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .speed_mode = LEDC_SPEED_MODE_MAX,
         .hpoint     = 0,
         .timer_sel  = LEDC_TIMER_1,
     };
