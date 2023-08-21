@@ -23,5 +23,4 @@ entries:
     pce_io (noflash)
     jag_io (noflash)
     wii_i2c (noflash)
-    memory_card (noflash)
     devcrypto (noflash)

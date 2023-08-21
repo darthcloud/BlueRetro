@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -164,11 +164,11 @@ void mc_storage_update(void) {
 }
 
 /* Assume r/w size will never cross blocks boundary */
-void mc_read(uint32_t addr, uint8_t *data, uint32_t size) {
+void IRAM_ATTR mc_read(uint32_t addr, uint8_t *data, uint32_t size) {
     memcpy(data, mc_buffer[addr >> 12] + (addr & 0xFFF), size);
 }
 
-void mc_write(uint32_t addr, uint8_t *data, uint32_t size) {
+void IRAM_ATTR mc_write(uint32_t addr, uint8_t *data, uint32_t size) {
     struct raw_fb fb_data = {0};
     uint32_t block = addr >> 12;
 
@@ -181,6 +181,6 @@ void mc_write(uint32_t addr, uint8_t *data, uint32_t size) {
     adapter_q_fb(&fb_data);
 }
 
-uint8_t *mc_get_ptr(uint32_t addr) {
+uint8_t IRAM_ATTR *mc_get_ptr(uint32_t addr) {
     return mc_buffer[addr >> 12] + (addr & 0xFFF);
 }
