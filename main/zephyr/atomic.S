@@ -6,7 +6,7 @@
 #ifndef BLUERETRO
 #include "xtensa_context.h"
 #else
-#include "zephyr/xtensa_context.h"
+#include "freertos/xtensa_context.h"
 #endif /* BLUERETRO */
 /**
  *

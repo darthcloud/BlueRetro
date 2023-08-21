@@ -81,7 +81,6 @@ idf_component_register(SRCS "main.c"
                             "wired/sea_io.c"
                             "wired/wii_i2c.c"
                             "zephyr/atomic.S"
-                            "zephyr/xtensa_context.S"
                     PRIV_INCLUDE_DIRS "."
                     LDFRAGMENTS linker.lf)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address-of-packed-member)
