@@ -64,6 +64,9 @@ enum {
 #define P2_RXD_PIN 22
 #define P2_DSR_PIN 25
 
+#define P1_ANALOG_LED_PIN 12
+#define P2_ANALOG_LED_PIN 15
+
 #define PS_SPI_DTR 0
 #define PS_SPI_SCK 1
 #define PS_SPI_TXD 2
@@ -78,6 +81,7 @@ struct ps_ctrl_port {
     struct spi_cfg cfg;
     spi_dev_t *spi_hw;
     uint8_t id;
+    uint8_t led_pin;
     uint8_t root_dev_type;
     uint8_t mt_state;
     uint8_t mt_first_port;
@@ -119,6 +123,7 @@ static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
             .inten = 1,
         },
         .id = 0,
+        .led_pin = P1_ANALOG_LED_PIN,
         .spi_hw = &SPI2,
     },
     {
@@ -138,6 +143,7 @@ static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
             .inten = 1,
         },
         .id = 1,
+        .led_pin = P2_ANALOG_LED_PIN,
         .spi_hw = &SPI3,
     }
 };
@@ -234,9 +240,15 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                 port->rumble_l_state[id] = 0;
                 if (port->dev_id[id] == 0x41) {
                     port->dev_id[id] = 0x73;
+                    if (id == 0) {
+                        gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
+                    }
                 }
                 else {
                     port->dev_id[id] = 0x41;
+                    if (id == 0) {
+                        gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
+                    }
                 }
             }
         }
@@ -286,9 +298,15 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 port->rumble_l_state[id] = 0;
                 if (req[1] == 0x01) {
                     port->pend_dev_id[id] = 0x73;
+                    if (id == 0) {
+                        gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
+                    }
                 }
                 else {
                     port->pend_dev_id[id] = 0x41;
+                    if (id == 0) {
+                        gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
+                    }
                 }
             }
             break;

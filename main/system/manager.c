@@ -631,7 +631,14 @@ void sys_mgr_init(void) {
 #endif
 
     io_conf.mode = GPIO_MODE_OUTPUT;
-    for (uint32_t i = 0; i < port_cnt; i++) {
+    for (uint32_t i = 0; i < sizeof(led_list); i++) {
+#ifdef CONFIG_BLUERETRO_HW2
+        /* Skip pin 15 if alt sense pin are used */
+        if (sense_list[0] == led_list[i]) {
+            continue;
+        }
+#endif
+        gpio_set_level(led_list[i], 0);
         io_conf.pin_bit_mask = 1ULL << led_list[i];
         gpio_config(&io_conf);
     }
