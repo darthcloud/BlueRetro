@@ -66,23 +66,25 @@ static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
 
     /* Go through the list of mappings, looking for PAD_RM and PAD_LM */
     for (uint32_t i = 0; i < config.in_cfg[dev].map_size; i++) {
-        uint8_t is_axis = btn_is_axis(config.in_cfg[dev].map_cfg[i].dst_id, config.in_cfg[dev].map_cfg[i].dst_btn);
-        if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_RM) {
-            map_cnt_r++;
-            if (is_axis) {
-                continue;
+        if (config.in_cfg[dev].map_cfg[i].dst_btn < BR_COMBO_BASE_1) {
+            uint8_t is_axis = btn_is_axis(config.in_cfg[dev].map_cfg[i].dst_id, config.in_cfg[dev].map_cfg[i].dst_btn);
+            if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_RM) {
+                map_cnt_r++;
+                if (is_axis) {
+                    continue;
+                }
+                if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_r) {
+                    perc_threshold_r = config.in_cfg[dev].map_cfg[i].perc_threshold;
+                }
             }
-            if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_r) {
-                perc_threshold_r = config.in_cfg[dev].map_cfg[i].perc_threshold;
-            }
-        }
-        else if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_LM) {
-            map_cnt_l++;
-            if (is_axis) {
-                continue;
-            }
-            if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_l) {
-                perc_threshold_l = config.in_cfg[dev].map_cfg[i].perc_threshold;
+            else if (config.in_cfg[dev].map_cfg[i].src_btn == PAD_LM) {
+                map_cnt_l++;
+                if (is_axis) {
+                    continue;
+                }
+                if (config.in_cfg[dev].map_cfg[i].perc_threshold > perc_threshold_l) {
+                    perc_threshold_l = config.in_cfg[dev].map_cfg[i].perc_threshold;
+                }
             }
         }
     }
