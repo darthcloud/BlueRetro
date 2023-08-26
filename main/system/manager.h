@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,9 +16,10 @@ enum {
     SYS_MGR_CMD_FACTORY_RST,
     SYS_MGR_CMD_DEEP_SLEEP,
     SYS_MGR_CMD_ADAPTER_RST,
+    SYS_MGR_CMD_WIRED_RST,
 };
 
 void sys_mgr_cmd(uint8_t cmd);
-void sys_mgr_init(void);
+void sys_mgr_init(uint32_t package);
 
 #endif /* _SYS_MANAGER_H_ */

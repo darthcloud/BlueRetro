@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,7 @@
 #include <esp_partition.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
+#include <soc/efuse_reg.h>
 #include "driver/gpio.h"
 #include "hal/ledc_hal.h"
 #include "hal/gpio_hal.h"
@@ -23,6 +24,7 @@
 #include "tools/util.h"
 #include "system/fs.h"
 #include "system/led.h"
+#include "bare_metal_app_cpu.h"
 #include "manager.h"
 
 #define BOOT_BTN_PIN 0
@@ -91,6 +93,7 @@ static uint8_t power_off_pin = POWER_OFF_PIN;
 static uint8_t port_cnt = 1;
 static uint16_t port_state = 0;
 static RingbufHandle_t cmd_q_hdl = NULL;
+static uint32_t chip_package = EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6;
 
 static int32_t sys_mgr_get_power(void);
 static int32_t sys_mgr_get_boot_btn(void);
@@ -101,6 +104,7 @@ static void sys_mgr_inquiry_toggle(void);
 static void sys_mgr_factory_reset(void);
 static void sys_mgr_deep_sleep(void);
 static void sys_mgr_esp_restart(void);
+static void sys_mgr_wired_reset(void);
 
 static const sys_mgr_cmd_t sys_mgr_cmds[] = {
     sys_mgr_reset,
@@ -110,6 +114,7 @@ static const sys_mgr_cmd_t sys_mgr_cmds[] = {
     sys_mgr_factory_reset,
     sys_mgr_deep_sleep,
     sys_mgr_esp_restart,
+    sys_mgr_wired_reset,
 };
 
 static inline uint32_t sense_port_is_empty(uint32_t index) {
@@ -515,6 +520,22 @@ static void sys_mgr_deep_sleep(void) {
     esp_deep_sleep_start();
 }
 
+static void IRAM_ATTR sys_mgr_wired_reinit_task(void) {
+    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+        adapter_init_buffer(i);
+    }
+
+    if (wired_adapter.system_id < WIRED_MAX) {
+        wired_bare_init(chip_package);
+    }
+}
+
+static void sys_mgr_wired_reset(void) {
+    init_app_cpu_baremetal();
+    start_app_cpu(sys_mgr_wired_reinit_task);
+    port_state = 0;
+}
+
 void sys_mgr_cmd(uint8_t cmd) {
     if (cmd_q_hdl) {
         UBaseType_t ret = xRingbufferSend(cmd_q_hdl, &cmd, sizeof(cmd), portMAX_DELAY);
@@ -524,7 +545,7 @@ void sys_mgr_cmd(uint8_t cmd) {
     }
 }
 
-void sys_mgr_init(void) {
+void sys_mgr_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
     io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -535,6 +556,7 @@ void sys_mgr_init(void) {
     io_conf.pin_bit_mask = 1ULL << BOOT_BTN_PIN;
     gpio_config(&io_conf);
 
+    chip_package = package;
     err_led_pin = err_led_get_pin();
 
     ledc_timer_config_t ledc_timer = {

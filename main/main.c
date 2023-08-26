@@ -112,7 +112,7 @@ static void wl_init_task(void *arg) {
 #ifndef CONFIG_BLUERETRO_QEMU
     mc_init();
 
-    sys_mgr_init();
+    sys_mgr_init(chip_package);
 #endif
 
 #ifdef CONFIG_BLUERETRO_PKT_INJECTION
