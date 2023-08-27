@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
+#include "system/manager.h"
 #include "real.h"
 
 enum {
@@ -85,7 +86,7 @@ struct real_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t real_mask[4] = {0x33370F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t real_mask[4] = {0x33770F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t real_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t real_btns_mask[32] = {
     0, 0, 0, 0,
@@ -98,7 +99,7 @@ static DRAM_ATTR const uint32_t real_btns_mask[32] = {
     BIT(REAL_R), BIT(REAL_R), 0, 0,
 };
 
-static const uint32_t real_fs_mask[4] = {0x333F0FCF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t real_fs_mask[4] = {0x337F0FCF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t real_fs_desc[4] = {0x000000CF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t real_fs_btns_mask[32] = {
     0, 0, 0, 0,
@@ -123,6 +124,26 @@ static const uint32_t real_mouse_btns_mask[32] = {
     BIT(REAL_M_RIGHT), 0, 0, BIT(REAL_M_MIDDLE),
     BIT(REAL_M_LEFT), 0, 0, 0,
 };
+
+static void real_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Output config mode toggle GamePad/GamePadAlt */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                config.out_cfg[ctrl_data->index].dev_mode &= 0x01;
+                config.out_cfg[ctrl_data->index].dev_mode ^= 0x01;
+                sys_mgr_cmd(SYS_MGR_CMD_WIRED_RST);
+            }
+        }
+    }
+}
 
 void IRAM_ATTR real_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
@@ -209,6 +230,8 @@ void real_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wir
         }
     }
 
+    real_ctrl_special_action(ctrl_data, wired_data);
+
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
 #ifdef CONFIG_BLUERETRO_RAW_OUTPUT
@@ -237,6 +260,8 @@ void real_fs_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired
             }
         }
     }
+
+    real_ctrl_special_action(ctrl_data, wired_data);
 
     for (uint32_t i = 0; i < 4; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & real_fs_desc[0])) {

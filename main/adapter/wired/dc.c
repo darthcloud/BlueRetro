@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
+#include "system/manager.h"
 #include "dc.h"
 
 enum {
@@ -99,7 +100,7 @@ struct dc_kb_map {
     };
 } __packed;
 
-static const uint32_t dc_mask[4] = {0x333FFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t dc_mask[4] = {0x337FFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t dc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t dc_btns_mask[32] = {
     0, 0, 0, 0,
@@ -162,6 +163,26 @@ static const uint8_t dc_kb_scancode[KBM_MAX] = {
  /* KB_RSHIFT, KB_RALT, KB_RWIN */
     0x00, 0x00, 0x00,
 };
+
+static void dc_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Output config mode toggle GamePad/GamePadAlt */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                config.out_cfg[ctrl_data->index].dev_mode &= 0x01;
+                config.out_cfg[ctrl_data->index].dev_mode ^= 0x01;
+                sys_mgr_cmd(SYS_MGR_CMD_WIRED_RST);
+            }
+        }
+    }
+}
 
 void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
@@ -246,6 +267,8 @@ static void dc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
             }
         }
     }
+
+    dc_ctrl_special_action(ctrl_data, wired_data);
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & dc_desc[0])) {

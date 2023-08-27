@@ -6,6 +6,7 @@
 #include <string.h>
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
+#include "system/manager.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "genesis.h"
@@ -122,7 +123,7 @@ struct genesis_map {
     uint16_t twh_buttons;
 } __packed;
 
-static const uint32_t genesis_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t genesis_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t genesis_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t genesis_btns_mask[2][3][32] = {
     {
@@ -208,6 +209,26 @@ static DRAM_ATTR const uint32_t genesis_twh_btns_mask[32] = {
     BIT(GENESIS_Z), BIT(GENESIS_Z), 0, 0,
 };
 
+static void genesis_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Output config mode toggle GamePad/GamePadAlt */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                config.out_cfg[ctrl_data->index].dev_mode &= 0x01;
+                config.out_cfg[ctrl_data->index].dev_mode ^= 0x01;
+                sys_mgr_cmd(SYS_MGR_CMD_WIRED_RST);
+            }
+        }
+    }
+}
+
 static void sega_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct sega_mouse_map map_tmp;
     int32_t *raw_axes = (int32_t *)(wired_data->output + 28);
@@ -283,6 +304,8 @@ static void genesis_std_from_generic(struct wired_ctrl *ctrl_data, struct wired_
         }
     }
 
+    genesis_ctrl_special_action(ctrl_data, wired_data);
+
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
 #ifdef CONFIG_BLUERETRO_RAW_OUTPUT
@@ -312,6 +335,8 @@ static void genesis_twh_from_generic(struct wired_ctrl *ctrl_data, struct wired_
         }
     }
 
+    genesis_ctrl_special_action(ctrl_data, wired_data);
+
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }
 
@@ -339,6 +364,8 @@ static void genesis_ea_from_generic(struct wired_ctrl *ctrl_data, struct wired_d
             }
         }
     }
+
+    genesis_ctrl_special_action(ctrl_data, wired_data);
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 }

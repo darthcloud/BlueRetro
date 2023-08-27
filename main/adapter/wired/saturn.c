@@ -9,6 +9,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/wired.h"
+#include "system/manager.h"
 #include "saturn.h"
 
 enum {
@@ -84,9 +85,9 @@ struct sega_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
-static const uint32_t saturn_mask[4] = {0x331F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t saturn_mask[4] = {0x335F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t saturn_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t saturn_3d_mask[4] = {0x331F0F0F, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t saturn_3d_mask[4] = {0x335F0F0F, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t saturn_3d_desc[4] = {0x1100000F, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t saturn_btns_mask[32] = {
     0, 0, 0, 0,
@@ -150,6 +151,26 @@ static const uint8_t saturn_kb_scancode[KBM_MAX] = {
  /* KB_RSHIFT, KB_RALT, KB_RWIN */
     0x59, 0x17, 0x00,
 };
+
+static void saturn_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Output config mode toggle GamePad/GamePadAlt */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MT]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                config.out_cfg[ctrl_data->index].dev_mode &= 0x01;
+                config.out_cfg[ctrl_data->index].dev_mode ^= 0x01;
+                sys_mgr_cmd(SYS_MGR_CMD_WIRED_RST);
+            }
+        }
+    }
+}
 
 void IRAM_ATTR saturn_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
@@ -243,6 +264,8 @@ void saturn_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *w
             }
         }
     }
+
+    saturn_ctrl_special_action(ctrl_data, wired_data);
 
     if (config.out_cfg[ctrl_data->index].dev_mode == DEV_PAD_ALT) {
         for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
