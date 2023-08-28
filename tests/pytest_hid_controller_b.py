@@ -256,7 +256,7 @@ def test_hid_controller_b_saturn_triggers_mapping(blueretro):
         '0000'
     )
 
-    blueretro.flush_logs()
+    blueretro.expect_json('wired_output')
 
     # Test trigger ON threshold for digital bits
     blueretro.send_hid_report(
