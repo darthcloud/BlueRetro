@@ -377,6 +377,13 @@ enum {
     FB_TYPE_SYS_ID,
 };
 
+enum {
+    HID_IN = 0,
+    HID_OUT,
+    //HID_FTR,
+    HID_TAG_CNT,
+};
+
 struct ctrl_meta {
     int32_t neutral;
     int32_t deadzone;
@@ -458,6 +465,7 @@ struct hid_usage {
 struct hid_report {
     uint32_t id;
     uint32_t len;
+    uint32_t tag;
     uint32_t usage_cnt;
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
