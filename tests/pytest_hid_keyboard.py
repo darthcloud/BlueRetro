@@ -23,10 +23,15 @@ def test_hid_keyboard_descriptor(blueretro):
 
     report = blueretro.expect_json('parsed_hid_report')
     assert report["report_id"] == 1
-    assert report["usages"][7]["bit_offset"] == 64
+    assert report["report_tag"] == 0
+    assert report["usages"][6]["bit_offset"] == 56
     assert report["report_type"] == 0
     assert report["device_type"] == 0
     assert report["device_subtype"] == 0
+
+    report = blueretro.expect_json('parsed_hid_report')
+    assert report["report_id"] == 1
+    assert report["report_tag"] == 1
 
     report = blueretro.expect_json('parsed_hid_report')
     assert report["report_id"] == 2
