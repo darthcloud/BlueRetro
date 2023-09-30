@@ -97,10 +97,6 @@ static void wl_init_task(void *arg) {
 
     config_init(DEFAULT_CFG);
 
-    if (wired_adapter.system_id < WIRED_MAX) {
-        wired_rtos_init();
-    }
-
 #ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {
         err_led_set();
@@ -108,6 +104,10 @@ static void wl_init_task(void *arg) {
         printf("Bluetooth init fail!\n");
     }
 #endif
+
+    if (wired_adapter.system_id < WIRED_MAX) {
+        wired_rtos_init();
+    }
 
 #ifndef CONFIG_BLUERETRO_QEMU
     mc_init();
