@@ -227,7 +227,8 @@ static void toggle_dsr(uint32_t port) {
 
 static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
     if (port->dev_type[id] != DEV_PSX_MOUSE && port->dev_type[id] != DEV_PSX_FLIGHT
-            && port->dev_type[id] != DEV_PSX_PS_2_KB_MOUSE_ADAPTER) {
+            && port->dev_type[id] != DEV_PSX_PS_2_KB_MOUSE_ADAPTER
+            && (port->dev_id[id] == 0x41 || port->dev_id[id] == 0x73)) {
         if (wired_adapter.data[id + port->mt_first_port].output[18]) {
             if (!port->analog_btn[id]) {
                 port->analog_btn[id] = 1;
