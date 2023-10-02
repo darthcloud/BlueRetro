@@ -241,12 +241,14 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                 port->rumble_l_state[id] = 0;
                 if (port->dev_id[id] == 0x41) {
                     port->dev_id[id] = 0x73;
+                    port->dev_desc[id] = 0x3FFFF;
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
                     }
                 }
                 else {
                     port->dev_id[id] = 0x41;
+                    port->dev_desc[id] = 0;
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
                     }
@@ -299,12 +301,14 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 port->rumble_l_state[id] = 0;
                 if (req[1] == 0x01) {
                     port->pend_dev_id[id] = 0x73;
+                    port->dev_desc[id] = 0x3FFFF;
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
                     }
                 }
                 else {
                     port->pend_dev_id[id] = 0x41;
+                    port->dev_desc[id] = 0;
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
                     }
@@ -366,7 +370,7 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
             *(uint32_t *)rsp = port->dev_desc[id];
             rsp += 4;
             *rsp++ = 0x00;
-            *rsp++ = 0x5A;
+            *rsp++ = (port->pend_dev_id[id] == 0x41) ? 0x00 : 0x5A;
             break;
         }
         case 0x44:
@@ -704,7 +708,7 @@ void ps_spi_init(uint32_t package) {
         ps_ctrl_ports[i].rx_buf[0][27] = 0x42;
         ps_ctrl_ports[i].rx_buf[1][27] = 0x42;
         for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
-             ps_ctrl_ports[i].dev_desc[j] = 0x3FFFF;
+             ps_ctrl_ports[i].dev_desc[j] = 0;
         }
     }
 
