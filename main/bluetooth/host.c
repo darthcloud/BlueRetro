@@ -226,6 +226,9 @@ static void bt_tx_task(void *param) {
                 vRingbufferReturnItem(txq_hdl, (void *)packet);
             }
         }
+        else {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
     }
 }
 
