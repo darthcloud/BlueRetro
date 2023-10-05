@@ -43,6 +43,7 @@ struct wired_ctrl *ctrl_output;
 struct generic_fb fb_input;
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
+static uint32_t adapter_out_mask[WIRED_MAX_DEV] = {0};
 
 static uint32_t btn_id_to_btn_idx(uint8_t btn_id) {
     if (btn_id < 32) {
@@ -223,6 +224,10 @@ static void adapter_fb_stop_cb(void* arg) {
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 }
 
+uint32_t adapter_get_out_mask(uint8_t dev_id) {
+    return adapter_out_mask[dev_id];
+}
+
 int32_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
@@ -359,7 +364,8 @@ void adapter_bridge(struct bt_data *bt_data) {
                 return;
             }
 
-            out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
+            adapter_out_mask[bt_data->base.pids->out_idx] =
+                out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
 #ifdef CONFIG_BLUERETRO_JSON_DBG

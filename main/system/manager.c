@@ -290,11 +290,12 @@ static void wired_port_hdl(void) {
 #ifdef CONFIG_BLUERETRO_HW2
         int32_t prev_idx = device->ids.out_idx;
 #endif
+        device->ids.out_idx = idx;
         if ((atomic_test_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG) && bt_ready) ||
                 !atomic_test_bit(&sys_mgr_flags, SYS_MGR_HOTPLUG)) {
-            port_mask |= BIT(idx);
+            port_mask |= BIT(idx) | adapter_get_out_mask(idx);
         }
-        device->ids.out_idx = idx++;
+        idx++;
 
 
         if (device->ids.out_idx < port_cnt) {
