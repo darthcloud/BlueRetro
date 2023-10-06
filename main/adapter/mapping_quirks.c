@@ -69,6 +69,17 @@ static void n64_8bitdo(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RT] = 0;
 }
 
+static void n64_8bitdo_mk(struct raw_src_mapping *map) {
+    map->mask[0] = 0x33550FFF;
+    map->desc[0] = 0x000000FF;
+
+    map->btns_mask[PAD_RB_LEFT] = BIT(1);
+    map->btns_mask[PAD_RB_RIGHT] = 0;
+    map->btns_mask[PAD_MT] = BIT(12);
+    map->btns_mask[PAD_LM] = BIT(8);
+    map->btns_mask[PAD_RM] = BIT(9);
+}
+
 static void m30_8bitdo(struct raw_src_mapping *map) {
     map->desc[0] = 0x000000FF;
 
@@ -167,6 +178,9 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_N64)) {
         n64_8bitdo(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_N64_MK)) {
+        n64_8bitdo_mk(&bt_data->raw_src_mappings[PAD]);
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_M30)) {
         m30_8bitdo(&bt_data->raw_src_mappings[PAD]);
