@@ -138,6 +138,7 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             device->mtu = mtu_rsp->mtu;
 
             device->hid_state = BT_ATT_HID_DEVICE_NAME;
+            bt_hci_stop_inquiry();
             bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_GAP_DEVICE_NAME);
             break;
         }
