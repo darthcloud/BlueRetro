@@ -305,6 +305,7 @@ enum {
     BT_QUIRK_RF_WARRIOR,
     BT_QUIRK_8BITDO_SATURN,
     BT_QUIRK_STADIA,
+    BT_QUIRK_OUYA,
 };
 
 /* Wired flags */

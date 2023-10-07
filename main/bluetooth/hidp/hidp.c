@@ -53,6 +53,7 @@ static const struct bt_name_type bt_name_type[] = {
     {"BlueN64 Gamepad", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_BLUEN64_N64)},
     {"Hyperkin Pad", BT_SW, BT_SW_HYPERKIN_ADMIRAL, 0},
     {"Stadia", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_STADIA)},
+    {"OUYA Game Controller", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, BIT(BT_QUIRK_OUYA)},
 #endif
 };
 

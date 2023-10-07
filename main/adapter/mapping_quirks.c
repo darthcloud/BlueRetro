@@ -163,6 +163,45 @@ static void stadia(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RJ] = BIT(STADIA_R3);
 }
 
+enum {
+    OUYA_O = 0,
+    OUYA_U,
+    OUYA_Y,
+    OUYA_A,
+    OUYA_L1,
+    OUYA_R1,
+    OUYA_L3,
+    OUYA_R3,
+    OUYA_UP,
+    OUYA_DOWN,
+    OUYA_LEFT,
+    OUYA_RIGHT,
+    OUYA_L2,
+    OUYA_R2,
+    OUYA_MENU,
+};
+
+static void ouya(struct raw_src_mapping *map) {
+    map->mask[0] = 0xBB1F0FFF;
+    map->desc[0] = 0x110000FF;
+
+    memset(map->btns_mask, 0, sizeof(map->btns_mask));
+
+    map->btns_mask[PAD_LD_LEFT] = BIT(OUYA_LEFT);
+    map->btns_mask[PAD_LD_RIGHT] = BIT(OUYA_RIGHT);
+    map->btns_mask[PAD_LD_DOWN] = BIT(OUYA_DOWN);
+    map->btns_mask[PAD_LD_UP] = BIT(OUYA_UP);
+    map->btns_mask[PAD_RB_LEFT] = BIT(OUYA_U);
+    map->btns_mask[PAD_RB_RIGHT] = BIT(OUYA_A);
+    map->btns_mask[PAD_RB_DOWN] = BIT(OUYA_O);
+    map->btns_mask[PAD_RB_UP] = BIT(OUYA_Y);
+    map->btns_mask[PAD_MM] = BIT(OUYA_MENU);
+    map->btns_mask[PAD_LS] = BIT(OUYA_L1);
+    map->btns_mask[PAD_LJ] = BIT(OUYA_L3);
+    map->btns_mask[PAD_RS] = BIT(OUYA_R1);
+    map->btns_mask[PAD_RJ] = BIT(OUYA_R3);
+}
+
 void mapping_quirks_apply(struct bt_data *bt_data) {
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_FACE_BTNS_INVERT)) {
         face_btns_invert(&bt_data->raw_src_mappings[PAD]);
@@ -196,5 +235,8 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_STADIA)) {
         stadia(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_OUYA)) {
+        ouya(&bt_data->raw_src_mappings[PAD]);
     }
 }
