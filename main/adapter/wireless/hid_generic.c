@@ -509,8 +509,12 @@ fillup_end:
 static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
 
+#ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
 #ifdef CONFIG_BLUERETRO_RAW_INPUT
     printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld", bt_data->base.report_id);
+#else
+    printf("R%ld: ", bt_data->base.report_id);
+#endif
 #endif
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
