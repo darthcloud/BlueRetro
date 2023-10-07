@@ -63,4 +63,5 @@ __pycache__/
 *.py[cod]
 .vscode/settings.json
 trace/
+**/.DS_Store
 
