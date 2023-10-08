@@ -16,15 +16,20 @@ def reassemble_acl_pkt(trace):
     new_pkt = None
     new_pkt_len = 0
     for pkt in trace:
+        offset = 5
+        if (pkt.haslayer(bt.HCI_PHDR_Hdr)):
+            offset += 4
+        if (pkt.haslayer(bt.HCI_ACL_Hdr)):
+            l2cap_len = 4 + raw(pkt)[offset] | raw(pkt)[offset + 1] << 8
         if (pkt.haslayer(bt.HCI_ACL_Hdr) and pkt.PB == 0x02 and
-                pkt.haslayer(bt.L2CAP_Hdr) and (len(pkt) - 5) < pkt[bt.L2CAP_Hdr].len):
-            new_pkt = pkt
-            new_pkt_len = pkt[bt.L2CAP_Hdr].len
-            new_pkt.PB = 0x00
+                (len(pkt) - offset) < l2cap_len):
+            new_pkt = raw(pkt)
+            new_pkt_len = offset + l2cap_len
         elif pkt.haslayer(bt.HCI_ACL_Hdr) and pkt.PB == 0x01:
-            new_pkt[Raw] = Raw(raw(new_pkt[Raw]) + raw(pkt)[5:])
-            if (len(new_pkt) - 9) == new_pkt_len:
-                reassembled_trace.append(new_pkt)
+            seg = raw(pkt)[offset:]
+            new_pkt += seg
+            if len(new_pkt) == new_pkt_len:
+                reassembled_trace.append(bt.HCI_PHDR_Hdr(new_pkt))
         else:
             reassembled_trace.append(pkt)
     return reassembled_trace
@@ -239,6 +244,7 @@ def main():
     bri = BlueRetroInjector()
 
     # Create a device on BR
+    bri.disconnect()
     bri.connect()
     bri.get_logs()
 
