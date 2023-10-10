@@ -62,13 +62,12 @@ static struct pcfx_ctrl_port pcfx_ctrl_ports[PCFX_PORT_MAX] = {
             .hw = &SPI2,
             .write_bit_order = 1,
             .read_bit_order = 1,
-            /* Set Mode 0 as per ESP32 TRM, cause that work well for PCFX! */
             .clk_idle_edge = 1,
             .clk_i_edge = 0,
             .miso_delay_mode = 0,
-            .miso_delay_num = 0,
-            .mosi_delay_mode = 2,
-            .mosi_delay_num = 2,
+            .miso_delay_num = 2,
+            .mosi_delay_mode = 0,
+            .mosi_delay_num = 3,
             .write_bit_len = 0,
             .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
             .inten = 0,
@@ -90,13 +89,12 @@ static struct pcfx_ctrl_port pcfx_ctrl_ports[PCFX_PORT_MAX] = {
             .hw = &SPI3,
             .write_bit_order = 1,
             .read_bit_order = 1,
-            /* Set Mode 0 as per ESP32 TRM, cause that work well for PCFX! */
             .clk_idle_edge = 1,
             .clk_i_edge = 0,
             .miso_delay_mode = 0,
-            .miso_delay_num = 0,
-            .mosi_delay_mode = 2,
-            .mosi_delay_num = 2,
+            .miso_delay_num = 2,
+            .mosi_delay_mode = 0,
+            .mosi_delay_num = 3,
             .write_bit_len = 0,
             .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
             .inten = 0,
@@ -140,24 +138,12 @@ static inline void load_mouse_axes(uint8_t port, uint8_t *axes) {
     }
 }
 
-static inline void write_buffer(spi_dev_t *hw, const uint8_t *data, uint32_t len)
-{
-    for (int i = 0; i < len; i += 4) {
-        //Use memcpy to get around alignment issues for txdata
-        uint32_t word;
-        memcpy(&word, &data[i], 4);
-        hw->data_buf[(i / 4)] = word;
-    }
-}
-
-static void load_buffer(uint8_t port) {
+static inline void load_buffer(uint8_t port) {
     switch (config.out_cfg[port].dev_mode) {
         case DEV_PAD:
         {
             uint32_t tmp = wired_adapter.data[port].output32[0] & wired_adapter.data[port].output_mask32[0];
-            write_buffer(pcfx_ctrl_ports[port].hw, (uint8_t *)&tmp, 4);
-            ++wired_adapter.data[port].frame_cnt;
-            pcfx_gen_turbo_mask(&wired_adapter.data[port]);
+            pcfx_ctrl_ports[port].hw->data_buf[0] = tmp;
             break;
         }
         case DEV_MOUSE:
@@ -165,7 +151,7 @@ static void load_buffer(uint8_t port) {
             uint8_t tmp[4];
             load_mouse_axes(port, tmp);
             memcpy(&tmp[2], &wired_adapter.data[port].output[2], 2);
-            write_buffer(pcfx_ctrl_ports[port].hw, tmp, 4);
+            pcfx_ctrl_ports[port].hw->data_buf[0] = *(uint32_t *)tmp;
             break;
         }
     }
@@ -189,12 +175,14 @@ static unsigned latch_isr(unsigned cause) {
 
     p = &pcfx_ctrl_ports[port];
 
-    p->hw->data_buf[0] = 0x000000F0;
     p->hw->data_buf[1] = 0xFFFFFFFF;
     load_buffer(port);
     p->hw->slave.sync_reset = 1;
     p->hw->slave.trans_done = 0;
     p->hw->cmd.usr = 1;
+
+    ++wired_adapter.data[port].frame_cnt;
+    pcfx_gen_turbo_mask(&wired_adapter.data[port]);
 
 exit:
     if (high_io) GPIO.status1_w1tc.intr_st = high_io;
@@ -230,7 +218,7 @@ void pcfx_spi_init(uint32_t package) {
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
         io_conf.pin_bit_mask = 1ULL << p->clk_pin;
         gpio_config_iram(&io_conf);
-        gpio_matrix_in(p->clk_pin, p->clk_sig, false);
+        gpio_matrix_in(p->clk_pin, p->clk_sig, true);
 
         periph_ll_enable_clk_clear_rst(p->spi_mod);
 
