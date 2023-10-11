@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -396,6 +396,15 @@ static void do_core_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    esp_flash_encryption_init_checks();
+#endif
+
+#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
+    // Note: in some configs this may read flash, so placed after flash init
+    esp_secure_boot_init_checks();
+#endif
+
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
     assert(err == ESP_OK && "Failed to disable ROM download mode");
@@ -408,15 +417,6 @@ static void do_core_init(void)
 
 #if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
     esp_efuse_disable_basic_rom_console();
-#endif
-
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
-
-#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
-    // Note: in some configs this may read flash, so placed after flash init
-    esp_secure_boot_init_checks();
 #endif
 
 #ifdef ROM_LOG_MODE
@@ -491,7 +491,7 @@ static void start_cpu0_default(void)
 
         ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
         ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s",CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                       efuse_ll_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+                       efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
         unsigned revision = efuse_hal_chip_revision();
         ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }
