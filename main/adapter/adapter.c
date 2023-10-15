@@ -373,6 +373,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 #endif
             adapter_debug_wired_print(&ctrl_output[0]);
 #endif
+            ctrl_output[bt_data->base.pids->out_idx].index = bt_data->base.pids->out_idx;
             sys_macro_hdl(&ctrl_output[bt_data->base.pids->out_idx], &bt_data->base.flags[PAD]);
             for (uint32_t i = 0; out_mask; i++, out_mask >>= 1) {
                 if (out_mask & 0x1) {
