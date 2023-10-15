@@ -939,6 +939,9 @@ void sega_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
     uint8_t port_cnt = 0;
 
+    dev_type[0] = DEV_NONE;
+    dev_type[1] = DEV_NONE;
+
     if (wired_adapter.system_id == SATURN) {
         switch (config.global_cfg.multitap_cfg) {
             case MT_SLOT_1:
