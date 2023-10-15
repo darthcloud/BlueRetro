@@ -470,7 +470,26 @@ static void ps_cmd_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                     load_mouse_axes(id + port->mt_first_port, &rsp[2]);
                     break;
                 default:
-                    memcpy(rsp, wired_adapter.data[id + port->mt_first_port].output, size);
+                    *(uint16_t *)&rsp[0] = wired_adapter.data[id + port->mt_first_port].output16[0]
+                        | wired_adapter.data[id + port->mt_first_port].output_mask16[0];
+                    if (size >  2) {
+                        for (uint32_t i = 2; i < 6; ++i) {
+                            rsp[i] = (wired_adapter.data[id + port->mt_first_port].output_mask[i]) ?
+                                wired_adapter.data[id + port->mt_first_port].output_mask[i]
+                                : wired_adapter.data[id + port->mt_first_port].output[i];
+                        }
+                    }
+                    if (size > 6) {
+                        *(uint16_t *)&rsp[6] = wired_adapter.data[id + port->mt_first_port].output16[3]
+                            & wired_adapter.data[id + port->mt_first_port].output_mask16[3];
+                        *(uint32_t *)&rsp[8] = wired_adapter.data[id + port->mt_first_port].output32[2]
+                            & wired_adapter.data[id + port->mt_first_port].output_mask32[2];
+                        *(uint32_t *)&rsp[12] = wired_adapter.data[id + port->mt_first_port].output32[3]
+                            & wired_adapter.data[id + port->mt_first_port].output_mask32[3];
+                        *(uint16_t *)&rsp[16] = wired_adapter.data[id + port->mt_first_port].output16[8]
+                            & wired_adapter.data[id + port->mt_first_port].output_mask16[8];
+                    }
+                    ++wired_adapter.data[id + port->mt_first_port].frame_cnt;
                     break;
             }
             if (cmd != 0x42 && cmd != 0x43) {

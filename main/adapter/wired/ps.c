@@ -92,7 +92,7 @@ static DRAM_ATTR const uint32_t ps_btns_mask[32] = {
     BIT(PS_L2), BIT(PS_L1), 0, BIT(PS_L3),
     BIT(PS_R2), BIT(PS_R1), 0, BIT(PS_R3),
 };
-static const uint8_t ps_btns_idx[32] = {
+static DRAM_ATTR const uint8_t ps_btns_idx[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
     5, 4, 7, 6,
@@ -180,9 +180,10 @@ void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
             memset((void *)map, 0, sizeof(*map));
             map->buttons = 0xFFFF;
             map->analog_btn = 0x00;
-            for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+            for (uint32_t i = 0; i < 4; i++) {
                 map->axes[ps_axes_idx[i]] = ps_axes_meta[i].neutral;
             }
+            memset(map->pressure, 0x00, sizeof(map->pressure));
 
             map_mask->buttons = 0x0000;
             map_mask->sticks = 0x00000000;
@@ -252,7 +253,7 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
         }
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+    for (uint32_t i = 0; i < 4; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & ps_desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[ps_axes_idx[i]] = 255;
@@ -393,5 +394,5 @@ void IRAM_ATTR ps_gen_turbo_mask(struct wired_data *wired_data) {
         }
     }
 
-    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, ps_axes_idx, ps_axes_meta);
+    wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, 4, ps_axes_idx, ps_axes_meta);
 }
