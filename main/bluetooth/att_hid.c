@@ -114,15 +114,12 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         case BT_ATT_OP_ERROR_RSP:
         {
             struct bt_att_error_rsp *error_rsp = (struct bt_att_error_rsp *)bt_hci_acl_pkt->att_data;
-            printf("# BT_ATT_OP_ERROR_RSP\n");
 
             switch (error_rsp->request) {
                 case BT_ATT_OP_READ_GROUP_REQ:
-                    printf("# BT_ATT_OP_READ_GROUP_REQ\n");
                     bt_att_cmd_find_info_req(device->acl_handle, hid_data->start_hdl, hid_data->end_hdl);
                     break;
                 case BT_ATT_OP_FIND_INFO_REQ:
-                    printf("# BT_ATT_OP_FIND_INFO_REQ\n");
                     device->hid_state = BT_ATT_HID_CHAR_PROP;
                     bt_att_cmd_read_type_req_uuid16(device->acl_handle,
                         hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
@@ -133,7 +130,6 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         case BT_ATT_OP_MTU_RSP:
         {
             struct bt_att_exchange_mtu_rsp *mtu_rsp = (struct bt_att_exchange_mtu_rsp *)bt_hci_acl_pkt->att_data;
-            printf("# BT_ATT_OP_MTU_RSP\n");
 
             device->mtu = mtu_rsp->mtu;
 
@@ -146,7 +142,6 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_find_info_rsp *find_info_rsp = (struct bt_att_find_info_rsp *)bt_hci_acl_pkt->att_data;
             uint16_t last_handle;
-            printf("# BT_ATT_OP_FIND_INFO_RSP\n");
 
             if (find_info_rsp->format == BT_ATT_INFO_16) {
                 struct bt_att_info_16 *info = (struct bt_att_info_16 *)find_info_rsp->info;
@@ -242,7 +237,6 @@ find_info_rsp_end:
         {
             struct bt_att_read_type_rsp *read_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_acl_pkt->att_data;
             uint8_t rsp_len = read_type_rsp->len - sizeof(read_type_rsp->data[0].handle);
-            printf("# BT_ATT_OP_READ_TYPE_RSP\n");
 
             switch (device->hid_state) {
                 case BT_ATT_HID_DEVICE_NAME:
@@ -283,7 +277,6 @@ find_info_rsp_end:
         case BT_ATT_OP_READ_RSP:
         {
             struct bt_att_read_rsp *read_rsp = (struct bt_att_read_rsp *)bt_hci_acl_pkt->att_data;
-            printf("# BT_ATT_OP_READ_RSP\n");
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
@@ -351,7 +344,6 @@ find_info_rsp_end:
         case BT_ATT_OP_READ_BLOB_RSP:
         {
             struct bt_att_read_blob_rsp *read_blob_rsp = (struct bt_att_read_blob_rsp *)bt_hci_acl_pkt->att_data;
-            printf("# BT_ATT_OP_READ_BLOB_RSP\n");
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_MAP:
@@ -390,7 +382,6 @@ find_info_rsp_end:
         {
             struct bt_att_read_group_rsp *read_group_rsp = (struct bt_att_read_group_rsp *)bt_hci_acl_pkt->att_data;
             const uint32_t elem_cnt = (att_len - 2)/read_group_rsp->len;
-            printf("# BT_ATT_OP_READ_GROUP_RSP\n");
 
             if (read_group_rsp->len == 6) {
                 struct bt_att_group_data_uuid16 *elem = (struct bt_att_group_data_uuid16 *)read_group_rsp->data;
@@ -407,7 +398,6 @@ find_info_rsp_end:
         }
         case BT_ATT_OP_WRITE_RSP:
         {
-            printf("# BT_ATT_OP_WRITE_RSP\n");
 
             switch (device->hid_state) {
                 case BT_ATT_HID_REPORT_CFG:

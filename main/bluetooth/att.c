@@ -32,7 +32,6 @@ void bt_att_cmd(uint16_t handle, uint8_t code, uint16_t len) {
 
 void bt_att_cmd_error_rsp(uint16_t handle, uint8_t req_opcode, uint16_t err_handle, uint8_t err) {
     struct bt_att_error_rsp *error_rsp = (struct bt_att_error_rsp *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     error_rsp->request = req_opcode;
     error_rsp->handle = err_handle;
@@ -43,7 +42,6 @@ void bt_att_cmd_error_rsp(uint16_t handle, uint8_t req_opcode, uint16_t err_hand
 
 void bt_att_cmd_mtu_req(uint16_t handle, uint16_t mtu) {
     struct bt_att_exchange_mtu_req *mtu_req = (struct bt_att_exchange_mtu_req *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     mtu_req->mtu = mtu;
 
@@ -52,7 +50,6 @@ void bt_att_cmd_mtu_req(uint16_t handle, uint16_t mtu) {
 
 void bt_att_cmd_mtu_rsp(uint16_t handle, uint16_t mtu) {
     struct bt_att_exchange_mtu_rsp *mtu_rsp = (struct bt_att_exchange_mtu_rsp *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     mtu_rsp->mtu = mtu;
 
@@ -61,7 +58,6 @@ void bt_att_cmd_mtu_rsp(uint16_t handle, uint16_t mtu) {
 
 void bt_att_cmd_find_info_req(uint16_t handle, uint16_t start, uint16_t end) {
     struct bt_att_find_info_req *find_info_req = (struct bt_att_find_info_req *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     find_info_req->start_handle = start;
     find_info_req->end_handle = end;
@@ -83,7 +79,6 @@ void bt_att_cmd_read_type_req_uuid16(uint16_t handle, uint16_t start, uint16_t e
 
 void bt_att_cmd_read_req(uint16_t handle, uint16_t att_handle) {
     struct bt_att_read_req *read_req = (struct bt_att_read_req *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     read_req->handle = att_handle;
 
@@ -102,7 +97,6 @@ void bt_att_cmd_read_blob_req(uint16_t handle, uint16_t att_handle, uint16_t off
 
 void bt_att_cmd_read_group_req_uuid16(uint16_t handle, uint16_t start, uint16_t uuid) {
     struct bt_att_read_group_req *read_group_req = (struct bt_att_read_group_req *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     read_group_req->start_handle = start;
     read_group_req->end_handle = 0xFFFF;
@@ -114,7 +108,6 @@ void bt_att_cmd_read_group_req_uuid16(uint16_t handle, uint16_t start, uint16_t 
 
 void bt_att_cmd_write_req(uint16_t handle, uint16_t att_handle, uint8_t *data, uint32_t len) {
     struct bt_att_write_req *write_req = (struct bt_att_write_req *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     write_req->handle = att_handle;
     memcpy(write_req->value, data, len);
@@ -124,7 +117,6 @@ void bt_att_cmd_write_req(uint16_t handle, uint16_t att_handle, uint8_t *data, u
 
 void bt_att_cmd_write_cmd(uint16_t handle, uint16_t att_handle, uint8_t *data, uint32_t len) {
     struct bt_att_write_cmd *write_cmd = (struct bt_att_write_cmd *)bt_hci_pkt_tmp.att_data;
-    printf("# %s\n", __FUNCTION__);
 
     write_cmd->handle = att_handle;
     memcpy(write_cmd->value, data, len);
@@ -133,13 +125,11 @@ void bt_att_cmd_write_cmd(uint16_t handle, uint16_t att_handle, uint8_t *data, u
 }
 
 void bt_att_cmd_wr_rsp(uint16_t handle) {
-    printf("# %s\n", __FUNCTION__);
 
     bt_att_cmd(handle, BT_ATT_OP_WRITE_RSP, 0);
 }
 
 void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, uint32_t data_len) {
-    printf("# %s\n", __FUNCTION__);
 
     memcpy(bt_hci_pkt_tmp.att_data, data, data_len);
 
@@ -147,7 +137,6 @@ void bt_att_cmd_prep_wr_rsp(uint16_t handle, uint8_t *data, uint32_t data_len) {
 }
 
 void bt_att_cmd_exec_wr_rsp(uint16_t handle) {
-    printf("# %s\n", __FUNCTION__);
 
     bt_att_cmd(handle, BT_ATT_OP_EXEC_WRITE_RSP, 0);
 }
