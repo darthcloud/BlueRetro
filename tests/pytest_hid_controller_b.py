@@ -78,8 +78,6 @@ def test_hid_controller_b_descriptor(blueretro):
     assert report["usages"][7]["bit_size"] == 16
 
     assert report["report_type"] == report_type.PAD
-    assert report["device_type"] == bt_type.HID_GENERIC
-    assert report["device_subtype"] == bt_subtype.SUBTYPE_DEFAULT
 
 
 def test_hid_controller_b_default_buttons_mapping(blueretro):

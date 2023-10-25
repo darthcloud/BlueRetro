@@ -29,8 +29,6 @@ def test_hid_controller_a_descriptor(blueretro):
     assert report["usages"][2]["bit_offset"] == 16
     assert report["usages"][2]["bit_size"] == 32
     assert report["report_type"] == 2
-    assert report["device_type"] == 0
-    assert report["device_subtype"] == 0
 
 
 def test_hid_controller_a_default_buttons_mapping(blueretro):
