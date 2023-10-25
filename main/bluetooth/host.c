@@ -29,6 +29,7 @@
 #include "adapter/gameid.h"
 #include "adapter/memory_card.h"
 #include "adapter/wired/wired.h"
+#include "adapter/hid_parser.h"
 
 #define BT_TX 0
 #define BT_RX 1
@@ -767,17 +768,14 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
     printf("\n");
 #else
     if (device->ids.type == BT_HID_GENERIC) {
-        uint32_t i = 0;
-        for (; i < REPORT_MAX; i++) {
-            if (bt_data->reports[i].id == report_id) {
-                bt_data->base.report_type = i;
-                report_type = i;
-                len = bt_data->reports[i].len;
-                break;
-            }
-        }
-        if (i == REPORT_MAX) {
+        struct hid_report *report = hid_parser_get_report(device->ids.id, report_id);
+        if (report == NULL || report->type == REPORT_NONE) {
             return;
+        }
+        bt_data->base.report_type = report_type = report->type;
+        len = report->len;
+        if (report_id != bt_data->reports[report_type].id) {
+            atomic_clear_bit(&bt_data->base.flags[report_type], BT_INIT);
         }
     }
     if (atomic_test_bit(&bt_data->base.flags[report_type], BT_INIT) || bt_data->base.report_cnt > 1) {

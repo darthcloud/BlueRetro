@@ -22,6 +22,7 @@
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 #define ADAPTER_MAX_AXES 6
 #define REPORT_MAX_USAGE 16
+#define HID_MAX_REPORT 10
 #define MAX_PULL_BACK 0.95
 
 /* BT device type ID */
@@ -469,6 +470,7 @@ struct hid_report {
     uint32_t len;
     uint32_t tag;
     uint32_t usage_cnt;
+    uint32_t type;
     struct hid_usage usages[REPORT_MAX_USAGE];
 };
 

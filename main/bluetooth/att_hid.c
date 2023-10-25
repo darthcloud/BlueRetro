@@ -13,8 +13,6 @@
 #include "zephyr/gatt.h"
 #include "adapter/hid_parser.h"
 
-#define HID_MAX_REPORT 10
-
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
     BT_ATT_HID_DISCOVERY,

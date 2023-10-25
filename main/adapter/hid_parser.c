@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <esp_heap_caps.h>
 #include "adapter.h"
 #include "hid_parser.h"
 #include "zephyr/usb_hid.h"
@@ -27,7 +28,7 @@ struct hid_fingerprint {
     uint8_t fp[REPORT_MAX_USAGE*2];
 };
 
-static struct hid_report wip_report[HID_TAG_CNT] = {0};
+static struct hid_report (*reports)[HID_MAX_REPORT * 2] = NULL; /* *2 since report IDs may be reused between tag type */
 
 /* List of usage we don't care about */
 static uint32_t hid_usage_is_collection(uint8_t page, uint16_t usage) {
@@ -196,9 +197,7 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
 }
 
 static void hid_process_report(struct bt_data *bt_data, struct hid_report *report) {
-    int32_t report_type = REPORT_NONE;
-
-    report_type = hid_report_fingerprint(report);
+    report->type = hid_report_fingerprint(report);
 #ifdef CONFIG_BLUERETRO_JSON_DBG
     printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": %ld, \"report_tag\": %ld, \"usages\": [", report->id, report->tag);
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
@@ -217,13 +216,17 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *repor
             report->usages[i].bit_offset, report->usages[i].bit_size);
     }
 #endif
-    if (report_type != REPORT_NONE && bt_data->reports[report_type].id == 0) {
-        memcpy(&bt_data->reports[report_type], report, sizeof(bt_data->reports[0]));
+    if (report->type != REPORT_NONE) {
 #ifdef CONFIG_BLUERETRO_JSON_DBG
-        printf(", \"report_type\": %ld", report_type);
+        printf(", \"report_type\": %ld", report->type);
 #else
-        printf("rtype: %ld", report_type);
+        printf("rtype: %ld", report->type);
 #endif
+        /* For output report we got to make a choice. */
+        /* So we use the first one we find. */
+        if (report->tag == HID_OUT && bt_data->reports[report->type].id == 0) {
+            memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
+        }
     }
 #ifdef CONFIG_BLUERETRO_JSON_DBG
     printf("}\n");
@@ -244,8 +247,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t tag_idx = 0;
     uint32_t report_bit_offset[HID_TAG_CNT] = {0};
     uint32_t report_usage_idx[HID_TAG_CNT] = {0};
+    struct hid_report *wip_report = &reports[bt_data->base.pids->id][0];
 
-    memset((void *)&wip_report, 0, sizeof(wip_report));
+    memset((void *)wip_report, 0, sizeof(*wip_report) * HID_MAX_REPORT * 2);
 
 #ifdef CONFIG_BLUERETRO_DUMP_HID_DESC
     data_dump(data, len);
@@ -416,19 +420,24 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 /* process previous report fingerprint */
                 if (report_id) {
                     for (uint32_t i = 0; i < HID_TAG_CNT; i++) {
-                        wip_report[i].tag = i;
-                        wip_report[i].usage_cnt = report_usage_idx[i];
-                        wip_report[i].len = report_bit_offset[i] / 8;
+                        wip_report->tag = i;
+                        wip_report->usage_cnt = report_usage_idx[i];
+                        wip_report->len = report_bit_offset[i] / 8;
                         if (report_bit_offset[i] % 8) {
-                            wip_report[i].len++;
+                            wip_report->len++;
                         }
-                        if (wip_report[i].len) {
-                            hid_process_report(bt_data, &wip_report[i]);
+                        if (wip_report->len) {
+                            hid_process_report(bt_data, wip_report);
+                        }
+                        if (i == 0) {
+                            wip_report++;
                         }
                     }
-                    report_cnt++;
                 }
-                memset((void *)&wip_report, 0, sizeof(wip_report));
+                if (wip_report->len) {
+                    wip_report++;
+                }
+                memset((void *)wip_report, 0, sizeof(*wip_report));
                 report_id = *desc++;
                 for (uint32_t i = 0; i < HID_TAG_CNT; i++) {
                     wip_report[i].id = report_id;
@@ -488,15 +497,45 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     }
     if (report_id) {
         for (uint32_t i = 0; i < HID_TAG_CNT; i++) {
-            wip_report[i].tag = i;
-            wip_report[i].usage_cnt = report_usage_idx[i];
-            wip_report[i].len = report_bit_offset[i] / 8;
+            wip_report->tag = i;
+            wip_report->usage_cnt = report_usage_idx[i];
+            wip_report->len = report_bit_offset[i] / 8;
             if (report_bit_offset[i] % 8) {
-                wip_report[i].len++;
+                wip_report->len++;
             }
-            if (wip_report[i].len) {
-                hid_process_report(bt_data, &wip_report[i]);
+            if (wip_report->len) {
+                hid_process_report(bt_data, wip_report);
+            }
+            wip_report++;
+        }
+    }
+}
+
+struct hid_report *hid_parser_get_report(int32_t dev_id, uint8_t report_id) {
+    struct hid_report *our_reports = reports[dev_id];
+
+    for (uint32_t i = 0; i < HID_MAX_REPORT * 2; i++) {
+        struct hid_report *report = &our_reports[i];
+        if (report->len && report->id == report_id && report->tag == HID_IN) {
+            return report;
+        }
+    }
+    return NULL;
+}
+
+void hid_parser_load_report(struct bt_data *bt_data, uint8_t report_id) {
+    struct hid_report *our_reports = reports[bt_data->base.pids->id];
+
+    for (uint32_t i = 0; i < HID_MAX_REPORT * 2; i++) {
+        struct hid_report *report = &our_reports[i];
+        if (report->len && report->id == report_id && report->tag == HID_IN) {
+            if (report->type != REPORT_NONE) {
+                memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
             }
         }
     }
+}
+
+void hid_parser_init(void) {
+    reports = heap_caps_malloc(sizeof(*reports) * BT_MAX_DEV, MALLOC_CAP_32BIT);
 }

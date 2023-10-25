@@ -21,6 +21,7 @@
 #include "wired/wired.h"
 #include "wireless/wireless.h"
 #include "macro.h"
+#include "hid_parser.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -449,6 +450,7 @@ void adapter_init(void) {
             printf("# %s bt_adapter.data[%ld].reports alloc fail\n", __FUNCTION__, i);
         }
     }
+    hid_parser_init();
 
     wired_adapter.input_q_hdl = queue_bss_init(16, sizeof(struct raw_fb));
     if (wired_adapter.input_q_hdl == NULL) {

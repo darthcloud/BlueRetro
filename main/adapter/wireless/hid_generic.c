@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,7 @@
 #include "tools/util.h"
 #include "hid_generic.h"
 #include "adapter/mapping_quirks.h"
+#include "adapter/hid_parser.h"
 
 /* dinput buttons */
 enum {
@@ -119,6 +120,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[KB];
 
     if (!atomic_test_bit(&bt_data->base.flags[KB], BT_INIT)) {
+        hid_parser_load_report(bt_data, bt_data->base.report_id);
         hid_kb_init(meta, &bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
         atomic_set_bit(&bt_data->base.flags[KB], BT_INIT);
     }
@@ -233,6 +235,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[MOUSE];
 
     if (!atomic_test_bit(&bt_data->base.flags[MOUSE], BT_INIT)) {
+        hid_parser_load_report(bt_data, bt_data->base.report_id);
         hid_mouse_init(meta, &bt_data->reports[MOUSE], &bt_data->raw_src_mappings[MOUSE]);
         atomic_set_bit(&bt_data->base.flags[MOUSE], BT_INIT);
     }
@@ -518,6 +521,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 #endif
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        hid_parser_load_report(bt_data, bt_data->base.report_id);
         hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
         mapping_quirks_apply(bt_data);
     }
@@ -618,7 +622,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
 int32_t hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
 #ifdef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
-    struct hid_report *report = &bt_data->reports[bt_data->base.report_type];
+    struct hid_report *report = hid_parser_get_report(bt_data->base.pids->id, bt_data->base.report_id);
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         int32_t len = report->usages[i].bit_size;
         uint32_t offset = report->usages[i].bit_offset;
