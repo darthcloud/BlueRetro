@@ -263,6 +263,7 @@ struct bt_gatt_cep {
 	/** Characteristic Extended properties */
 	u16_t		properties;
 };
+#endif /* BLUERETRO */
 
 /* Client Characteristic Configuration Values */
 
@@ -279,6 +280,7 @@ struct bt_gatt_cep {
  */
 #define BT_GATT_CCC_INDICATE			0x0002
 
+#ifndef BLUERETRO
 /* Client Characteristic Configuration Attribute Value */
 struct bt_gatt_ccc {
 	/** Client Characteristic Configuration flags */

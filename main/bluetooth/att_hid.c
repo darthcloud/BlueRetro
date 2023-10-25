@@ -13,7 +13,7 @@
 #include "zephyr/gatt.h"
 #include "adapter/hid_parser.h"
 
-#define HID_MAX_REPORT 5
+#define HID_MAX_REPORT 10
 
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
@@ -63,17 +63,6 @@ struct bt_att_hid {
 
 static struct bt_att_hid att_hid[7] = {0};
 
-static int32_t bt_att_is_report_required(struct bt_att_hid_report *att_hid, struct bt_data *bt_data) {
-    if (att_hid->type == 0x01) {
-        for (uint32_t i = 0; i < REPORT_MAX; i++) {
-            if (att_hid->id == bt_data->reports[i].id) {
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
 static uint32_t bt_att_get_report_index(struct bt_att_hid *hid_data, uint8_t report_id) {
     for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
         if (hid_data->reports[i].id == report_id) {
@@ -96,7 +85,7 @@ void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *
     uint8_t char_prop = hid_data->reports[index].char_prop;
 
     if (att_handle) {
-        if (char_prop | BT_GATT_CHRC_WRITE) {
+        if (char_prop & BT_GATT_CHRC_WRITE) {
             bt_att_cmd_write_req(device->acl_handle, att_handle, data, len);
         }
         else {
@@ -124,6 +113,10 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_read_type_req_uuid16(device->acl_handle,
                         hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
                     break;
+                case BT_ATT_OP_READ_TYPE_REQ:
+                    device->hid_state = BT_ATT_HID_REPORT_MAP;
+                    bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                    break;
             }
             break;
         }
@@ -150,6 +143,7 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 last_handle = info[elem_cnt - 1].handle;
 
                 for (uint32_t i = 0; i < elem_cnt; i++) {
+                    printf("# INFO HDL: %04X UUID: %04X REPORT_CNT: %d\n", info[i].handle, info[i].uuid, hid_data->report_cnt);
                     switch (info[i].uuid) {
                         case BT_UUID_GATT_PRIMARY:
                             hid_data->report_cnt = 0;
@@ -190,6 +184,8 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
                 for (uint32_t i = 0; i < elem_cnt; i++) {
                     uint16_t *uuid = (uint16_t *)&info[i].uuid[12];
+                    printf("# INFO HDL: %04X UUID: %04X REPORT_CNT: %d\n", info[i].handle, *uuid, hid_data->report_cnt);
+
                     switch (*uuid) {
                         case BT_UUID_GATT_PRIMARY:
                             hid_data->report_cnt = 0;
@@ -228,8 +224,9 @@ find_info_rsp_end:
                 bt_att_cmd_find_info_req(device->acl_handle, last_handle + 1, hid_data->end_hdl);
             }
             else {
-                device->hid_state = BT_ATT_HID_REPORT_MAP;
-                bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                device->hid_state = BT_ATT_HID_CHAR_PROP;
+                bt_att_cmd_read_type_req_uuid16(device->acl_handle,
+                    hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
             }
             break;
         }
@@ -256,20 +253,28 @@ find_info_rsp_end:
                 }
                 case BT_ATT_HID_CHAR_PROP:
                 {
-                    const uint32_t elem_cnt = (att_len - 2) / sizeof(read_type_rsp->len);
+                    struct bt_att_read_type_data *data = (struct bt_att_read_type_data *)read_type_rsp->data;
+                    const uint32_t elem_cnt = (att_len - 2) / read_type_rsp->len;
+                    uint16_t last_handle = data[elem_cnt - 1].handle;
 
                     for (uint32_t i = 0; i < elem_cnt; i++) {
-                        struct bt_att_read_type_data *data = (struct bt_att_read_type_data *)read_type_rsp->data;
-
                         for (uint32_t j = 0; j < HID_MAX_REPORT; j++) {
-                            if (hid_data->reports[j].report_hdl == data[i].handle) {
+                            if (hid_data->reports[j].report_hdl == data[i].char_value_handle) {
+                                printf("# CHAR_PROP Handl: %04X Prop: %02X\n", data[i].char_value_handle, data[i].char_prop);
                                 hid_data->reports[j].char_prop = data[i].char_prop;
                             }
                         }
                     }
 
-                    device->hid_state = BT_ATT_HID_REPORT_MAP;
-                    bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                    if (last_handle < hid_data->end_hdl) {
+                        bt_att_cmd_read_type_req_uuid16(device->acl_handle,
+                            last_handle + 1, hid_data->end_hdl, BT_UUID_GATT_CHRC);
+                    }
+                    else {
+                        device->hid_state = BT_ATT_HID_REPORT_MAP;
+                        bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
+                    }
+
                 }
             }
             break;
@@ -302,6 +307,7 @@ find_info_rsp_end:
                         }
                         if (hid_data->reports[hid_data->report_idx].ref_hdl) {
                             device->hid_state = BT_ATT_HID_REPORT_REF;
+                            hid_data->report_idx = 0;
                             bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                         }
                         else {
@@ -316,7 +322,8 @@ find_info_rsp_end:
 
                     hid_data->reports[hid_data->report_idx].id = report_ref->report_id;
                     hid_data->reports[hid_data->report_idx++].type = report_ref->report_type;
-                    if (hid_data->reports[hid_data->report_idx].ref_hdl) {
+
+                    if (hid_data->report_idx < HID_MAX_REPORT && hid_data->reports[hid_data->report_idx].ref_hdl) {
                         bt_att_cmd_read_req(device->acl_handle, hid_data->reports[hid_data->report_idx].ref_hdl);
                     }
                     else {
@@ -324,8 +331,8 @@ find_info_rsp_end:
                         device->hid_state = BT_ATT_HID_REPORT_CFG;
 
                         for (i = 0; i < HID_MAX_REPORT; i++) {
-                            if (bt_att_is_report_required(&hid_data->reports[i], bt_data)) {
-                                uint16_t data = 0x0001;
+                            if (hid_data->reports[i].char_prop & BT_GATT_CHRC_NOTIFY) {
+                                uint16_t data = BT_GATT_CCC_NOTIFY;
                                 bt_att_cmd_write_req(device->acl_handle, hid_data->reports[i].cfg_hdl, (uint8_t *)&data, sizeof(data));
                                 hid_data->report_idx = i + 1;
                                 break;
@@ -404,8 +411,8 @@ find_info_rsp_end:
                 {
                     uint32_t i = 0;
                     for (i = hid_data->report_idx; i < HID_MAX_REPORT; i++) {
-                        if (bt_att_is_report_required(&hid_data->reports[i], bt_data)) {
-                            uint16_t data = 0x0001;
+                        if (hid_data->reports[i].char_prop & BT_GATT_CHRC_NOTIFY) {
+                            uint16_t data = BT_GATT_CCC_NOTIFY;
                             bt_att_cmd_write_req(device->acl_handle, hid_data->reports[i].cfg_hdl, (uint8_t *)&data, sizeof(data));
                             hid_data->report_idx = i + 1;
                             break;
