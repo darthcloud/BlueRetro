@@ -36,6 +36,7 @@ struct hid_report_meta {
     int8_t hid_btn_idx;
     int8_t hid_axes_idx[ADAPTER_MAX_AXES];
     int8_t hid_hat_idx;
+    uint8_t kb_bitfield;
     struct ctrl_meta hid_axes_meta[ADAPTER_MAX_AXES];
 };
 
@@ -95,6 +96,12 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
     memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
     meta->hid_btn_idx = -1;
 
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
+        if (report->usages[i].usage > 0 && report->usages[i].usage < 0xE0) {
+            meta->kb_bitfield = 1;
+            break;
+        }
+    }
     for (uint32_t i = 0, key_idx = 0; i < report->usage_cnt; i++) {
         switch (report->usages[i].usage_page) {
             case USAGE_GEN_KEYBOARD:
@@ -104,16 +111,16 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
                     meta->hid_btn_idx = i;
                 }
                 else if (key_idx < 6) {
-                    map->mask[0] |= 0xE6FF0F0F;
-                    map->mask[1] |= 0xFFFFFFFF;
-                    map->mask[2] |= 0xFFFFFFFF;
-                    map->mask[3] |= 0x7FFFF;
                     meta->hid_axes_idx[key_idx] = i;
                     key_idx++;
                 }
                 break;
         }
     }
+    map->mask[0] |= 0xE6FF0F0F;
+    map->mask[1] |= 0xFFFFFFFF;
+    map->mask[2] |= 0xFFFFFFFF;
+    map->mask[3] |= 0x7FFFF;
 }
 
 static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
@@ -145,17 +152,39 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         }
     }
 
-    for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
-        if (meta->hid_axes_idx[i] > -1) {
-            int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
-            uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
-            uint32_t mask = (1ULL << len) - 1;
-            uint32_t byte_offset = offset / 8;
-            uint32_t bit_shift = offset % 8;
-            uint32_t key = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
+    if (meta->kb_bitfield) {
+        for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
+            if (meta->hid_axes_idx[i] > -1) {
+                int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
+                uint32_t mask = (1ULL << len) - 1;
+                uint32_t byte_offset = offset / 8;
+                uint32_t bit_shift = offset % 8;
+                uint32_t key_field = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
-            if (key > 3 && key < ARRAY_SIZE(hid_kb_key_to_generic)) {
-                ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
+                for (uint32_t mask = 1; mask; mask <<= 1) {
+                    uint32_t key = __builtin_ffs(key_field & mask);
+                    if (key) {
+                        key = key - 1 + bt_data->reports[KB].usages[meta->hid_axes_idx[i]].usage;
+                        ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
+                    }
+                }
+            }
+        }
+    }
+    else {
+        for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
+            if (meta->hid_axes_idx[i] > -1) {
+                int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
+                uint32_t mask = (1ULL << len) - 1;
+                uint32_t byte_offset = offset / 8;
+                uint32_t bit_shift = offset % 8;
+                uint32_t key = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
+
+                if (key > 3 && key < ARRAY_SIZE(hid_kb_key_to_generic)) {
+                    ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
+                }
             }
         }
     }
