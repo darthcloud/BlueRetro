@@ -425,15 +425,40 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
             case HID_MI_INPUT: /* 0x81 */
                 if (!(*desc & 0x01) && hid_stack[hid_stack_idx].usage_page != 0xFF && usage_list[0] != 0xFF && report_usage_idx[tag_idx] < REPORT_MAX_USAGE) {
                     if (hid_stack[hid_stack_idx].report_size == 1) {
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage_page = hid_stack[hid_stack_idx].usage_page;
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage = usage_list[0];
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].flags = *desc;
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_offset = report_bit_offset[tag_idx];
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_size = hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
-                        wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
-                        report_bit_offset[tag_idx] += hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
-                        ++report_usage_idx[tag_idx];
+                        if (hid_stack[hid_stack_idx].report_cnt > 32) {
+                            uint32_t bit_cnt = hid_stack[hid_stack_idx].report_cnt;
+                            uint32_t div = 32;
+                            uint32_t usage = usage_list[0];
+
+                            while (bit_cnt) {
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage_page = hid_stack[hid_stack_idx].usage_page;
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage = usage;
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].flags = *desc;
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_offset = report_bit_offset[tag_idx];
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_size = div;
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
+                                wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
+                                report_bit_offset[tag_idx] += div;
+                                usage += div;
+
+                                bit_cnt -= div;
+                                while (bit_cnt < div) {
+                                    div /= 2;
+                                }
+                                ++report_usage_idx[tag_idx];
+                            }
+                        }
+                        else {
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage_page = hid_stack[hid_stack_idx].usage_page;
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].usage = usage_list[0];
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].flags = *desc;
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_offset = report_bit_offset[tag_idx];
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].bit_size = hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
+                            wip_report[tag_idx].usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
+                            report_bit_offset[tag_idx] += hid_stack[hid_stack_idx].report_cnt * hid_stack[hid_stack_idx].report_size;
+                            ++report_usage_idx[tag_idx];
+                        }
                     }
                     else {
                         uint32_t idx_end = report_usage_idx[tag_idx] + hid_stack[hid_stack_idx].report_cnt;
