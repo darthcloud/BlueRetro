@@ -28,40 +28,6 @@ struct hid_fingerprint {
 };
 
 static struct hid_report wip_report[HID_TAG_CNT] = {0};
-static const struct hid_fingerprint hid_fp[] = {
-#ifndef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
-    {
-        .dev_type = BT_PS3,
-        .dev_subtype = BT_SUBTYPE_DEFAULT,
-        .fp_len = 10,
-        .fp = {0x09, 0x01, 0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35},
-    },
-    {
-        .dev_type = BT_PS,
-        .dev_subtype = BT_SUBTYPE_DEFAULT,
-        .fp_len = 16,
-        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35, 0x01, 0x39, 0x09, 0x01, 0x01, 0x33, 0x01, 0x34},
-    },
-    {
-        .dev_type = BT_XBOX,
-        .dev_subtype = BT_XBOX_XINPUT,
-        .fp_len = 16,
-        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34, 0x01, 0x32, 0x01, 0x35, 0x01, 0x39, 0x09, 0x01},
-    },
-    {
-        .dev_type = BT_XBOX,
-        .dev_subtype = BT_XBOX_XS,
-        .fp_len = 18,
-        .fp = {0x01, 0x30, 0x01, 0x31, 0x01, 0x32, 0x01, 0x35, 0x02, 0xC5, 0x02, 0xC4, 0x01, 0x39, 0x09, 0x01, 0x0C, 0xB2},
-    },
-    {
-        .dev_type = BT_SW,
-        .dev_subtype = BT_SUBTYPE_DEFAULT,
-        .fp_len = 12,
-        .fp = {0x09, 0x01, 0x01, 0x39, 0x01, 0x30, 0x01, 0x31, 0x01, 0x33, 0x01, 0x34},
-    },
-#endif
-};
 
 /* List of usage we don't care about */
 static uint32_t hid_usage_is_collection(uint8_t page, uint16_t usage) {
@@ -229,47 +195,8 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
     return type;
 }
 
-static void hid_device_fingerprint(struct hid_report *report, int32_t *type, uint32_t *subtype) {
-    uint8_t fp[REPORT_MAX_USAGE*2] = {0};
-    uint32_t fp_len = 0;
-
-    switch (hid_report_fingerprint(report)) {
-        case KB:
-        case MOUSE:
-        case RUMBLE:
-            *type = BT_HID_GENERIC;
-            *subtype = BT_SUBTYPE_DEFAULT;
-            return;
-        case PAD:
-            for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
-                if (report->usages[i].usage_page) {
-                    fp[fp_len++] = report->usages[i].usage_page;
-                    fp[fp_len++] = report->usages[i].usage;
-                }
-                else {
-                    break;
-                }
-            }
-            for (uint32_t i = 0; i < sizeof(hid_fp)/sizeof(hid_fp[0]); i++) {
-                if (fp_len == hid_fp[i].fp_len && memcmp(hid_fp[i].fp, fp, fp_len) == 0) {
-                    *type = hid_fp[i].dev_type;
-                    *subtype = hid_fp[i].dev_subtype;
-                    return;
-                }
-            }
-            *type = BT_HID_GENERIC;
-            *subtype = BT_SUBTYPE_DEFAULT;
-            return;
-    }
-    *type = BT_NONE;
-    *subtype = BT_SUBTYPE_DEFAULT;
-    return;
-}
-
 static void hid_process_report(struct bt_data *bt_data, struct hid_report *report) {
     int32_t report_type = REPORT_NONE;
-    int32_t dev_type = BT_NONE;
-    uint32_t dev_subtype = BT_SUBTYPE_DEFAULT;
 
     report_type = hid_report_fingerprint(report);
 #ifdef CONFIG_BLUERETRO_JSON_DBG
@@ -291,17 +218,12 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *repor
     }
 #endif
     if (report_type != REPORT_NONE && bt_data->reports[report_type].id == 0) {
-        hid_device_fingerprint(report, &dev_type, &dev_subtype);
         memcpy(&bt_data->reports[report_type], report, sizeof(bt_data->reports[0]));
 #ifdef CONFIG_BLUERETRO_JSON_DBG
-        printf(", \"report_type\": %ld, \"device_type\": %ld, \"device_subtype\": %ld",
-            report_type, dev_type, dev_subtype);
+        printf(", \"report_type\": %ld", report_type);
 #else
-        printf("rtype: %ld dtype: %ld sub: %ld", report_type, dev_type, dev_subtype);
+        printf("rtype: %ld", report_type);
 #endif
-        if (bt_data->base.pids->type <= BT_HID_GENERIC && dev_type > BT_HID_GENERIC) {
-            bt_type_update(bt_data->base.pids->id, dev_type, dev_subtype);
-        }
     }
 #ifdef CONFIG_BLUERETRO_JSON_DBG
     printf("}\n");
