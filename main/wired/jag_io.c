@@ -410,10 +410,6 @@ static void jag_ctrl_task(void) {
                     core0_stall_end();
                     lock = 0;
                     timeout = 0;
-                    for (uint32_t i = 0; i < 4; ++i) {
-                        ++wired_adapter.data[i].frame_cnt;
-                        jag_gen_turbo_mask(&wired_adapter.data[i]);
-                    }
                 }
             }
         }
@@ -429,6 +425,8 @@ static void jag_ctrl_task(void) {
             timeout = 0;
 
             if (row_idx[idx] == 3) {
+                ++wired_adapter.data[socket_idx[idx]].frame_cnt;
+                jag_gen_turbo_mask(&wired_adapter.data[socket_idx[idx]]);
                 bank[socket_idx[idx]]++;
                 if (bank[socket_idx[idx]] > 2) {
                     bank[socket_idx[idx]] = 0;
