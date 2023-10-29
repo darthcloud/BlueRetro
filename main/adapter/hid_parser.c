@@ -236,7 +236,6 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t *end = data + len;
     uint8_t *desc = data;
     uint8_t report_id = 0;
-    uint8_t report_cnt = 0;
     uint8_t tag_idx = 0;
     uint32_t report_bit_offset[HID_TAG_CNT] = {0};
     uint32_t report_usage_idx[HID_TAG_CNT] = {0};
@@ -494,7 +493,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 return;
         }
     }
-    if (report_cnt == 0 && wip_report[HID_IN]->id == 0) {
+    if (report_idx == 0 && wip_report[HID_IN]->id == 0) {
         report_id = 1;
         wip_report[HID_IN]->id = 1;
         wip_report[HID_OUT]->id = 1;
