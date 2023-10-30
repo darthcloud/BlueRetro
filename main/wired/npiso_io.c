@@ -48,6 +48,7 @@
 
 #define VTAP_PAL_PIN 16
 #define VTAP_MODE_PIN 27
+#define FC_ONLY_MODE_PIN 33
 
 enum {
     NPISO_CLK = 0,
@@ -70,12 +71,12 @@ enum {
     DEV_SNES_XBAND_KB,
 };
 
-static const uint8_t gpio_pins[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
+static uint8_t gpio_pins[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
     {P1_CLK_PIN, P1_SEL_PIN, P1_D0_PIN, P1_D1_PIN},
     {P2_CLK_PIN, P2_SEL_PIN, P2_D0_PIN, P2_D1_PIN},
 };
 
-static const uint32_t gpio_mask[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
+static uint32_t gpio_mask[NPISO_PORT_MAX][NPISO_PIN_MAX] = {
     {P1_CLK_MASK, P1_SEL_MASK, P1_D0_MASK, P1_D1_MASK},
     {P2_CLK_MASK, P2_SEL_MASK, P2_D0_MASK, P2_D1_MASK},
 };
@@ -619,6 +620,32 @@ void npiso_init(uint32_t package)
                         break;
                 }
             }
+        }
+    }
+
+    /* Famicom port only detect */
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << FC_ONLY_MODE_PIN;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config_iram(&io_conf);
+    if (!(GPIO.in1.val & (1U << (FC_ONLY_MODE_PIN - 32)))) {
+        if (dev_type[0] == DEV_FC_KB) {
+            gpio_pins[0][NPISO_CLK] = P2_CLK_PIN;
+            gpio_mask[0][NPISO_CLK] = P2_CLK_MASK;
+            gpio_pins[0][NPISO_D0] = P2_D0_PIN;
+            gpio_mask[0][NPISO_D0] = P2_D0_MASK;
+            gpio_pins[1][NPISO_CLK] = P1_CLK_PIN;
+            gpio_mask[1][NPISO_CLK] = P1_CLK_MASK;
+            gpio_pins[1][NPISO_D0] = P1_D1_PIN;
+            gpio_mask[1][NPISO_D0] = P1_D1_MASK;
+        }
+        else {
+            gpio_pins[0][NPISO_D0] = P1_D1_PIN;
+            gpio_mask[0][NPISO_D0] = P1_D1_MASK;
+            gpio_pins[1][NPISO_D0] = P2_D1_PIN;
+            gpio_mask[1][NPISO_D0] = P2_D1_MASK;
         }
     }
 
