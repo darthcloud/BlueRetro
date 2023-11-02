@@ -623,32 +623,6 @@ void npiso_init(uint32_t package)
         }
     }
 
-    /* Famicom port only detect */
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.pin_bit_mask = 1ULL << FC_ONLY_MODE_PIN;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config_iram(&io_conf);
-    if (!(GPIO.in1.val & (1U << (FC_ONLY_MODE_PIN - 32)))) {
-        if (dev_type[0] == DEV_FC_KB) {
-            gpio_pins[0][NPISO_CLK] = P2_CLK_PIN;
-            gpio_mask[0][NPISO_CLK] = P2_CLK_MASK;
-            gpio_pins[0][NPISO_D0] = P2_D0_PIN;
-            gpio_mask[0][NPISO_D0] = P2_D0_MASK;
-            gpio_pins[1][NPISO_CLK] = P1_CLK_PIN;
-            gpio_mask[1][NPISO_CLK] = P1_CLK_MASK;
-            gpio_pins[1][NPISO_D0] = P1_D1_PIN;
-            gpio_mask[1][NPISO_D0] = P1_D1_MASK;
-        }
-        else {
-            gpio_pins[0][NPISO_D0] = P1_D1_PIN;
-            gpio_mask[0][NPISO_D0] = P1_D1_MASK;
-            gpio_pins[1][NPISO_D0] = P2_D1_PIN;
-            gpio_mask[1][NPISO_D0] = P2_D1_MASK;
-        }
-    }
-
     /* Latch */
     io_conf.intr_type = GPIO_INTR_POSEDGE;
     io_conf.pin_bit_mask = 1ULL << NPISO_LATCH_PIN;
@@ -676,16 +650,15 @@ void npiso_init(uint32_t package)
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
             gpio_config_iram(&io_conf);
-            set_data(i, j &  0x1, 1);
+            set_data(i, j & 0x1, 1);
         }
     }
 
     /* D2, D3, D4 */
-    if (dev_type[0] == DEV_FC_KB) {
-        for (uint32_t i = 0; i < sizeof(kb_gpio_pins); i++) {
-            io_conf.pin_bit_mask = 1ULL << kb_gpio_pins[i];
-            gpio_config_iram(&io_conf);
-        }
+    for (uint32_t i = 0; i < sizeof(kb_gpio_pins); i++) {
+        io_conf.pin_bit_mask = 1ULL << kb_gpio_pins[i];
+        gpio_config_iram(&io_conf);
+        GPIO.out_w1ts = 1U << kb_gpio_pins[i];
     }
 
     /* P1 Select */
@@ -720,6 +693,32 @@ void npiso_init(uint32_t package)
         io_conf.pin_bit_mask = 1ULL << VTAP_MODE_PIN;
         gpio_config_iram(&io_conf);
         gpio_set_level_iram(VTAP_MODE_PIN, 1);
+    }
+
+    /* Famicom port only detect */
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << FC_ONLY_MODE_PIN;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config_iram(&io_conf);
+    if (!(GPIO.in1.val & (1U << (FC_ONLY_MODE_PIN - 32)))) {
+        if (dev_type[0] == DEV_FC_KB) {
+            gpio_pins[0][NPISO_CLK] = P2_CLK_PIN;
+            gpio_mask[0][NPISO_CLK] = P2_CLK_MASK;
+            gpio_pins[0][NPISO_D0] = P2_D0_PIN;
+            gpio_mask[0][NPISO_D0] = P2_D0_MASK;
+            gpio_pins[1][NPISO_CLK] = P1_CLK_PIN;
+            gpio_mask[1][NPISO_CLK] = P1_CLK_MASK;
+            gpio_pins[1][NPISO_D0] = P1_D1_PIN;
+            gpio_mask[1][NPISO_D0] = P1_D1_MASK;
+        }
+        else {
+            gpio_pins[0][NPISO_D0] = P1_D1_PIN;
+            gpio_mask[0][NPISO_D0] = P1_D1_MASK;
+            gpio_pins[1][NPISO_D0] = P2_D1_PIN;
+            gpio_mask[1][NPISO_D0] = P2_D1_MASK;
+        }
     }
 
     if (dev_type[1] == DEV_SFC_SNES_MULTITAP) {
