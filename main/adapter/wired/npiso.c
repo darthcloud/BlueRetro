@@ -175,7 +175,7 @@ static const struct npiso_kb_key_to_matrix npiso_kb_key_to_matrix[KBM_MAX] = {
  /* KB_F1, KB_F2, KB_F3, KB_F4, KB_F5, KB_F6, KB_F7, KB_F8 */
     {7, 0, P2_D1_MASK}, {6, 0, P2_D1_MASK}, {5, 0, P2_D1_MASK}, {4, 0, P2_D1_MASK}, {3, 0, P2_D1_MASK}, {2, 0, P2_D1_MASK}, {1, 0, P2_D1_MASK}, {0, 0, P2_D1_MASK},
  /* KB_F9, KB_F10, KB_F11, KB_F12, KB_PSCREEN, KB_SCROLL, KB_PAUSE, KB_INSERT */
-    {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {8, 1, P2_D4_MASK},
+    {0, 0, P2_D1_MASK | P2_D2_MASK | P2_D3_MASK | P2_D4_MASK}, {0, 1, P2_D1_MASK | P2_D2_MASK | P2_D3_MASK | P2_D4_MASK}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {8, 1, P2_D4_MASK},
  /* KB_HOME, KB_PAGEUP, KB_DEL, KB_END, KB_PAGEDOWN, KB_NUMLOCK, KB_KP_DIV, KB_KP_MULTI */
     {8, 0, P2_D1_MASK}, {0, 0, 0}, {8, 1, P2_D3_MASK}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0},
 

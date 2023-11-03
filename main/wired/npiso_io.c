@@ -720,6 +720,11 @@ void npiso_init(uint32_t package)
             gpio_mask[1][NPISO_D0] = P2_D1_MASK;
         }
     }
+    else {
+        if (dev_type[0] == DEV_FC_KB) {
+            gpio_mask[0][NPISO_D0] |= P1_D1_MASK;
+        }
+    }
 
     if (dev_type[1] == DEV_SFC_SNES_MULTITAP) {
         intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_sfc_snes_5p_isr);
