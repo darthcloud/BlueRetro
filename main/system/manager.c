@@ -149,7 +149,12 @@ static inline void set_power_off(uint32_t state) {
 }
 
 static inline void set_port_led(uint32_t index, uint32_t state) {
-    gpio_set_level(led_list[index], state);
+    if (state) {
+        esp_rom_gpio_connect_out_signal(led_list[index], ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_1, 0, 0);
+    }
+    else {
+        esp_rom_gpio_connect_out_signal(led_list[index], ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_2, 0, 0);
+    }
 }
 
 static inline uint32_t get_port_led_pin(uint32_t index) {
@@ -176,12 +181,6 @@ static void internal_flag_init(void) {
     }
     else {
         printf("# %s: Internal adapter\n", __FUNCTION__);
-    }
-}
-
-static void port_led_reset(uint32_t pin) {
-    if (pin) {
-        gpio_set_direction(pin, GPIO_MODE_OUTPUT);
     }
 }
 
@@ -309,8 +308,6 @@ static void wired_port_hdl(void) {
 
         if (!bt_ready && !err_led_set) {
             uint8_t new_led = (device->ids.out_idx < port_cnt) ? get_port_led_pin(device->ids.out_idx) : 0;
-
-            port_led_reset(current_pulse_led);
 
             if (bt_hci_get_inquiry()) {
                 port_led_pulse(new_led);
@@ -664,6 +661,9 @@ void sys_mgr_init(uint32_t package) {
         gpio_set_level(led_list[i], 0);
         io_conf.pin_bit_mask = 1ULL << led_list[i];
         gpio_config(&io_conf);
+        /* Can't use GPIO mode on port LED as some wired driver overwrite whole GPIO port */
+        /* Use unused LEDC channel 2 to force output low */
+        esp_rom_gpio_connect_out_signal(led_list[i], ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_2, 0, 0);
     }
 
 #ifdef CONFIG_BLUERETRO_HW2
