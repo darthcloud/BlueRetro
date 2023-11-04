@@ -15,6 +15,7 @@
 
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
+    BT_ATT_HID_APPEARANCE,
     BT_ATT_HID_DISCOVERY,
     BT_ATT_HID_CHAR_PROP,
     BT_ATT_HID_REPORT_MAP,
@@ -109,6 +110,11 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_hid_set_type_flags_from_name(device, hid_data->device_name);
                     printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
 
+                    device->hid_state = BT_ATT_HID_APPEARANCE;
+                    bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_GAP_APPEARANCE);
+                    break;
+                case BT_ATT_HID_APPEARANCE:
+                    printf("# Failed to get device appearance\n");
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
                     break;
@@ -271,6 +277,15 @@ find_info_rsp_end:
                     bt_hid_set_type_flags_from_name(device, hid_data->device_name);
                     printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
 
+                    device->hid_state = BT_ATT_HID_APPEARANCE;
+                    bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_GAP_APPEARANCE);
+                    break;
+                }
+                case BT_ATT_HID_APPEARANCE:
+                {
+                    uint16_t appearance = *(uint16_t *)read_type_rsp->data[0].value;
+
+                    printf("# dev: %ld appearance: %03X:%02X\n", device->ids.id, appearance >> 6, appearance & 0x3F);
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
                     break;
@@ -399,8 +414,9 @@ find_info_rsp_end:
                     bt_hid_set_type_flags_from_name(device, hid_data->device_name);
                     printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
 
-                    device->hid_state = BT_ATT_HID_DISCOVERY;
-                    bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
+
+                    device->hid_state = BT_ATT_HID_APPEARANCE;
+                    bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_GAP_APPEARANCE);
                     break;
                 }
                 case BT_ATT_HID_REPORT_MAP:
