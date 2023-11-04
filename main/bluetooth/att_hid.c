@@ -50,6 +50,8 @@ struct bt_att_hid_report {
 };
 
 struct bt_att_hid {
+    char device_name[32];
+    uint16_t dev_name_hdl;
     uint16_t start_hdl;
     uint16_t end_hdl;
     uint16_t map_hdl;
@@ -59,7 +61,7 @@ struct bt_att_hid {
     struct bt_att_hid_report reports[HID_MAX_REPORT];
 };
 
-static struct bt_att_hid att_hid[7] = {0};
+static struct bt_att_hid att_hid[BT_MAX_DEV] = {0};
 
 static uint32_t bt_att_get_report_index(struct bt_att_hid *hid_data, uint8_t report_id) {
     for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
@@ -102,16 +104,27 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_error_rsp *error_rsp = (struct bt_att_error_rsp *)bt_hci_acl_pkt->att_data;
 
-            switch (error_rsp->request) {
-                case BT_ATT_OP_READ_GROUP_REQ:
-                    bt_att_cmd_find_info_req(device->acl_handle, hid_data->start_hdl, hid_data->end_hdl);
+            switch (device->hid_state) {
+                case BT_ATT_HID_DEVICE_NAME:
+                    bt_hid_set_type_flags_from_name(device, hid_data->device_name);
+                    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
+
+                    device->hid_state = BT_ATT_HID_DISCOVERY;
+                    bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
                     break;
-                case BT_ATT_OP_FIND_INFO_REQ:
-                    device->hid_state = BT_ATT_HID_CHAR_PROP;
-                    bt_att_cmd_read_type_req_uuid16(device->acl_handle,
-                        hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
+                case BT_ATT_HID_DISCOVERY:
+                    switch (error_rsp->request) {
+                        case BT_ATT_OP_READ_GROUP_REQ:
+                            bt_att_cmd_find_info_req(device->acl_handle, hid_data->start_hdl, hid_data->end_hdl);
+                            break;
+                        case BT_ATT_OP_FIND_INFO_REQ:
+                            device->hid_state = BT_ATT_HID_CHAR_PROP;
+                            bt_att_cmd_read_type_req_uuid16(device->acl_handle,
+                                hid_data->start_hdl, hid_data->end_hdl, BT_UUID_GATT_CHRC);
+                            break;
+                    }
                     break;
-                case BT_ATT_OP_READ_TYPE_REQ:
+                case BT_ATT_HID_CHAR_PROP:
                     device->hid_state = BT_ATT_HID_REPORT_MAP;
                     bt_att_cmd_read_req(device->acl_handle, hid_data->map_hdl);
                     break;
@@ -236,14 +249,27 @@ find_info_rsp_end:
             switch (device->hid_state) {
                 case BT_ATT_HID_DEVICE_NAME:
                 {
-                    char device_name[32] = {0};
+                    char tmp[32] = {0};
+                    uint32_t name_len = rsp_len + strlen(hid_data->device_name);
 
-                    if (rsp_len > 31) {
-                        rsp_len = 31;
+                    hid_data->dev_name_hdl = read_type_rsp->data[0].handle;
+
+                    if (name_len < sizeof(hid_data->device_name)) {
+                        memcpy(tmp, read_type_rsp->data[0].value, rsp_len);
+                        strcat(hid_data->device_name, tmp);
+                        if (att_len == device->mtu) {
+                            bt_att_cmd_read_blob_req(device->acl_handle, hid_data->dev_name_hdl, strlen(hid_data->device_name));
+                            break;
+                        }
                     }
-                    memcpy(device_name, read_type_rsp->data[0].value, rsp_len);
-                    bt_hid_set_type_flags_from_name(device, device_name);
-                    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, device_name);
+                    else {
+                        memcpy(tmp, read_type_rsp->data[0].value,
+                            sizeof(hid_data->device_name) - strlen(hid_data->device_name) - 1);
+                        strcat(hid_data->device_name, tmp);
+                    }
+
+                    bt_hid_set_type_flags_from_name(device, hid_data->device_name);
+                    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
 
                     device->hid_state = BT_ATT_HID_DISCOVERY;
                     bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
@@ -351,6 +377,32 @@ find_info_rsp_end:
             struct bt_att_read_blob_rsp *read_blob_rsp = (struct bt_att_read_blob_rsp *)bt_hci_acl_pkt->att_data;
 
             switch (device->hid_state) {
+                case BT_ATT_HID_DEVICE_NAME:
+                {
+                    char tmp[32] = {0};
+                    uint32_t name_len = att_len - 1 + strlen(hid_data->device_name);
+
+                    if (name_len < sizeof(hid_data->device_name)) {
+                        memcpy(tmp, read_blob_rsp->value, att_len - 1);
+                        strcat(hid_data->device_name, tmp);
+                        if (att_len == device->mtu) {
+                            bt_att_cmd_read_blob_req(device->acl_handle, hid_data->dev_name_hdl, strlen(hid_data->device_name));
+                            break;
+                        }
+                    }
+                    else {
+                        memcpy(tmp, read_blob_rsp->value,
+                            sizeof(hid_data->device_name) - strlen(hid_data->device_name) - 1);
+                        strcat(hid_data->device_name, tmp);
+                    }
+
+                    bt_hid_set_type_flags_from_name(device, hid_data->device_name);
+                    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
+
+                    device->hid_state = BT_ATT_HID_DISCOVERY;
+                    bt_att_cmd_read_group_req_uuid16(device->acl_handle, 0x0001, BT_UUID_GATT_PRIMARY);
+                    break;
+                }
                 case BT_ATT_HID_REPORT_MAP:
                     if (bt_data->base.sdp_data == NULL) {
                         bt_data->base.sdp_data = malloc(BT_SDP_DATA_SIZE);
