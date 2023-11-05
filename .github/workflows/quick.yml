@@ -1,11 +1,11 @@
-name: Quick
+name: quick
 on:
   workflow_dispatch:
     inputs:
       hw_version:
         description: 'Hardware version'
         required: true
-        default: 'hw2'
+        default: 'hw1'
       br_config:
         description: 'BlueRetro config'
         required: true
@@ -47,7 +47,7 @@ jobs:
         echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version }} ${{ github.event.inputs.br_config }}" | cut -c -31 > version.txt
         cat version.txt
         cp configs/${{ github.event.inputs.hw_version }}/${{ github.event.inputs.br_config }} sdkconfig
-        idf.py build
+        BR_HW=_${{ github.event.inputs.hw_version }} BR_SYS=_${{ github.event.inputs.br_config }} idf.py build
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact
@@ -57,5 +57,5 @@ jobs:
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
-          BlueRetro/build/BlueRetro.bin
+          BlueRetro/build/BlueRetro*.bin
         if-no-files-found: error

@@ -47,7 +47,7 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
-        for file in configs/${{ github.event.inputs.hw_version || 'hw1' }}/*; do echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version || 'hw1' }} $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/${{ github.event.inputs.hw_version || 'hw1' }}/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        for file in configs/${{ github.event.inputs.hw_version || 'hw1' }}/*; do echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version || 'hw1' }} $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/${{ github.event.inputs.hw_version || 'hw1' }}/$(basename $file) sdkconfig; BR_HW=_${{ github.event.inputs.hw_version || 'hw1' }} BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact

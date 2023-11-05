@@ -1,4 +1,4 @@
-name: CI
+name: build
 on:
   push:
     branches: [ master ]
@@ -39,7 +39,8 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
-        for file in configs/hw1/*; do echo "$(git describe --always --tags --dirty) hw1 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw1/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        rm -fr build
+        for file in configs/hw1/*; do echo "$(git describe --always --tags --dirty) hw1 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw1/$(basename $file) sdkconfig; BR_HW=_hw1 BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact HW1
@@ -55,7 +56,8 @@ jobs:
       working-directory: ./BlueRetro
       run: |
         . ../esp-idf/export.sh
-        for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; idf.py build; mv build/BlueRetro.bin build/BlueRetro_$(basename $file).bin; done
+        rm -fr build
+        for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; BR_HW=_hw2 BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Upload artifact HW2
