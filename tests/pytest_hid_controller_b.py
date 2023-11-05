@@ -5,7 +5,7 @@ from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from device_data.test_data_generator import btns_generic_to_wired_test_data
 from bit_helper import bit, swap16
-from device_data.br import bt_type, bt_subtype, system, report_type, axis, dev_mode, hat_to_ld_btns
+from device_data.br import bt_conn_type, system, report_type, axis, dev_mode, hat_to_ld_btns
 from device_data.hid import hid_btns_mask
 from device_data.gc import gc_axes
 from device_data.saturn import saturn, saturn_btns_mask
@@ -189,7 +189,7 @@ def test_hid_controller_b_axes_default_scaling(blueretro):
             assert wired['axes'][ax] == pytest.approx(axes[ax]['wired'], 0.1)
 
 
-@pytest.mark.parametrize('blueretro', [[system.SATURN, dev_mode.PAD_ALT]], indirect=True)
+@pytest.mark.parametrize('blueretro', [[system.SATURN, dev_mode.PAD_ALT, bt_conn_type.BT_BR_EDR]], indirect=True)
 def test_hid_controller_b_saturn_buttons_mapping(blueretro):
     ''' Press each buttons and check if Saturn mapping is right. '''
     blueretro.send_name(DEVICE_NAME)
@@ -227,7 +227,7 @@ def test_hid_controller_b_saturn_buttons_mapping(blueretro):
         assert wired['btns'] == wired_btns
 
 
-@pytest.mark.parametrize('blueretro', [[system.SATURN, dev_mode.PAD_ALT]], indirect=True)
+@pytest.mark.parametrize('blueretro', [[system.SATURN, dev_mode.PAD_ALT, bt_conn_type.BT_BR_EDR]], indirect=True)
 def test_hid_controller_b_saturn_triggers_mapping(blueretro):
     ''' Press each buttons and check if Saturn triggers mapping is right. '''
     blueretro.send_name(DEVICE_NAME)

@@ -100,6 +100,9 @@ static void adapter_debug_task(void *arg) {
                             bt_host_reset_dev(device);
                             device->ids.type = BT_HID_GENERIC;
                             atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
+                            if (pkt->data_len && pkt->data[0]) {
+                                atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
+                            }
                             printf("# DBG handle: %d dev: %ld type: %ld\n", pkt->handle, device->ids.id, device->ids.type);
                         }
                     }

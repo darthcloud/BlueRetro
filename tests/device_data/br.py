@@ -3,6 +3,12 @@ from enum import IntEnum, auto
 from bit_helper import bit
 
 
+class bt_conn_type(IntEnum):
+    ''' BT connection type. '''
+    BT_BR_EDR = 0
+    BT_LE = auto()
+
+
 class bt_type(IntEnum):
     ''' BT device type ID. '''
     NONE = -1

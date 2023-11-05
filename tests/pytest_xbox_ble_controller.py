@@ -1,21 +1,23 @@
 ''' Tests for the Xbox One S & Series X|S controllers with BLE firmware. '''
+import pytest
 from itertools import islice
 from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap16, swap24
 from device_data.xbox import xbox_ble_btns_mask, xbox_axes
-from device_data.br import axis, hat_to_ld_btns
+from device_data.br import system, dev_mode, bt_conn_type, axis, hat_to_ld_btns
 from device_data.gc import gc_axes
 
 
-DEVICE_NAME = 'Xbox Wireless Contr'
+DEVICE_NAME = 'Xbox Wireless Controller'
 
 
+@pytest.mark.parametrize('blueretro', [[system.GC, dev_mode.PAD, bt_conn_type.BT_LE]], indirect=True)
 def test_xbox_ble_controller_default_buttons_mapping(blueretro):
     ''' Press each buttons and check if default mapping is right. '''
     # Set device name
     blueretro.send_name(DEVICE_NAME)
-    blueretro.expect('# dev: 0 type: 3:9 Xbox Wireless Contr')
+    blueretro.expect('# bt_type_update: dev: 0 type: 3 subtype: 9')
 
     # Init adapter with a few neutral state report
     for _ in range(2):
@@ -63,11 +65,12 @@ def test_xbox_ble_controller_default_buttons_mapping(blueretro):
         assert br_generic['btns'][0] == br_btns
 
 
+@pytest.mark.parametrize('blueretro', [[system.GC, dev_mode.PAD, bt_conn_type.BT_LE]], indirect=True)
 def test_xbox_ble_controller_axes_default_scaling(blueretro):
     ''' Set the various axes and check if the scaling is right. '''
     # Set device name
     blueretro.send_name(DEVICE_NAME)
-    blueretro.expect('# dev: 0 type: 3:9 Xbox Wireless Contr')
+    blueretro.expect('# bt_type_update: dev: 0 type: 3 subtype: 9')
 
     # Init adapter with a few neutral state report
     for _ in range(2):

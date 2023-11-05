@@ -5,7 +5,7 @@ from device_data.test_data_generator import btns_generic_to_wired_test_data
 from bit_helper import swap32
 from device_data.hid import hid_btns_mask
 from device_data.n64 import n64_btns_mask
-from device_data.br import system, dev_mode
+from device_data.br import system, dev_mode, bt_conn_type
 
 
 DEVICE_NAME = 'HID Generic'
@@ -57,7 +57,7 @@ def test_hid_controller_a_default_buttons_mapping(blueretro):
         assert br_generic['btns'][0] == br_btns
 
 
-@pytest.mark.parametrize('blueretro', [[system.N64, dev_mode.PAD]], indirect=True)
+@pytest.mark.parametrize('blueretro', [[system.N64, dev_mode.PAD, bt_conn_type.BT_BR_EDR]], indirect=True)
 def test_hid_controller_a_n64_buttons_mapping(blueretro):
     ''' Press each buttons and check if N64 mapping is right. '''
     blueretro.send_name(DEVICE_NAME)
