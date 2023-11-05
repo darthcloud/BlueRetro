@@ -1104,20 +1104,10 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     len = *data++;
                     type = *data;
                     switch (type) {
-                        case BT_DATA_UUID16_SOME:
-                        case BT_DATA_UUID16_ALL:
-                            value = *(uint16_t *)&data[1];
-                            if (value == BT_UUID_HIDS) {
-                                goto connect;
-                            }
-                            else {
-                                goto skip;
-                            }
-                            break;
                         case BT_DATA_GAP_APPEARANCE:
                             /* HID category */
-                            value = *(uint16_t *)&data[1] & 0xFFC0;
-                            if (value == 0x03C0) {
+                            value = *(uint16_t *)&data[1];
+                            if ((value >> 6) == 0x00F && (value & 0x3F) > 0 && (value & 0x3F) < 5) {
                                 goto connect;
                             }
                             else {
