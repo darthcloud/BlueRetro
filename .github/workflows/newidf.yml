@@ -50,6 +50,11 @@ jobs:
         for file in configs/${{ github.event.inputs.hw_version || 'hw1' }}/*; do echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version || 'hw1' }} $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/${{ github.event.inputs.hw_version || 'hw1' }}/$(basename $file) sdkconfig; BR_HW=_${{ github.event.inputs.hw_version || 'hw1' }} BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
+    - name: Copy OTA initial binary
+      working-directory: ./BlueRetro/build
+      run: |
+        mkdir ota
+        mv ota_data_initial.bin ota/
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
@@ -57,5 +62,6 @@ jobs:
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
+          BlueRetro/build/ota/ota_data_initial.bin
           BlueRetro/build/BlueRetro*.bin
         if-no-files-found: error
