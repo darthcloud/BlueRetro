@@ -43,6 +43,11 @@ jobs:
         for file in configs/hw1/*; do echo "$(git describe --always --tags --dirty) hw1 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw1/$(basename $file) sdkconfig; BR_HW=_hw1 BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
+    - name: Copy OTA initial binary
+      working-directory: ./BlueRetro/build
+      run: |
+        mkdir ota
+        mv ota_data_initial.bin ota/
     - name: Upload artifact HW1
       uses: actions/upload-artifact@v3
       with:
@@ -60,7 +65,7 @@ jobs:
         for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; BR_HW=_hw2 BR_SYS=_$(basename $file) idf.py reconfigure build; done
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
-    - name: Copy OTA initial binary
+    - name: Copy OTA initial binary HW2
       working-directory: ./BlueRetro/build
       run: |
         mkdir ota
