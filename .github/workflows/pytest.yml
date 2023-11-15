@@ -39,9 +39,9 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
-        echo "$(git describe --always --tags --dirty) hw1 dbg_qemu" | cut -c -31 > version.txt
+        echo "$(git describe --always --tags --dirty) dbg qemu" | cut -c -31 > version.txt
         cat version.txt
-        cp configs/hw1/dbg_qemu sdkconfig
+        cp configs/dbg/qemu sdkconfig
         idf.py build
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
