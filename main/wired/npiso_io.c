@@ -719,6 +719,8 @@ void npiso_init(uint32_t package)
             gpio_pins[1][NPISO_D0] = P2_D1_PIN;
             gpio_mask[1][NPISO_D0] = P2_D1_MASK;
         }
+        fs_id[0] = 0xDF;
+        fs_id[1] = 0xEF;
     }
     else {
         if (dev_type[0] == DEV_FC_KB) {
