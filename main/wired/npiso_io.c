@@ -703,19 +703,9 @@ void npiso_init(uint32_t package)
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config_iram(&io_conf);
     if (!(GPIO.in1.val & (1U << (FC_ONLY_MODE_PIN - 32)))) {
-        if (dev_type[0] == DEV_FC_KB) {
-            gpio_pins[0][NPISO_CLK] = P2_CLK_PIN;
-            gpio_mask[0][NPISO_CLK] = P2_CLK_MASK;
-            gpio_pins[0][NPISO_D0] = P2_D0_PIN;
-            gpio_mask[0][NPISO_D0] = P2_D0_MASK;
-            gpio_pins[1][NPISO_CLK] = P1_CLK_PIN;
-            gpio_mask[1][NPISO_CLK] = P1_CLK_MASK;
-            gpio_pins[1][NPISO_D0] = P1_D1_PIN;
-            gpio_mask[1][NPISO_D0] = P1_D1_MASK;
-        }
-        else {
-            gpio_pins[0][NPISO_D0] = P1_D1_PIN;
-            gpio_mask[0][NPISO_D0] = P1_D1_MASK;
+        gpio_pins[0][NPISO_D0] = P1_D1_PIN;
+        gpio_mask[0][NPISO_D0] = P1_D1_MASK;
+        if (!(dev_type[0] == DEV_FC_KB)) {
             gpio_pins[1][NPISO_D0] = P2_D1_PIN;
             gpio_mask[1][NPISO_D0] = P2_D1_MASK;
         }
