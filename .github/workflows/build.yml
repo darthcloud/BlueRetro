@@ -8,6 +8,22 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        hw_version: [hw1, hw2]
+        br_config:
+          [3do, cdi, dreamcast, gamecube, gbahd, genesis, jaguar, jvs_arcade, n64, nes,
+          parallel_1p, parallel_1p_3v3, parallel_2p, parallel_2p_3v3, pc_engine, pcfx,
+          playstation, saturn, snes, universal, virtualboy, wii_extension]
+        include:
+          - hw_version: dbg
+            br_config: pad_test
+          - hw_version: dbg
+            br_config: qemu
+          - hw_version: dbg
+            br_config: qemu_bt_trace_replay
+          - hw_version: dbg
+            br_config: qemu_bt_trace_replay_test
     runs-on: ubuntu-20.04
 
     steps:
@@ -34,13 +50,16 @@ jobs:
       run: sh ./install.sh
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
-    - name: Build HW1 with ESP-IDF
+    - name: Build with ESP-IDF
       working-directory: ./BlueRetro
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
         rm -fr build
-        for file in configs/hw1/*; do echo "$(git describe --always --tags --dirty) hw1 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw1/$(basename $file) sdkconfig; BR_HW=_hw1 BR_SYS=_$(basename $file) idf.py reconfigure build; done
+        echo "$(git describe --always --tags --dirty) ${{ matrix.hw_version }} ${{ matrix.br_config }}" | cut -c -31 > version.txt
+        cat version.txt
+        cp configs/${{ matrix.hw_version }}/${{ matrix.br_config }} sdkconfig
+        BR_HW=_${{ matrix.hw_version }} BR_SYS=_${{ matrix.br_config }} idf.py reconfigure build
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Copy OTA initial binary
@@ -48,32 +67,10 @@ jobs:
       run: |
         mkdir ota
         mv ota_data_initial.bin ota/
-    - name: Upload artifact HW1
+    - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.br_version }}_hw1
-        path: |
-          BlueRetro/build/partition_table/partition-table.bin
-          BlueRetro/build/bootloader/bootloader.bin
-          BlueRetro/build/BlueRetro*.bin
-        if-no-files-found: error
-    - name: Build HW2 with ESP-IDF
-      working-directory: ./BlueRetro
-      run: |
-        . ../esp-idf/export.sh
-        rm -fr build
-        for file in configs/hw2/*; do echo "$(git describe --always --tags --dirty) hw2 $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/hw2/$(basename $file) sdkconfig; BR_HW=_hw2 BR_SYS=_$(basename $file) idf.py reconfigure build; done
-      env:
-        IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
-    - name: Copy OTA initial binary HW2
-      working-directory: ./BlueRetro/build
-      run: |
-        mkdir ota
-        mv ota_data_initial.bin ota/
-    - name: Upload artifact HW2
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.br_version }}_hw2
+        name: ${{ env.br_version }}_${{ matrix.hw_version }}
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin

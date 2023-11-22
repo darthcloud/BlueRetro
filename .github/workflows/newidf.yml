@@ -1,16 +1,27 @@
 name: new_idf
 on:
   workflow_dispatch:
-    inputs:
-      hw_version:
-        description: 'hardware version'
-        required: true
-        default: 'hw1'
   schedule:
     - cron:  '0 0 * * 0'
 
 jobs:
   build:
+    strategy:
+      matrix:
+        hw_version: [hw1, hw2]
+        br_config:
+          [3do, cdi, dreamcast, gamecube, gbahd, genesis, jaguar, jvs_arcade, n64, nes,
+          parallel_1p, parallel_1p_3v3, parallel_2p, parallel_2p_3v3, pc_engine, pcfx,
+          playstation, saturn, snes, universal, virtualboy, wii_extension]
+        include:
+          - hw_version: dbg
+            br_config: pad_test
+          - hw_version: dbg
+            br_config: qemu
+          - hw_version: dbg
+            br_config: qemu_bt_trace_replay
+          - hw_version: dbg
+            br_config: qemu_bt_trace_replay_test
     runs-on: ubuntu-20.04
 
     steps:
@@ -47,7 +58,11 @@ jobs:
       run: |
         . ../esp-idf/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
-        for file in configs/${{ github.event.inputs.hw_version || 'hw1' }}/*; do echo "$(git describe --always --tags --dirty) ${{ github.event.inputs.hw_version || 'hw1' }} $(basename $file)" | cut -c -31 > version.txt; cat version.txt; cp configs/${{ github.event.inputs.hw_version || 'hw1' }}/$(basename $file) sdkconfig; BR_HW=_${{ github.event.inputs.hw_version || 'hw1' }} BR_SYS=_$(basename $file) idf.py reconfigure build; done
+        rm -fr build
+        echo "$(git describe --always --tags --dirty) ${{ matrix.hw_version }} ${{ matrix.br_config }}" | cut -c -31 > version.txt
+        cat version.txt
+        cp configs/${{ matrix.hw_version }}/${{ matrix.br_config }} sdkconfig
+        BR_HW=_${{ matrix.hw_version }} BR_SYS=_${{ matrix.br_config }} idf.py reconfigure build
       env:
         IDF_TOOLS_PATH : "/home/runner/work/BlueRetro/BlueRetro/BlueRetroRoot/"
     - name: Copy OTA initial binary
@@ -58,7 +73,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.br_version }}_${{ github.event.inputs.hw_version || 'hw1' }}_newidf
+        name: ${{ env.br_version }}_${{ matrix.hw_version }}
         path: |
           BlueRetro/build/partition_table/partition-table.bin
           BlueRetro/build/bootloader/bootloader.bin
