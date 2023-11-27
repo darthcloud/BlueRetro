@@ -76,5 +76,7 @@ Thanks to all sponsors!!
   https://github.com/nostalgic-indulgences/BlueRetro_Internal_Installation
 * BlueRetro latency test by [GamingNJncos](https://twitter.com/GamingNJncos): Documentation on how to run BlueRetro latency test\
   https://github.com/GamingNJncos/BLE-3D-Saturn-Public/tree/main/BlueRetro_Latency_Testing
+* BR4N64 by [TharathielCB](https://github.com/TharathielCB): Internal BlueRetro Flex-PCB for Nintendo 64\
+  https://github.com/TharathielCB/BR4N64
 
 <br><p align="center"><img src="https://cdn.hackaday.io/images/4560691598833898038.png" height="200"/></p>
