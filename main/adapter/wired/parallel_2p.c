@@ -39,11 +39,6 @@
 #define P2_LD_LEFT P2_L_PIN
 #define P2_LD_RIGHT P2_R_PIN
 
-struct para_2p_map {
-    uint32_t buttons;
-    uint32_t buttons_high;
-} __packed;
-
 static const uint32_t para_2p_mask[4] = {0x00050F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t para_2p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t para_2p_btns_mask[2][32] = {

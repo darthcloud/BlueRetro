@@ -7,10 +7,10 @@
 #include "adapter/config.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
-#include "parallel_1p.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 #include "wired/sea_io.h"
+#include "sea.h"
 
 #define P1_LD_UP 19
 #define P1_LD_DOWN 22
@@ -25,22 +25,6 @@
 #define P1_MT 33
 #define P1_LM 15
 #define P1_RM 14
-
-enum {
-    GBAHD_B = 0,
-    GBAHD_A,
-    GBAHD_LD_LEFT,
-    GBAHD_LD_RIGHT,
-    GBAHD_LD_DOWN,
-    GBAHD_LD_UP,
-    GBAHD_OSD,
-};
-
-struct sea_map {
-    uint32_t buttons;
-    uint32_t buttons_high;
-    uint8_t buttons_osd;
-} __packed;
 
 static const uint32_t sea_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t sea_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};

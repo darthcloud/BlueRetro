@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2023, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stddef.h>
+#include "soc/gpio_struct.h"
+#include "zephyr/types.h"
+#include "tools/util.h"
 #include "npiso.h"
 #include "cdi.h"
 #include "genesis.h"
@@ -159,18 +162,40 @@ void wired_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct ge
 
 void wired_para_turbo_mask_hdlr(void) {
     if (wired_adapter.system_id == PARALLEL_1P || wired_adapter.system_id == PARALLEL_1P_OD) {
+        struct para_1p_map *map = (struct para_1p_map *)wired_adapter.data[0].output;
+        struct para_1p_map *turbo_map_mask = (struct para_1p_map *)wired_adapter.data[0].output_mask;
+
         ++wired_adapter.data[0].frame_cnt;
         para_1p_gen_turbo_mask(&wired_adapter.data[0]);
+
+        GPIO.out = map->buttons | turbo_map_mask->buttons;
+        GPIO.out1.val = map->buttons_high | turbo_map_mask->buttons_high;
     }
     else if (wired_adapter.system_id == PARALLEL_2P || wired_adapter.system_id == PARALLEL_2P_OD) {
+        struct para_2p_map *map1 = (struct para_2p_map *)wired_adapter.data[0].output;
+        struct para_2p_map *map2 = (struct para_2p_map *)wired_adapter.data[1].output;
+        struct para_2p_map *map1_mask = (struct para_2p_map *)wired_adapter.data[0].output_mask;
+        struct para_2p_map *map2_mask = (struct para_2p_map *)wired_adapter.data[1].output_mask;
+
         ++wired_adapter.data[0].frame_cnt;
         para_2p_gen_turbo_mask(0, &wired_adapter.data[0]);
         ++wired_adapter.data[1].frame_cnt;
         para_2p_gen_turbo_mask(1, &wired_adapter.data[1]);
+
+        GPIO.out = (map1->buttons | map1_mask->buttons) & (map2->buttons | map2_mask->buttons);
+        GPIO.out1.val = (map1->buttons_high | map1_mask->buttons_high) & (map2->buttons_high | map2_mask->buttons_high);
     }
     else if (wired_adapter.system_id == SEA_BOARD) {
+        struct sea_map *map = (struct sea_map *)wired_adapter.data[0].output;
+        struct sea_map *turbo_map_mask = (struct sea_map *)wired_adapter.data[0].output_mask;
+
         ++wired_adapter.data[0].frame_cnt;
         sea_gen_turbo_mask(&wired_adapter.data[0]);
+
+        if (!(map->buttons_osd & BIT(GBAHD_OSD))) {
+            GPIO.out = map->buttons | turbo_map_mask->buttons;
+            GPIO.out1.val = map->buttons_high | turbo_map_mask->buttons_high;
+        }
     }
 }
 

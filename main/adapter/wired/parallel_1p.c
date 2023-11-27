@@ -25,11 +25,6 @@
 #define P1_LM 25
 #define P1_RM 33
 
-struct para_1p_map {
-    uint32_t buttons;
-    uint32_t buttons_high;
-} __packed;
-
 static const uint32_t para_1p_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t para_1p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t para_1p_btns_mask[32] = {
