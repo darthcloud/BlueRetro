@@ -91,6 +91,7 @@ static uint8_t current_pulse_led = LED_P1_PIN;
 static uint8_t err_led_pin;
 static uint8_t power_off_pin = POWER_OFF_PIN;
 static uint8_t port_cnt = 1;
+static uint8_t led_init_cnt = 1;
 static uint16_t port_state = 0;
 static RingbufHandle_t cmd_q_hdl = NULL;
 static uint32_t chip_package = EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6;
@@ -631,6 +632,11 @@ void sys_mgr_init(uint32_t package) {
             break;
     }
 
+    led_init_cnt = port_cnt;
+    if (wired_adapter.system_id == PSX || wired_adapter.system_id == PS2) {
+        led_init_cnt = 4;
+    }
+
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 #ifdef CONFIG_BLUERETRO_HW2
     io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
@@ -651,7 +657,7 @@ void sys_mgr_init(uint32_t package) {
 #endif
 
     io_conf.mode = GPIO_MODE_OUTPUT;
-    for (uint32_t i = 0; i < sizeof(led_list); i++) {
+    for (uint32_t i = 0; i < led_init_cnt; i++) {
 #ifdef CONFIG_BLUERETRO_HW2
         /* Skip pin 15 if alt sense pin are used */
         if (sense_list[0] == led_list[i]) {
@@ -661,9 +667,12 @@ void sys_mgr_init(uint32_t package) {
         gpio_set_level(led_list[i], 0);
         io_conf.pin_bit_mask = 1ULL << led_list[i];
         gpio_config(&io_conf);
-        /* Can't use GPIO mode on port LED as some wired driver overwrite whole GPIO port */
-        /* Use unused LEDC channel 2 to force output low */
-        esp_rom_gpio_connect_out_signal(led_list[i], ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_2, 0, 0);
+
+        if (i < port_cnt) {
+            /* Can't use GPIO mode on port LED as some wired driver overwrite whole GPIO port */
+            /* Use unused LEDC channel 2 to force output low */
+            esp_rom_gpio_connect_out_signal(led_list[i], ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_2, 0, 0);
+        }
     }
 
 #ifdef CONFIG_BLUERETRO_HW2
