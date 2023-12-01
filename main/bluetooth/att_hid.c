@@ -22,6 +22,8 @@ enum {
     BT_ATT_HID_REPORT_MAP,
     BT_ATT_HID_REPORT_REF,
     BT_ATT_HID_REPORT_CFG,
+    BT_ATT_HID_PPCP_CFG,
+    BT_ATT_HID_BATT_LVL,
     BT_ATT_HID_INIT,
     BT_ATT_HID_STATE_MAX,
 };
@@ -355,6 +357,40 @@ static void bt_att_hid_start_report_cfg(struct bt_dev *device,
     bt_att_hid_continue_report_cfg(device, hid_data, 0, NULL, 0);
 }
 
+static void bt_att_hid_start_ppcp_cfg(struct bt_dev *device,
+        struct bt_att_hid *hid_data) {
+    bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_GAP_PPCP);
+}
+
+static void bt_att_hid_process_ppcp_cfg(struct bt_dev *device,
+        struct bt_att_hid *hid_data, uint32_t att_len, uint8_t *data, uint32_t data_len) {
+    if (data) {
+        struct bt_l2cap_conn_param_req *conn_param_req = (struct bt_l2cap_conn_param_req *)data;
+        struct hci_cp_le_conn_update le_conn_update = {0};
+
+        le_conn_update.handle = device->acl_handle;
+        le_conn_update.conn_interval_min = conn_param_req->min_interval;
+        le_conn_update.conn_interval_max = conn_param_req->max_interval;
+        le_conn_update.conn_latency = conn_param_req->latency;
+        le_conn_update.supervision_timeout = conn_param_req->timeout;
+        le_conn_update.min_ce_len = 0;
+        le_conn_update.max_ce_len = 0;
+
+        bt_hci_le_conn_update(&le_conn_update);
+    }
+    bt_att_hid_start_next_state(device, hid_data);
+}
+
+static void bt_att_hid_start_batt_lvl(struct bt_dev *device,
+        struct bt_att_hid *hid_data) {
+    bt_att_cmd_read_type_req_uuid16(device->acl_handle, 0x0001, 0xFFFF, BT_UUID_BAS_BATTERY_LEVEL);
+}
+
+static void bt_att_hid_process_batt_lvl(struct bt_dev *device,
+        struct bt_att_hid *hid_data, uint32_t att_len, uint8_t *data, uint32_t data_len) {
+    bt_att_hid_start_next_state(device, hid_data);
+}
+
 static void bt_att_hid_start_init(struct bt_dev *device,
         struct bt_att_hid *hid_data) {
     if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
@@ -372,6 +408,8 @@ static bit_att_hid_start_func_t start_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_start_report_map,
     bt_att_hid_start_report_ref,
     bt_att_hid_start_report_cfg,
+    bt_att_hid_start_ppcp_cfg,
+    bt_att_hid_start_batt_lvl,
     bt_att_hid_start_init, /* Need to be last one */
 };
 static bit_att_hid_process_func_t process_state_func[BT_ATT_HID_STATE_MAX] = {
@@ -383,6 +421,8 @@ static bit_att_hid_process_func_t process_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_process_report_map,
     bt_att_hid_process_report_ref,
     bt_att_hid_continue_report_cfg,
+    bt_att_hid_process_ppcp_cfg,
+    bt_att_hid_process_batt_lvl,
     NULL, /* Need to be last one */
 };
 
@@ -494,6 +534,12 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                         break;
                     case BT_ATT_HID_CHAR_PROP:
                         bt_att_hid_process_char_prop(device, hid_data, att_len, (uint8_t *)read_type_rsp->data, read_type_rsp->len);
+                        break;
+                    case BT_ATT_HID_PPCP_CFG:
+                        bt_att_hid_process_ppcp_cfg(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
+                        break;
+                    case BT_ATT_HID_BATT_LVL:
+                        bt_att_hid_process_batt_lvl(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
                         break;
                     default:
                         printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
