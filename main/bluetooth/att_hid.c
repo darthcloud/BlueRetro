@@ -446,31 +446,35 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
     switch (bt_hci_acl_pkt->att_hdr.code) {
         case BT_ATT_OP_ERROR_RSP:
-        {
-            bt_att_hid_process_current_state(device, hid_data, att_len, NULL, 0);
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                bt_att_hid_process_current_state(device, hid_data, att_len, NULL, 0);
+            }
             break;
-        }
         case BT_ATT_OP_MTU_RSP:
         {
             struct bt_att_exchange_mtu_rsp *mtu_rsp = (struct bt_att_exchange_mtu_rsp *)bt_hci_acl_pkt->att_data;
 
             device->mtu = mtu_rsp->mtu;
 
-            bt_hci_stop_inquiry();
-            bt_att_hid_start_first_state(device, hid_data);
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                bt_hci_stop_inquiry();
+                bt_att_hid_start_first_state(device, hid_data);
+            }
             break;
         }
         case BT_ATT_OP_FIND_INFO_RSP:
         {
             struct bt_att_find_info_rsp *find_info_rsp = (struct bt_att_find_info_rsp *)bt_hci_acl_pkt->att_data;
 
-            switch (device->hid_state) {
-                case BT_ATT_HID_IDENT_HID_HLDS:
-                    bt_att_hid_process_ident_hid_hdls(device, hid_data, att_len, find_info_rsp->info, find_info_rsp->format);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_IDENT_HID_HLDS:
+                        bt_att_hid_process_ident_hid_hdls(device, hid_data, att_len, find_info_rsp->info, find_info_rsp->format);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
@@ -479,20 +483,22 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             struct bt_att_read_type_rsp *read_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_acl_pkt->att_data;
             uint8_t rsp_len = read_type_rsp->len - sizeof(read_type_rsp->data[0].handle);
 
-            switch (device->hid_state) {
-                case BT_ATT_HID_DEVICE_NAME:
-                    hid_data->dev_name_hdl = read_type_rsp->data[0].handle;
-                    bt_att_hid_process_device_name(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
-                    break;
-                case BT_ATT_HID_APPEARANCE:
-                    bt_att_hid_process_appearance(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
-                    break;
-                case BT_ATT_HID_CHAR_PROP:
-                    bt_att_hid_process_char_prop(device, hid_data, att_len, (uint8_t *)read_type_rsp->data, read_type_rsp->len);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_DEVICE_NAME:
+                        hid_data->dev_name_hdl = read_type_rsp->data[0].handle;
+                        bt_att_hid_process_device_name(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
+                        break;
+                    case BT_ATT_HID_APPEARANCE:
+                        bt_att_hid_process_appearance(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
+                        break;
+                    case BT_ATT_HID_CHAR_PROP:
+                        bt_att_hid_process_char_prop(device, hid_data, att_len, (uint8_t *)read_type_rsp->data, read_type_rsp->len);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
@@ -500,16 +506,18 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_read_rsp *read_rsp = (struct bt_att_read_rsp *)bt_hci_acl_pkt->att_data;
 
-            switch (device->hid_state) {
-                case BT_ATT_HID_REPORT_MAP:
-                    bt_att_hid_process_report_map(device, hid_data, att_len, read_rsp->value, att_len - 1);
-                    break;
-                case BT_ATT_HID_REPORT_REF:
-                    bt_att_hid_process_report_ref(device, hid_data, att_len, read_rsp->value, att_len - 1);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_REPORT_MAP:
+                        bt_att_hid_process_report_map(device, hid_data, att_len, read_rsp->value, att_len - 1);
+                        break;
+                    case BT_ATT_HID_REPORT_REF:
+                        bt_att_hid_process_report_ref(device, hid_data, att_len, read_rsp->value, att_len - 1);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
@@ -517,16 +525,18 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_read_blob_rsp *read_blob_rsp = (struct bt_att_read_blob_rsp *)bt_hci_acl_pkt->att_data;
 
-            switch (device->hid_state) {
-                case BT_ATT_HID_DEVICE_NAME:
-                    bt_att_hid_process_device_name(device, hid_data, att_len, read_blob_rsp->value, att_len - 1);
-                    break;
-                case BT_ATT_HID_REPORT_MAP:
-                    bt_att_hid_process_report_map(device, hid_data, att_len, read_blob_rsp->value, att_len - 1);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_DEVICE_NAME:
+                        bt_att_hid_process_device_name(device, hid_data, att_len, read_blob_rsp->value, att_len - 1);
+                        break;
+                    case BT_ATT_HID_REPORT_MAP:
+                        bt_att_hid_process_report_map(device, hid_data, att_len, read_blob_rsp->value, att_len - 1);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
@@ -534,25 +544,29 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_read_group_rsp *read_group_rsp = (struct bt_att_read_group_rsp *)bt_hci_acl_pkt->att_data;
 
-            switch (device->hid_state) {
-                case BT_ATT_HID_FIND_HID_HDLS:
-                    bt_att_hid_process_find_hid_hdls(device, hid_data, att_len, (uint8_t *)read_group_rsp->data, read_group_rsp->len);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_FIND_HID_HDLS:
+                        bt_att_hid_process_find_hid_hdls(device, hid_data, att_len, (uint8_t *)read_group_rsp->data, read_group_rsp->len);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
         case BT_ATT_OP_WRITE_RSP:
         {
-            switch (device->hid_state) {
-                case BT_ATT_HID_REPORT_CFG:
-                    bt_att_hid_continue_report_cfg(device, hid_data, att_len, NULL, 0);
-                    break;
-                default:
-                    printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
-                    break;
+            if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+                switch (device->hid_state) {
+                    case BT_ATT_HID_REPORT_CFG:
+                        bt_att_hid_continue_report_cfg(device, hid_data, att_len, NULL, 0);
+                        break;
+                    default:
+                        printf("# %s: Invalid state: %ld rsp: 0x%02X\n", __FUNCTION__, device->hid_state, bt_hci_acl_pkt->att_hdr.code);
+                        break;
+                }
             }
             break;
         }
