@@ -22,6 +22,7 @@ enum {
     BT_ATT_HID_REPORT_MAP,
     BT_ATT_HID_REPORT_REF,
     BT_ATT_HID_REPORT_CFG,
+    BT_ATT_HID_INIT,
     BT_ATT_HID_STATE_MAX,
 };
 
@@ -343,9 +344,8 @@ static void bt_att_hid_continue_report_cfg(struct bt_dev *device,
             break;
         }
     }
-    if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY) && i >= HID_MAX_REPORT) {
-        atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
-        bt_hid_init(device);
+    if (i >= HID_MAX_REPORT) {
+        bt_att_hid_start_next_state(device, hid_data);
     }
 }
 
@@ -353,6 +353,14 @@ static void bt_att_hid_start_report_cfg(struct bt_dev *device,
         struct bt_att_hid *hid_data) {
     hid_data->report_idx = 0;
     bt_att_hid_continue_report_cfg(device, hid_data, 0, NULL, 0);
+}
+
+static void bt_att_hid_start_init(struct bt_dev *device,
+        struct bt_att_hid *hid_data) {
+    if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
+        atomic_set_bit(&device->flags, BT_DEV_HID_INTR_READY);
+        bt_hid_init(device);
+    }
 }
 
 static bit_att_hid_start_func_t start_state_func[BT_ATT_HID_STATE_MAX] = {
@@ -364,6 +372,7 @@ static bit_att_hid_start_func_t start_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_start_report_map,
     bt_att_hid_start_report_ref,
     bt_att_hid_start_report_cfg,
+    bt_att_hid_start_init, /* Need to be last one */
 };
 static bit_att_hid_process_func_t process_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_process_device_name,
@@ -374,6 +383,7 @@ static bit_att_hid_process_func_t process_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_process_report_map,
     bt_att_hid_process_report_ref,
     bt_att_hid_continue_report_cfg,
+    NULL, /* Need to be last one */
 };
 
 static void bt_att_hid_start_first_state(struct bt_dev *device,
