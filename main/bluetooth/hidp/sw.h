@@ -52,6 +52,12 @@ struct bt_hidp_sw_conf {
     };
 } __packed;
 
+#define BT_HIDP_SW_SET_RUMBLE 0x10
+struct bt_hidp_sw_rumble {
+    uint8_t tid;
+    uint8_t rumble[8];
+} __packed;
+
 #define BT_HIDP_SW_SUBCMD_ACK 0x21
 struct bt_hidp_sw_subcmd_ack {
     uint8_t tbd[13];

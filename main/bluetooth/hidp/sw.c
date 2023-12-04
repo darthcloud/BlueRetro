@@ -85,6 +85,23 @@ void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_CONF, sizeof(*sw_conf));
 }
 
+void bt_hid_cmd_sw_send_keep_alive(struct bt_dev *device) {
+    struct bt_hidp_sw_rumble *sw_rumble = (struct bt_hidp_sw_rumble *)bt_hci_pkt_tmp.hidp_data;
+
+    sw_rumble->tid = device->tid++;
+    sw_rumble->tid &= 0xF;
+    sw_rumble->rumble[0] = 0x00;
+    sw_rumble->rumble[1] = 0x01;
+    sw_rumble->rumble[2] = 0x40;
+    sw_rumble->rumble[3] = 0x40;
+    sw_rumble->rumble[4] = 0x00;
+    sw_rumble->rumble[5] = 0x01;
+    sw_rumble->rumble[6] = 0x40;
+    sw_rumble->rumble[7] = 0x40;
+
+    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_RUMBLE, sizeof(*sw_rumble));
+}
+
 void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
     struct bt_dev *device = NULL;
     bt_host_get_dev_from_id(dev_id, &device);
@@ -92,6 +109,12 @@ void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
     if (device && atomic_test_bit(&device->flags, BT_DEV_CALIB_SET)) {
         *cal = &calib[dev_id];
     }
+}
+
+static void bt_hid_sw_keepalive_callback(void *arg) {
+    struct bt_dev *device = (struct bt_dev *)arg;
+
+    bt_hid_cmd_sw_send_keep_alive(device);
 }
 
 static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
@@ -186,6 +209,14 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
                 .subcmd_data[0] = bt_hid_led_dev_id_map[device->ids.out_idx],
             };
             bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
+
+            const esp_timer_create_args_t sw_timer_args = {
+                .callback = &bt_hid_sw_keepalive_callback,
+                .arg = (void *)device,
+                .name = "sw_keepalive"
+            };
+            esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
+            esp_timer_start_periodic(device->timer_hdl, 3000000);
             break;
         }
     }
