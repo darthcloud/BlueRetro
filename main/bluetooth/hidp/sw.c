@@ -213,8 +213,6 @@ void bt_hid_sw_init(struct bt_dev *device) {
 
     memset((uint8_t *)dev_calib, 0, sizeof(*dev_calib));
 
-    bt_hci_sniff_mode(device, 8);
-
     esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
     esp_timer_start_once(device->timer_hdl, 300000);
 #endif
