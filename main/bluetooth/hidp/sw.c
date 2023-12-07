@@ -15,6 +15,7 @@
 //#define SW_TRIGGER_TIME_EN
 //#define SW_ENABLE_IMU_EN
 //#define SW_SET_MCU_CFG_EN
+#define KEEPALIVE_PERIOD_US 3000000
 
 enum {
     SW_INIT_STATE_READ_INFO = 0,
@@ -82,6 +83,9 @@ void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
     sw_conf->tid = device->tid++;
     sw_conf->tid &= 0xF;
 
+    /* Reset keepalive since this serve as one & also avoid rumble disruption */
+    esp_timer_restart(device->timer_hdl, KEEPALIVE_PERIOD_US);
+
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_CONF, sizeof(*sw_conf));
 }
 
@@ -90,14 +94,8 @@ void bt_hid_cmd_sw_send_keep_alive(struct bt_dev *device) {
 
     sw_rumble->tid = device->tid++;
     sw_rumble->tid &= 0xF;
-    sw_rumble->rumble[0] = 0x00;
-    sw_rumble->rumble[1] = 0x01;
-    sw_rumble->rumble[2] = 0x40;
-    sw_rumble->rumble[3] = 0x40;
-    sw_rumble->rumble[4] = 0x00;
-    sw_rumble->rumble[5] = 0x01;
-    sw_rumble->rumble[6] = 0x40;
-    sw_rumble->rumble[7] = 0x40;
+    sw_rumble->rumble32[0] = BT_HIDP_SW_RUMBLE_IDLE;
+    sw_rumble->rumble32[1] = BT_HIDP_SW_RUMBLE_IDLE;
 
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_RUMBLE, sizeof(*sw_rumble));
 }
@@ -216,7 +214,7 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
                 .name = "sw_keepalive"
             };
             esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
-            esp_timer_start_periodic(device->timer_hdl, 3000000);
+            esp_timer_start_periodic(device->timer_hdl, KEEPALIVE_PERIOD_US);
             break;
         }
     }
