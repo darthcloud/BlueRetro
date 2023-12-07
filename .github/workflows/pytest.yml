@@ -48,7 +48,7 @@ jobs:
     - name: Setup QEMU
       working-directory: /home/runner/work
       run: |
-        curl -L $(curl -s https://api.github.com/repos/espressif/qemu/releases/latest | jq '.assets[] | select(.name|match("xtensa")) | select(.name|match("x86_64")) | select(.name|match("linux")) | .browser_download_url' | tr -d '"') | tar xj
+        curl -L $(curl -s https://api.github.com/repos/espressif/qemu/releases/latest | jq '.assets[] | select(.name|match("xtensa")) | select(.name|match("x86_64")) | select(.name|match("linux")) | .browser_download_url' | tr -d '"') | tar xJ
         echo "/home/runner/work/qemu/bin" >> $GITHUB_PATH
         sudo apt-get install libslirp0
     - name: Run pytest
