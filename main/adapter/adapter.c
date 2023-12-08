@@ -407,7 +407,7 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
 uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
     uint32_t ret = 0;
 #ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
-    if (wired_adapter.system_id != WIRED_AUTO) {
+    if (wired_adapter.system_id != WIRED_AUTO && bt_data && bt_data->base.pids) {
         wired_fb_to_generic(config.out_cfg[bt_data->base.pids->id].dev_mode, fb_data, &fb_input);
 #else
         fb_input.state ^= 0x01;
