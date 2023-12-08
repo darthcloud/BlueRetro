@@ -207,14 +207,6 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
                 .subcmd_data[0] = bt_hid_led_dev_id_map[device->ids.out_idx],
             };
             bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
-
-            const esp_timer_create_args_t sw_timer_args = {
-                .callback = &bt_hid_sw_keepalive_callback,
-                .arg = (void *)device,
-                .name = "sw_keepalive"
-            };
-            esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
-            esp_timer_start_periodic(device->timer_hdl, KEEPALIVE_PERIOD_US);
             break;
         }
     }
@@ -228,6 +220,14 @@ static void bt_hid_sw_init_callback(void *arg) {
 
     esp_timer_delete(device->timer_hdl);
     device->timer_hdl = NULL;
+
+    const esp_timer_create_args_t sw_timer_args = {
+        .callback = &bt_hid_sw_keepalive_callback,
+        .arg = (void *)device,
+        .name = "sw_keepalive"
+    };
+    esp_timer_create(&sw_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
+    esp_timer_start_periodic(device->timer_hdl, KEEPALIVE_PERIOD_US);
 }
 
 void bt_hid_sw_init(struct bt_dev *device) {
@@ -391,12 +391,6 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                         {
                             printf("# BT_HIDP_SW_SUBCMD_SET_MCU_CFG\n");
                             bt_hid_sw_exec_next_state(device);
-                            break;
-                        }
-                        case BT_HIDP_SW_SUBCMD_SET_LED:
-                        {
-                            printf("# BT_HIDP_SW_SUBCMD_SET_LED\n");
-                            /* init done */
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_ENABLE_IMU:
