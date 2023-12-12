@@ -42,13 +42,13 @@ Thanks to all sponsors!!
 
 <BR>
   
-  [<img src="http://www.retroscaler.com/wp-content/uploads/2023/06/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
-* RetroScaler BlueRetro Wireless Game Controllers Converter Adapter For PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
-  https://www.aliexpress.com/item/1005004114458491.html
-* RetroScaler BlueRetro Motor Wireless Game Controllers Adapter For Nintendo GameCube by [RetroScaler](https://twitter.com/RetroScaler): GameCube single port dongle.\
-  https://www.aliexpress.us/item/1005004917765807.html
-* RetroScaler BlueRetro Wireless Game Controller Adapter For SEGA DreamCast by [RetroScaler](https://twitter.com/RetroScaler): Dreamcast 4 players adapter.\
-  https://www.aliexpress.com/item/1005005362930850.html
+  [<img src="https://www.retroscaler.com/wp-content/uploads/2023/06/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
+* RetroScaler Mini Blueretro Wireless Game Controller Adapter for PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
+  https://www.aliexpress.us/item/3256805870708776.html?gatewayAdapt=glo2usa4itemAdapt
+* RetroScaler Blueretro Wireless Game Controller Adapter for NEO.GEO by [RetroScaler](https://twitter.com/RetroScaler): Neo-Geo single port dongle.\
+  https://www.aliexpress.us/item/3256806140926261.html?gatewayAdapt=glo2usa4itemAdapt
+* RetroScaler Blueretro Wireless Game Controller Adapter for SNES SFC by [RetroScaler](https://twitter.com/RetroScaler): SFC/SNES single port adapter.\
+  https://www.aliexpress.us/item/3256805054285627.html?gatewayAdapt=glo2usa4itemAdapt
 
 <BR>
   
