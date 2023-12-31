@@ -439,7 +439,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                                 meta->hid_axes_meta[AXIS_RY].abs_max = report->usages[i].logical_max;
                                 meta->hid_axes_meta[AXIS_RY].abs_min = report->usages[i].logical_min;
                             }
-                            meta->hid_axes_meta[AXIS_LY].polarity = 1;
+                            meta->hid_axes_meta[AXIS_RY].polarity = 1;
                         }
                         break;
                     case 0x35 /* USAGE_GEN_DESKTOP_RZ */:
