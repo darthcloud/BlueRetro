@@ -85,7 +85,7 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
 
 void bt_hid_set_type_flags_from_name(struct bt_dev *device, const char* name) {
     for (uint32_t i = 0; i < sizeof(bt_name_type)/sizeof(*bt_name_type); i++) {
-        if (strstr(name, bt_name_type[i].name) != NULL) {
+        if (strcasestr(name, bt_name_type[i].name) != NULL) {
             struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
 
             bt_type_update(device->ids.id, bt_name_type[i].type, bt_name_type[i].subtype);
