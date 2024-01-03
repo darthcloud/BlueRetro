@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,8 @@
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/wired.h"
 #include "ps.h"
+
+#define PS_JOYSTICK_AXES_CNT 4
 
 enum {
     PS_SELECT = 0,
@@ -30,10 +32,14 @@ enum {
     PS_S,
 };
 
-static DRAM_ATTR const uint8_t ps_axes_idx[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const uint8_t ps_axes_idx[ADAPTER_PS2_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-    2,       3,       0,       1,       14,     15
+    2,       3,       0,       1,       14,     15,
+/*  TRIG_LS, TRIG_RS, DPAD_L,  DPAD_R,  DPAD_D, DPAD_U  */
+    12,      13,      5,       4,       7,      6,
+/*  BTN_L,   BTN_R,   BTN_D,   BTN_U  */
+    11,      9,       10,      8
 };
 
 static DRAM_ATTR const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
@@ -42,14 +48,24 @@ static DRAM_ATTR const uint8_t ps_mouse_axes_idx[ADAPTER_MAX_AXES] =
     0,       1,       0,       1,       0,     1
 };
 
-static DRAM_ATTR const struct ctrl_meta ps_axes_meta[ADAPTER_MAX_AXES] =
+static DRAM_ATTR const struct ctrl_meta ps_axes_meta[ADAPTER_PS2_MAX_AXES] =
 {
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0xB0, .abs_min = 0xB0},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0xB0, .abs_min = 0xB0, .polarity = 1},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0xB0, .abs_min = 0xB0},
     {.size_min = -128, .size_max = 127, .neutral = 0x80, .abs_max = 0xB0, .abs_min = 0xB0, .polarity = 1},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
-    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0x00, .abs_max = 0x100, .abs_min = 0x00},
 };
 
 static DRAM_ATTR const struct ctrl_meta ps_mouse_axes_meta[ADAPTER_MAX_AXES] =
@@ -81,7 +97,7 @@ struct ps_mouse_map {
 } __packed;
 
 static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
-static const uint32_t ps_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps_desc[4] = {0x330F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t ps_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -180,7 +196,7 @@ void IRAM_ATTR ps_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
             memset((void *)map, 0, sizeof(*map));
             map->buttons = 0xFFFF;
             map->analog_btn = 0x00;
-            for (uint32_t i = 0; i < 4; i++) {
+            for (uint32_t i = 0; i < PS_JOYSTICK_AXES_CNT; i++) {
                 map->axes[ps_axes_idx[i]] = ps_axes_meta[i].neutral;
             }
             memset(map->pressure, 0x00, sizeof(map->pressure));
@@ -197,13 +213,16 @@ void ps_meta_init(struct wired_ctrl *ctrl_data) {
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data)*WIRED_MAX_DEV);
 
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
-        for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
+        for (uint32_t j = 0; j < ADAPTER_PS2_MAX_AXES; j++) {
             switch (config.out_cfg[i].dev_mode) {
                 case DEV_KB:
                     ctrl_data[i].mask = ps_kb_mask;
                     ctrl_data[i].desc = ps_kb_desc;
                     goto exit_axes_loop;
                 case DEV_MOUSE:
+                    if (i >= PS_JOYSTICK_AXES_CNT) {
+                        goto exit_axes_loop;
+                    }
                     ctrl_data[i].mask = ps_mouse_mask;
                     ctrl_data[i].desc = ps_mouse_desc;
                     ctrl_data[i].axes[j].meta = &ps_mouse_axes_meta[j];
@@ -229,16 +248,10 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
         if (ctrl_data->map_mask[0] & BIT(i)) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
                 map_tmp.buttons &= ~ps_btns_mask[i];
-                if (ps_btns_idx[i]) {
-                    map_tmp.axes[ps_btns_idx[i]] = 0xFF;
-                }
                 wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
             else {
                 map_tmp.buttons |= ps_btns_mask[i];
-                if (ps_btns_idx[i]) {
-                    map_tmp.axes[ps_btns_idx[i]] = 0x00;
-                }
                 wired_data->cnt_mask[i] = 0;
             }
         }
@@ -253,8 +266,10 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
         }
     }
 
-    for (uint32_t i = 0; i < 4; i++) {
-        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & ps_desc[0])) {
+    for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
+        uint32_t btn_id = axis_to_btn_id(i);
+        uint32_t btn_mask = axis_to_btn_mask(i);
+        if (ctrl_data->map_mask[0] & (btn_mask & ps_desc[0])) {
             if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
                 map_tmp.axes[ps_axes_idx[i]] = 255;
             }
@@ -264,8 +279,17 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
             else {
                 map_tmp.axes[ps_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
+
+            if (i >= PS_JOYSTICK_AXES_CNT && map_tmp.axes[ps_axes_idx[i]]) {
+                map_tmp.buttons &= ~ps_btns_mask[btn_id];;
+                wired_data->cnt_mask[btn_id] = ctrl_data->btns[0].cnt_mask[btn_id];
+            }
+            else {
+                map_tmp.buttons |= ps_btns_mask[btn_id];
+                wired_data->cnt_mask[btn_id] = 0;
+            }
         }
-        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
+        wired_data->cnt_mask[btn_id] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
@@ -295,7 +319,7 @@ static void ps_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_dat
         }
     }
 
-    for (uint32_t i = 2; i < 4; i++) {
+    for (uint32_t i = 2; i < PS_JOYSTICK_AXES_CNT; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & ps_mouse_desc[0])) {
             if (ctrl_data->axes[i].relative) {
                 map_tmp.relative[ps_mouse_axes_idx[i]] = 1;

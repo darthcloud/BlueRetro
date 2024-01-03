@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -254,6 +254,26 @@ int32_t btn_id_to_axis(uint8_t btn_id) {
             return TRIG_L;
         case PAD_RM:
             return TRIG_R;
+        case PAD_LS:
+            return TRIG_LS;
+        case PAD_RS:
+            return TRIG_RS;
+        case PAD_LD_LEFT:
+            return DPAD_LEFT;
+        case PAD_LD_RIGHT:
+            return DPAD_RIGHT;
+        case PAD_LD_DOWN:
+            return DPAD_DOWN;
+        case PAD_LD_UP:
+            return DPAD_UP;
+        case PAD_RB_LEFT:
+            return BTN_LEFT;
+        case PAD_RB_RIGHT:
+            return BTN_RIGHT;
+        case PAD_RB_DOWN:
+            return BTN_DOWN;
+        case PAD_RB_UP:
+            return BTN_UP;
     }
     return AXIS_NONE;
 }
@@ -282,6 +302,26 @@ uint32_t axis_to_btn_mask(uint8_t axis) {
             return BIT(PAD_LM);
         case TRIG_R:
             return BIT(PAD_RM);
+        case TRIG_LS:
+            return BIT(PAD_LS);
+        case TRIG_RS:
+            return BIT(PAD_RS);
+        case DPAD_LEFT:
+            return BIT(PAD_LD_LEFT);
+        case DPAD_RIGHT:
+            return BIT(PAD_LD_RIGHT);
+        case DPAD_DOWN:
+            return BIT(PAD_LD_DOWN);
+        case DPAD_UP:
+            return BIT(PAD_LD_UP);
+        case BTN_LEFT:
+            return BIT(PAD_RB_LEFT);
+        case BTN_RIGHT:
+            return BIT(PAD_RB_RIGHT);
+        case BTN_DOWN:
+            return BIT(PAD_RB_DOWN);
+        case BTN_UP:
+            return BIT(PAD_RB_UP);
     }
     return 0x00000000;
 }
@@ -300,6 +340,26 @@ uint32_t IRAM_ATTR axis_to_btn_id(uint8_t axis) {
             return PAD_LM;
         case TRIG_R:
             return PAD_RM;
+        case TRIG_LS:
+            return PAD_LS;
+        case TRIG_RS:
+            return PAD_RS;
+        case DPAD_LEFT:
+            return PAD_LD_LEFT;
+        case DPAD_RIGHT:
+            return PAD_LD_RIGHT;
+        case DPAD_DOWN:
+            return PAD_LD_DOWN;
+        case DPAD_UP:
+            return PAD_LD_UP;
+        case BTN_LEFT:
+            return PAD_RB_LEFT;
+        case BTN_RIGHT:
+            return PAD_RB_RIGHT;
+        case BTN_DOWN:
+            return PAD_RB_DOWN;
+        case BTN_UP:
+            return PAD_RB_UP;
     }
     return 0;
 }
@@ -316,6 +376,16 @@ int8_t btn_sign(uint32_t polarity, uint8_t btn_id) {
         case MOUSE_WY_UP:
         //case MOUSE_X_RIGHT:
         //case MOUSE_Y_UP:
+        case PAD_LS:
+        case PAD_RS:
+        case PAD_LD_LEFT:
+        case PAD_LD_RIGHT:
+        case PAD_LD_DOWN:
+        case PAD_LD_UP:
+        case PAD_RB_LEFT:
+        case PAD_RB_RIGHT:
+        case PAD_RB_DOWN:
+        case PAD_RB_UP:
             return polarity ? -1 : 1;
         case PAD_LX_LEFT:
         case PAD_LY_DOWN:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -40,18 +40,32 @@ static const uint8_t ps3_config[] = {
     0x00, 0x00, 0x00
 };
 
-static const uint8_t ps3_axes_idx[ADAPTER_MAX_AXES] =
+static const uint8_t ps3_axes_idx[ADAPTER_PS2_MAX_AXES] =
 {
 /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-    0,       1,       2,       3,       12,     13
+    0,       1,       2,       3,       12,     13,
+/*  TRIG_LS, TRIG_RS, DPAD_L,  DPAD_R,  DPAD_D, DPAD_U  */
+    14,      15,      11,      9,       10,     8,
+/*  BTN_L,   BTN_R,   BTN_D,   BTN_U  */
+    19,      17,      18,      16
 };
 
-static const struct ctrl_meta ps3_axes_meta[ADAPTER_MAX_AXES] =
+static const struct ctrl_meta ps3_axes_meta[ADAPTER_PS2_MAX_AXES] =
 {
     {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
     {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
     {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80},
     {.neutral = 0x80, .abs_max = 0x7F, .abs_min = 0x80, .polarity = 1},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
+    {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
     {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
     {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
 };
@@ -75,6 +89,7 @@ struct ps3_set_conf {
 
 static const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps3_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t ps3_pressure_desc[4] = {0x330F0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t ps3_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -87,6 +102,8 @@ static const uint32_t ps3_btns_mask[32] = {
 };
 
 int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
+    uint32_t i = 8;
+    uint32_t axes_cnt = ADAPTER_MAX_AXES;
     struct ps3_map *map = (struct ps3_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
@@ -101,7 +118,13 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
     ctrl_data->mask = (uint32_t *)ps3_mask;
     ctrl_data->desc = (uint32_t *)ps3_desc;
 
-    for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
+    if (wired_adapter.system_id == PSX || wired_adapter.system_id == PS2) {
+        ctrl_data->desc = (uint32_t *)ps3_pressure_desc;
+        axes_cnt = ADAPTER_PS2_MAX_AXES;
+        i = 20;
+    }
+
+    for (; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (map->buttons & ps3_btns_mask[i]) {
             ctrl_data->btns[0].value |= generic_btns_mask[i];
         }
@@ -109,7 +132,7 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         memcpy(meta, ps3_axes_meta, sizeof(ps3_axes_meta));
-        for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
             meta[i].abs_max *= MAX_PULL_BACK;
             meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral);
@@ -117,7 +140,7 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+    for (i = 0; i < axes_cnt; i++) {
         ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral + bt_data->base.axes_cal[i];
     }
