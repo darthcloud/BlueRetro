@@ -6,6 +6,13 @@ menu "BlueRetro"
         help
             Select this to enable HW2 features like port detection.
 
+    config BLUERETRO_ALT_LED_PINS
+        bool "Use alternate LED pins"
+        default n
+        help
+            Select this to use pins 14, 32, 33, and 25 for LED pins 1-4
+            (RetroScaler).
+
     choice
         prompt "Select universal or specific system"
         default BLUERETRO_SYSTEM_UNIVERSAL

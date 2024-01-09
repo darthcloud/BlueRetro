@@ -45,10 +45,17 @@
 #define SENSE_P1_ALT_PIN 15
 #define SENSE_P2_ALT_PIN 34
 
+#ifndef CONFIG_BLUERETRO_ALT_LED_PINS
 #define LED_P1_PIN 2
 #define LED_P2_PIN 4
 #define LED_P3_PIN 12
 #define LED_P4_PIN 15
+#else
+#define LED_P1_PIN 14
+#define LED_P2_PIN 32
+#define LED_P3_PIN 33
+#define LED_P4_PIN 25
+#endif
 
 #define RELAY_PULSE_MS 20
 #define DUTY_CYCLE_HALF 0x80000
