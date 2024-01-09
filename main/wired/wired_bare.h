@@ -54,6 +54,8 @@
 #define HARDCODED_SYS SEA_BOARD
 #elif defined(CONFIG_BLUERETRO_SYSTEM_SPI)
 #define HARDCODED_SYS SPI
+#elif defined(CONFIG_BLUERETRO_SYSTEM_OGX360)
+#define HARDCODED_SYS OGX360
 #endif
 
 struct spi_cfg {

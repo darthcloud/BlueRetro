@@ -303,7 +303,17 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data
 void xbox_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct xb1_rumble *rumble = (struct xb1_rumble *)bt_data->base.output;
 
-    if (fb_data->state) {
+    if (fb_data->state == 1 && ( fb_data->left_motor || fb_data->right_motor )) {
+        struct xb1_rumble xb1_rumble_data = {
+            .enable = 0x03,
+            .mag_l = fb_data->left_motor >> 24,
+            .mag_r = fb_data->right_motor >> 24,
+            .duration = 0xFF,
+            .cnt = 0x00,
+        };
+        memcpy((void *)rumble, (void *)&xb1_rumble_data, sizeof(xb1_rumble_data));
+    }
+    else if (fb_data->state == 1) {
         memcpy((void *)rumble, (void *)&xb1_rumble_on, sizeof(xb1_rumble_on));
     }
     else {

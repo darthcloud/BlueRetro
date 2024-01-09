@@ -228,8 +228,16 @@ static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
     set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->base.pids->id];
 
     if (fb_data->state) {
-        set_conf->r_rumble = 0x7F;
-        set_conf->l_rumble = 0x7F;
+        if (fb_data->left_motor || fb_data->right_motor)
+        {
+            set_conf->r_rumble = fb_data->right_motor >> 24;
+            set_conf->l_rumble = fb_data->left_motor >> 24;
+        }
+        else
+        {
+            set_conf->r_rumble = 0x3F;
+            set_conf->l_rumble = 0x3F;
+        }
     }
 }
 
@@ -240,8 +248,16 @@ static void ps5_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
     set_conf->conf0 = 0x02;
     if (fb_data->state) {
         set_conf->cmd = 0x03;
-        set_conf->r_rumble = 0x3F;
-        set_conf->l_rumble = 0x3F;
+        if (fb_data->left_motor || fb_data->right_motor)
+        {
+            set_conf->r_rumble = fb_data->right_motor >> 24;
+            set_conf->l_rumble = fb_data->left_motor >> 24;
+        }
+        else
+        {
+            set_conf->r_rumble = 0x3F;
+            set_conf->l_rumble = 0x3F;
+        }
     }
 }
 

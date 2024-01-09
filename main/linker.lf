@@ -24,3 +24,4 @@ entries:
     jag_io (noflash)
     wii_i2c (noflash)
     devcrypto (noflash)
+    ogx360_i2c (noflash)

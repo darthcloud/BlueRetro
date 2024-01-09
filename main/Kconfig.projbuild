@@ -128,6 +128,11 @@ menu "BlueRetro"
             help
                 Select this to support only SEA Board.
 
+        config BLUERETRO_SYSTEM_OGX360
+            bool "OGX360"
+            help
+                Select this to support only OGX360.
+
     endchoice
 
     menu "Debug"

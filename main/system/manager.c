@@ -627,6 +627,9 @@ void sys_mgr_init(uint32_t package) {
         case SEA_BOARD:
             port_cnt = 1;
             break;
+        case OGX360:
+            port_cnt = 4;
+            break;
         default:
             port_cnt = 2;
             break;

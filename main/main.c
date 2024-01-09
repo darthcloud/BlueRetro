@@ -69,6 +69,7 @@ static void wired_init_task(void) {
     memcpy(fb_data.data, sysname, fb_data.header.data_len);
     adapter_q_fb(&fb_data);
 
+    ets_printf("wired_bare_init()");
     if (wired_adapter.system_id < WIRED_MAX) {
         wired_bare_init(chip_package);
     }
