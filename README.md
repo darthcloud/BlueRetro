@@ -42,7 +42,7 @@ Thanks to all sponsors!!
 
 <BR>
   
-  [<img src="https://www.retroscaler.com/wp-content/uploads/2023/06/logo.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
+  [<img src="https://github.com/darthcloud/img/blob/main/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20220407151631.png" width="400"/>](https://www.aliexpress.com/item/1005004114458491.html)
 * RetroScaler Mini Blueretro Wireless Game Controller Adapter for PS1 PS2 by [RetroScaler](https://twitter.com/RetroScaler): PS1 & PS2 single port dongle.\
   https://www.aliexpress.us/item/3256805870708776.html?gatewayAdapt=glo2usa4itemAdapt
 * RetroScaler Blueretro Wireless Game Controller Adapter for NEO.GEO by [RetroScaler](https://twitter.com/RetroScaler): Neo-Geo single port dongle.\
