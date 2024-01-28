@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <nvs_flash.h>
 #include <esp_ota_ops.h>
 #include <esp32/rom/ets_sys.h>
 #include <soc/efuse_reg.h>
@@ -94,6 +95,14 @@ static void wl_init_task(void *arg) {
         printf("FS init fail!\n");
     }
 #endif
+
+    /* Initialize NVS for PHY cal and default config */
+    int32_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
 
     config_init(DEFAULT_CFG);
 
