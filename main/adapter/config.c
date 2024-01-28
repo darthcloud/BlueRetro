@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include "nvs.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter.h"
@@ -26,6 +28,7 @@ static uint8_t config_default_combo[BR_COMBO_CNT] = {
 };
 
 static void config_init_struct(struct config *data);
+static void config_init_nvs_patch(struct config *data);
 static int32_t config_load_from_file(struct config *data, char *filename);
 static int32_t config_store_on_file(struct config *data, char *filename);
 static int32_t config_v0_update(struct config *data, char *filename);
@@ -79,6 +82,7 @@ static int32_t config_v1_update(struct config *data, char *filename) {
 fail:
     printf("%s: Update failed, reset config (Sorry!)\n", __FUNCTION__);
     config_init_struct(data);
+    config_init_nvs_patch(data);
     return config_store_on_file(data, filename);
 }
 
@@ -149,9 +153,79 @@ static void config_init_struct(struct config *data) {
     }
 }
 
+static void config_init_nvs_patch(struct config *data) {
+    esp_err_t err;
+    nvs_handle_t nvs;
+    uint8_t value;
+
+    err = nvs_open("global", NVS_READONLY, &nvs);
+    if (err == ESP_OK) {
+        err = nvs_get_u8(nvs, "system", &value);
+        if (err == ESP_OK) {
+            data->global_cfg.system_cfg = value;
+        }
+        err = nvs_get_u8(nvs, "multitap", &value);
+        if (err == ESP_OK) {
+            data->global_cfg.multitap_cfg = value;
+        }
+        err = nvs_get_u8(nvs, "inquiry", &value);
+        if (err == ESP_OK) {
+            data->global_cfg.inquiry_mode = value;
+        }
+        err = nvs_get_u8(nvs, "bank", &value);
+        if (err == ESP_OK) {
+            data->global_cfg.banksel = value;
+        }
+        nvs_close(nvs);
+    }
+
+    err = nvs_open("output", NVS_READONLY, &nvs);
+    if (err == ESP_OK) {
+        err = nvs_get_u8(nvs, "mode", &value);
+        if (err == ESP_OK) {
+            for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+                data->out_cfg[i].dev_mode = value;
+            }
+        }
+        err = nvs_get_u8(nvs, "accessories", &value);
+        if (err == ESP_OK) {
+            for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+                data->out_cfg[i].acc_mode = value;
+            }
+        }
+        nvs_close(nvs);
+    }
+
+    err = nvs_open("mapping", NVS_READONLY, &nvs);
+    if (err == ESP_OK) {
+        nvs_iterator_t it = NULL;
+        err = nvs_entry_find_in_handle(nvs, NVS_TYPE_ANY, &it);
+        while (err == ESP_OK) {
+            nvs_entry_info_t info;
+            nvs_entry_info(it, &info);
+            errno = 0;
+            uint32_t index = strtol(info.key, NULL, 10);
+            if (!errno) {
+                struct map_cfg mapping = {0};
+                size_t size = sizeof(struct map_cfg);
+                err = nvs_get_blob(nvs, info.key, &mapping, &size);
+                if (err == ESP_OK) {
+                    for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
+                        memcpy(&data->in_cfg[i].map_cfg[index], &mapping, sizeof(struct map_cfg));
+                    }
+                }
+            }
+            err = nvs_entry_next(&it);
+        }
+        nvs_release_iterator(it);
+        nvs_close(nvs);
+    }
+}
+
 static int32_t config_load_from_file(struct config *data, char *filename) {
 #ifdef CONFIG_BLUERETRO_QEMU
     config_init_struct(data);
+    config_init_nvs_patch(data);
     return 0;
 #else
     struct stat st;
@@ -160,6 +234,7 @@ static int32_t config_load_from_file(struct config *data, char *filename) {
     if (stat(filename, &st) != 0) {
         printf("%s: No config on FS. Creating...\n", __FUNCTION__);
         config_init_struct(data);
+        config_init_nvs_patch(data);
         ret = config_store_on_file(data, filename);
     }
     else {
