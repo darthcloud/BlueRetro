@@ -65,7 +65,7 @@ static uint8_t sense_list[] = {
     SENSE_P1_PIN, SENSE_P2_PIN, SENSE_P3_PIN, SENSE_P4_PIN
 };
 #endif
-static const uint8_t led_list[] = {
+static uint8_t led_list[] = {
     LED_P1_PIN, LED_P2_PIN, LED_P3_PIN, LED_P4_PIN
 };
 static uint8_t current_pulse_led = LED_P1_PIN;
@@ -126,6 +126,24 @@ static inline void set_power_off(uint32_t state) {
     }
     else {
         gpio_set_level(power_off_pin, state);
+    }
+}
+
+static inline void set_reset(uint32_t state) {
+    if (hw_config.reset_pin_polarity) {
+        gpio_set_level(RESET_PIN, !state);
+    }
+    else {
+        gpio_set_level(RESET_PIN, state);
+    }
+}
+
+static inline void set_sense_out(uint32_t pin, uint32_t state) {
+    if (hw_config.ports_sense_output_polarity) {
+        gpio_set_level(pin, !state);
+    }
+    else {
+        gpio_set_level(pin, state);
     }
 }
 
@@ -325,11 +343,11 @@ static void wired_port_hdl(void) {
         port_state = port_mask;
         if (hw_config.ports_sense_p3_p4_as_output) {
             /* Toggle Wii classic sense line to force ctrl reinit */
-            gpio_set_level(SENSE_P3_PIN, 0);
-            gpio_set_level(SENSE_P4_PIN, 0);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            gpio_set_level(SENSE_P3_PIN, 1);
-            gpio_set_level(SENSE_P4_PIN, 1);
+            set_sense_out(SENSE_P3_PIN, 0);
+            set_sense_out(SENSE_P4_PIN, 0);
+            vTaskDelay(hw_config.ports_sense_output_ms / portTICK_PERIOD_MS);
+            set_sense_out(SENSE_P3_PIN, 1);
+            set_sense_out(SENSE_P4_PIN, 1);
         }
     }
 }
@@ -421,9 +439,9 @@ static void sys_mgr_task(void *arg) {
 }
 
 static void sys_mgr_reset(void) {
-    gpio_set_level(RESET_PIN, 0);
+    set_reset(0);
     vTaskDelay(hw_config.reset_pin_pulse_ms / portTICK_PERIOD_MS);
-    gpio_set_level(RESET_PIN, 1);
+    set_reset(1);
 }
 
 static void sys_mgr_inquiry_toggle(void) {
@@ -635,6 +653,12 @@ void sys_mgr_init(uint32_t package) {
     gpio_config(&io_conf);
 #endif
 
+#ifndef CONFIG_BLUERETRO_HW2
+    for (uint32_t i = 0; i < sizeof(led_list); i++) {
+        led_list[i] = hw_config.hw1_ports_led_pins[i];
+    }
+#endif
+
     io_conf.mode = GPIO_MODE_OUTPUT;
     for (uint32_t i = 0; i < led_init_cnt; i++) {
 #ifdef CONFIG_BLUERETRO_HW2
@@ -655,8 +679,11 @@ void sys_mgr_init(uint32_t package) {
     }
 
 #ifdef CONFIG_BLUERETRO_HW2
-    if (hw_config.power_pin_polarity) {
+    if (hw_config.power_pin_od) {
         io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    }
+    else {
+        io_conf.mode = GPIO_MODE_OUTPUT;
     }
     set_power_on(0);
     io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
@@ -667,15 +694,25 @@ void sys_mgr_init(uint32_t package) {
     gpio_config(&io_conf);
 
     gpio_set_level(RESET_PIN, 1);
-    io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    if (hw_config.reset_pin_od) {
+        io_conf.mode = GPIO_MODE_OUTPUT_OD;
+    }
+    else {
+        io_conf.mode = GPIO_MODE_OUTPUT;
+    }
     io_conf.pin_bit_mask = 1ULL << RESET_PIN;
     gpio_config(&io_conf);
 
     if (hw_config.ports_sense_p3_p4_as_output) {
         /* Wii-ext got a sense line that we need to control */
+        if (hw_config.ports_sense_output_od) {
+            io_conf.mode = GPIO_MODE_OUTPUT_OD;
+        }
+        else {
+            io_conf.mode = GPIO_MODE_OUTPUT;
+        }
         io_conf.intr_type = GPIO_INTR_DISABLE;
         io_conf.pin_bit_mask = 1ULL << SENSE_P4_PIN;
-        io_conf.mode = GPIO_MODE_OUTPUT;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
         io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
         gpio_config(&io_conf);

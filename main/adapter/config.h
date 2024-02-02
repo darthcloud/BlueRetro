@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -61,6 +61,7 @@ struct config {
 struct hw_config {
     uint32_t external_adapter;
     uint32_t hotplug;
+    uint32_t hw1_ports_led_pins[4];
     uint32_t led_flash_duty_cycle;
     uint32_t led_flash_hz[3];
     uint32_t led_off_duty_cycle;
@@ -72,11 +73,15 @@ struct hw_config {
     uint32_t led_pulse_hz;
     uint32_t port_cnt;
     uint32_t ports_sense_input_polarity;
+    uint32_t ports_sense_output_ms;
+    uint32_t ports_sense_output_od;
     uint32_t ports_sense_output_polarity;
     uint32_t ports_sense_p3_p4_as_output;
     uint32_t power_pin_is_hold;
+    uint32_t power_pin_od;
     uint32_t power_pin_polarity;
     uint32_t power_pin_pulse_ms;
+    uint32_t reset_pin_od;
     uint32_t reset_pin_polarity;
     uint32_t reset_pin_pulse_ms;
     uint32_t sw_io0_hold_thres_ms[3];
