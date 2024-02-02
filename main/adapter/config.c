@@ -16,6 +16,39 @@
 #include "adapter/gameid.h"
 
 struct config config;
+struct hw_config hw_config = {
+    .external_adapter = 0,
+    .hotplug = 0,
+    .led_flash_duty_cycle = 0x80000,
+    .led_flash_hz = {2, 4, 8},
+    .led_off_duty_cycle = 0,
+    .led_on_duty_cycle = 0xFFFFF,
+    .led_pulse_duty_max = 2000,
+    .led_pulse_duty_min = 50,
+    .led_pulse_fade_cycle_delay_ms = 500,
+    .led_pulse_fade_time_ms = 500,
+    .led_pulse_hz = 5000,
+    .port_cnt = 2,
+    .ports_sense_input_polarity = 0,
+    .ports_sense_output_polarity = 0, //TODO
+    .ports_sense_p3_p4_as_output = 0,
+    .power_pin_is_hold = 0,
+    .power_pin_polarity = 0,
+    .power_pin_pulse_ms = 20,
+    .reset_pin_polarity = 0, //TODO
+    .reset_pin_pulse_ms = 500,
+    .sw_io0_hold_thres_ms = {1000, 3000, 6000},
+    .ps_ctrl_colors = {
+        0xFF0000, /* Blue */
+        0x0000FF, /* Red */
+        0x00FF00, /* Green */
+        0xFF00FF, /* Pink */
+        0xFFFF00, /* Cyan */
+        0x0080FF, /* Orange */
+        0x00FFFF, /* Yellow */
+        0xFF0080, /* Purple */
+    },
+};
 static uint32_t config_src = DEFAULT_CFG;
 static uint32_t config_version_magic[] = {
     CONFIG_MAGIC_V0,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "bluetooth/hidp/ps.h"
+#include "adapter/config.h"
 #include "ps.h"
 
 enum {
@@ -225,7 +226,7 @@ static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_d
     memset((void *)set_conf, 0, sizeof(*set_conf));
     set_conf->conf0 = 0xc4;
     set_conf->conf1 = 0x03;
-    set_conf->leds = bt_ps4_ps5_led_dev_id_map[bt_data->base.pids->id];
+    set_conf->leds = hw_config.ps_ctrl_colors[bt_data->base.pids->id];
 
     if (fb_data->state) {
         set_conf->r_rumble = 0x7F;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,17 +10,6 @@
 #include "adapter/config.h"
 #include "bluetooth/host.h"
 #include "ps.h"
-
-const uint32_t bt_ps4_ps5_led_dev_id_map[] = {
-    0xFF0000, /* Blue */
-    0x0000FF, /* Red */
-    0x00FF00, /* Green */
-    0xFF00FF, /* Pink */
-    0xFFFF00, /* Cyan */
-    0x0080FF, /* Orange */
-    0x00FFFF, /* Yellow */
-    0xFF0080, /* Purple */
-};
 
 static void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report);
 
@@ -141,7 +130,7 @@ static void bt_hid_ps5_init_callback(void *arg) {
         .conf0 = 0x02,
         .conf1 = 0xF6,
     };
-    ps5_set_led.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
+    ps5_set_led.leds = hw_config.ps_ctrl_colors[device->ids.out_idx];
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
@@ -204,7 +193,7 @@ void bt_hid_ps_init(struct bt_dev *device) {
                 .conf0 = 0xc0,
                 .conf1 = 0x07,
             };
-            ps4_set_conf.leds = bt_ps4_ps5_led_dev_id_map[device->ids.out_idx];
+            ps4_set_conf.leds = hw_config.ps_ctrl_colors[device->ids.out_idx];
 
             printf("# %s\n", __FUNCTION__);
 
