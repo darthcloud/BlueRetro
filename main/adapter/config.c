@@ -54,6 +54,50 @@ struct hw_config hw_config = {
         0xFF0080, /* Purple */
     },
 };
+
+static char *hw_config_name_idx[] = {
+    "ext_adapter",
+    "hotplug",
+    "hw1_led_pins_0",
+    "hw1_led_pins_1",
+    "hw1_led_pins_2",
+    "hw1_led_pins_3",
+    "led_flash_duty",
+    "led_flash_hz_0",
+    "led_flash_hz_1",
+    "led_flash_hz_2",
+    "led_off_duty",
+    "led_on_duty",
+    "led_p_duty_max",
+    "led_p_duty_min",
+    "led_p_fade_c_ms",
+    "led_p_fade_t_ms",
+    "led_pulse_hz",
+    "port_cnt",
+    "ports_s_in_pol",
+    "ports_s_out_ms",
+    "ports_s_out_od",
+    "ports_s_out_pol",
+    "ports_s_out_en",
+    "pwr_pin_is_hold",
+    "pwr_pin_od",
+    "pwr_pin_pol",
+    "pwr_pin_p_ms",
+    "reset_pin_od",
+    "reset_pin_pol",
+    "reset_pin_p_ms",
+    "sw_thres_ms_0",
+    "sw_thres_ms_1",
+    "sw_thres_ms_2",
+    "ps_ctrl_color_0",
+    "ps_ctrl_color_1",
+    "ps_ctrl_color_2",
+    "ps_ctrl_color_3",
+    "ps_ctrl_color_4",
+    "ps_ctrl_color_5",
+    "ps_ctrl_color_6",
+    "ps_ctrl_color_7",
+};
 static uint32_t config_src = DEFAULT_CFG;
 static uint32_t config_version_magic[] = {
     CONFIG_MAGIC_V0,
@@ -152,6 +196,15 @@ static int32_t config_v2_update(struct config *data, char *filename) {
     }
 
     return config_store_on_file(data, filename);
+}
+
+static int32_t hw_config_lookup_key_name(const char* key) {
+    for (uint32_t i = 0; i < sizeof(hw_config_name_idx)/sizeof(*hw_config_name_idx); i++) {
+        if (strstr(key, hw_config_name_idx[i]) != NULL) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 static void config_init_struct(struct config *data) {
@@ -323,6 +376,32 @@ static int32_t config_store_on_file(struct config *data, char *filename) {
         ret = 0;
     }
     return ret;
+}
+
+void hw_config_patch(void) {
+    esp_err_t err;
+    nvs_handle_t nvs;
+
+    err = nvs_open("hw", NVS_READONLY, &nvs);
+    if (err == ESP_OK) {
+        nvs_iterator_t it = NULL;
+        err = nvs_entry_find_in_handle(nvs, NVS_TYPE_ANY, &it);
+        while (err == ESP_OK) {
+            nvs_entry_info_t info;
+            nvs_entry_info(it, &info);
+            int32_t index = hw_config_lookup_key_name(info.key);
+            if (index > -1) {
+                uint32_t value;
+                err = nvs_get_u32(nvs, info.key, &value);
+                if (err == ESP_OK) {
+                    hw_config.data32[index] = value;
+                }
+            }
+            err = nvs_entry_next(&it);
+        }
+        nvs_release_iterator(it);
+        nvs_close(nvs);
+    }
 }
 
 void config_init(uint32_t src) {

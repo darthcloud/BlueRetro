@@ -59,39 +59,45 @@ struct config {
 } __packed;
 
 struct hw_config {
-    uint32_t external_adapter;
-    uint32_t hotplug;
-    uint32_t hw1_ports_led_pins[4];
-    uint32_t led_flash_duty_cycle;
-    uint32_t led_flash_hz[3];
-    uint32_t led_off_duty_cycle;
-    uint32_t led_on_duty_cycle;
-    uint32_t led_pulse_duty_max;
-    uint32_t led_pulse_duty_min;
-    uint32_t led_pulse_fade_cycle_delay_ms;
-    uint32_t led_pulse_fade_time_ms;
-    uint32_t led_pulse_hz;
-    uint32_t port_cnt;
-    uint32_t ports_sense_input_polarity;
-    uint32_t ports_sense_output_ms;
-    uint32_t ports_sense_output_od;
-    uint32_t ports_sense_output_polarity;
-    uint32_t ports_sense_p3_p4_as_output;
-    uint32_t power_pin_is_hold;
-    uint32_t power_pin_od;
-    uint32_t power_pin_polarity;
-    uint32_t power_pin_pulse_ms;
-    uint32_t reset_pin_od;
-    uint32_t reset_pin_polarity;
-    uint32_t reset_pin_pulse_ms;
-    uint32_t sw_io0_hold_thres_ms[3];
-    uint32_t ps_ctrl_colors[8];
+    union {
+        struct {
+            uint32_t external_adapter;
+            uint32_t hotplug;
+            uint32_t hw1_ports_led_pins[4];
+            uint32_t led_flash_duty_cycle;
+            uint32_t led_flash_hz[3];
+            uint32_t led_off_duty_cycle;
+            uint32_t led_on_duty_cycle;
+            uint32_t led_pulse_duty_max;
+            uint32_t led_pulse_duty_min;
+            uint32_t led_pulse_fade_cycle_delay_ms;
+            uint32_t led_pulse_fade_time_ms;
+            uint32_t led_pulse_hz;
+            uint32_t port_cnt;
+            uint32_t ports_sense_input_polarity;
+            uint32_t ports_sense_output_ms;
+            uint32_t ports_sense_output_od;
+            uint32_t ports_sense_output_polarity;
+            uint32_t ports_sense_p3_p4_as_output;
+            uint32_t power_pin_is_hold;
+            uint32_t power_pin_od;
+            uint32_t power_pin_polarity;
+            uint32_t power_pin_pulse_ms;
+            uint32_t reset_pin_od;
+            uint32_t reset_pin_polarity;
+            uint32_t reset_pin_pulse_ms;
+            uint32_t sw_io0_hold_thres_ms[3];
+            uint32_t ps_ctrl_colors[8];
+        };
+        uint32_t data32[41];
+    };
     uint8_t bdaddr[6];
 } __packed;
 
 extern struct config config;
 extern struct hw_config hw_config;
 
+void hw_config_patch(void);
 void config_init(uint32_t src);
 void config_update(uint32_t dst);
 uint32_t config_get_src(void);

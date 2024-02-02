@@ -629,11 +629,6 @@ void sys_mgr_init(uint32_t package) {
             break;
     }
 
-    led_init_cnt = hw_config.port_cnt;
-    if (wired_adapter.system_id == PSX || wired_adapter.system_id == PS2) {
-        led_init_cnt = 4;
-    }
-
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 #ifdef CONFIG_BLUERETRO_HW2
     io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
@@ -643,6 +638,13 @@ void sys_mgr_init(uint32_t package) {
 #endif
 
     internal_flag_init();
+
+    hw_config_patch();
+
+    led_init_cnt = hw_config.port_cnt;
+    if (wired_adapter.system_id == PSX || wired_adapter.system_id == PS2) {
+        led_init_cnt = 4;
+    }
 
 #ifdef CONFIG_BLUERETRO_HW2
     for (uint32_t i = 0; i < hw_config.port_cnt; i++) {
