@@ -54,7 +54,7 @@ void err_led_init(uint32_t package) {
     };
     ledc_channel_config_t ledc_channel = {
         .channel    = LEDC_CHANNEL_0,
-        .duty       = hw_config.led_off_duty_cycle,
+        .duty       = hw_config.led_pulse_off_duty_cycle,
         .gpio_num   = ERR_LED_PIN,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .hpoint     = 0,
@@ -69,7 +69,7 @@ void err_led_init(uint32_t package) {
     ledc_timer_config(&ledc_timer);
     ledc_channel_config(&ledc_channel);
     ledc_fade_func_install(0);
-    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_off_duty_cycle, 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_pulse_off_duty_cycle, 0);
 
     xTaskCreatePinnedToCore(&err_led_task, "err_led_task", 768, NULL, 5, &err_led_task_hdl, 0);
     err_led_clear();
@@ -81,7 +81,7 @@ void err_led_cfg_update(void) {
 
 void err_led_set(void) {
     vTaskSuspend(err_led_task_hdl);
-    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_on_duty_cycle, 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_pulse_on_duty_cycle, 0);
     atomic_set_bit(&led_flags, ERR_LED_SET);
 }
 
@@ -89,7 +89,7 @@ void err_led_clear(void) {
     /* When error is set it stay on until power cycle */
     if (!atomic_test_bit(&led_flags, ERR_LED_SET)) {
         vTaskSuspend(err_led_task_hdl);
-        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_off_duty_cycle, 0);
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_pulse_off_duty_cycle, 0);
     }
 }
 

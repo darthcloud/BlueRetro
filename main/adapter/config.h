@@ -66,13 +66,15 @@ struct hw_config {
             uint32_t hw1_ports_led_pins[4];
             uint32_t led_flash_duty_cycle;
             uint32_t led_flash_hz[3];
-            uint32_t led_off_duty_cycle;
-            uint32_t led_on_duty_cycle;
+            uint32_t led_flash_off_duty_cycle;
+            uint32_t led_flash_on_duty_cycle;
             uint32_t led_pulse_duty_max;
             uint32_t led_pulse_duty_min;
             uint32_t led_pulse_fade_cycle_delay_ms;
             uint32_t led_pulse_fade_time_ms;
             uint32_t led_pulse_hz;
+            uint32_t led_pulse_off_duty_cycle;
+            uint32_t led_pulse_on_duty_cycle;
             uint32_t port_cnt;
             uint32_t ports_sense_input_polarity;
             uint32_t ports_sense_output_ms;
@@ -89,7 +91,7 @@ struct hw_config {
             uint32_t sw_io0_hold_thres_ms[3];
             uint32_t ps_ctrl_colors[8];
         };
-        uint32_t data32[41];
+        uint32_t data32[43];
     };
     uint8_t bdaddr[6];
 } __packed;

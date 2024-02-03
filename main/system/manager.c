@@ -192,7 +192,7 @@ static void port_led_pulse(uint32_t pin) {
 }
 
 static void set_leds_as_btn_status(uint8_t state) {
-    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, hw_config.led_on_duty_cycle, 0);
+    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, hw_config.led_flash_on_duty_cycle, 0);
 
     /* Use all port LEDs */
     for (uint32_t i = 0; i < hw_config.port_cnt; i++) {
@@ -564,7 +564,7 @@ void sys_mgr_init(uint32_t package) {
     };
     ledc_channel_config_t ledc_channel = {
         .channel    = LEDC_CHANNEL_1,
-        .duty       = hw_config.led_on_duty_cycle,
+        .duty       = hw_config.led_flash_on_duty_cycle,
         .gpio_num   = LED_P1_PIN,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .hpoint     = 0,
