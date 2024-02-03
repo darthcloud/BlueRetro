@@ -13,6 +13,7 @@
 #include <esp_mac.h>
 #include <esp_timer.h>
 #include <driver/gpio.h>
+#include "nvs.h"
 #include "queue_bss.h"
 #include "host.h"
 #include "hci.h"
@@ -68,7 +69,7 @@ static uint8_t frag_buf[1024];
 #ifdef CONFIG_BLUERETRO_BT_H4_TRACE
 static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
-static int32_t bt_host_load_bdaddr_from_file(void);
+static int32_t bt_host_load_bdaddr_from_nvs(void);
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
 static int32_t bt_host_load_le_keys_from_file(struct bt_host_le_link_keys *data);
@@ -98,29 +99,23 @@ static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
 }
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
-static int32_t bt_host_load_bdaddr_from_file(void) {
-    struct stat st;
+static int32_t bt_host_load_bdaddr_from_nvs(void) {
+    esp_err_t err;
+    nvs_handle_t nvs;
     int32_t ret = -1;
 
-    if (stat(BDADDR_FILE, &st) != 0) {
-        printf("# %s: No BDADDR on SD. Using ESP32's MAC\n", __FUNCTION__);
-    }
-    else {
-        FILE *file = fopen(BDADDR_FILE, "rb");
-        if (file == NULL) {
-            printf("# %s: failed to open file for reading\n", __FUNCTION__);
+    err = nvs_open("hw", NVS_READONLY, &nvs);
+    if (err == ESP_OK) {
+        uint8_t test_mac[6];
+        size_t size = sizeof(test_mac);
+        err = nvs_get_blob(nvs, "bdaddr", test_mac, &size);
+        if (err == ESP_OK) {
+            test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
+            esp_base_mac_addr_set(test_mac);
+            printf("# %s: Using NVS MAC\n", __FUNCTION__);
+            ret = 0;
         }
-        else {
-            uint8_t test_mac[6];
-            uint32_t count = fread((void *)test_mac, sizeof(test_mac), 1, file);
-            fclose(file);
-            if (count == 1) {
-                test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
-                esp_base_mac_addr_set(test_mac);
-                printf("# %s: Using BDADDR.BIN MAC\n", __FUNCTION__);
-                ret = 0;
-            }
-        }
+        nvs_close(nvs);
     }
     return ret;
 }
@@ -605,7 +600,7 @@ int32_t bt_host_init(void) {
     gpio_set_level(26, 1);
 #endif
 
-    bt_host_load_bdaddr_from_file();
+    bt_host_load_bdaddr_from_nvs();
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
