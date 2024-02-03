@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 void err_led_init(uint32_t package);
+void err_led_cfg_update(void);
 void err_led_set(void);
 void err_led_clear(void);
 void err_led_pulse(void);

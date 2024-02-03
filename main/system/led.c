@@ -75,6 +75,10 @@ void err_led_init(uint32_t package) {
     err_led_clear();
 }
 
+void err_led_cfg_update(void) {
+    ledc_set_freq(LEDC_HIGH_SPEED_MODE, LEDC_TIMER_0, hw_config.led_pulse_hz);
+}
+
 void err_led_set(void) {
     vTaskSuspend(err_led_task_hdl);
     ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, hw_config.led_on_duty_cycle, 0);

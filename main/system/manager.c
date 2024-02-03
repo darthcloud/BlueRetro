@@ -641,6 +641,8 @@ void sys_mgr_init(uint32_t package) {
 
     hw_config_patch();
 
+    err_led_cfg_update();
+
     led_init_cnt = hw_config.port_cnt;
     if (wired_adapter.system_id == PSX || wired_adapter.system_id == PS2) {
         led_init_cnt = 4;
