@@ -299,7 +299,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc++;
                 break;
             case HID_GI_LOGICAL_MIN(1): /* 0x15 */
-                hid_stack[hid_stack_idx].logical_min = *desc++;
+                hid_stack[hid_stack_idx].logical_min = *(int8_t *)desc++;
                 break;
             case HID_GI_LOGICAL_MIN(2): /* 0x16 */
                 hid_stack[hid_stack_idx].logical_min = *(int16_t *)desc;
@@ -310,7 +310,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc += 4;
                 break;
             case HID_GI_LOGICAL_MAX(1): /* 0x25 */
-                hid_stack[hid_stack_idx].logical_max = *desc++;
+                hid_stack[hid_stack_idx].logical_max = *(int8_t *)desc++;
                 break;
             case HID_GI_LOGICAL_MAX(2): /* 0x26 */
                 hid_stack[hid_stack_idx].logical_max = *(int16_t *)desc;
