@@ -20,7 +20,7 @@ class BlueRetroInjector:
     def get_logs(self):
         self.__read()
 
-    def connect(self, bt_conn_type):
+    def connect(self, bt_conn_type=0):
         self.__write(0x01, self.handle, bt_conn_type.to_bytes(1, 'big'))
 
     def disconnect(self):
