@@ -528,7 +528,7 @@ void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     memset((void *)conf, 0, sizeof(*conf));
 
     conf->subcmd = BT_HIDP_SW_SUBCMD_SET_LED;
-    conf->subcmd_data[0] = led_dev_id_map[bt_data->base.pids->id];
+    conf->subcmd_data[0] = led_dev_id_map[bt_data->base.pids->out_idx];
 
     if (fb_data->state) {
         memcpy((void *)conf->rumble, (void *)sw_rumble_on, sizeof(sw_rumble_on));
