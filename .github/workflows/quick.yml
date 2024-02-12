@@ -56,7 +56,7 @@ jobs:
         mkdir ota
         mv ota_data_initial.bin ota/
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: darthcloud/upload-artifact@v3node20
       with:
         name: ${{ env.br_version }}_${{ github.event.inputs.hw_version }}_${{ github.event.inputs.br_config }}
         path: |
