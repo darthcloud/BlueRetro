@@ -24,7 +24,7 @@ jobs:
             br_config: qemu_bt_trace_replay_test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/darthcloud/idf-blueretro:latest
+      image: ghcr.io/darthcloud/idf-blueretro:v5.2.0_2023-10-09
 
     steps:
     - name: Checkout repo
