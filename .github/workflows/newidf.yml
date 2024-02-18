@@ -24,7 +24,7 @@ jobs:
             br_config: qemu_bt_trace_replay_test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/darthcloud/idf-blueretro:v5.2.0_2023-10-09
+      image: espressif/idf:latest
 
     steps:
     - name: Checkout repo
@@ -41,18 +41,3 @@ jobs:
         cat version.txt
         cp configs/${{ matrix.hw_version }}/${{ matrix.br_config }} sdkconfig
         BR_HW=_${{ matrix.hw_version }} BR_SYS=_${{ matrix.br_config }} idf.py reconfigure build
-    - name: Copy OTA initial binary
-      working-directory: ./build
-      run: |
-        mkdir ota
-        mv ota_data_initial.bin ota/
-    - name: Upload artifact
-      uses: darthcloud/upload-artifact@v3node20
-      with:
-        name: ${{ env.br_version }}_${{ matrix.hw_version }}
-        path: |
-          build/partition_table/partition-table.bin
-          build/bootloader/bootloader.bin
-          build/ota/ota_data_initial.bin
-          build/BlueRetro*.bin
-        if-no-files-found: error
