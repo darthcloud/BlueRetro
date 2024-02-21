@@ -501,20 +501,20 @@ void adapter_init(void) {
     wired_adapter.system_id = WIRED_AUTO;
 
     /* Save regular DRAM by allocating big sruct w/ only 32bits access in IRAM */
-    ctrl_input = heap_caps_malloc(sizeof(struct wireless_ctrl), MALLOC_CAP_32BIT);
+    ctrl_input = heap_caps_aligned_alloc(32, sizeof(struct wireless_ctrl), MALLOC_CAP_32BIT);
     if (ctrl_input == NULL) {
         printf("# %s ctrl_input alloc fail\n", __FUNCTION__);
     }
-    ctrl_output = heap_caps_malloc(sizeof(struct wired_ctrl) * WIRED_MAX_DEV, MALLOC_CAP_32BIT);
+    ctrl_output = heap_caps_aligned_alloc(32, sizeof(struct wired_ctrl) * WIRED_MAX_DEV, MALLOC_CAP_32BIT);
     if (ctrl_output == NULL) {
         printf("# %s ctrl_output alloc fail\n", __FUNCTION__);
     }
     for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
-        bt_adapter.data[i].raw_src_mappings = heap_caps_malloc(sizeof(struct raw_src_mapping) * REPORT_MAX, MALLOC_CAP_32BIT);
+        bt_adapter.data[i].raw_src_mappings = heap_caps_aligned_alloc(32, sizeof(struct raw_src_mapping) * REPORT_MAX, MALLOC_CAP_32BIT);
         if (bt_adapter.data[i].raw_src_mappings == NULL) {
             printf("# %s bt_adapter.data[%ld].raw_src_mappings alloc fail\n", __FUNCTION__, i);
         }
-        bt_adapter.data[i].reports = heap_caps_malloc(sizeof(struct hid_report) * REPORT_MAX, MALLOC_CAP_32BIT);
+        bt_adapter.data[i].reports = heap_caps_aligned_alloc(32, sizeof(struct hid_report) * REPORT_MAX, MALLOC_CAP_32BIT);
         if (bt_adapter.data[i].reports == NULL) {
             printf("# %s bt_adapter.data[%ld].reports alloc fail\n", __FUNCTION__, i);
         }
