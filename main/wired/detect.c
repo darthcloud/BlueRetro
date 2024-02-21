@@ -31,7 +31,7 @@ static const uint8_t system_id_high[][4] = {
 static void detect_system(const uint32_t io, const uint8_t (*system_id)[4], const uint8_t *detect_pin) {
     if (wired_adapter.system_id <= WIRED_AUTO) {
         for (uint32_t i = 0; i < 4; i++) {
-            if (io & BIT(detect_pin[i] - 32)) {
+            if (io & BIT(detect_pin[i] & 0x1F)) {
                 if (GPIO.in1.val & BIT(ALT_SYS_PIN - 32)) {
                     wired_adapter.system_id = system_id[0][i];
                 }
