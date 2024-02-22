@@ -15,8 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/darthcloud/idf-blueretro:v5.2.0_2023-10-09
-        
+      image: ghcr.io/darthcloud/idf-blueretro:v5.3.0_2024-02-18
+
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
