@@ -84,6 +84,8 @@ idf_component_register(SRCS "main.c"
                     PRIV_INCLUDE_DIRS "."
                     LDFRAGMENTS linker.lf)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address-of-packed-member)
+target_compile_options(${COMPONENT_LIB} PRIVATE -fno-builtin-memset)
+target_compile_options(${COMPONENT_LIB} PRIVATE -fno-builtin-memcpy)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "-DXT_INTEXC_HOOKS" APPEND)
 target_link_libraries(${COMPONENT_TARGET} "-u ld_include_my_startup_file")
