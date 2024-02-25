@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-void sea_tx_byte(uint8_t data);
+void sea_tx_byte(uint16_t data);
 void sea_init(void);
 
 #endif /* _SEA_IO_H_ */

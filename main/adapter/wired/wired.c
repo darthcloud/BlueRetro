@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Jacques Gagnon
+ * Copyright (c) 2021-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -192,7 +192,7 @@ void wired_para_turbo_mask_hdlr(void) {
         ++wired_adapter.data[0].frame_cnt;
         sea_gen_turbo_mask(&wired_adapter.data[0]);
 
-        if (!(map->buttons_osd & BIT(GBAHD_OSD))) {
+        if (!(map->gbahd_state & BIT(GBAHD_STATE_OSD))) {
             GPIO.out = map->buttons | turbo_map_mask->buttons;
             GPIO.out1.val = map->buttons_high | turbo_map_mask->buttons_high;
         }

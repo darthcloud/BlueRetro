@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,16 +12,18 @@
 #include <hal/rmt_ll.h>
 #include <hal/rmt_types.h>
 #include "adapter/adapter.h"
+#include "adapter/config.h"
 #include "system/gpio.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "system/fpga_config.h"
+#include "adapter/wired/sea.h"
 
 #define GBAHD_COM_PIN 33
 #define GBAHD_BIT_PERIOD_TICKS 24
-#define BIT_ZERO 0x80080010
-#define BIT_ONE  0x80100008
-#define BIT_STOP 0x80008000
+#define BIT_ZERO 0x80040010
+#define BIT_ONE  0x80100004
+#define BIT_STOP 0x80008028
 
 #define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
 
@@ -38,16 +40,14 @@ static const uint8_t output_list[] = {
     4, 5, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23
 };
 static volatile rmt_symbol_word_t *rmt_items = (volatile rmt_symbol_word_t *)RMTMEM.chan[0].data32;
-#endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 
-void sea_tx_byte(uint8_t data) {
-#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
+static void sea_tx_byte_ll(uint16_t data) {
     volatile uint32_t *item_ptr = &rmt_items[0].val;
 
     RMT.conf_ch[0].conf1.mem_rd_rst = 1;
     RMT.conf_ch[0].conf1.mem_rd_rst = 0;
 
-    for (uint32_t mask = 0x80; mask; mask >>= 1, ++item_ptr) {
+    for (uint16_t mask = 0x0001; mask; mask <<= 1, ++item_ptr) {
         if (data & mask) {
             *item_ptr = BIT_ONE;
         }
@@ -57,6 +57,15 @@ void sea_tx_byte(uint8_t data) {
     }
     *item_ptr = BIT_STOP;
     RMT.conf_ch[0].conf1.tx_start = 1;
+}
+#endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
+
+void sea_tx_byte(uint16_t data) {
+#ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
+    while (!(rmt_ll_tx_get_interrupt_status(&RMT, 0) & RMT_LL_EVENT_TX_DONE(0)));
+    rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_TX_DONE(0));
+
+    sea_tx_byte_ll(data);
 #endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 }
 
@@ -101,6 +110,8 @@ void sea_init(void) {
     RMT.conf_ch[0].conf1.rx_filter_thres = 0; /* No minimum length */
     RMT.conf_ch[0].conf1.rx_filter_en = 0;
 
+    rmt_ll_enable_interrupt(&RMT, RMT_LL_EVENT_TX_DONE(0), 1);
+
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG_IRAM[GBAHD_COM_PIN], PIN_FUNC_GPIO);
     gpio_set_direction_iram(GBAHD_COM_PIN, GPIO_MODE_OUTPUT);
     gpio_matrix_out(GBAHD_COM_PIN, RMT_SIG_OUT0_IDX, 0, 0);
@@ -110,5 +121,8 @@ void sea_init(void) {
     rmt_ll_rx_enable(&RMT, 0, 0);
     rmt_ll_rx_reset_pointer(&RMT, 0);
     rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_RX_DONE(0));
+
+    /* Repurpose banksel as GBAHD cfg */
+    sea_tx_byte_ll(GBAHD_CONFIG | config.global_cfg.banksel);
 #endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 }
