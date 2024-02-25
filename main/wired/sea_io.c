@@ -44,6 +44,9 @@ void sea_tx_byte(uint8_t data) {
 #ifdef CONFIG_BLUERETRO_SYSTEM_SEA_BOARD
     volatile uint32_t *item_ptr = &rmt_items[0].val;
 
+    RMT.conf_ch[0].conf1.mem_rd_rst = 1;
+    RMT.conf_ch[0].conf1.mem_rd_rst = 0;
+
     for (uint32_t mask = 0x80; mask; mask >>= 1, ++item_ptr) {
         if (data & mask) {
             *item_ptr = BIT_ONE;
@@ -53,7 +56,7 @@ void sea_tx_byte(uint8_t data) {
         }
     }
     *item_ptr = BIT_STOP;
-    rmt_ll_tx_start(&RMT, 0);
+    RMT.conf_ch[0].conf1.tx_start = 1;
 #endif /* CONFIG_BLUERETRO_SYSTEM_SEA_BOARD */
 }
 
