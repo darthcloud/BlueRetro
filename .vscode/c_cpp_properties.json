@@ -18,7 +18,7 @@
           ],
           "limitSymbolsToIncludedHeaders": false
         },
-        "compilerPath": "${workspaceFolder}/../tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc"
+        "compilerPath": "${workspaceFolder}/../tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc"
       }
     ],
     "version": 4
