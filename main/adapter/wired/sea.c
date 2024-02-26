@@ -174,6 +174,7 @@ void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wir
         struct sea_map *turbo_map_mask = (struct sea_map *)wired_data->output_mask;
         uint32_t map_mask = 0xFFFFFFFF;
         uint32_t map_mask_high = 0xFFFFFFFF;
+        uint32_t map_mask_osd = 0xFFFF;
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (ctrl_data->map_mask[0] & BIT(i)) {
@@ -187,6 +188,7 @@ void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wir
                         map_mask &= ~sea_btns_mask[i];
                     }
                     map_tmp->buttons_osd |= sea_gbahd_btns_mask[i];
+                    map_mask_osd &= ~sea_gbahd_btns_mask[i];
                     wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
                 }
                 else {
@@ -200,7 +202,9 @@ void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wir
                             map_tmp->buttons |= sea_btns_mask[i];
                         }
                     }
-                    map_tmp->buttons_osd &= ~sea_gbahd_btns_mask[i];
+                    if (map_mask_osd & sea_gbahd_btns_mask[i]) {
+                        map_tmp->buttons_osd &= ~sea_gbahd_btns_mask[i];
+                    }
                     wired_data->cnt_mask[i] = 0;
                 }
             }
