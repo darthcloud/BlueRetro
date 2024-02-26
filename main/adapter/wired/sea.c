@@ -75,6 +75,7 @@ void sea_meta_init(struct wired_ctrl *ctrl_data) {
 
 static void gbahd_osd(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct sea_map *map_tmp = (struct sea_map *)wired_data->output;
+    struct sea_map *turbo_map_mask = (struct sea_map *)wired_data->output_mask;
     static uint32_t gbahd_osd_btn = 0;
 
     if (!(map_tmp->gbahd_state & BIT(GBAHD_STATE_OSD))) {
@@ -165,7 +166,7 @@ static void gbahd_osd(struct wired_ctrl *ctrl_data, struct wired_data *wired_dat
             }
         }
     }
-    sea_tx_byte(map_tmp->buttons_osd);
+    sea_tx_byte(map_tmp->buttons_osd & turbo_map_mask->buttons_osd);
 }
 
 void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
@@ -228,6 +229,7 @@ void sea_gen_turbo_mask(struct wired_data *wired_data) {
     struct sea_map *map_mask = (struct sea_map *)wired_data->output_mask;
 
     memset(map_mask, 0, sizeof(*map_mask));
+    map_mask->buttons_osd = 0xFFFF;
 
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         uint8_t mask = wired_data->cnt_mask[i] >> 1;
@@ -242,6 +244,7 @@ void sea_gen_turbo_mask(struct wired_data *wired_data) {
                         else {
                             map_mask->buttons |= sea_btns_mask[i];
                         }
+                        map_mask->buttons_osd &= ~sea_gbahd_btns_mask[i];
                     }
                 }
                 else {
@@ -252,6 +255,7 @@ void sea_gen_turbo_mask(struct wired_data *wired_data) {
                         else {
                             map_mask->buttons |= sea_btns_mask[i];
                         }
+                        map_mask->buttons_osd &= ~sea_gbahd_btns_mask[i];
                     }
                 }
             }
