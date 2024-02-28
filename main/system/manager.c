@@ -384,7 +384,7 @@ static void boot_btn_hdl(void) {
 
         switch (state) {
             case SYS_MGR_BTN_STATE0:
-                sys_mgr_reset();
+                sys_mgr_power_off();
                 break;
             case SYS_MGR_BTN_STATE1:
                 if (bt_hci_get_inquiry()) {
@@ -397,8 +397,8 @@ static void boot_btn_hdl(void) {
             case SYS_MGR_BTN_STATE2:
                 bt_hci_start_inquiry();
                 break;
-            case SYS_MGR_BTN_STATE3:  // shut down
-                sys_mgr_power_off();
+            case SYS_MGR_BTN_STATE3:
+                sys_mgr_reset();
                 break;
             default:
                 sys_mgr_factory_reset();
