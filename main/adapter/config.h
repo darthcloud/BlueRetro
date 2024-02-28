@@ -65,7 +65,7 @@ struct hw_config {
             uint32_t hotplug;
             uint32_t hw1_ports_led_pins[4];
             uint32_t led_flash_duty_cycle;
-            uint32_t led_flash_hz[3];
+            uint32_t led_flash_hz[4];
             uint32_t led_flash_off_duty_cycle;
             uint32_t led_flash_on_duty_cycle;
             uint32_t led_pulse_duty_max;
@@ -88,7 +88,7 @@ struct hw_config {
             uint32_t reset_pin_od;
             uint32_t reset_pin_polarity;
             uint32_t reset_pin_pulse_ms;
-            uint32_t sw_io0_hold_thres_ms[3];
+            uint32_t sw_io0_hold_thres_ms[4];
             uint32_t ps_ctrl_colors[8];
         };
         uint32_t data32[43];
