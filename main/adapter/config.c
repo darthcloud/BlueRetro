@@ -21,7 +21,7 @@ struct hw_config hw_config = {
     .hotplug = 0,
     .hw1_ports_led_pins = {2, 4, 12, 15},
     .led_flash_duty_cycle = 0x80000,
-    .led_flash_hz = {2, 4, 8},
+    .led_flash_hz = {2, 4, 8, 12},
     .led_flash_off_duty_cycle = 0,
     .led_flash_on_duty_cycle = 0xFFFFF,
     .led_pulse_duty_max = 2000,
@@ -44,7 +44,7 @@ struct hw_config hw_config = {
     .reset_pin_od = 1,
     .reset_pin_polarity = 0,
     .reset_pin_pulse_ms = 500,
-    .sw_io0_hold_thres_ms = {1000, 3000, 6000},
+    .sw_io0_hold_thres_ms = {1000, 3000, 6000, 8000},
     .ps_ctrl_colors = {
         0xFF0000, /* Blue */
         0x0000FF, /* Red */
