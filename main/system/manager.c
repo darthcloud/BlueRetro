@@ -58,6 +58,7 @@ enum {
     SYS_MGR_BTN_STATE1,
     SYS_MGR_BTN_STATE2,
     SYS_MGR_BTN_STATE3,
+    SYS_MGR_BTN_STATE4,
 };
 
 #ifdef CONFIG_BLUERETRO_HW2
@@ -366,7 +367,7 @@ static void boot_btn_hdl(void) {
 
         while (sys_mgr_get_boot_btn()) {
             hold_cnt++;
-            if (hold_cnt > (hw_config.sw_io0_hold_thres_ms[state] / 10) && state < SYS_MGR_BTN_STATE3) {
+            if (hold_cnt > (hw_config.sw_io0_hold_thres_ms[state] / 10) && state < SYS_MGR_BTN_STATE4) {
                 ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, hw_config.led_flash_duty_cycle, 0);
                 ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, hw_config.led_flash_hz[state]);
                 state++;
@@ -395,6 +396,9 @@ static void boot_btn_hdl(void) {
                 break;
             case SYS_MGR_BTN_STATE2:
                 bt_hci_start_inquiry();
+                break;
+            case SYS_MGR_BTN_STATE3:  // Fügen Sie den neuen Zustand hinzu
+                sys_mgr_power_off();
                 break;
             default:
                 sys_mgr_factory_reset();
