@@ -397,7 +397,7 @@ static void boot_btn_hdl(void) {
             case SYS_MGR_BTN_STATE2:
                 bt_hci_start_inquiry();
                 break;
-            case SYS_MGR_BTN_STATE3:  // Fügen Sie den neuen Zustand hinzu
+            case SYS_MGR_BTN_STATE3:  // shut down
                 sys_mgr_power_off();
                 break;
             default:
