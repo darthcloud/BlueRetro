@@ -182,7 +182,7 @@ static const struct npiso_kb_key_to_matrix npiso_kb_key_to_matrix[KBM_MAX] = {
  /* KB_KP_MINUS, KB_KP_PLUS, KB_KP_ENTER, KB_KP_1, KB_KP_2, KB_KP_3, KB_KP_4, KB_KP_5 */
     {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0},
  /* KB_KP_6, KB_KP_7, KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT, KB_LALT, KB_RCTRL */
-    {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {7, 1, P2_D3_MASK}, {0, 0, 0}, {0, 0, 0},
+    {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {7, 1, P2_D2_MASK}, {0, 0, 0}, {0, 0, 0},
  /* KB_RSHIFT, KB_RALT, KB_RWIN */
     {0, 1, P2_D2_MASK}, {1, 0, P2_D2_MASK}, {0, 0, 0},
 };
