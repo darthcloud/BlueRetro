@@ -32,6 +32,7 @@
 #define P1_L_RN_MASK (1 << P1_L_RN_PIN)
 
 #define POLL_TIMEOUT 512
+#define POLL_TIMEOUT_KB 256
 
 #define P1_OUT0_MASK (BIT(P1_U_I_PIN) | BIT(P1_R_II_PIN) | BIT(P1_D_SL_PIN) | BIT(P1_L_RN_PIN))
 
@@ -69,6 +70,7 @@ static uint32_t axes[4] = {0};
 static uint32_t axes_mask[4] = {
     P1_U_I_MASK, P1_R_II_MASK, P1_D_SL_MASK, P1_L_RN_MASK
 };
+static const uint32_t (*scancodes)[2] = (uint32_t (*)[2])wired_adapter.data[0].output;
 
 static inline void load_mouse_axes() {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[0].output + 12);
@@ -294,6 +296,58 @@ static unsigned pce_mouse_oe_isr(unsigned cause) {
     return 0;
 }
 
+static void pce_kb_task(void) {
+    uint32_t timeout, cur_in1, prev_in1, change1 = 0, lock = 0;
+
+    timeout = 0;
+    cur_in1 = GPIO.in1.val;
+    while (1) {
+        prev_in1 = cur_in1;
+        cur_in1 = GPIO.in1.val;
+        while (!(change1 = cur_in1 ^ prev_in1)) {
+            prev_in1 = cur_in1;
+            cur_in1 = GPIO.in1.val;
+            if (lock) {
+                if (++timeout > POLL_TIMEOUT_KB) {
+                    core0_stall_end();
+                    lock = 0;
+                    timeout = 0;
+                }
+            }
+        }
+
+        if (change1 & P1_SEL_MASK) {
+            if (!lock) {
+                core0_stall_start();
+                ++lock;
+            }
+            if (cur_in1 & P1_SEL_MASK) {
+                if (cycle < 17) {
+                    ++cycle;
+                }
+                GPIO.out = scancodes[cycle][1];
+            }
+            else {
+                GPIO.out = scancodes[cycle][0];
+            }
+            timeout = 0;
+        }
+    }
+}
+
+static unsigned pce_kb_oe_isr(unsigned cause) {
+    uint32_t cur_in1 = GPIO.in1.val;
+    cycle = 0;
+    if (cur_in1 & P1_SEL_MASK) {
+        GPIO.out = scancodes[cycle][1];
+    }
+    else {
+        GPIO.out = scancodes[cycle][0];
+    }
+    GPIO.status_w1tc = P1_OE_MASK;
+    return 0;
+}
+
 void pce_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
 
@@ -357,6 +411,10 @@ void pce_io_init(uint32_t package) {
     }
 
     switch (config.out_cfg[0].dev_mode) {
+        case DEV_KB:
+            intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, pce_kb_oe_isr);
+            pce_kb_task();
+            break;
         case DEV_MOUSE:
             intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, GPIO_INTR_NUM, pce_mouse_oe_isr);
             pce_mouse_task();
