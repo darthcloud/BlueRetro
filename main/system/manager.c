@@ -388,9 +388,8 @@ static void boot_btn_hdl(void) {
                 default:
                     break;
             }
+            set_leds_as_btn_status(1);
         }
-        set_leds_as_btn_status(1);
-      
         else {
             switch (state) {
                 case SYS_MGR_BTN_STATE0:
@@ -415,9 +414,8 @@ static void boot_btn_hdl(void) {
                     sys_mgr_factory_reset();
                     break;
             }
-        }
-        set_leds_as_btn_status(0);
-      
+            set_leds_as_btn_status(0);
+        }     
         /* Inhibit SW press for 2 seconds */
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
