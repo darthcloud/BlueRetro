@@ -388,7 +388,8 @@ static void boot_btn_hdl(void) {
                 default:
                     break;
             }
-            set_leds_as_btn_status(1);  
+            set_leds_as_btn_status(1);
+            return;
         }
             
         else {
@@ -416,6 +417,7 @@ static void boot_btn_hdl(void) {
                     break;
             }
             set_leds_as_btn_status(0);
+            return;
         }
 
         /* Inhibit SW press for 2 seconds */
