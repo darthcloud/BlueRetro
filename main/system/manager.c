@@ -357,14 +357,7 @@ static void boot_btn_hdl(void) {
     uint32_t hold_cnt = 0;
     uint32_t state = 0;
 
-    if (sys_mgr_get_boot_btn()) {
-        if (!sys_mgr_get_power()) {
-            sys_mgr_power_on();
-            return;
-        }
-
-        set_leds_as_btn_status(1);
-
+  if (sys_mgr_get_boot_btn()) {
         while (sys_mgr_get_boot_btn()) {
             hold_cnt++;
             if (hold_cnt > (hw_config.sw_io0_hold_thres_ms[state] / 10) && state < SYS_MGR_BTN_STATE4) {
@@ -382,28 +375,47 @@ static void boot_btn_hdl(void) {
             state++;
         }
 
-        switch (state) {
-            case SYS_MGR_BTN_STATE0:
-                sys_mgr_reset();
-                break;
-            case SYS_MGR_BTN_STATE1:
-                sys_mgr_power_off();
-                break;
-            case SYS_MGR_BTN_STATE2:
-                if (bt_hci_get_inquiry()) {
-                    bt_hci_stop_inquiry();
-                }
-                else {
-                    bt_host_disconnect_all();
-                }
-                break;
-            case SYS_MGR_BTN_STATE3:
-                bt_hci_start_inquiry();
-                break;
+        if (!sys_mgr_get_power()) {
+            switch (state) {
+                case SYS_MGR_BTN_STATE0:
+                    sys_mgr_power_on();
+                    break;
+                case SYS_MGR_BTN_STATE1: /* fallback reset */
+                    set_reset(0);
+                    sys_mgr_power_on();
+                    set_reset(1);
+                    break;
+                default:
+                    break;
+            }
+            set_leds_as_btn_status(1);  
+            return;
+        }
+            
+        else {
+            switch (state) {
+                case SYS_MGR_BTN_STATE0:
+                    sys_mgr_reset();
+                    break;
+                case SYS_MGR_BTN_STATE1: /* power off */
+                    sys_mgr_power_off();
+                    break;
+                case SYS_MGR_BTN_STATE2:
+                    if (bt_hci_get_inquiry()) {
+                        bt_hci_stop_inquiry();
+                    }
+                    else {
+                        bt_host_disconnect_all();
+                    }
+                    break;
+                case SYS_MGR_BTN_STATE3:
+                    bt_hci_start_inquiry();
+                    break;
 
-            default:
-                sys_mgr_factory_reset();
-                break;
+                default:
+                    sys_mgr_factory_reset();
+                    break;
+            }
         }
 
         set_leds_as_btn_status(0);
