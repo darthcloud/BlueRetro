@@ -76,6 +76,16 @@ struct pce_mouse_map {
     uint8_t relative[2];
 } __packed;
 
+struct pce_kb_map {
+    uint32_t scancodes[18][2];
+} __packed;
+
+struct pce_kb_key_to_matrix {
+    uint8_t idx;
+    uint8_t nibble_idx;
+    uint32_t mask;
+};
+
 static const uint32_t pce_mouse_mask[4] = {0x190100F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t pce_mouse_desc[4] = {0x000000F0, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t pce_mouse_btns_mask[32] = {
@@ -165,6 +175,44 @@ static DRAM_ATTR const uint32_t pce_6btns_btns_mask[][32] = {
     },
 };
 
+static const uint32_t pce_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0xFFFFFFFF, 0x0007FFFF | BR_COMBO_MASK};
+static const uint32_t pce_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const struct pce_kb_key_to_matrix pce_kb_key_to_matrix[KBM_MAX] = {
+ /* KB_A, KB_D, KB_S, KB_W, MOUSE_X_LEFT, MOUSE_X_RIGHT, MOUSE_Y_DOWN MOUSE_Y_UP */
+    {3, 0, P1_R_II_MASK}, {3, 1, P1_U_I_MASK}, {5, 0, P1_L_RN_MASK}, {14, 1, P1_D_SL_MASK}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0},
+ /* KB_LEFT, KB_RIGHT, KB_DOWN, KB_UP, MOUSE_WX_LEFT, MOUSE_WX_RIGHT, MOUSE_WY_DOWN, MOUSE_WY_UP */
+    {11, 0, P1_D_SL_MASK}, {9, 0, P1_D_SL_MASK}, {11, 0, P1_R_II_MASK}, {9, 0, P1_R_II_MASK}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0},
+ /* KB_Q, KB_R, KB_E, KB_F, KB_ESC, KB_ENTER, KB_LWIN, KB_HASH */
+    {5, 0, P1_R_II_MASK}, {5, 0, P1_D_SL_MASK}, {3, 1, P1_R_II_MASK}, {3, 1, P1_D_SL_MASK}, {15, 1, P1_D_SL_MASK}, {15, 0, P1_U_I_MASK}, {9, 1, P1_R_II_MASK}, {0, 0, 0},
+ /* MOUSE_RIGHT, KB_Z, KB_LCTRL, MOUSE_MIDDLE, MOUSE_LEFT, KB_X, KB_LSHIFT, KB_SPACE */
+    {0, 0, 0}, {6, 0, P1_D_SL_MASK}, {14, 1, P1_U_I_MASK}, {0, 0, 0}, {0, 0, 0}, {6, 0, P1_U_I_MASK}, {15, 0, P1_D_SL_MASK}, {10, 1, P1_D_SL_MASK},
+
+ /* KB_B, KB_C, KB_G, KB_H, KB_I, KB_J, KB_K, KB_L */
+    {3, 0, P1_D_SL_MASK}, {3, 0, P1_L_RN_MASK}, {12, 1, P1_D_SL_MASK}, {4, 0, P1_U_I_MASK}, {4, 0, P1_R_II_MASK}, {4, 0, P1_D_SL_MASK}, {4, 0, P1_L_RN_MASK}, {4, 1, P1_U_I_MASK},
+ /* KB_M, KB_N, KB_O, KB_P, KB_T, KB_U, KB_V, KB_Y */
+    {4, 1, P1_R_II_MASK}, {4, 1, P1_D_SL_MASK}, {12, 1, P1_U_I_MASK}, {5, 0, P1_U_I_MASK}, {5, 1, P1_U_I_MASK}, {5, 1, P1_R_II_MASK}, {5, 1, P1_D_SL_MASK}, {6, 0, P1_R_II_MASK},
+ /* KB_1, KB_2, KB_3, KB_4, KB_5, KB_6, KB_7, KB_8 */
+    {7, 0, P1_R_II_MASK}, {7, 0, P1_D_SL_MASK}, {7, 0, P1_L_RN_MASK}, {7, 1, P1_U_I_MASK}, {7, 1, P1_R_II_MASK}, {7, 1, P1_D_SL_MASK}, {16, 1, P1_D_SL_MASK}, {8, 0, P1_U_I_MASK},
+ /* KB_9, KB_0, KB_BACKSPACE, KB_TAB, KB_MINUS, KB_EQUAL, KB_LEFTBRACE, KB_RIGHTBRACE */
+    {8, 0, P1_R_II_MASK}, {7, 0, P1_U_I_MASK}, {13, 1, P1_R_II_MASK}, {11, 0, P1_U_I_MASK}, {16, 1, P1_R_II_MASK}, {6, 1, P1_D_SL_MASK}, {6, 0, P1_L_RN_MASK}, {6, 1, P1_R_II_MASK},
+
+ /* KB_BACKSLASH, KB_SEMICOLON, KB_APOSTROPHE, KB_GRAVE, KB_COMMA, KB_DOT, KB_SLASH, KB_CAPSLOCK */
+    {12, 1, P1_R_II_MASK}, {8, 0, P1_L_RN_MASK}, {8, 0, P1_D_SL_MASK}, {6, 1, P1_U_I_MASK}, {8, 1, P1_U_I_MASK}, {8, 1, P1_R_II_MASK}, {8, 1, P1_D_SL_MASK}, {15, 1, P1_U_I_MASK},
+ /* KB_F1, KB_F2, KB_F3, KB_F4, KB_F5, KB_F6, KB_F7, KB_F8 */
+    {10, 0, P1_R_II_MASK}, {10, 0, P1_D_SL_MASK}, {10, 0, P1_L_RN_MASK}, {10, 1, P1_U_I_MASK}, {10, 1, P1_R_II_MASK}, {13, 0, P1_U_I_MASK}, {13, 0, P1_R_II_MASK}, {13, 0, P1_D_SL_MASK},
+ /* KB_F9, KB_F10, KB_F11, KB_F12, KB_PSCREEN, KB_SCROLL, KB_PAUSE, KB_INSERT */
+    {13, 0, P1_L_RN_MASK}, {13, 1, P1_U_I_MASK}, {2, 1, P1_R_II_MASK}, {2, 1, P1_U_I_MASK}, {11, 0, P1_L_RN_MASK}, {14, 0, P1_R_II_MASK}, {14, 0, P1_U_I_MASK}, {13, 1, P1_D_SL_MASK},
+ /* KB_HOME, KB_PAGEUP, KB_DEL, KB_END, KB_PAGEDOWN, KB_NUMLOCK, KB_KP_DIV, KB_KP_MULTI */
+    {11, 1, P1_U_I_MASK}, {12, 0, P1_R_II_MASK}, {15, 1, P1_R_II_MASK}, {10, 0, P1_U_I_MASK}, {12, 0, P1_U_I_MASK}, {9, 0, P1_U_I_MASK}, {11, 1, P1_D_SL_MASK}, {2, 0, P1_D_SL_MASK},
+
+ /* KB_KP_MINUS, KB_KP_PLUS, KB_KP_ENTER, KB_KP_1, KB_KP_2, KB_KP_3, KB_KP_4, KB_KP_5 */
+    {11, 1, P1_R_II_MASK}, {2, 0, P1_L_RN_MASK}, {15, 0, P1_R_II_MASK}, {1, 0, P1_R_II_MASK}, {1, 0, P1_D_SL_MASK}, {1, 0, P1_L_RN_MASK}, {1, 1, P1_U_I_MASK}, {1, 1, P1_R_II_MASK},
+ /* KB_KP_6, KB_KP_7, KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT, KB_LALT, KB_RCTRL */
+    {1, 1, P1_D_SL_MASK}, {14, 1, P1_R_II_MASK}, {2, 0, P1_U_I_MASK}, {2, 0, P1_R_II_MASK}, {1, 0, P1_U_I_MASK}, {2, 1, P1_D_SL_MASK}, {9, 1, P1_U_I_MASK}, {14, 0, P1_L_RN_MASK},
+ /* KB_RSHIFT, KB_RALT, KB_RWIN */
+    {15, 0, P1_L_RN_MASK}, {3, 0, P1_U_I_MASK}, {14, 0, P1_D_SL_MASK},
+};
+
 static void pce_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     /* Output config mode toggle GamePad/GamePadAlt */
     if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MT]) {
@@ -218,6 +266,25 @@ static void pce_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_da
     memcpy(wired_data->output + 8, (uint8_t *)&map_tmp + 8, sizeof(map_tmp) - 8);
 }
 
+static void pce_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    struct pce_kb_map map_tmp;
+
+    memset(&map_tmp, 0xFF, sizeof(map_tmp));
+
+    for (uint32_t i = 0; i < KBM_MAX; i++) {
+        if (ctrl_data->map_mask[i / 32] & BIT(i & 0x1F)) {
+            if (ctrl_data->btns[i / 32].value & BIT(i & 0x1F)) {
+                uint8_t byte = pce_kb_key_to_matrix[i].idx;
+                uint8_t nibble = pce_kb_key_to_matrix[i].nibble_idx;
+
+                map_tmp.scancodes[byte][nibble] &= ~pce_kb_key_to_matrix[i].mask;
+            }
+        }
+    }
+
+    memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
+}
+
 static void pce_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct pce_map map_tmp;
     uint32_t map_mask[3];
@@ -258,6 +325,17 @@ static void pce_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_dat
 
 void IRAM_ATTR pce_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
+        case DEV_KB:
+        {
+            struct pce_kb_map *map = (struct pce_kb_map *)wired_data->output;
+
+            memset(wired_data->output, 0xFF, sizeof(struct pce_kb_map));
+            map->scancodes[0][0] = P1_R_II_MASK;
+            map->scancodes[0][1] = PCE_OUT_DISABLE;
+            map->scancodes[17][0] = P1_R_II_MASK;
+            map->scancodes[17][1] = PCE_OUT_DISABLE;
+            break;
+        }
         case DEV_MOUSE:
         {
             struct pce_mouse_map *map = (struct pce_mouse_map *)wired_data->output;
@@ -289,6 +367,10 @@ void pce_meta_init(struct wired_ctrl *ctrl_data) {
     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
         for (uint32_t j = 0; j < ADAPTER_MAX_AXES; j++) {
             switch (config.out_cfg[0].dev_mode) {
+                case DEV_KB:
+                    ctrl_data[i].mask = pce_kb_mask;
+                    ctrl_data[i].desc = pce_kb_desc;
+                    break;
                 case DEV_MOUSE:
                     ctrl_data[i].mask = pce_mouse_mask;
                     ctrl_data[i].desc = pce_mouse_desc;
@@ -308,6 +390,9 @@ void pce_meta_init(struct wired_ctrl *ctrl_data) {
 
 void pce_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     switch (dev_mode) {
+        case DEV_KB:
+            pce_kb_from_generic(ctrl_data, wired_data);
+            break;
         case DEV_MOUSE:
             pce_mouse_from_generic(ctrl_data, wired_data);
             break;
