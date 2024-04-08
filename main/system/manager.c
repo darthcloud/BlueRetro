@@ -51,6 +51,8 @@
 #define LED_P3_PIN 12
 #define LED_P4_PIN 15
 
+#define INHIBIT_CNT 200
+
 typedef void (*sys_mgr_cmd_t)(void);
 
 enum {
@@ -353,6 +355,7 @@ static void wired_port_hdl(void) {
 }
 
 static void boot_btn_hdl(void) {
+    uint32_t inhibit_cnt = 0;
     uint32_t hold_cnt = 0;
     uint32_t state = 0;
 
@@ -402,8 +405,16 @@ static void boot_btn_hdl(void) {
         }
 
         set_leds_as_btn_status(0);
-        /* Inhibit SW press for 2 seconds */
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        while (inhibit_cnt++ < INHIBIT_CNT) {
+            /* Power off on quick double press */
+            if (sys_mgr_get_boot_btn()) {
+                sys_mgr_power_off();
+                /* Inhibit SW press for 2 seconds */
+                vTaskDelay(2000 / portTICK_PERIOD_MS);
+                return;
+            }
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        };
     }
 }
 
