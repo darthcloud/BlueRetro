@@ -307,6 +307,7 @@ static void config_init_nvs_patch(struct config *data) {
                 if (err == ESP_OK) {
                     for (uint32_t i = 0; i < WIRED_MAX_DEV; i++) {
                         memcpy(&data->in_cfg[i].map_cfg[index], &mapping, sizeof(struct map_cfg));
+                        data->in_cfg[i].map_cfg[index].dst_id = i;
                     }
                 }
             }
