@@ -355,16 +355,23 @@ static void wired_port_hdl(void) {
 }
 
 static void boot_btn_hdl(void) {
-    uint32_t inhibit_cnt = 0;
+    static uint32_t check_qdp = 0;
+    static uint32_t inhibit_cnt = 0;
     uint32_t hold_cnt = 0;
     uint32_t state = 0;
 
-    if (sys_mgr_get_boot_btn()) {
-        if (!sys_mgr_get_power()) {
-            sys_mgr_power_on();
-            return;
+    /* Let inhibit_cnt reach 0 before handling button again */
+    if (inhibit_cnt && inhibit_cnt--) {
+        /* Power off on quick double press */
+        if (check_qdp && sys_mgr_get_power() && sys_mgr_get_boot_btn()) {
+            sys_mgr_power_off();
+            check_qdp = 0;
         }
+        return;
+    }
+    check_qdp = 0;
 
+    if (sys_mgr_get_boot_btn()) {
         set_leds_as_btn_status(1);
 
         while (sys_mgr_get_boot_btn()) {
@@ -384,37 +391,45 @@ static void boot_btn_hdl(void) {
             state++;
         }
 
-        switch (state) {
-            case SYS_MGR_BTN_STATE0:
-                sys_mgr_reset();
-                break;
-            case SYS_MGR_BTN_STATE1:
-                if (bt_hci_get_inquiry()) {
-                    bt_hci_stop_inquiry();
-                }
-                else {
-                    bt_host_disconnect_all();
-                }
-                break;
-            case SYS_MGR_BTN_STATE2:
-                bt_hci_start_inquiry();
-                break;
-            default:
-                sys_mgr_factory_reset();
-                break;
+        if (sys_mgr_get_power()) {
+            /* System is on */
+            switch (state) {
+                case SYS_MGR_BTN_STATE0:
+                    sys_mgr_reset();
+                    check_qdp = 1;
+                    break;
+                case SYS_MGR_BTN_STATE1:
+                    if (bt_hci_get_inquiry()) {
+                        bt_hci_stop_inquiry();
+                    }
+                    else {
+                        bt_host_disconnect_all();
+                    }
+                    break;
+                case SYS_MGR_BTN_STATE2:
+                    bt_hci_start_inquiry();
+                    break;
+                default:
+                    sys_mgr_factory_reset();
+                    break;
+            }
+        }
+        else {
+            /* System is off */
+            switch (state) {
+                case SYS_MGR_BTN_STATE0:
+                    sys_mgr_power_on();
+                    break;
+                default:
+                    set_reset(0);
+                    sys_mgr_power_on();
+                    set_reset(1);
+                    break;
+            }
         }
 
         set_leds_as_btn_status(0);
-        while (inhibit_cnt++ < INHIBIT_CNT) {
-            /* Power off on quick double press */
-            if (sys_mgr_get_boot_btn()) {
-                sys_mgr_power_off();
-                /* Inhibit SW press for 2 seconds */
-                vTaskDelay(2000 / portTICK_PERIOD_MS);
-                return;
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        };
+        inhibit_cnt = INHIBIT_CNT;
     }
 }
 
