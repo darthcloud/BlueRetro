@@ -98,6 +98,7 @@ struct dc_kb_map {
         };
         uint8_t key_codes[8];
     };
+    int8_t br_key_codes[6];
 } __packed;
 
 static const uint32_t dc_mask[4] = {0x337FFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
@@ -188,7 +189,9 @@ void IRAM_ATTR dc_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
     switch (dev_mode) {
         case DEV_KB:
         {
-            memset(wired_data->output, 0x00, sizeof(struct dc_kb_map));
+            struct dc_kb_map *map = (struct dc_kb_map *)wired_data->output;
+            memset(map, 0x00, sizeof(struct dc_kb_map));
+            memset(map->br_key_codes, KBM_NONE, sizeof(map->br_key_codes));
             break;
         }
         case DEV_MOUSE:
@@ -331,16 +334,56 @@ static void dc_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *
     struct dc_kb_map map_tmp = {0};
     uint32_t code_idx = 0;
 
+    memcpy((void *)&map_tmp, wired_data->output, sizeof(map_tmp));
+
+    /* Clear released keys since previous report and shift remaining one left in array */
+    for (uint32_t i = 0; i < ARRAY_SIZE(dc_kb_keycode_idx);) {
+        int8_t br_key_code = map_tmp.br_key_codes[i];
+
+        if (map_tmp.br_key_codes[i] > KBM_NONE && !(ctrl_data->btns[br_key_code / 32].value & BIT(br_key_code & 0x1F))) {
+            uint32_t j = i;
+            for (; j < (ARRAY_SIZE(dc_kb_keycode_idx) - 1); j++) {
+                map_tmp.br_key_codes[j] = map_tmp.br_key_codes[j + 1];
+            }
+            map_tmp.br_key_codes[j] = KBM_NONE;
+        }
+        else {
+            i++;
+        }
+    }
+
+    /* Update DC keycodes */
+    for (uint32_t i = 0; i < ARRAY_SIZE(dc_kb_keycode_idx); i++) {
+        int8_t br_key_code = map_tmp.br_key_codes[i];
+        if (br_key_code == KBM_NONE) {
+            map_tmp.key_codes[dc_kb_keycode_idx[i]] = 0;
+        }
+        else {
+            map_tmp.key_codes[dc_kb_keycode_idx[i]] = dc_kb_scancode[map_tmp.br_key_codes[i]];
+            code_idx++;
+        }
+    }
+
+    /* Add new key press */
     for (uint32_t i = 0; i < KBM_MAX && code_idx < ARRAY_SIZE(dc_kb_keycode_idx); i++) {
         if (ctrl_data->map_mask[i / 32] & BIT(i & 0x1F)) {
             if (ctrl_data->btns[i / 32].value & BIT(i & 0x1F)) {
                 if (dc_kb_scancode[i]) {
+                    for (uint32_t j = 0; j < ARRAY_SIZE(dc_kb_keycode_idx); j++) {
+                        if (map_tmp.br_key_codes[j] == i) {
+                            goto next_loop;
+                        }
+                    }
+                    map_tmp.br_key_codes[code_idx] = i;
                     map_tmp.key_codes[dc_kb_keycode_idx[code_idx++]] = dc_kb_scancode[i];
                 }
             }
         }
+next_loop:
+        ;
     }
 
+    map_tmp.bitfield = 0;
     if (ctrl_data->map_mask[0] & BIT(KB_LCTRL & 0x1F) && ctrl_data->btns[0].value & BIT(KB_LCTRL & 0x1F)) {
         map_tmp.bitfield |= BIT(DC_KB_LCTRL);
     }
