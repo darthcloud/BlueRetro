@@ -441,7 +441,7 @@ void adapter_bridge(struct bt_data *bt_data) {
 #ifdef CONFIG_BLUERETRO_JSON_DBG
             printf("{\"log_type\": \"mapped_input\"");
 #endif
-            adapter_debug_wired_print(&ctrl_output[0]);
+            adapter_debug_wired_print(&ctrl_output[bt_data->base.pids->out_idx]);
 #endif
             ctrl_output[bt_data->base.pids->out_idx].index = bt_data->base.pids->out_idx;
             sys_macro_hdl(&ctrl_output[bt_data->base.pids->out_idx], &bt_data->base.flags[PAD]);
