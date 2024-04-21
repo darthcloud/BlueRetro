@@ -124,6 +124,10 @@ def find_device(trace):
             bd_addr = raw(pkt[Raw])[5:11]
             mode = "LE"
             break
+        if pkt.haslayer(bt.HCI_LE_Meta_Connection_Complete):
+            handle = pkt[bt.HCI_LE_Meta_Connection_Complete].handle
+            bd_addr = pkt[bt.HCI_LE_Meta_Connection_Complete].paddr
+            mode = "LE"
     return mode, bd_addr, handle
 
 
