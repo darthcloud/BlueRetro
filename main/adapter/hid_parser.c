@@ -290,6 +290,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc++;
                 break;
             case 0x0A: /* USAGE16 */
+            case HID_LI_USAGE_MIN(2): /* 0x1A */
                 if (usage_idx < REPORT_MAX_USAGE) {
                     usage_list[usage_idx++] = *(uint16_t *)desc;
                 }
