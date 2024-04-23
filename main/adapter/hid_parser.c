@@ -18,7 +18,7 @@ struct hid_stack_element {
     uint32_t report_cnt;
     int32_t logical_min;
     int32_t logical_max;
-    uint8_t usage_page;
+    uint32_t usage_page;
 };
 
 static struct hid_report *reports[BT_MAX_DEV][HID_MAX_REPORT] = {0};
@@ -273,11 +273,11 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 hid_stack[hid_stack_idx].usage_page = *desc++;
                 break;
             case 0x06: /* USAGE_PAGE16 */
-                hid_stack[hid_stack_idx].usage_page = 0xFF;
+                hid_stack[hid_stack_idx].usage_page = *(uint16_t *)desc;
                 desc += 2;
                 break;
             case 0x07: /* USAGE_PAGE32 */
-                hid_stack[hid_stack_idx].usage_page = 0xFF;
+                hid_stack[hid_stack_idx].usage_page = *(uint32_t *)desc;
                 desc += 4;
                 break;
             case HID_LI_USAGE: /* 0x09 */
