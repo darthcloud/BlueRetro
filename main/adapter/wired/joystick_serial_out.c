@@ -125,11 +125,11 @@ static void joystick_serial_out_ctrl_from_generic(struct wired_ctrl *ctrl_data, 
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 #ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d, %d, %d, %d, %d], \"btns\": [%d, %d]}\n",
+    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d, %d, %d, %d, %d], \"btns\": [%d]}\n",
         map_tmp.axes[joystick_serial_out_axes_idx[0]], map_tmp.axes[joystick_serial_out_axes_idx[1]],
         map_tmp.axes[joystick_serial_out_axes_idx[2]], map_tmp.axes[joystick_serial_out_axes_idx[3]],
         map_tmp.axes[joystick_serial_out_axes_idx[4]], map_tmp.axes[joystick_serial_out_axes_idx[5]],
-        map_tmp.buttons, map_tmp.analog_btn);
+        map_tmp.buttons);
 #endif
 }
 
