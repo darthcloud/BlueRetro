@@ -128,6 +128,7 @@ def find_device(trace):
             handle = pkt[bt.HCI_LE_Meta_Connection_Complete].handle
             bd_addr = pkt[bt.HCI_LE_Meta_Connection_Complete].paddr
             mode = "LE"
+            break
     return mode, bd_addr, handle
 
 
