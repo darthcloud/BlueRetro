@@ -7,6 +7,7 @@
 #define _ADAPTER_DEBUG_H_
 
 void adapter_debug_wireless_print(struct wireless_ctrl *ctrl_input);
+void adapter_debug_joystick_serial_out(int32_t out_idx, int32_t type, struct wired_ctrl *ctrl_input);
 void adapter_debug_wired_print(struct wired_ctrl *ctrl_input);
 void adapter_debug_injector_init(void);
 

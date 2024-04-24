@@ -51,6 +51,7 @@ static const char *sys_name[WIRED_MAX] = {
     "PARALLEL_1P_OD",
     "PARALLEL_2P_OD",
     "SEA Board",
+    "JOYSTICK_SERIAL_OUT"
 };
 
 static const wired_init_t wired_init[WIRED_MAX] = {
@@ -78,6 +79,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     NULL, /* PARALLEL_1P_OD */
     NULL, /* PARALLEL_2P_OD */
     NULL, /* SEA_BOARD */
+    NULL, /* JOYSTICK_SERIAL_OUT */
 };
 
 static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
@@ -105,6 +107,7 @@ static const wired_port_cfg_t wired_port_cfg[WIRED_MAX] = {
     NULL, /* PARALLEL_1P_OD */
     NULL, /* PARALLEL_2P_OD */
     NULL, /* SEA_BOARD */
+    NULL, /* JOYSTICK_SERIAL_OUT */
 };
 
 void wired_bare_init(uint32_t package) {

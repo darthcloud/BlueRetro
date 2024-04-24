@@ -437,6 +437,10 @@ void adapter_bridge(struct bt_data *bt_data) {
             adapter_out_mask[bt_data->base.pids->out_idx] =
                 out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
+            if (wired_adapter.system_id == JOYSTICK_SERIAL_OUT) {
+                adapter_debug_joystick_serial_out(bt_data->base.pids->out_idx, bt_data->base.pids->type, &ctrl_output[bt_data->base.pids->out_idx]);        
+            }                
+
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
 #ifdef CONFIG_BLUERETRO_JSON_DBG
             printf("{\"log_type\": \"mapped_input\"");

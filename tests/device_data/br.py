@@ -70,6 +70,7 @@ class system(IntEnum):
     PARALLEL_1P_OD = auto()
     PARALLEL_2P_OD = auto()
     SEA_BOARD = auto()
+    JOYSTICK_SERIAL_OUT = auto()
 
 
 class report_type(IntEnum):

@@ -14,6 +14,7 @@
 #include "bluetooth/host.h"
 #include "bluetooth/hci.h"
 #include "bluetooth/hidp/hidp.h"
+#include <esp_timer.h>
 
 #ifdef CONFIG_BLUERETRO_PKT_INJECTION
 enum {
@@ -38,6 +39,8 @@ struct adapter_debug_pkt {
 
 static uint8_t uart_buffer[2048];
 #endif
+
+static uint64_t lastSerialOut[6];
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
 static void adapter_debug_btns(int32_t value) {
@@ -189,6 +192,44 @@ void adapter_debug_wireless_print(struct wireless_ctrl *ctrl_input) {
 #endif
     printf("\n");
 #endif
+}
+
+void adapter_debug_joystick_serial_out(int32_t out_idx, int32_t type, struct wired_ctrl *ctrl_input) {
+    uint64_t currentTime = esp_timer_get_time();
+    uint64_t durationSinceLastUpdate = currentTime - lastSerialOut[out_idx];
+    
+    uint32_t b = ctrl_input->btns[0].value;
+    uint32_t buttonValues = 0;
+    
+    if (b & BIT(PAD_LD_LEFT)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LD_LEFT);
+    if (b & BIT(PAD_LD_RIGHT)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LD_RIGHT);
+    if (b & BIT(PAD_LD_DOWN)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LD_DOWN);
+    if (b & BIT(PAD_LD_UP)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LD_UP);
+
+    if (b & BIT(PAD_RB_LEFT)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RB_LEFT);
+    if (b & BIT(PAD_RB_RIGHT)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RB_RIGHT);
+    if (b & BIT(PAD_RB_DOWN)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RB_DOWN);
+    if (b & BIT(PAD_RB_UP)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RB_UP);
+
+    if (b & BIT(PAD_MS)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_MS);
+    if (b & BIT(PAD_MM)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_MM);
+    if (b & BIT(PAD_MT)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_MT);
+
+    if (b & BIT(PAD_LS)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LS);
+    if (b & BIT(PAD_LJ)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_LJ);
+    if (b & BIT(PAD_RS)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RS);
+    if (b & BIT(PAD_RJ)) buttonValues |= BIT(JOYSTICK_SERIAL_OUT_BTN_RJ);
+
+    // type 3 controllers like 8bitdo pro/pro+ and Xbox One only send updates when there are changes so we should always process these messages
+    // other controller types send messages continuously so we want to limit based on duration to avoid sending too much serial data
+    if (type == 3 || durationSinceLastUpdate > 3000)
+    {
+        lastSerialOut[out_idx] = currentTime;
+        
+        printf("[%ld%5lu%4ld%4ld%4ld%4ld%3ld%3ld]\n", out_idx, buttonValues,
+        ctrl_input->axes[0].value, ctrl_input->axes[1].value, ctrl_input->axes[2].value, 
+        ctrl_input->axes[3].value, ctrl_input->axes[4].value, ctrl_input->axes[5].value);
+    }
 }
 
 void adapter_debug_wired_print(struct wired_ctrl *ctrl_input) {
