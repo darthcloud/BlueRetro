@@ -187,6 +187,11 @@ menu "BlueRetro"
             help
                 Select this to enable adapter rumble debug.
 
+        config BLUERETRO_ADAPTER_RUMBLE_TEST
+            bool "Enable adapter rumble test"
+            help
+                Select this to enable adapter rumble test.
+
         config BLUERETRO_ADAPTER_INPUT_DBG
             bool "Enable adapter input debug"
             help

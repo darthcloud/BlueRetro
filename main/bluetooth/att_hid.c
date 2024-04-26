@@ -12,6 +12,9 @@
 #include "zephyr/att.h"
 #include "zephyr/gatt.h"
 #include "adapter/hid_parser.h"
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
+#include "bluetooth/hidp/xbox.h"
+#endif
 
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
@@ -622,7 +625,18 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
             for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
                 if (notify->handle == hid_data->reports[i].report_hdl) {
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
+                    struct bt_hidp_xb1_rumble rumble = {
+                        .enable = 0x03,
+                        .duration = 0xFF,
+                        .cnt = 0x00,
+                    };
+                    rumble.mag_r = bt_hci_acl_pkt->hidp_data[11];
+                    rumble.mag_l = bt_hci_acl_pkt->hidp_data[9];
+                    bt_hid_cmd_xbox_rumble(device, &rumble);
+#else
                     bt_host_bridge(device, hid_data->reports[i].id, notify->value, att_len - sizeof(notify->handle));
+#endif
                     break;
                 }
             }

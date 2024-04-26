@@ -13,7 +13,7 @@ static const uint8_t bt_init_magic[] = {
 };
 
 static const uint8_t ps3_config[] = {
-    0x01, 0xfe, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0, 0x00, 0, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
     0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
     0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
@@ -113,7 +113,23 @@ void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_PS3_STATUS:
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
+                    struct bt_hidp_ps3_set_conf rumble;
+                    memcpy(&rumble, ps3_config, sizeof(rumble));
+                    if (bt_hci_acl_pkt->hidp_data[17] || bt_hci_acl_pkt->hidp_data[18]) {
+                        rumble.r_rumble_pow = 0x01;
+                    }
+                    if (bt_hci_acl_pkt->hidp_data[17]) {
+                        rumble.l_rumble_pow = bt_hci_acl_pkt->hidp_data[17];
+                        rumble.l_rumble_len = 0xFF;
+                    }
+                    if (bt_hci_acl_pkt->hidp_data[18]) {
+                        rumble.r_rumble_len = 0xFF;
+                    }
+                    bt_hid_cmd_ps3_set_conf(device, &rumble);
+#else
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+#endif
                     break;
             }
             break;

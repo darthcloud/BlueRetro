@@ -224,14 +224,34 @@ void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                         bt_type_update(device->ids.id, BT_PS, BT_SUBTYPE_DEFAULT);
                         device->ids.report_type = BT_HIDP_PS4_STATUS;
                     }
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
+                    struct bt_hidp_ps4_set_conf rumble4 = {
+                        .conf0 = 0xc4,
+                        .conf1 = 0x03,
+                    };
+                    rumble4.r_rumble = bt_hci_acl_pkt->hidp_data[10];
+                    rumble4.l_rumble = bt_hci_acl_pkt->hidp_data[9];
+                    bt_hid_cmd_ps4_set_conf(device, &rumble4);
+#else
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+#endif
                     break;
                 case BT_HIDP_PS5_STATUS:
                     if (device->ids.report_type != BT_HIDP_PS5_STATUS) {
                         bt_type_update(device->ids.id, BT_PS, BT_PS5_DS);
                         device->ids.report_type = BT_HIDP_PS5_STATUS;
                     }
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
+                    struct bt_hidp_ps5_set_conf rumble = {
+                        .conf0 = 0x02,
+                        .cmd = 0x03,
+                    };
+                    rumble.r_rumble = bt_hci_acl_pkt->hidp_data[6];
+                    rumble.l_rumble = bt_hci_acl_pkt->hidp_data[5];
+                    bt_hid_cmd_ps5_set_conf(device, &rumble);
+#else
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+#endif
                     break;
             }
             break;
