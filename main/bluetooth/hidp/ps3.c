@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +13,7 @@ static const uint8_t bt_init_magic[] = {
 };
 
 static const uint8_t ps3_config[] = {
-    0x01, 0, 0x00, 0, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
     0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
     0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
@@ -28,80 +28,42 @@ static void bt_hid_cmd_ps3_bt_init(struct bt_dev *device) {
     bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_FE, BT_HIDP_PS3_BT_INIT, sizeof(*bt_init));
 }
 
-static void bt_hid_ps3_fb_init(struct bt_dev *device) {
-    struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_hci_pkt_tmp.hidp_data;
-    memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
-    set_conf->leds = (bt_hid_led_dev_id_map[device->ids.out_idx] << 1);
-
-    bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_OUT, BT_HIDP_PS3_SET_CONF, sizeof(*set_conf));
-}
-
-static void bt_hid_ps3_fb_ready_callback(void *arg) {
-    struct bt_dev *device = (struct bt_dev *)arg;
-
-    if (!atomic_test_bit(&device->flags, BT_DEV_FB_DELAY)) {
-        bt_hid_ps3_fb_init(device);
-    }
-    atomic_clear_bit(&device->flags, BT_DEV_FB_DELAY);
-
-    esp_timer_delete(device->timer_hdl);
-    device->timer_hdl = NULL;
-}
-
 static void bt_hid_ps3_init_callback(void *arg) {
     struct bt_dev *device = (struct bt_dev *)arg;
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
 
     printf("# %s\n", __FUNCTION__);
 
     esp_timer_delete(device->timer_hdl);
     device->timer_hdl = NULL;
-    bt_hid_ps3_fb_init(device);
+    bt_hid_cmd_ps3_set_conf(device, bt_data->base.output);
+
+    atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
 }
 
-static void bt_hid_ps3_fb_delay(struct bt_dev *device, uint64_t delay_ms) {
+void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report) {
+    struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_hci_pkt_tmp.hidp_data;
+    memcpy((void *)set_conf, report, sizeof(*set_conf));
+    bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_OUT, BT_HIDP_PS3_SET_CONF, sizeof(*set_conf));
+}
+
+void bt_hid_ps3_init(struct bt_dev *device) {
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_data->base.output;
+    printf("# %s\n", __FUNCTION__);
+
+    memcpy((void *)set_conf, ps3_config, sizeof(ps3_config));
+    set_conf->leds = (bt_hid_led_dev_id_map[device->ids.out_idx] << 1);
+
+    /* PS3 ctrl not yet ready to RX config, delay 20ms */
     const esp_timer_create_args_t ps3_timer_args = {
         .callback = &bt_hid_ps3_init_callback,
         .arg = (void *)device,
         .name = "ps3_init_timer"
     };
-
     esp_timer_create(&ps3_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
-    esp_timer_start_once(device->timer_hdl, delay_ms);
-}
+    esp_timer_start_once(device->timer_hdl, 1000000);
 
-void bt_hid_cmd_ps3_set_conf(struct bt_dev *device, void *report) {
-    struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_hci_pkt_tmp.hidp_data;
-
-    memcpy((void *)set_conf, report, sizeof(*set_conf));
-
-    if (set_conf->r_rumble_pow) {
-        bt_hid_cmd(device->acl_handle, device->ctrl_chan.dcid, BT_HIDP_SET_OUT, BT_HIDP_PS3_SET_CONF, sizeof(*set_conf));
-
-        if (device->timer_hdl == NULL) {
-            const esp_timer_create_args_t ps3_timer_args = {
-                .callback = &bt_hid_ps3_fb_ready_callback,
-                .arg = (void *)device,
-                .name = "ps3_fb_timer"
-            };
-
-            esp_timer_create(&ps3_timer_args, (esp_timer_handle_t *)&device->timer_hdl);
-            esp_timer_start_once(device->timer_hdl, 120000);
-            atomic_set_bit(&device->flags, BT_DEV_FB_DELAY);
-        }
-    }
-    else {
-        if (!atomic_test_bit(&device->flags, BT_DEV_FB_DELAY)) {
-            bt_hid_ps3_fb_init(device);
-        }
-        atomic_clear_bit(&device->flags, BT_DEV_FB_DELAY);
-    }
-}
-
-void bt_hid_ps3_init(struct bt_dev *device) {
-    printf("# %s\n", __FUNCTION__);
-
-    /* PS3 ctrl not yet ready to RX config, delay 20ms */
-    bt_hid_ps3_fb_delay(device, 1000000);
     bt_hid_cmd_ps3_bt_init(device);
 }
 

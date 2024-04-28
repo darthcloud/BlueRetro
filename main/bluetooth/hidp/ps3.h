@@ -21,10 +21,10 @@ struct bt_hidp_ps3_status {
 #define BT_HIDP_PS3_SET_CONF 0x01
 struct bt_hidp_ps3_set_conf {
     uint8_t tbd0;
-    uint8_t r_rumble_len;
-    uint8_t r_rumble_pow;
-    uint8_t l_rumble_len;
-    uint8_t l_rumble_pow;
+    uint8_t hf_motor_len;
+    uint8_t hf_lf_motors_enable;
+    uint8_t lf_motor_len;
+    uint8_t lf_motor_pwr;
     uint8_t tbd1[4];
     uint8_t leds;
     uint8_t tbd2[25];
