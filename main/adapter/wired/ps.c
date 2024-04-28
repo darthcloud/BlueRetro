@@ -383,9 +383,19 @@ void ps_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wire
 void ps_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
-    fb_data->state = raw_fb_data->data[0];
-    fb_data->cycles = 0;
-    fb_data->start = 0;
+
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
+            fb_data->state = (raw_fb_data->data[0] || raw_fb_data->data[1] ? 1 : 0);
+            fb_data->lf_pwr = raw_fb_data->data[1];
+            fb_data->hf_pwr = (raw_fb_data->data[0]) ? 0xFF : 0x00;
+            fb_data->cycles = 0;
+            fb_data->start = 0;
+            break;
+        case FB_TYPE_STATUS_LED:
+            fb_data->led = raw_fb_data->data[0];
+            break;
+    }
 }
 
 void IRAM_ATTR ps_gen_turbo_mask(struct wired_data *wired_data) {
