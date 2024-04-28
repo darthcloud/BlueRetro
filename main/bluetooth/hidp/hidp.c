@@ -58,7 +58,7 @@ static const struct bt_name_type bt_name_type[] = {
 };
 
 static const bt_hid_init_t bt_hid_init_list[BT_TYPE_MAX] = {
-    NULL, /* BT_HID_GENERIC */
+    bt_hid_generic_init, /* BT_HID_GENERIC */
     bt_hid_ps3_init, /* BT_PS3 */
     bt_hid_wii_init, /* BT_WII */
     bt_hid_xbox_init, /* BT_XBOX */
