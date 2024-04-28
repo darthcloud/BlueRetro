@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "ps3.h"
+#include "bluetooth/hidp/ps3.h"
 
 enum {
     PS3_SELECT = 8,
@@ -30,14 +31,6 @@ enum {
 
 static const uint8_t led_dev_id_map[] = {
     0x1, 0x2, 0x4, 0x8, 0x3, 0x6, 0xC
-};
-
-static const uint8_t ps3_config[] = {
-    0x01, 0xfe, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
-    0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
-    0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
-    0x00, 0x00, 0x00
 };
 
 static const uint8_t ps3_axes_idx[ADAPTER_PS2_MAX_AXES] =
@@ -74,17 +67,6 @@ struct ps3_map {
     uint32_t buttons;
     uint8_t reserved;
     uint8_t axes[20];
-} __packed;
-
-struct ps3_set_conf {
-    uint8_t tbd0;
-    uint8_t r_rumble_len;
-    uint8_t r_rumble_pow;
-    uint8_t l_rumble_len;
-    uint8_t l_rumble_pow;
-    uint8_t tbd1[4];
-    uint8_t leds;
-    uint8_t tbd2[25];
 } __packed;
 
 static const uint32_t ps3_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, 0x00000000};
@@ -149,11 +131,21 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 }
 
 void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct ps3_set_conf *set_conf = (struct ps3_set_conf *)bt_data->base.output;
-    memcpy((void *)set_conf, ps3_config, sizeof(*set_conf));
-    set_conf->leds = (led_dev_id_map[bt_data->base.pids->id] << 1);
+    struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_data->base.output;
 
-    if (fb_data->state) {
-        set_conf->r_rumble_pow = 0x01;
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
+            if (fb_data->state) {
+                set_conf->hf_lf_motors_enable = 0x01;
+
+                set_conf->lf_motor_pwr = fb_data->lf_pwr;
+                set_conf->lf_motor_len = (fb_data->lf_pwr) ? 0xFF : 0x00;
+
+                set_conf->hf_motor_len = (fb_data->hf_pwr > 128) ? 0xFF : 0x00;
+            }
+            break;
+        case FB_TYPE_PLAYER_LED:
+            set_conf->leds = (led_dev_id_map[bt_data->base.pids->out_idx] << 1);
+            break;
     }
 }
