@@ -449,9 +449,14 @@ struct generic_fb {
     union {
         struct {
             uint32_t state;
+            uint32_t lf_pwr;
+            uint32_t hf_pwr;
+            uint32_t lt_pwr;
+            uint32_t rt_pwr;
             uint32_t cycles;
             uint32_t start;
         };
+        uint32_t led;
     };
 };
 
