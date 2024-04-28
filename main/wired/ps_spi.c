@@ -235,6 +235,7 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
         }
         else {
             if (port->analog_btn[id]) {
+                struct raw_fb fb_data = {0};
                 port->analog_btn[id] = 0;
                 port->rumble_r_state[id] = 0;
                 port->rumble_l_state[id] = 0;
@@ -244,6 +245,7 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
                     }
+                    fb_data.data[0] = 1;
                 }
                 else {
                     port->dev_id[id] = 0x41;
@@ -251,7 +253,12 @@ static void ps_analog_btn_hdlr(struct ps_ctrl_port *port, uint8_t id) {
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
                     }
+                    fb_data.data[0] = 0;
                 }
+                fb_data.header.wired_id = id + port->mt_first_port;
+                fb_data.header.type = FB_TYPE_STATUS_LED;
+                fb_data.header.data_len = 1;
+                adapter_q_fb(&fb_data);
             }
         }
     }
@@ -293,6 +300,7 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
         case 0x44:
         {
             if (port->dev_id[id] == 0xF3) {
+                struct raw_fb fb_data = {0};
                 port->rumble_r_state[id] = 0;
                 port->rumble_l_state[id] = 0;
                 if (req[1] == 0x01) {
@@ -301,6 +309,7 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 1);
                     }
+                    fb_data.data[0] = 1;
                 }
                 else {
                     port->pend_dev_id[id] = 0x41;
@@ -308,7 +317,12 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                     if (id == 0) {
                         gpio_set_level_iram(ps_ctrl_ports[port->mt_first_port ? 1 : 0].led_pin, 0);
                     }
+                    fb_data.data[0] = 0;
                 }
+                fb_data.header.wired_id = id + port->mt_first_port;
+                fb_data.header.type = FB_TYPE_STATUS_LED;
+                fb_data.header.data_len = 1;
+                adapter_q_fb(&fb_data);
             }
             break;
         }
