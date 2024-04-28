@@ -92,7 +92,6 @@ struct ps_ctrl_port {
     uint8_t dev_type[MT_PORT_MAX];
     uint8_t dev_id[MT_PORT_MAX];
     uint8_t pend_dev_id[MT_PORT_MAX];
-    uint8_t last_rumble[MT_PORT_MAX];
     uint8_t rumble_r_state[MT_PORT_MAX];
     uint8_t rumble_l_state[MT_PORT_MAX];
     uint8_t rumble_r_idx[MT_PORT_MAX];
@@ -266,18 +265,15 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 struct raw_fb fb_data = {0};
                 req++;
                 if (port->rumble_r_state[id]) {
-                    fb_data.data[0] = (req[port->rumble_r_idx[id]]) ? 1 : 0;
+                    fb_data.data[0] = req[port->rumble_r_idx[id]];
                 }
-                if (!fb_data.data[0] && port->rumble_l_state[id]) {
-                    fb_data.data[0] = (req[port->rumble_l_idx[id]]) ? 1 : 0;
+                if (port->rumble_l_state[id]) {
+                    fb_data.data[1] = req[port->rumble_l_idx[id]];
                 }
-                if (port->last_rumble[id] != fb_data.data[0]) {
-                    port->last_rumble[id] = fb_data.data[0];
-                    fb_data.header.wired_id = id + port->mt_first_port;
-                    fb_data.header.type = FB_TYPE_RUMBLE;
-                    fb_data.header.data_len = 1;
-                    adapter_q_fb(&fb_data);
-                }
+                fb_data.header.wired_id = id + port->mt_first_port;
+                fb_data.header.type = FB_TYPE_RUMBLE;
+                fb_data.header.data_len = 2;
+                adapter_q_fb(&fb_data);
             }
             break;
         }
@@ -727,7 +723,7 @@ void ps_spi_init(uint32_t package) {
         ps_ctrl_ports[i].rx_buf[0][27] = 0x42;
         ps_ctrl_ports[i].rx_buf[1][27] = 0x42;
         for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
-             ps_ctrl_ports[i].dev_desc[j] = 0;
+            ps_ctrl_ports[i].dev_desc[j] = 0;
         }
     }
 
