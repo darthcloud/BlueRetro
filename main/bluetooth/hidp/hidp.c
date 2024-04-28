@@ -105,7 +105,6 @@ void bt_hid_init(struct bt_dev *device) {
     if (device->ids.type > BT_NONE && bt_hid_init_list[device->ids.type]) {
         bt_hid_init_list[device->ids.type](device);
     }
-    atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
 }
 
 void bt_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
