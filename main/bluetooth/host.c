@@ -233,8 +233,7 @@ static void bt_fb_task(void *param) {
 
     while(1) {
         /* Look for rumble/led feedback data */
-        fb_data = (struct raw_fb *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len);
-        if (fb_data) {
+        while ((fb_data = (struct raw_fb *)queue_bss_dequeue(wired_adapter.input_q_hdl, &fb_len))) {
             struct bt_dev *device = NULL;
             struct bt_data *bt_data = NULL;
 
@@ -247,20 +246,13 @@ static void bt_fb_task(void *param) {
                 case FB_TYPE_MEM_WRITE:
                     mc_storage_update();
                     break;
+                case FB_TYPE_STATUS_LED:
                 case FB_TYPE_PLAYER_LED:
-                    if (device) {
-                        bt_hid_init(device);
-                    }
-                    break;
                 case FB_TYPE_RUMBLE:
-                {
                     if (bt_data) {
-                        if (adapter_bridge_fb(fb_data, bt_data)) {
-                            bt_hid_feedback(device, bt_data->base.output);
-                        }
+                        adapter_bridge_fb(fb_data, bt_data);
                     }
                     break;
-                }
                 case FB_TYPE_GAME_ID:
                     if (gid_update(fb_data)) {
                         config_init(GAMEID_CFG);
@@ -276,7 +268,18 @@ static void bt_fb_task(void *param) {
             }
             queue_bss_return(wired_adapter.input_q_hdl, (uint8_t *)fb_data, fb_len);
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+
+        /* TX Feedback every ~frame, double as a keep alive */
+        for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+            struct bt_dev *device = &bt_dev[i];
+
+            if (atomic_test_bit(&device->flags, BT_DEV_HID_INIT_DONE)) {
+                struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+
+                bt_hid_feedback(device, bt_data->base.output);
+            }
+        }
+        vTaskDelay(16 / portTICK_PERIOD_MS);
     }
 }
 
