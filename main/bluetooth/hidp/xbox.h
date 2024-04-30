@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,10 +21,10 @@ struct bt_hidp_xb1_adaptive_status {
 #define BT_HIDP_XB1_RUMBLE 0x03
 struct bt_hidp_xb1_rumble {
     uint8_t enable;
-    uint8_t mag_lt;
-    uint8_t mag_rt;
-    uint8_t mag_l;
-    uint8_t mag_r;
+    uint8_t lt_motor_pwr;
+    uint8_t rt_motor_pwr;
+    uint8_t lf_motor_pwr;
+    uint8_t hf_motor_pwr;
     uint8_t duration;
     uint8_t delay;
     uint8_t cnt;

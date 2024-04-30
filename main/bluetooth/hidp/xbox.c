@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,10 +22,20 @@ void bt_hid_cmd_xbox_rumble(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_xbox_init(struct bt_dev *device) {
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    struct bt_hidp_xb1_rumble *rumble = (struct bt_hidp_xb1_rumble *)bt_data->base.output;
+
+    /* Init output data for Rumble feedback */
+    rumble->enable = 0x03;
+    rumble->duration = 0xFF;
+    rumble->cnt = 0x00;
+
     printf("# %s\n", __FUNCTION__);
     if (atomic_test_bit(&device->flags, BT_DEV_IS_BLE)) {
         bt_type_update(device->ids.id, BT_XBOX, BT_XBOX_XS);
     }
+
+    atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
 }
 
 void bt_hid_xbox_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {
