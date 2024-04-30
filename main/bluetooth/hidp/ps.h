@@ -21,8 +21,8 @@ struct bt_hidp_ps4_set_conf {
     uint8_t tbd0;
     uint8_t conf1;
     uint8_t tbd1[2];
-    uint8_t r_rumble;
-    uint8_t l_rumble;
+    uint8_t hf_motor_pwr;
+    uint8_t lf_motor_pwr;
     union {
         struct {
             uint8_t rgb[3];
@@ -40,8 +40,8 @@ struct bt_hidp_ps5_set_conf {
     uint8_t conf0;
     uint8_t cmd;
     uint8_t conf1;
-    uint8_t r_rumble;
-    uint8_t l_rumble;
+    uint8_t hf_motor_pwr;
+    uint8_t lf_motor_pwr;
     uint8_t tbd0[4];
     uint8_t mic_led;
     uint8_t tbd1; // Mic/audio mute

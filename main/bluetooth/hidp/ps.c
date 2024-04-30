@@ -27,15 +27,6 @@ static void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
     bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_PS4_SET_CONF, sizeof(*set_conf));
 }
 
-static void bt_hid_cmd_ps5_rumble_init(struct bt_dev *device) {
-    struct bt_hidp_ps5_set_conf ps5_set_conf = {
-        .conf0 = 0x02,
-        .cmd = 0x02,
-    };
-
-    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
-}
-
 static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
     int32_t perc_threshold_l = -1;
     int32_t perc_threshold_r = -1;
@@ -122,37 +113,48 @@ static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
 
 static void bt_hid_ps5_init_callback(void *arg) {
     struct bt_dev *device = (struct bt_dev *)arg;
-    struct bt_hidp_ps5_set_conf ps5_set_conf = {
-        .conf0 = 0x02,
-        .conf1 = 0x08,
-    };
-    struct bt_hidp_ps5_set_conf ps5_set_led = {
-        .conf0 = 0x02,
-        .conf1 = 0xF6,
-    };
-    ps5_set_led.leds = hw_config.ps_ctrl_colors[device->ids.out_idx];
-    printf("# %s\n", __FUNCTION__);
 
-    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_conf);
-    bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
+    if (device->ids.report_type != BT_HIDP_PS4_STATUS) {
+        struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+        struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_data->base.output;
 
-    /* Set trigger "click" haptic effect when rumble is on */
-    if (config.out_cfg[device->ids.out_idx].acc_mode == ACC_RUMBLE
-            || config.out_cfg[device->ids.out_idx].acc_mode == ACC_BOTH) {
-        bt_hid_cmd_ps5_trigger_init(device);
+        /* Init output data for Rumble/LED feedback */
+        memset(set_conf, 0x00, sizeof(*set_conf));
+        set_conf->conf0 = 0x02;
+        set_conf->cmd = 0x03;
+        set_conf->conf1 = 0x04;
+        set_conf->leds = hw_config.ps_ctrl_colors[device->ids.out_idx];
+
+        struct bt_hidp_ps5_set_conf ps5_clear_led = {
+            .conf0 = 0x02,
+            .conf1 = 0x08,
+        };
+        struct bt_hidp_ps5_set_conf ps5_set_led = {
+            .conf0 = 0x02,
+            .conf1 = 0x04,
+        };
+        ps5_set_led.leds = hw_config.ps_ctrl_colors[device->ids.out_idx];
+        printf("# %s\n", __FUNCTION__);
+
+        bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_clear_led);
+        bt_hid_cmd_ps5_set_conf(device, (void *)&ps5_set_led);
+
+        /* Set trigger "click" haptic effect when rumble is on */
+        if (config.out_cfg[device->ids.out_idx].acc_mode == ACC_RUMBLE
+                || config.out_cfg[device->ids.out_idx].acc_mode == ACC_BOTH) {
+            bt_hid_cmd_ps5_trigger_init(device);
+        }
     }
 
     esp_timer_delete(device->timer_hdl);
     device->timer_hdl = NULL;
+
+    atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
+    printf("# PS init done\n");
 }
 
 static void bt_hid_cmd_ps5_set_conf(struct bt_dev *device, void *report) {
     struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_hci_pkt_tmp.hidp_data;
-
-    /* Hack for PS5 rumble, BlueRetro design dont't allow to Q 2 frames */
-    if (((struct bt_hidp_ps5_set_conf *)report)->r_rumble || ((struct bt_hidp_ps5_set_conf *)report)->l_rumble) {
-        bt_hid_cmd_ps5_rumble_init(device);
-    }
 
     bt_hci_pkt_tmp.hidp_hdr.hdr = BT_HIDP_DATA_OUT;
     bt_hci_pkt_tmp.hidp_hdr.protocol = BT_HIDP_PS5_SET_CONF;
@@ -178,6 +180,14 @@ void bt_hid_cmd_ps_set_conf(struct bt_dev *device, void *report) {
 
 void bt_hid_ps_init(struct bt_dev *device) {
 #ifndef CONFIG_BLUERETRO_TEST_FALLBACK_REPORT
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_data->base.output;
+
+    /* Init output data for Rumble/LED feedback */
+    set_conf->conf0 = 0xc4;
+    set_conf->conf1 = 0x03;
+    set_conf->leds = hw_config.ps_ctrl_colors[bt_data->base.pids->out_idx];
+
     switch (device->ids.subtype) {
         case BT_PS5_DS:
             bt_hid_ps5_init_callback((void *)device);
@@ -214,8 +224,9 @@ void bt_hid_ps_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
         case BT_HIDP_DATA_IN:
             switch (bt_hci_acl_pkt->hidp_hdr.protocol) {
                 case BT_HIDP_HID_STATUS:
-                    if (device->ids.subtype != BT_SUBTYPE_DEFAULT) {
+                    if (device->ids.report_type != BT_HIDP_HID_STATUS) {
                         bt_type_update(device->ids.id, BT_PS, BT_SUBTYPE_DEFAULT);
+                        device->ids.report_type = BT_HIDP_HID_STATUS;
                     }
                     bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
                     break;
