@@ -223,26 +223,41 @@ static void hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_d
 
 static void ps4_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_ps4_set_conf *set_conf = (struct bt_hidp_ps4_set_conf *)bt_data->base.output;
-    memset((void *)set_conf, 0, sizeof(*set_conf));
-    set_conf->conf0 = 0xc4;
-    set_conf->conf1 = 0x03;
-    set_conf->leds = hw_config.ps_ctrl_colors[bt_data->base.pids->id];
 
-    if (fb_data->state) {
-        set_conf->r_rumble = 0x7F;
-        set_conf->l_rumble = 0x7F;
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
+            if (fb_data->state) {
+                set_conf->hf_motor_pwr = fb_data->hf_pwr;
+                set_conf->lf_motor_pwr = fb_data->lf_pwr;
+            }
+            else {
+                set_conf->hf_motor_pwr = 0x00;
+                set_conf->lf_motor_pwr = 0x00;
+            }
+            break;
+        case FB_TYPE_PLAYER_LED:
+            set_conf->leds = hw_config.ps_ctrl_colors[bt_data->base.pids->out_idx];
+            break;
     }
 }
 
 static void ps5_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_ps5_set_conf *set_conf = (struct bt_hidp_ps5_set_conf *)bt_data->base.output;
-    memset((void *)set_conf, 0, sizeof(*set_conf));
 
-    set_conf->conf0 = 0x02;
-    if (fb_data->state) {
-        set_conf->cmd = 0x03;
-        set_conf->r_rumble = 0x3F;
-        set_conf->l_rumble = 0x3F;
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
+            if (fb_data->state) {
+                set_conf->hf_motor_pwr = fb_data->hf_pwr;
+                set_conf->lf_motor_pwr = fb_data->lf_pwr;
+            }
+            else {
+                set_conf->hf_motor_pwr = 0x00;
+                set_conf->lf_motor_pwr = 0x00;
+            }
+            break;
+        case FB_TYPE_PLAYER_LED:
+            set_conf->leds = hw_config.ps_ctrl_colors[bt_data->base.pids->out_idx];
+            break;
     }
 }
 
