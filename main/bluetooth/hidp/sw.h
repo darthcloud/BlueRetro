@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,7 +8,11 @@
 
 #include "hidp.h"
 
-#define BT_HIDP_SW_RUMBLE_IDLE 0x40400100
+#define BT_HIDP_SW_LRA_IDLE 0x40400100
+#define BT_HIDP_SW_LRA_R_HF_FREQ 0x028
+#define BT_HIDP_SW_LRA_R_LF_FREQ 0x70
+#define BT_HIDP_SW_LRA_L_HF_FREQ 0x060
+#define BT_HIDP_SW_LRA_L_LF_FREQ 0x70
 
 struct bt_hid_sw_axis_calib {
     union {
@@ -40,12 +44,37 @@ struct bt_hid_sw_ctrl_calib {
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30
 #define BT_HIDP_SW_SUBCMD_ENABLE_IMU 0x40
 #define BT_HIDP_SW_SUBCMD_EN_RUMBLE 0x48
+
+typedef union {
+    struct {
+        uint16_t freq : 9;
+        uint16_t amp: 7;
+    };
+    uint16_t val;
+} sw_lra_hf_t;
+
+typedef union {
+    struct {
+        uint16_t freq : 7;
+        uint16_t amp: 7;
+        uint16_t tbd1: 1;
+        uint16_t tbd2: 1;
+    };
+    uint16_t val;
+} sw_lra_lf_t;
+
+typedef union {
+    struct {
+        sw_lra_hf_t hf;
+        sw_lra_lf_t lf;
+    };
+    uint32_t val;
+} sw_lra_t;
+
 struct bt_hidp_sw_conf {
     uint8_t tid;
-    union {
-        uint8_t rumble[8];
-        uint32_t rumble32[2];
-    };
+    sw_lra_t l_lra;
+    sw_lra_t r_lra;
     uint8_t subcmd;
     union {
         uint8_t subcmd_data[38];
@@ -60,10 +89,8 @@ struct bt_hidp_sw_conf {
 #define BT_HIDP_SW_SET_RUMBLE 0x10
 struct bt_hidp_sw_rumble {
     uint8_t tid;
-    union {
-        uint8_t rumble[8];
-        uint32_t rumble32[2];
-    };
+    sw_lra_t l_lra;
+    sw_lra_t r_lra;
 } __packed;
 
 #define BT_HIDP_SW_SUBCMD_ACK 0x21
