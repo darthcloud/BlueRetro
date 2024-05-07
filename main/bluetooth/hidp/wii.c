@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -134,11 +134,17 @@ void bt_hid_cmd_wii_set_feedback(struct bt_dev *device, void *report) {
 }
 
 void bt_hid_wii_init(struct bt_dev *device) {
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    struct bt_hidp_wii_conf *set_conf = (struct bt_hidp_wii_conf *)bt_data->base.output;
+    set_conf->conf = bt_hid_led_dev_id_map[device->ids.out_idx] << 4;
+
     struct bt_hidp_wii_conf wii_conf = {.conf = (bt_hid_led_dev_id_map[device->ids.out_idx] << 4)};
     printf("# %s\n", __FUNCTION__);
 
     bt_hid_cmd_wii_set_feedback(device, (void *)&wii_conf);
     bt_hid_cmd_wii_set_rep_mode(device, (void *)&wii_rep_conf);
+
+    atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
 }
 
 void bt_hid_wii_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, uint32_t len) {

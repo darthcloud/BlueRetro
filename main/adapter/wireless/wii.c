@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "bluetooth/hidp/wii.h"
 #include "wii.h"
 
 #define WIIU_AXES_MAX 4
@@ -476,10 +477,20 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 }
 
 void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    if (fb_data->state) {
-        bt_data->base.output[0] = (led_dev_id_map[bt_data->base.pids->id] << 4) | 0x01;
-    }
-    else {
-        bt_data->base.output[0] = (led_dev_id_map[bt_data->base.pids->id] << 4);
+    struct bt_hidp_wii_conf *set_conf = (struct bt_hidp_wii_conf *)bt_data->base.output;
+
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
+            if (fb_data->state) {
+                set_conf->conf |= 0x01;
+            }
+            else {
+                set_conf->conf &= ~0x01;
+            }
+            break;
+        case FB_TYPE_PLAYER_LED:
+            set_conf->conf &= 0x0F;
+            set_conf->conf |= (led_dev_id_map[bt_data->base.pids->id] << 4);
+            break;
     }
 }
