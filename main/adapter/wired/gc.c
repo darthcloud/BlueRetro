@@ -226,6 +226,8 @@ void gc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
     fb_data->state = raw_fb_data->data[0];
+    fb_data->lf_pwr = (fb_data->state) ? 0xFF : 0x00;
+    fb_data->hf_pwr = (fb_data->state) ? 0xFF : 0x00;
     fb_data->cycles = 0;
     fb_data->start = 0;
 }
