@@ -161,8 +161,8 @@ static uint32_t cur_us = 0, pre_us = 0;
 #endif
 
 static struct maple_pkt pkt;
-static uint32_t rumble_max = 0x00020013;
-static uint32_t rumble_val = 0x10E0073B;
+static uint32_t rumble_timeout = 0x00021300; /* mask 0x02 (unit1), 5 sec timeout */
+static uint32_t rumble_config = 0x10000F00; /* unit 1, freq 8 Hz */
 static uint32_t port_cnt = ARRAY_SIZE(gpio_pin);
 
 static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
@@ -511,7 +511,7 @@ maple_end:
                                 pkt.len = 0x02;
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_RUMBLE;
-                                pkt.data32[1] = rumble_val;
+                                pkt.data32[1] = rumble_config;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             case CMD_BLOCK_READ:
@@ -519,7 +519,7 @@ maple_end:
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_RUMBLE;
                                 pkt.data32[1] = 0;
-                                pkt.data32[2] = rumble_max;
+                                pkt.data32[2] = rumble_timeout;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             case CMD_BLOCK_WRITE:
@@ -527,7 +527,7 @@ maple_end:
                                 pkt.cmd = CMD_ACK;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 if (!bad_frame) {
-                                    rumble_max = pkt.data32[2];
+                                    rumble_timeout = pkt.data32[2];
                                 }
                                 break;
                             case CMD_SET_CONDITION:
@@ -535,15 +535,15 @@ maple_end:
                                 pkt.cmd = CMD_ACK;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 if (!bad_frame) {
-                                    rumble_val = pkt.data32[1];
+                                    rumble_config = pkt.data32[1];
                                     if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
                                         struct raw_fb fb_data = {0};
 
                                         fb_data.header.wired_id = port;
                                         fb_data.header.type = FB_TYPE_RUMBLE;
                                         fb_data.header.data_len = sizeof(uint32_t) * 2;
-                                        *(uint32_t *)&fb_data.data[0] = rumble_max;
-                                        *(uint32_t *)&fb_data.data[4] = *(uint32_t *)&pkt.data[8];
+                                        *(uint32_t *)&fb_data.data[0] = rumble_timeout;
+                                        *(uint32_t *)&fb_data.data[4] = rumble_config;
                                         adapter_q_fb(&fb_data);
                                     }
                                 }

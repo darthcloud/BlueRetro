@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,9 @@
 #include "adapter/wired/wired.h"
 #include "system/manager.h"
 #include "dc.h"
+
+#define DC_TIMEOUT_TO_US 250000
+#define DC_FREQ_TO_US 2000000
 
 enum {
     DC_Z = 0,
@@ -99,6 +102,25 @@ struct dc_kb_map {
         uint8_t key_codes[8];
     };
     int8_t br_key_codes[6];
+} __packed;
+
+struct dc_vibration {
+    uint8_t incline;
+    uint8_t freq; /* 0.5 Hz step, 0 = 0.5 Hz */
+    uint8_t pwr_n: 3;
+    uint8_t exhalation: 1;
+    uint8_t pwr_p: 3;
+    uint8_t convergence: 1;
+    uint8_t continuous: 1;
+    uint8_t tbd: 3;
+    uint8_t unit: 4;
+} __packed;
+
+struct dc_timeout {
+    uint8_t unit2_timeout;
+    uint8_t unit1_timeout; /* 0.25 sec step, 0 = 0.25 sec */
+    uint8_t unit_mask; /* unit1 mask is 0x02 */
+    uint8_t tbd;
 } __packed;
 
 static const uint32_t dc_mask[4] = {0x337FFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
@@ -428,36 +450,44 @@ void dc_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wire
 }
 
 void dc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
+    struct dc_timeout *dc_to = (struct dc_timeout *)&raw_fb_data->data[0];
+    struct dc_vibration *dc_fb = (struct dc_vibration *)&raw_fb_data->data[4];
+
+    // printf("%s unit: %d, cont: %d, conv: %d, exha: %d, pwr_p: %d, pwr_n: %d, freq: %d, inc: %d\n",
+    //     __FUNCTION__, dc_fb->unit, dc_fb->continuous, dc_fb->convergence, dc_fb->exhalation,
+    //     dc_fb->pwr_p, dc_fb->pwr_n, dc_fb->freq, dc_fb->incline);
+    // printf("timeout: %d mask: %d\n", dc_to->unit1_timeout, dc_to->unit_mask);
+
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
     fb_data->cycles = 0;
     fb_data->start = 0;
 
+    /* Always stop current timer when we get new fb data */
+    adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
+
+    /* This stop rumble when BR timeout trigger */
     if (raw_fb_data->header.data_len == 0) {
         fb_data->state = 0;
-        adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
+        fb_data->lf_pwr = fb_data->hf_pwr = 0;
     }
     else {
-        uint32_t dur_us = 1000 * ((*(uint16_t *)&raw_fb_data->data[0]) * 250 + 250);
-        uint8_t freq = raw_fb_data->data[5];
-        uint8_t mag0 = raw_fb_data->data[6] & 0x07;
-        uint8_t mag1 = (raw_fb_data->data[6] >> 4) & 0x07;
+        uint32_t timeout_us = (dc_to->unit1_timeout + 1) * DC_TIMEOUT_TO_US;
+        /* pwr is either positive or negative, never both */
+        uint8_t pwr = dc_fb->pwr_p | dc_fb->pwr_n;
 
-        if (mag0 || mag1) {
-            if (freq && ((raw_fb_data->data[6] & 0x88) || !(raw_fb_data->data[7] & 0x01))) {
-                if (raw_fb_data->data[4]) {
-                    dur_us = 1000000 * raw_fb_data->data[4] * MAX(mag0, mag1) / freq;
-                }
-                else {
-                    dur_us = 1000000 / freq;
-                }
+        if (pwr) {
+            if (!dc_fb->continuous) {
+                timeout_us = DC_FREQ_TO_US / (dc_fb->freq + 1);
             }
             fb_data->state = 1;
-            adapter_fb_stop_timer_start(raw_fb_data->header.wired_id, dur_us);
+            fb_data->lf_pwr = fb_data->hf_pwr = pwr * (255.0 / 7.0);
+             
+            adapter_fb_stop_timer_start(raw_fb_data->header.wired_id, timeout_us);
         }
         else {
             fb_data->state = 0;
-            adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);
+            fb_data->lf_pwr = fb_data->hf_pwr = 0;
         }
     }
 }
