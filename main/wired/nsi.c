@@ -378,7 +378,7 @@ static void n64_pad_cmd_hdlr(uint8_t channel, uint8_t port, uint16_t item) {
         default:
             /* 0x00 & 0xFF cmds goes here, corrupt cmd too! This help avoid ctrl detection error */
             *(uint16_t *)buf = N64_CTRL;
-            if (config.out_cfg[channel].acc_mode > ACC_NONE) {
+            if (config.out_cfg[channel].acc_mode > ACC_NONE && config.out_cfg[channel].acc_mode < ACC_BOTH) {
                 if (ctrl_acc_update[channel] > 1) {
                     buf[2] = N64_SLOT_EMPTY;
                     ctrl_acc_update[channel]--;
