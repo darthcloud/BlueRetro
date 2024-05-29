@@ -228,8 +228,6 @@ void gc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
     fb_data->state = raw_fb_data->data[0];
     fb_data->lf_pwr = (fb_data->state) ? 0xFF : 0x00;
     fb_data->hf_pwr = (fb_data->state) ? 0xFF : 0x00;
-    fb_data->cycles = 0;
-    fb_data->start = 0;
 }
 
 void IRAM_ATTR gc_gen_turbo_mask(struct wired_data *wired_data) {

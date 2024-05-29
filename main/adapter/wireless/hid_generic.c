@@ -745,12 +745,7 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                 rumble->report_size += bytes_count;
 
                 if (fb_data->state) {
-                    if (fb_data->cycles) {
-                        tmp_value = fb_data->cycles;
-                    }
-                    else {
-                        tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
-                    }
+                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
                 }
                 else {
                     tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
@@ -762,7 +757,7 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                 bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
                 rumble->report_size += bytes_count;
 
-                tmp_value = fb_data->start;
+                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
 
                 is_rumble_usage = true;
                 break;

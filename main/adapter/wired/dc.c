@@ -460,8 +460,6 @@ void dc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
 
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
-    fb_data->cycles = 0;
-    fb_data->start = 0;
 
     /* Always stop current timer when we get new fb data */
     adapter_fb_stop_timer_stop(raw_fb_data->header.wired_id);

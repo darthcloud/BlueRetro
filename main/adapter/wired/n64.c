@@ -198,8 +198,6 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
 
             fb_data.wired_id = wired_id;
             fb_data.type = FB_TYPE_RUMBLE;
-            fb_data.cycles = 0;
-            fb_data.start = 0;
             fb_data.state = 1;
             adapter_fb_stop_timer_start(wired_id, duration_us);
             wireless_fb_from_generic(&fb_data, bt_data);
@@ -379,8 +377,6 @@ void n64_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gene
     fb_data->state = raw_fb_data->data[0];
     fb_data->lf_pwr = (fb_data->state) ? 0xFF : 0x00;
     fb_data->hf_pwr = (fb_data->state) ? 0xFF : 0x00;
-    fb_data->cycles = 0;
-    fb_data->start = 0;
 }
 
 void IRAM_ATTR n64_gen_turbo_mask(struct wired_data *wired_data) {
