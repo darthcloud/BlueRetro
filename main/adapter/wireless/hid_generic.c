@@ -52,8 +52,6 @@ struct generic_rumble {
     uint32_t report_size;
 } __packed;
 
-#define RUMBLE_ON_MULTIPLIER 1.0 // Range from 0.0 to 1.0
-
 static const uint32_t hid_kb_bitfield_to_generic[8] = {
     KB_LCTRL,
     KB_LSHIFT,
@@ -698,85 +696,97 @@ int32_t hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 }
 
 void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-    struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
 
-    rumble->report_size = 0;
-    uint32_t bytes_count = 0;
-    uint32_t tmp_value = 0;
-    uint32_t offset = 0;
-    uint32_t counter = 0;
-    bool is_rumble_usage = false;
-
-    for (uint32_t i = 0; i < bt_data->reports[RUMBLE].usage_cnt; i++)
-    {
-        is_rumble_usage = false;
-
-        switch (bt_data->reports[RUMBLE].usages[i].usage)
+    switch (fb_data->type) {
+        case FB_TYPE_RUMBLE:
         {
-            case 0x50: /* Duration */
-                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                rumble->report_size += bytes_count;
+            struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
 
-                if (fb_data->state) {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
-                }
-                else {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                }
+            rumble->report_size = 0;
+            uint32_t bytes_count = 0;
+            uint32_t tmp_value = 0;
+            uint32_t offset = 0;
+            uint32_t counter = 0;
+            uint32_t pwr[2];
+            uint32_t pwr_idx = 0;
+            bool is_rumble_usage = false;
 
-                is_rumble_usage = true;
-                break;
-            case 0x70: /* Magnitude */
-            case 0x97: /* Enable Actuators */
-                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                rumble->report_size += bytes_count;
+            pwr[0] = fb_data->lf_pwr;
+            pwr[1] = fb_data->hf_pwr;
 
-                if (fb_data->state) {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max * RUMBLE_ON_MULTIPLIER;
-                }
-                else {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                }
-
-                is_rumble_usage = true;
-                break;
-            case 0x7C: /* Loop Count */
-                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                rumble->report_size += bytes_count;
-
-                if (fb_data->state) {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
-                }
-                else {
-                    tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                }
-
-                is_rumble_usage = true;
-                break;
-            case 0xA7: /* Start Delay */
-                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                rumble->report_size += bytes_count;
-
-                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-
-                is_rumble_usage = true;
-                break;
-        }
-
-        if (is_rumble_usage) {
-            counter = 0;
-            while(tmp_value)
+            for (uint32_t i = 0; i < bt_data->reports[RUMBLE].usage_cnt; i++)
             {
-                rumble->state[offset++] = tmp_value;
-                tmp_value >>= 8;
-                counter++;
+                is_rumble_usage = false;
+
+                switch (bt_data->reports[RUMBLE].usages[i].usage)
+                {
+                    case 0x50: /* Duration */
+                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                        rumble->report_size += bytes_count;
+
+                        if (fb_data->state) {
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                        }
+                        else {
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                        }
+
+                        is_rumble_usage = true;
+                        break;
+                    case 0x70: /* Magnitude */
+                    case 0x97: /* Enable Actuators */
+                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                        rumble->report_size += bytes_count;
+
+                        if (fb_data->state && pwr_idx < sizeof(pwr)/sizeof(pwr[0])) {
+                            tmp_value = ((float)bt_data->reports[RUMBLE].usages[i].logical_max / 255.0) * pwr[pwr_idx++];
+                        }
+                        else {
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                        }
+
+                        is_rumble_usage = true;
+                        break;
+                    case 0x7C: /* Loop Count */
+                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                        rumble->report_size += bytes_count;
+
+                        if (fb_data->state) {
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                        }
+                        else {
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                        }
+
+                        is_rumble_usage = true;
+                        break;
+                    case 0xA7: /* Start Delay */
+                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                        rumble->report_size += bytes_count;
+
+                        tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+
+                        is_rumble_usage = true;
+                        break;
+                }
+
+                if (is_rumble_usage) {
+                    counter = 0;
+                    while(tmp_value)
+                    {
+                        rumble->state[offset++] = tmp_value;
+                        tmp_value >>= 8;
+                        counter++;
+                    }
+                    for (uint32_t refill = counter; refill < bytes_count; refill++) {
+                        rumble->state[offset++] = 0;
+                    }
+                }
             }
-            for (uint32_t refill = counter; refill < bytes_count; refill++) {
-                rumble->state[offset++] = 0;
-            }
+
+            rumble->report_id = bt_data->reports[RUMBLE].id;
+            break;
         }
     }
-
-    rumble->report_id = bt_data->reports[RUMBLE].id;
 }
 
