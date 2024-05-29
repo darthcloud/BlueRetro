@@ -30,7 +30,7 @@ static void bt_hid_cmd_ps4_set_conf(struct bt_dev *device, void *report) {
 static void bt_hid_cmd_ps5_trigger_init(struct bt_dev *device) {
     int32_t perc_threshold_l = -1;
     int32_t perc_threshold_r = -1;
-    int32_t dev = bt_host_get_dev_from_out_idx(device->ids.out_idx, &device);
+    int32_t dev = device->ids.id;
     uint32_t map_cnt_l = 0;
     uint32_t map_cnt_r = 0;
 

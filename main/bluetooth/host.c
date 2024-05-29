@@ -238,7 +238,7 @@ static void bt_fb_task(void *param) {
             struct bt_dev *device = NULL;
             struct bt_data *bt_data = NULL;
 
-            bt_host_get_dev_from_out_idx(fb_data->header.wired_id, &device);
+            bt_host_get_active_dev_from_out_idx(fb_data->header.wired_id, &device);
             if (device) {
                 bt_data = &bt_adapter.data[device->ids.id];
             }
@@ -557,6 +557,16 @@ int32_t bt_host_get_dev_from_id(uint8_t id, struct bt_dev **device) {
 int32_t bt_host_get_dev_from_out_idx(uint8_t out_idx, struct bt_dev **device) {
     for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
         if (bt_dev[i].ids.out_idx == out_idx) {
+            *device = &bt_dev[i];
+            return i;
+        }
+    }
+    return -1;
+}
+
+int32_t bt_host_get_active_dev_from_out_idx(uint8_t out_idx, struct bt_dev **device) {
+    for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+        if (atomic_test_bit(&bt_dev[i].flags, BT_DEV_HID_INIT_DONE) && bt_dev[i].ids.out_idx == out_idx) {
             *device = &bt_dev[i];
             return i;
         }

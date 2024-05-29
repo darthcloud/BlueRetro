@@ -190,7 +190,7 @@ static void n64_acc_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
     struct bt_dev *device = NULL;
     struct bt_data *bt_data = NULL;
 
-    bt_host_get_dev_from_out_idx(wired_id, &device);
+    bt_host_get_active_dev_from_out_idx(wired_id, &device);
     if (device) {
         bt_data = &bt_adapter.data[device->ids.id];
         if (bt_data) {
