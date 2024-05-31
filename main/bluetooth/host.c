@@ -289,7 +289,7 @@ static void bt_fb_task(void *param) {
                 bt_hid_feedback(device, bt_data->base.output);
             }
         }
-        vTaskDelay(32 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 
