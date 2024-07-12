@@ -1,3 +1,5 @@
+ <p align="center"><a href="https://blueretro.com/products/brx"><img src="https://github.com/darthcloud/img/blob/main/brx_banner.png"/></a></p>
+
 # BlueRetro
 
 <p align="center"><img src="/static/PNGs/BRE_Logo_Color_Outline.png" width="600"/></p>
