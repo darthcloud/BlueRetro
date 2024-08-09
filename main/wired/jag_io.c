@@ -425,8 +425,6 @@ static void jag_ctrl_task(void) {
             timeout = 0;
 
             if (row_idx[idx] == 3) {
-                ++wired_adapter.data[socket_idx[idx]].frame_cnt;
-                jag_gen_turbo_mask(&wired_adapter.data[socket_idx[idx]]);
                 bank[socket_idx[idx]]++;
                 if (bank[socket_idx[idx]] > 2) {
                     bank[socket_idx[idx]] = 0;
