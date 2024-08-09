@@ -49,7 +49,7 @@ jobs:
         mkdir ota
         mv ota_data_initial.bin ota/
     - name: Upload artifact
-      uses: darthcloud/upload-artifact@v3node20
+      uses: darthcloud/upload-artifact@v4
       with:
         name: ${{ env.br_version }}_${{ matrix.hw_version }}
         path: |
