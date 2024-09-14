@@ -220,7 +220,7 @@ void ps_meta_init(struct wired_ctrl *ctrl_data) {
                     ctrl_data[i].desc = ps_kb_desc;
                     goto exit_axes_loop;
                 case DEV_MOUSE:
-                    if (i >= PS_JOYSTICK_AXES_CNT) {
+                    if (j >= PS_JOYSTICK_AXES_CNT) {
                         goto exit_axes_loop;
                     }
                     ctrl_data[i].mask = ps_mouse_mask;
@@ -280,13 +280,15 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
                 map_tmp.axes[ps_axes_idx[i]] = (uint8_t)(ctrl_data->axes[i].value + ctrl_data->axes[i].meta->neutral);
             }
 
-            if (i >= PS_JOYSTICK_AXES_CNT && map_tmp.axes[ps_axes_idx[i]]) {
-                map_tmp.buttons &= ~ps_btns_mask[btn_id];;
-                wired_data->cnt_mask[btn_id] = ctrl_data->btns[0].cnt_mask[btn_id];
-            }
-            else {
-                map_tmp.buttons |= ps_btns_mask[btn_id];
-                wired_data->cnt_mask[btn_id] = 0;
+            if (i >= PS_JOYSTICK_AXES_CNT) {
+                if (map_tmp.axes[ps_axes_idx[i]]) {
+                    map_tmp.buttons &= ~ps_btns_mask[btn_id];;
+                    wired_data->cnt_mask[btn_id] = ctrl_data->btns[0].cnt_mask[btn_id];
+                }
+                else {
+                    map_tmp.buttons |= ps_btns_mask[btn_id];
+                    wired_data->cnt_mask[btn_id] = 0;
+                }
             }
         }
         wired_data->cnt_mask[btn_id] = ctrl_data->axes[i].cnt_mask;
