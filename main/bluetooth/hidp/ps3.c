@@ -90,7 +90,9 @@ void bt_hid_ps3_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     }
                     bt_hid_cmd_ps3_set_conf(device, &rumble);
 #else
-                    bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+                    if (bt_hci_acl_pkt->hidp_data[0] != 0xFF) {
+                        bt_host_bridge(device, bt_hci_acl_pkt->hidp_hdr.protocol, bt_hci_acl_pkt->hidp_data, hidp_data_len);
+                    }
 #endif
                     break;
             }
