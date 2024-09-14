@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/darthcloud/idf-blueretro:v5.3.0_2024-02-18
+    outputs:
+      br_version: ${{ env.br_version }}
 
     steps:
     - name: Checkout repo
@@ -49,12 +51,36 @@ jobs:
         mkdir ota
         mv ota_data_initial.bin ota/
     - name: Upload artifact
-      uses: darthcloud/upload-artifact@v4
+      uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.br_version }}_${{ matrix.hw_version }}
+        name: ${{ matrix.hw_version }}_${{ matrix.br_config }}
         path: |
           build/partition_table/partition-table.bin
           build/bootloader/bootloader.bin
           build/ota/ota_data_initial.bin
           build/BlueRetro*.bin
         if-no-files-found: error
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge Artifacts HW1
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_hw1
+          pattern: hw1*
+          delete-merged: true
+      - name: Merge Artifacts HW2
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_hw2
+          pattern: hw2*
+          delete-merged: true
+      - name: Merge Artifacts DBG
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_dbg
+          pattern: dbg*
+          delete-merged: true
