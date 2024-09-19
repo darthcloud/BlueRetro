@@ -33,6 +33,7 @@ enum {
     BT_DEV_IS_BLE,
     BT_DEV_FB_DELAY,
     BT_DEV_CALIB_SET,
+    BT_DEV_PPCP_DONE,
 };
 
 enum {

@@ -1142,6 +1142,17 @@ connect:
 skip:
             break;
         }
+        case BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE:
+        {
+            struct bt_hci_evt_le_conn_update_complete *conn =
+                (struct bt_hci_evt_le_conn_update_complete *)(bt_hci_evt_pkt->evt_data + sizeof(struct bt_hci_evt_le_meta_event));
+            printf("# BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE sts: %d, int: %d, lat: %d, tout: %d\n",
+                conn->status, conn->interval, conn->latency, conn->supv_timeout);
+            if (device) {
+                atomic_set_bit(&device->flags, BT_DEV_PPCP_DONE);
+            }
+            break;
+        }
         case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
         {
             struct bt_hci_evt_le_remote_feat_complete *le_remote_feat =

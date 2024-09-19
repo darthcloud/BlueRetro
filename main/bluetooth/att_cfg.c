@@ -51,6 +51,8 @@ enum {
     GAP_DEV_NAME_CHRC_HDL,
     GAP_APP_ATT_HDL,
     GAP_APP_CHRC_HDL,
+    GAP_PPCP_ATT_HDL,
+    GAP_PPCP_CHRC_HDL,
     BR_GRP_HDL = 0x0040,
     BR_GLBL_CFG_ATT_HDL,
     BR_GLBL_CFG_CHRC_HDL,
@@ -115,6 +117,7 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
     struct bt_att_read_type_rsp *rd_type_rsp = (struct bt_att_read_type_rsp *)bt_hci_pkt_tmp.att_data;
     struct bt_att_data *name_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 0);
     struct bt_att_data *app_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 7);
+    struct bt_att_data *ppcp_data = (struct bt_att_data *)((uint8_t *)rd_type_rsp->data + 14);
     uint8_t *data;
 
     printf("# %s\n", __FUNCTION__);
@@ -137,7 +140,15 @@ static void bt_att_cmd_gap_char_read_type_rsp(uint16_t handle) {
     data += 2;
     *(uint16_t *)data = BT_UUID_GAP_APPEARANCE;
 
-    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len * 2);
+    ppcp_data->handle = GAP_PPCP_ATT_HDL;
+    data = ppcp_data->value;
+    *data = BT_GATT_CHRC_READ;
+    data++;
+    *(uint16_t *)data = GAP_PPCP_CHRC_HDL;
+    data += 2;
+    *(uint16_t *)data = BT_UUID_GAP_PPCP;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_TYPE_RSP, sizeof(rd_type_rsp->len) + rd_type_rsp->len * 3);
 }
 
 static void bt_att_cmd_blueretro_char_read_type_rsp(uint16_t handle, uint16_t start) {
@@ -195,6 +206,20 @@ static void bt_att_cmd_app_rd_rsp(uint16_t handle) {
     *(uint16_t *)bt_hci_pkt_tmp.att_data = 964; /* HID Gamepad */
 
     bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(uint16_t));
+}
+
+static void bt_att_cmd_ppcp_rd_rsp(uint16_t handle) {
+    struct bt_l2cap_conn_param_req *conn_param =
+        (struct bt_l2cap_conn_param_req *)bt_hci_pkt_tmp.att_data;
+
+    printf("# %s\n", __FUNCTION__);
+
+    conn_param->min_interval = 6;
+    conn_param->max_interval = 12;
+    conn_param->latency = 0;
+    conn_param->timeout = 960;
+
+    bt_att_cmd(handle, BT_ATT_OP_READ_RSP, sizeof(struct bt_l2cap_conn_param_req));
 }
 
 static void bt_att_cmd_global_cfg_rd_rsp(uint16_t handle, uint16_t offset) {
@@ -360,7 +385,7 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
 
     printf("# %s\n", __FUNCTION__);
 
-    if (start <= GAP_APP_CHRC_HDL) {
+    if (start <= GAP_PPCP_CHRC_HDL) {
         rd_grp_rsp->len = 6;
 
         if (start <= GATT_GRP_HDL && end >= GATT_SRVC_CH_CHRC_HDL) {
@@ -370,9 +395,9 @@ static void bt_att_cmd_read_group_rsp(uint16_t handle, uint16_t start, uint16_t 
             len += rd_grp_rsp->len;
         }
 
-        if (start <= GAP_GRP_HDL && end >= GAP_APP_CHRC_HDL) {
+        if (start <= GAP_GRP_HDL && end >= GAP_PPCP_CHRC_HDL) {
             gap_data->start_handle = GAP_GRP_HDL;
-            gap_data->end_handle = GAP_APP_CHRC_HDL;
+            gap_data->end_handle = GAP_PPCP_CHRC_HDL;
             *(uint16_t *)gap_data->value = BT_UUID_GAP;
             len += rd_grp_rsp->len;
         }
@@ -558,11 +583,11 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_gatt_char_read_type_rsp(device->acl_handle);
                 }
                 /* GAP */
-                else if (start >= GATT_SRVC_CH_CHRC_HDL && start < GAP_APP_CHRC_HDL && end >= GAP_APP_CHRC_HDL) {
+                else if (start >= GATT_SRVC_CH_CHRC_HDL && start < GAP_PPCP_CHRC_HDL && end >= GAP_PPCP_CHRC_HDL) {
                     bt_att_cmd_gap_char_read_type_rsp(device->acl_handle);
                 }
                 /* BLUERETRO */
-                else if (start >= GAP_APP_CHRC_HDL && start < LAST_HDL && end >= LAST_HDL) {
+                else if (start >= GAP_PPCP_CHRC_HDL && start < LAST_HDL && end >= LAST_HDL) {
                     bt_att_cmd_blueretro_char_read_type_rsp(device->acl_handle, start);
                 }
                 else {
@@ -586,6 +611,9 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 case GAP_APP_CHRC_HDL:
                     bt_att_cmd_app_rd_rsp(device->acl_handle);
                     break;
+                case GAP_PPCP_CHRC_HDL:
+                    bt_att_cmd_ppcp_rd_rsp(device->acl_handle);
+                    break;
                 case BR_GLBL_CFG_CHRC_HDL:
                     bt_att_cmd_global_cfg_rd_rsp(device->acl_handle, 0);
                     break;
@@ -608,6 +636,21 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cfg_cmd_bdaddr_rsp(device->acl_handle);
                     break;
                 case BR_CFG_CMD_CHRC_HDL:
+                    if (!atomic_test_bit(&device->flags, BT_DEV_PPCP_DONE)) {
+                        struct hci_cp_le_conn_update le_conn_update = {
+                            .conn_interval_min = 6,
+                            .conn_interval_max = 12,
+                            .conn_latency = 0,
+                            .supervision_timeout = 960,
+                            .min_ce_len = 0,
+                            .max_ce_len = 0,
+                        };
+
+                        le_conn_update.handle = device->acl_handle;
+
+                        bt_hci_le_conn_update(&le_conn_update);
+                        atomic_set_bit(&device->flags, BT_DEV_PPCP_DONE);
+                    }
                     bt_att_cfg_cmd_rd_hdlr(device->acl_handle);
                     break;
                 default:
