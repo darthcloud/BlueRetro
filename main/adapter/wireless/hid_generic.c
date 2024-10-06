@@ -699,94 +699,109 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
 
     switch (fb_data->type) {
         case FB_TYPE_RUMBLE:
-        {
-            struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
+            if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_GC)) {
+                struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
 
-            rumble->report_size = 0;
-            uint32_t bytes_count = 0;
-            uint32_t tmp_value = 0;
-            uint32_t offset = 0;
-            uint32_t counter = 0;
-            uint32_t pwr[2];
-            uint32_t pwr_idx = 0;
-            bool is_rumble_usage = false;
-
-            pwr[0] = fb_data->lf_pwr;
-            pwr[1] = fb_data->hf_pwr;
-
-            for (uint32_t i = 0; i < bt_data->reports[RUMBLE].usage_cnt; i++)
-            {
-                is_rumble_usage = false;
-
-                switch (bt_data->reports[RUMBLE].usages[i].usage)
-                {
-                    case 0x50: /* Duration */
-                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                        rumble->report_size += bytes_count;
-
-                        if (fb_data->state) {
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
-                        }
-                        else {
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                        }
-
-                        is_rumble_usage = true;
-                        break;
-                    case 0x70: /* Magnitude */
-                    case 0x97: /* Enable Actuators */
-                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                        rumble->report_size += bytes_count;
-
-                        if (fb_data->state && pwr_idx < sizeof(pwr)/sizeof(pwr[0])) {
-                            tmp_value = ((float)bt_data->reports[RUMBLE].usages[i].logical_max / 255.0) * pwr[pwr_idx++];
-                        }
-                        else {
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                        }
-
-                        is_rumble_usage = true;
-                        break;
-                    case 0x7C: /* Loop Count */
-                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                        rumble->report_size += bytes_count;
-
-                        if (fb_data->state) {
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
-                        }
-                        else {
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-                        }
-
-                        is_rumble_usage = true;
-                        break;
-                    case 0xA7: /* Start Delay */
-                        bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
-                        rumble->report_size += bytes_count;
-
-                        tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
-
-                        is_rumble_usage = true;
-                        break;
+                rumble->report_id = 0xA5;
+                rumble->report_size = 3;
+                rumble->state[0] = 0xdb;
+                if (fb_data->state) {
+                    rumble->state[1] = fb_data->lf_pwr;
+                    rumble->state[2] = fb_data->hf_pwr;
                 }
-
-                if (is_rumble_usage) {
-                    counter = 0;
-                    while(tmp_value)
-                    {
-                        rumble->state[offset++] = tmp_value;
-                        tmp_value >>= 8;
-                        counter++;
-                    }
-                    for (uint32_t refill = counter; refill < bytes_count; refill++) {
-                        rumble->state[offset++] = 0;
-                    }
+                else {
+                    rumble->state[1] = 0x00;
+                    rumble->state[2] = 0x00;
                 }
             }
+            else {
+                struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
 
-            rumble->report_id = bt_data->reports[RUMBLE].id;
+                rumble->report_size = 0;
+                uint32_t bytes_count = 0;
+                uint32_t tmp_value = 0;
+                uint32_t offset = 0;
+                uint32_t counter = 0;
+                uint32_t pwr[2];
+                uint32_t pwr_idx = 0;
+                bool is_rumble_usage = false;
+
+                pwr[0] = fb_data->lf_pwr;
+                pwr[1] = fb_data->hf_pwr;
+
+                for (uint32_t i = 0; i < bt_data->reports[RUMBLE].usage_cnt; i++)
+                {
+                    is_rumble_usage = false;
+
+                    switch (bt_data->reports[RUMBLE].usages[i].usage)
+                    {
+                        case 0x50: /* Duration */
+                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            rumble->report_size += bytes_count;
+
+                            if (fb_data->state) {
+                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                            }
+                            else {
+                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                            }
+
+                            is_rumble_usage = true;
+                            break;
+                        case 0x70: /* Magnitude */
+                        case 0x97: /* Enable Actuators */
+                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            rumble->report_size += bytes_count;
+
+                            if (fb_data->state && pwr_idx < sizeof(pwr)/sizeof(pwr[0])) {
+                                tmp_value = ((float)bt_data->reports[RUMBLE].usages[i].logical_max / 255.0) * pwr[pwr_idx++];
+                            }
+                            else {
+                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                            }
+
+                            is_rumble_usage = true;
+                            break;
+                        case 0x7C: /* Loop Count */
+                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            rumble->report_size += bytes_count;
+
+                            if (fb_data->state) {
+                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                            }
+                            else {
+                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                            }
+
+                            is_rumble_usage = true;
+                            break;
+                        case 0xA7: /* Start Delay */
+                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            rumble->report_size += bytes_count;
+
+                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+
+                            is_rumble_usage = true;
+                            break;
+                    }
+
+                    if (is_rumble_usage) {
+                        counter = 0;
+                        while(tmp_value)
+                        {
+                            rumble->state[offset++] = tmp_value;
+                            tmp_value >>= 8;
+                            counter++;
+                        }
+                        for (uint32_t refill = counter; refill < bytes_count; refill++) {
+                            rumble->state[offset++] = 0;
+                        }
+                    }
+                }
+
+                rumble->report_id = bt_data->reports[RUMBLE].id;
+            }
             break;
-        }
     }
 }
 
