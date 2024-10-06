@@ -21,6 +21,7 @@
 #include "wired/wired.h"
 #include "wireless/wireless.h"
 #include "macro.h"
+#include "bluetooth/host.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -44,6 +45,7 @@ struct generic_fb fb_input;
 struct bt_adapter bt_adapter = {0};
 struct wired_adapter wired_adapter = {0};
 static uint32_t adapter_out_mask[WIRED_MAX_DEV] = {0};
+static bool rumble_mute = false;
 
 static uint32_t btn_id_to_btn_idx(uint8_t btn_id) {
     if (btn_id < 32) {
@@ -220,6 +222,9 @@ static void adapter_fb_stop_cb(void* arg) {
     fb_data.header.data_len = 0;
 
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
+
+    /* Unmute system rumble */
+    rumble_mute = false;
 
     /* Send 0 byte data, system that require callback stop shall look for that */
     adapter_q_fb(&fb_data);
@@ -495,7 +500,32 @@ uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
 
 void IRAM_ATTR adapter_q_fb(struct raw_fb *fb_data) {
     /* Best efford only on fb */
-    queue_bss_enqueue(wired_adapter.input_q_hdl, (uint8_t *)fb_data, sizeof(*fb_data));
+    if (!rumble_mute) {
+        queue_bss_enqueue(wired_adapter.input_q_hdl, (uint8_t *)fb_data, sizeof(*fb_data));
+    }
+}
+
+void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
+    struct bt_dev *device = NULL;
+    struct bt_data *bt_data = NULL;
+
+    bt_host_get_active_dev_from_out_idx(wired_id, &device);
+    if (device) {
+        bt_data = &bt_adapter.data[device->ids.id];
+        if (bt_data) {
+            struct generic_fb fb_data = {0};
+
+            fb_data.wired_id = wired_id;
+            fb_data.type = FB_TYPE_RUMBLE;
+            fb_data.state = 1;
+            fb_data.hf_pwr = 0xFF;
+            fb_data.lf_pwr = 0xFF;
+            rumble_mute = true;
+            adapter_fb_stop_timer_start(wired_id, duration_us);
+            wireless_fb_from_generic(&fb_data, bt_data);
+            bt_hid_feedback(device, bt_data->base.output);
+        }
+    }
 }
 
 void adapter_init(void) {
