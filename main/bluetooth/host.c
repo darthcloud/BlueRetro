@@ -34,6 +34,7 @@
 
 #define BT_TX 0
 #define BT_RX 1
+#define BT_FB_TASK_DELAY_CNT 30
 
 enum {
     /* BT CTRL flags */
@@ -229,8 +230,10 @@ static void bt_tx_task(void *param) {
 }
 
 static void bt_fb_task(void *param) {
+    static bool rumble_en = false;
     uint32_t *fb_len;
     struct raw_fb *fb_data = NULL;
+    uint32_t delay_cnt = BT_FB_TASK_DELAY_CNT; /* 100ms * 30 = 3sec */
 
     while(1) {
         /* Look for rumble/led feedback data */
@@ -260,7 +263,9 @@ static void bt_fb_task(void *param) {
                     /* Fallthrough */
                 case FB_TYPE_RUMBLE:
                     if (bt_data) {
+                        rumble_en = true;
                         adapter_bridge_fb(fb_data, bt_data);
+                        delay_cnt = 0;
                     }
                     break;
                 case FB_TYPE_GAME_ID:
@@ -280,14 +285,17 @@ static void bt_fb_task(void *param) {
         }
 
         /* TX Feedback every ~frame, double as a keep alive */
-        for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
-            struct bt_dev *device = &bt_dev[i];
+        if (delay_cnt-- == 0) {
+            for (uint32_t i = 0; i < BT_MAX_DEV; i++) {
+                struct bt_dev *device = &bt_dev[i];
 
-            if (atomic_test_bit(&device->flags, BT_DEV_HID_INIT_DONE)) {
-                struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+                if (rumble_en && atomic_test_bit(&device->flags, BT_DEV_HID_INIT_DONE)) {
+                    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
 
-                bt_hid_feedback(device, bt_data->base.output);
+                    bt_hid_feedback(device, bt_data->base.output);
+                }
             }
+            delay_cnt = BT_FB_TASK_DELAY_CNT;
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
