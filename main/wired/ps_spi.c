@@ -277,6 +277,9 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 if (port->rumble_l_state[id]) {
                     fb_data.data[1] = req[port->rumble_l_idx[id]];
                 }
+                if (!(port->rumble_l_state[id] && port->rumble_r_state[id]) && req[0] == 0x73) {
+                    fb_data.data[0] = req[1];
+                }
                 fb_data.header.wired_id = id + port->mt_first_port;
                 fb_data.header.type = FB_TYPE_RUMBLE;
                 fb_data.header.data_len = 2;
