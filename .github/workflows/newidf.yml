@@ -33,6 +33,7 @@ jobs:
         submodules: recursive
         fetch-depth: 0
     - name: Build with ESP-IDF
+      shell: bash
       run: |
         . $IDF_PATH/export.sh
         echo "br_version=$(git describe --always --tags --dirty)" >> $GITHUB_ENV
