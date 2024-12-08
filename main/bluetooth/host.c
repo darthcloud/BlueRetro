@@ -24,6 +24,7 @@
 #include "smp.h"
 #include "tools/util.h"
 #include "debug.h"
+#include "mon.h"
 #include "system/fs.h"
 #include "adapter/config.h"
 #include "adapter/gameid.h"
@@ -68,9 +69,6 @@ static uint32_t frag_size = 0;
 static uint32_t frag_offset = 0;
 static uint8_t frag_buf[1024];
 
-#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
-static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir);
-#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 static int32_t bt_host_load_bdaddr_from_nvs(void);
 static int32_t bt_host_load_keys_from_file(struct bt_host_link_keys *data);
 static int32_t bt_host_store_keys_on_file(struct bt_host_link_keys *data);
@@ -85,21 +83,6 @@ static esp_vhci_host_callback_t vhci_host_cb = {
     bt_host_tx_pkt_ready,
     bt_host_rx_pkt
 };
-
-#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
-static void bt_h4_trace(uint8_t *data, uint16_t len, uint8_t dir) {
-    if (dir)
-        printf("I ");
-    else
-        printf("O ");
-
-    printf("%06X", 0);
-    for (uint32_t i = 0; i < len; i++) {
-        printf(" %02X", data[i]);
-    }
-    printf("\n");
-}
-#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
 static int32_t bt_host_load_bdaddr_from_nvs(void) {
     esp_err_t err;
@@ -215,7 +198,8 @@ static void bt_tx_task(void *param) {
                 }
                 else {
 #ifdef CONFIG_BLUERETRO_BT_H4_TRACE
-                    bt_h4_trace(packet, packet_len, BT_TX);
+                    bt_mon_tx((packet[0] == BT_HCI_H4_TYPE_CMD) ? BT_MON_CMD : BT_MON_ACL_TX,
+                        packet + 1, packet_len - 1);
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
                     atomic_clear_bit(&bt_flags, BT_CTRL_READY);
                     esp_vhci_host_send_packet(packet, packet_len);
@@ -405,7 +389,8 @@ static void bt_host_tx_pkt_ready(void) {
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     struct bt_hci_pkt *bt_hci_pkt = (struct bt_hci_pkt *)data;
 #ifdef CONFIG_BLUERETRO_BT_H4_TRACE
-    bt_h4_trace(data, len, BT_RX);
+    bt_mon_tx((bt_hci_pkt->h4_hdr.type == BT_HCI_H4_TYPE_EVT) ? BT_MON_EVT : BT_MON_ACL_RX,
+        data + 1, len - 1);
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
@@ -632,6 +617,11 @@ int32_t bt_host_init(void) {
 #endif
 
     bt_host_load_bdaddr_from_nvs();
+
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
+    bt_mon_init(UART_NUM_1, 921600, UART_DATA_8_BITS, UART_STOP_BITS_1,
+        UART_PARITY_DISABLE, UART_HW_FLOWCTRL_DISABLE);
+#endif
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
