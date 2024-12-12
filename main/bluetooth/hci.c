@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -1408,6 +1408,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     printf("# dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
+                    bt_l2cap_cmd_sdp_conn_req(device);
                 }
             }
             else {
