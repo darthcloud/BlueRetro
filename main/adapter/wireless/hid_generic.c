@@ -79,15 +79,26 @@ static const uint32_t hid_kb_key_to_generic[] = {
     KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT,
 };
 
-static const uint32_t hid_pad_default_btns_mask[32] = {
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, BIT(HID_Z), 0, BIT(HID_C),
-    BIT(HID_X), BIT(HID_B), BIT(HID_A), BIT(HID_Y),
-    BIT(HID_START), BIT(HID_SELECT), BIT(HID_MENU), 0,
-    BIT(HID_L), BIT(HID_LB), 0, BIT(HID_LJ),
-    BIT(HID_R), BIT(HID_RB), 0, BIT(HID_RJ),
+// static const uint32_t hid_pad_default_btns_mask[32] = {
+//     0, 0, 0, 0,
+//     0, 0, 0, 0,
+//     0, 0, 0, 0,
+//     0, BIT(HID_Z), 0, BIT(HID_C),
+//     BIT(HID_X), BIT(HID_B), BIT(HID_A), BIT(HID_Y),
+//     BIT(HID_START), BIT(HID_SELECT), BIT(HID_MENU), 0,
+//     BIT(HID_L), BIT(HID_LB), 0, BIT(HID_LJ),
+//     BIT(HID_R), BIT(HID_RB), 0, BIT(HID_RJ),
+// };
+
+static const uint32_t hid_pad_default_btns_idx[32] = {
+    PAD_RB_DOWN, PAD_RB_RIGHT, PAD_LT,
+    PAD_RB_LEFT, PAD_RB_UP, PAD_RT,
+    PAD_LS, PAD_RS,
+    PAD_LM, PAD_RM,
+    PAD_MS, PAD_MM, PAD_MT,
+    PAD_LJ, PAD_RJ,
+    PAD_MQ,
+    PAD_RD_LEFT, PAD_RD_RIGHT, PAD_RD_DOWN, PAD_RD_UP,
 };
 
 static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
@@ -306,6 +317,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
 
 static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
     uint32_t z_is_joy = 0;
+    int8_t hid_cbtn_idx = -1;
     memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
     meta->hid_btn_idx = -1;
     meta->hid_hat_idx = -1;
@@ -473,7 +485,9 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                 }
                 break;
             case USAGE_GEN_BUTTON:
-                meta->hid_btn_idx = i;
+                if (meta->hid_btn_idx < 0) {
+                    meta->hid_btn_idx = i;
+                }
                 break;
             case 0x02 /* USAGE_SIMS */:
                 switch (report->usages[i].usage) {
@@ -495,6 +509,11 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         break;
                 }
                 break;
+            case 0x0C: /* Consumer */
+                if (hid_cbtn_idx < 0) {
+                    hid_cbtn_idx = i;
+                }
+                break;
         }
     }
 
@@ -504,35 +523,75 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
         meta->hid_axes_meta[i].abs_min *= MAX_PULL_BACK;
     }
 
-    /* HID buttons order is from most important to the less in HID spec. */
-    if (meta->hid_btn_idx > -1) {
-        uint32_t hid_mask = (1 << report->usages[meta->hid_btn_idx].bit_size) - 1;
-
-        /* Use a good default for most modern controller */
-        for (uint32_t i = 12; i < ARRAY_SIZE(generic_btns_mask); i++) {
-            if (hid_pad_default_btns_mask[i] && !(map->mask[0] & BIT(i))) {
-                map->mask[0] |= BIT(i);
-                map->btns_mask[i] = hid_pad_default_btns_mask[i];
-                hid_mask &= ~hid_pad_default_btns_mask[i];
-            }
+    /* We assume here that button-like usages are all */
+    /* placed consecutively in the report. We try here to aggregate */
+    /* then all under a single button usage. */
+    int8_t btn_idx = 0;
+    uint32_t btn_offset = 0;
+    if (meta->hid_btn_idx > -1 && hid_cbtn_idx == -1) {
+        btn_idx = meta->hid_btn_idx;
+        btn_offset = report->usages[btn_idx].bit_offset;
+    }
+    else if (meta->hid_btn_idx == -1 && hid_cbtn_idx > -1) {
+        btn_idx = hid_cbtn_idx;
+        btn_offset = report->usages[btn_idx].bit_offset;
+    }
+    else if (meta->hid_btn_idx > -1 && hid_cbtn_idx > -1) {
+        btn_idx = meta->hid_btn_idx;
+        if (meta->hid_btn_idx < hid_cbtn_idx) {
+            btn_offset = report->usages[meta->hid_btn_idx].bit_offset;
         }
+        else {
+            btn_offset = report->usages[hid_cbtn_idx].bit_offset;
+        }
+    }
 
-        /* fillup what is left */
-        for (uint32_t hid_btn = 15, i = 12; hid_btn < report->usages[meta->hid_btn_idx].bit_size; hid_btn++) {
-            while (map->btns_mask[i]) {
-                i++;
-                if (i > 32) {
-                    goto fillup_end;
+    if (meta->hid_btn_idx > -1) {
+        uint32_t uidx = meta->hid_btn_idx;
+        for (; report->usages[uidx].usage_page == USAGE_GEN_BUTTON; uidx++) {
+            if (report->usages[uidx].usage) {
+                uint32_t usage = report->usages[uidx].usage - 1;
+                for (uint32_t j = 0; j < report->usages[uidx].bit_size; j++, usage++) {
+                    map->mask[0] |= BIT(hid_pad_default_btns_idx[usage]);
+                    map->btns_mask[hid_pad_default_btns_idx[usage]] =
+                        BIT(report->usages[uidx].bit_offset - btn_offset + j);
                 }
             }
-            if (!(map->mask[0] & BIT(i))) {
-                map->mask[0] |= BIT(i);
-                map->btns_mask[i] = BIT(hid_btn);
-                hid_mask &= ~BIT(hid_btn);
+        }
+        report->usages[btn_idx].bit_size =
+            report->usages[uidx - 1].bit_offset + report->usages[uidx - 1].bit_size - btn_offset;
+    }
+    if (hid_cbtn_idx > -1) {
+        uint32_t uidx = hid_cbtn_idx;
+        for (; report->usages[uidx].usage_page == 0x0C; uidx++) {
+            if (report->usages[uidx].usage) {
+                switch (report->usages[uidx].usage) {
+                    case 0x40 /* Menu */:
+                        map->mask[0] |= BIT(PAD_MM);
+                        map->btns_mask[PAD_MM] =
+                            BIT(report->usages[uidx].bit_offset - btn_offset);
+                        break;
+                    case 0x223 /* AC Home */:
+                        map->mask[0] |= BIT(PAD_MT);
+                        map->btns_mask[PAD_MT] =
+                            BIT(report->usages[uidx].bit_offset - btn_offset);
+                        break;
+                    case 0x224 /* AC Back */:
+                        map->mask[0] |= BIT(PAD_MS);
+                        map->btns_mask[PAD_MS] =
+                            BIT(report->usages[uidx].bit_offset - btn_offset);
+                        break;
+                }
             }
         }
-fillup_end:
-        ;
+        uint32_t bit_size =
+            report->usages[uidx - 1].bit_offset + report->usages[uidx - 1].bit_size - btn_offset;
+        if (bit_size > report->usages[btn_idx].bit_size) {
+            report->usages[btn_idx].bit_size = bit_size;
+        }
+        if (btn_idx == hid_cbtn_idx) {
+            meta->hid_btn_idx = btn_idx;
+        }
     }
 }
 
