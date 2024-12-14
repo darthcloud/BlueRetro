@@ -91,8 +91,8 @@ static const uint32_t hid_kb_key_to_generic[] = {
 // };
 
 static const uint32_t hid_pad_default_btns_idx[32] = {
-    PAD_RB_DOWN, PAD_RB_RIGHT, PAD_LT,
-    PAD_RB_LEFT, PAD_RB_UP, PAD_RT,
+    PAD_RB_DOWN, PAD_RB_RIGHT, PAD_RT,
+    PAD_RB_LEFT, PAD_RB_UP, PAD_LT,
     PAD_LS, PAD_RS,
     PAD_LM, PAD_RM,
     PAD_MS, PAD_MM, PAD_MT,

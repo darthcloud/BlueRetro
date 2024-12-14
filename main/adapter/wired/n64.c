@@ -64,17 +64,17 @@ struct n64_kb_map {
     uint8_t bitfield;
 } __packed;
 
-static const uint32_t n64_mask[4] = {0x33DFAFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t n64_mask[4] = {0x77DF0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t n64_desc[4] = {0x0000000F, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t n64_btns_mask[32] = {
     0, 0, 0, 0,
     BIT(N64_C_LEFT), BIT(N64_C_RIGHT), BIT(N64_C_DOWN), BIT(N64_C_UP),
     BIT(N64_LD_LEFT), BIT(N64_LD_RIGHT), BIT(N64_LD_DOWN), BIT(N64_LD_UP),
-    0, BIT(N64_C_RIGHT), 0, BIT(N64_C_UP),
+    0, 0, 0, 0,
     BIT(N64_B), BIT(N64_C_DOWN), BIT(N64_A), BIT(N64_C_LEFT),
     BIT(N64_START), 0, 0, 0,
-    BIT(N64_Z), BIT(N64_L), 0, 0,
-    BIT(N64_Z), BIT(N64_R), 0, 0,
+    BIT(N64_Z), BIT(N64_L), BIT(N64_C_UP), 0,
+    BIT(N64_Z), BIT(N64_R), BIT(N64_C_RIGHT), 0,
 };
 
 static const uint32_t n64_mouse_mask[4] = {0x110000F0, 0x00000000, 0x00000000, BR_COMBO_MASK};
