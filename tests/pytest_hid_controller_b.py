@@ -100,7 +100,7 @@ def test_hid_controller_b_default_buttons_mapping(blueretro):
     blueretro.flush_logs()
 
     # Validate buttons default mapping
-    for hid_btns, br_btns in btns_generic_test_data(hid_btns_mask, 0xAA7FA000):
+    for hid_btns, br_btns in btns_generic_test_data(hid_btns_mask, 0xFFFF0000):
         blueretro.send_hid_report(
             'a101'
             '8080'
@@ -209,7 +209,7 @@ def test_hid_controller_b_saturn_buttons_mapping(blueretro):
     blueretro.flush_logs()
 
     # Validate buttons default mapping
-    for hid_btns, wired_btns in btns_generic_to_wired_test_data(hid_btns_mask, saturn_btns_mask, 0xAA7FA000):
+    for hid_btns, wired_btns in btns_generic_to_wired_test_data(hid_btns_mask, saturn_btns_mask, 0x221F0000):
         wired_btns ^= 0xFFFF
         blueretro.send_hid_report(
             'a101'
@@ -268,6 +268,8 @@ def test_hid_controller_b_saturn_triggers_mapping(blueretro):
     wired = blueretro.expect_json('wired_output')
     assert wired['btns'] ^ 0xFFFF == bit(saturn.L) | bit(saturn.R)
 
+    blueretro.flush_logs()
+
     # Test trigger below ON threshold but over OFF threshold for digital bits
     blueretro.send_hid_report(
         'a101'
@@ -279,6 +281,8 @@ def test_hid_controller_b_saturn_triggers_mapping(blueretro):
     )
     wired = blueretro.expect_json('wired_output')
     assert wired['btns'] ^ 0xFFFF == bit(saturn.L) | bit(saturn.R)
+
+    blueretro.flush_logs()
 
     # Test trigger below OFF threshold for digital bits
     blueretro.send_hid_report(

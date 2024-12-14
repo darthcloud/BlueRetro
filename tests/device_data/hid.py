@@ -31,9 +31,9 @@ hid_btns_mask = [
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    bit(hid.B16), bit(hid.Z), bit(hid.B17), bit(hid.C),
+    bit(hid.B17), bit(hid.B18), bit(hid.B19), bit(hid.B20),
     bit(hid.X), bit(hid.B), bit(hid.A), bit(hid.Y),
-    bit(hid.START), bit(hid.SELECT), bit(hid.MENU), bit(hid.B18),
-    bit(hid.L), bit(hid.LB), bit(hid.B19), bit(hid.LJ),
-    bit(hid.R), bit(hid.RB), bit(hid.B20), bit(hid.RJ),
+    bit(hid.START), bit(hid.SELECT), bit(hid.MENU), bit(hid.B16),
+    bit(hid.L), bit(hid.LB), bit(hid.Z), bit(hid.LJ),
+    bit(hid.R), bit(hid.RB), bit(hid.C), bit(hid.RJ),
 ]

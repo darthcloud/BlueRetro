@@ -29,11 +29,11 @@ n64_btns_mask = [
     0, 0, 0, 0,
     bit(n64.C_LEFT), bit(n64.C_RIGHT), bit(n64.C_DOWN), bit(n64.C_UP),
     bit(n64.LD_LEFT), bit(n64.LD_RIGHT), bit(n64.LD_DOWN), bit(n64.LD_UP),
-    0, bit(n64.C_RIGHT), 0, bit(n64.C_UP),
+    0, 0, 0, 0,
     bit(n64.B), bit(n64.C_DOWN), bit(n64.A), bit(n64.C_LEFT),
     bit(n64.START), 0, 0, 0,
-    bit(n64.Z), bit(n64.L), 0, 0,
-    bit(n64.Z), bit(n64.R), 0, 0,
+    bit(n64.Z), bit(n64.L), bit(n64.C_UP), 0,
+    bit(n64.Z), bit(n64.R), bit(n64.C_RIGHT), 0,
 ]
 
 
