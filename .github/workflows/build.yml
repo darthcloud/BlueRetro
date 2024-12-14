@@ -1,10 +1,8 @@
 name: build
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
+  schedule:
+    - cron:  '0 10 * * *'
 
 jobs:
   build:
@@ -36,6 +34,11 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
+    - name: Cron needed check
+      if: github.event_name == 'schedule'
+      run: if [[ "$(git log --oneline --since '24 hours ago' | wc -l)" == "0" ]]; then gh run cancel ${{ github.run_id }}; gh run watch ${{ github.run_id }}; fi
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Build with ESP-IDF
       shell: bash
       run: |
