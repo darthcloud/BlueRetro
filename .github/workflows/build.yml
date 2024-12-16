@@ -35,6 +35,7 @@ jobs:
         submodules: recursive
         fetch-depth: 0
     - name: Cron needed check
+      shell: bash
       if: github.event_name == 'schedule'
       run: if [[ "$(git log --oneline --since '24 hours ago' | wc -l)" == "0" ]]; then gh run cancel ${{ github.run_id }}; gh run watch ${{ github.run_id }}; fi
       env:
