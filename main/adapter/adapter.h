@@ -517,6 +517,8 @@ struct bt_data_base {
     uint8_t *pnp_data;
     uint32_t pnp_len;
     int32_t axes_cal[ADAPTER_PS2_MAX_AXES];
+    uint16_t vid;
+    uint16_t pid;
     uint8_t output[128];
 };
 

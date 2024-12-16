@@ -165,10 +165,20 @@ static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device, uin
 }
 
 void bt_sdp_parser(struct bt_data *bt_data) {
+    const uint8_t sdp_vid[] = {0x09, 0x02, 0x01};
+    const uint8_t sdp_pid[] = {0x09, 0x02, 0x02};
     const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
     uint8_t *hid_desc = NULL;
     uint32_t hid_desc_len = 0;
     uint32_t hid_offset = 0;
+
+    bt_data->base.vid = sys_be16_to_cpu(*(uint16_t *)(memmem(bt_data->base.pnp_data, bt_data->base.pnp_len, sdp_vid, sizeof(sdp_vid)) + 4));
+    bt_data->base.pid = sys_be16_to_cpu(*(uint16_t *)(memmem(bt_data->base.pnp_data, bt_data->base.pnp_len, sdp_pid, sizeof(sdp_pid)) + 4));
+    if (bt_data->base.pnp_data) {
+        free(bt_data->base.pnp_data);
+        bt_data->base.pnp_data = NULL;
+    }
+    printf("# %s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
 
     hid_desc = memmem(bt_data->base.sdp_data, bt_data->base.sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
     hid_offset = hid_desc - bt_data->base.sdp_data;
