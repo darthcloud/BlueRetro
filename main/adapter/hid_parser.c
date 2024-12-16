@@ -189,7 +189,33 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
     return type;
 }
 
+static void hid_patch_report(struct bt_data *bt_data, struct hid_report *report) {
+    switch (bt_data->base.vid) {
+        case 0x3250: /* Atari VCS */
+            switch (bt_data->base.pid) {
+                case 0x1001: /* Classic Controller */
+                case 0x1002: /* Modern Controller */
+                    /* Rumble report */
+                    if (report->id == 1 && report->tag == 1) {
+                        uint8_t usages[] = {
+                            0x70, 0x50, 0xA7, 0x7C, /* LF (left) */
+                            0x70, 0x50, 0xA7, 0x7C, /* HF (right) */
+                        };
+                        for (uint32_t i = 0; i < report->usage_cnt; i++) {
+                            report->usages[i].usage_page = USAGE_GEN_PHYS_INPUT;
+                            report->usages[i].usage = usages[i];
+                            report->usages[i].logical_min = 0;
+                            report->usages[i].logical_max = 0xFF;
+                        }
+                    }
+                    break;
+            }
+            break;
+    }
+}
+
 static void hid_process_report(struct bt_data *bt_data, struct hid_report *report) {
+    hid_patch_report(bt_data, report);
     report->type = hid_report_fingerprint(report);
 #ifdef CONFIG_BLUERETRO_JSON_DBG
     printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": %ld, \"report_tag\": %ld, \"usages\": [", report->id, report->tag);
