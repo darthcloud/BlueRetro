@@ -17,6 +17,7 @@
 
 #define BT_MAX_RETRY 3
 #define BT_SDP_DATA_SIZE 2048
+#define BT_PNP_DATA_SIZE 128
 
 enum {
     /* BT device connection flags */

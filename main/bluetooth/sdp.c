@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,11 +13,6 @@
 #include "l2cap.h"
 #include "sdp.h"
 
-/* We only care about HID Descriptor and maybe PNP vendor/product ID */
-/* But safer to request all L2CAP attribute like BlueZ do */
-#define SDP_GET_ALL_L2CAP_ATTR 1
-
-#ifdef SDP_GET_ALL_L2CAP_ATTR
 static const uint8_t l2cap_attr_req[] = {
     /* Service Search Pattern */
         /* Data Element */
@@ -39,28 +34,6 @@ static const uint8_t l2cap_attr_req[] = {
                     /* Data Value */
                         /* Att Range */ 0x00, 0x00, /* to */ 0xff, 0xff,
 };
-#else
-static const uint8_t hid_descriptor_attr_req[] = {
-    /* Service Search Pattern */
-        /* Data Element */
-            /* Type */ BT_SDP_SEQ8,
-            /* Size */ 0x03,
-            /* Data Value */
-                /* Data Element */
-                    /* Type */ BT_SDP_UUID16,
-                    /* Data Value */
-                        /* UUID */ (BT_SDP_HID_SVCLASS >> 8), (BT_SDP_HID_SVCLASS & 0xff),
-    /* Max Att Byte */ 0x04, 0x00, /* 1024 */
-    /* Att ID List */
-        /* Data Element */
-            /* Type */ BT_SDP_SEQ8,
-            /* Size */ 0x03,
-            /* Data Value */
-                /* Data Element */
-                    /* Type */ BT_SDP_UUID16,
-                    /* Data Value */
-                        /* Att */ (BT_SDP_ATTR_HID_DESCRIPTOR_LIST >> 8), (BT_SDP_ATTR_HID_DESCRIPTOR_LIST & 0xff),
-};
 
 static const uint8_t pnp_attr_req[] = {
     /* Service Search Pattern */
@@ -81,10 +54,8 @@ static const uint8_t pnp_attr_req[] = {
                 /* Data Element */
                     /* Type */ BT_SDP_UINT32,
                     /* Data Value */
-                        /* Att Range */ (BT_SDP_ATTR_VENDOR_ID >> 8), (BT_SDP_ATTR_VENDOR_ID & 0xff),
-                            /* to */    (BT_SDP_ATTR_PRODUCT_ID >> 8), (BT_SDP_ATTR_PRODUCT_ID & 0xff),
+                        /* Att Range */ 0x00, 0x00, /* to */ 0xff, 0xff,
 };
-#endif
 
 static const uint8_t xb1_svc_search_attr_rsp[] = {
     0x35, 0x0a, 0x35, 0x08, 0x09, 0x00, 0x01, 0x35, 0x03, 0x19, 0x12, 0x00
@@ -180,28 +151,18 @@ static void bt_sdp_cmd_svc_search_attr_rsp(uint16_t handle, uint16_t cid, uint16
     bt_sdp_cmd(handle, cid, BT_SDP_SVC_SEARCH_ATTR_RSP, tid, sizeof(struct bt_sdp_att_rsp) + len + 1);
 }
 
-#ifdef SDP_GET_ALL_L2CAP_ATTR
 void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
     memcpy(bt_hci_pkt_tmp.sdp_data, l2cap_attr_req, sizeof(l2cap_attr_req));
     memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(l2cap_attr_req), cont_data, cont_len);
 
     bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(l2cap_attr_req) + cont_len);
 }
-#else
-static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device) {
+static void bt_sdp_cmd_pnp_vendor_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
     memcpy(bt_hci_pkt_tmp.sdp_data, pnp_attr_req, sizeof(pnp_attr_req));
-    *(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req)) = 0;
+    memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(pnp_attr_req), cont_data, cont_len);
 
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + 1);
+    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(pnp_attr_req) + cont_len);
 }
-
-void bt_sdp_cmd_svc_search_attr_req(struct bt_dev *device, uint8_t *cont_data, uint32_t cont_len) {
-    memcpy(bt_hci_pkt_tmp.sdp_data, hid_descriptor_attr_req, sizeof(hid_descriptor_attr_req));
-    memcpy(bt_hci_pkt_tmp.sdp_data + sizeof(hid_descriptor_attr_req), cont_data, cont_len);
-
-    bt_sdp_cmd(device->acl_handle, device->sdp_tx_chan.dcid, BT_SDP_SVC_SEARCH_ATTR_REQ, tx_tid++, sizeof(hid_descriptor_attr_req) + cont_len);
-}
-#endif
 
 void bt_sdp_parser(struct bt_data *bt_data) {
     const uint8_t sdp_hid_desc_list[] = {0x09, 0x02, 0x06};
@@ -293,15 +254,16 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
             uint8_t *sdp_data = bt_hci_acl_pkt->sdp_data + sizeof(struct bt_sdp_att_rsp);
             uint8_t *sdp_con_state = sdp_data + sys_be16_to_cpu(att_rsp->att_list_len);
             uint32_t free_len = BT_SDP_DATA_SIZE - bt_adapter.data[device->ids.id].base.sdp_len;
+            uint32_t free_pnp_len = BT_PNP_DATA_SIZE - bt_adapter.data[device->ids.id].base.pnp_len;
             uint32_t cp_len = sys_be16_to_cpu(att_rsp->att_list_len);
-
-            if (cp_len > free_len) {
-                cp_len = free_len;
-                printf("# %s SDP data > buffer will be trunc to %d, cp_len %ld\n", __FUNCTION__, BT_SDP_DATA_SIZE, cp_len);
-            }
 
             switch (device->sdp_state) {
                 case 0:
+                    if (cp_len > free_len) {
+                        cp_len = free_len;
+                        printf("# %s SDP data > buffer will be trunc to %d, cp_len %ld\n", __FUNCTION__, BT_SDP_DATA_SIZE, cp_len);
+                    }
+
                     if (bt_adapter.data[device->ids.id].base.sdp_data == NULL) {
                         bt_adapter.data[device->ids.id].base.sdp_data = malloc(BT_SDP_DATA_SIZE);
                         if (bt_adapter.data[device->ids.id].base.sdp_data == NULL) {
@@ -315,17 +277,33 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                         bt_sdp_cmd_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
                     }
                     else {
-#ifdef SDP_GET_ALL_L2CAP_ATTR
-                        bt_l2cap_cmd_sdp_disconn_req(device);
-                        atomic_set_bit(&device->flags, BT_DEV_SDP_DATA);
-#else
-                        bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device);
+                        uint8_t cont = 0x00;
+                        bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device, &cont, 1);
                         device->sdp_state++;
-#endif
                     }
                     break;
                 case 1:
-                    bt_l2cap_cmd_sdp_disconn_req(device);
+                    if (cp_len > free_pnp_len) {
+                        cp_len = free_pnp_len;
+                        printf("# %s PNP data > buffer will be trunc to %d, cp_len %ld\n", __FUNCTION__, BT_PNP_DATA_SIZE, cp_len);
+                    }
+
+                    if (bt_adapter.data[device->ids.id].base.pnp_data == NULL) {
+                        bt_adapter.data[device->ids.id].base.pnp_data = malloc(BT_PNP_DATA_SIZE);
+                        if (bt_adapter.data[device->ids.id].base.pnp_data == NULL) {
+                            printf("# dev: %ld Failed to alloc pnp memory\n", device->ids.id);
+                            break;
+                        }
+                    }
+                    memcpy(bt_adapter.data[device->ids.id].base.pnp_data + bt_adapter.data[device->ids.id].base.pnp_len, sdp_data, cp_len);
+                    bt_adapter.data[device->ids.id].base.pnp_len += cp_len;
+                    if (*sdp_con_state) {
+                        bt_sdp_cmd_pnp_vendor_svc_search_attr_req(device, sdp_con_state, 1 + *sdp_con_state);
+                    }
+                    else {
+                        bt_l2cap_cmd_sdp_disconn_req(device);
+                        atomic_set_bit(&device->flags, BT_DEV_SDP_DATA);
+                    }
                     break;
             }
             break;
