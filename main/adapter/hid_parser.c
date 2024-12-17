@@ -175,11 +175,6 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
                         return RUMBLE;
                     }
                     break;
-                case 0x0C: /* CONSUMER */
-                    if (type == REPORT_NONE) {
-                        type = EXTRA;
-                    }
-                    break;
             }
         }
         else {

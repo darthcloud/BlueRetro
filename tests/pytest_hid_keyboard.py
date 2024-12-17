@@ -35,4 +35,3 @@ def test_hid_keyboard_descriptor(blueretro):
     assert report["report_id"] == 2
     assert report["usages"][0]["usage_page"] == 0x0C
     assert report["usages"][0]["usage"] == 0x1B1
-    assert report["report_type"] == 3

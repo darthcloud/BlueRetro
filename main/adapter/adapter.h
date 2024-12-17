@@ -22,7 +22,7 @@
 #define WIRED_MAX_DEV 12 /* Saturn limit */
 #define ADAPTER_MAX_AXES 6
 #define ADAPTER_PS2_MAX_AXES 16
-#define REPORT_MAX_USAGE 18
+#define REPORT_MAX_USAGE 24
 #define HID_MAX_REPORT 10
 #define MAX_PULL_BACK 0.95
 
@@ -98,7 +98,6 @@ enum {
     KB,
     MOUSE,
     PAD,
-    EXTRA,
     RUMBLE,
     REPORT_MAX,
     //LEDS,
