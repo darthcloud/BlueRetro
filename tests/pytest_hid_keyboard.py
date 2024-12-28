@@ -16,22 +16,21 @@ HID_DESC = ('05010906a101850175019508050719e0'
 
 def test_hid_keyboard_descriptor(blueretro):
     ''' Load a HID descriptor and check if it's parsed right. '''
-    blueretro.send_name(DEVICE_NAME)
-    blueretro.send_hid_desc(HID_DESC)
+    rsp = blueretro.send_name(DEVICE_NAME)
+    assert rsp['device_name']['device_id'] == 0
+    assert rsp['device_name']['device_type'] == 0
+    assert rsp['device_name']['device_subtype'] == 0
+    assert rsp['device_name']['device_name'] == 'HID Keyboard'
+    
+    rsp = blueretro.send_hid_desc(HID_DESC)
+    assert rsp['hid_reports'][0]["report_id"] == 1
+    assert rsp['hid_reports'][0]["report_tag"] == 0
+    assert rsp['hid_reports'][0]["usages"][6]["bit_offset"] == 56
+    assert rsp['hid_reports'][0]["report_type"] == 0
 
-    blueretro.expect('# dev: 0 type: 0:0 HID Keyboard')
+    assert rsp['hid_reports'][1]["report_id"] == 1
+    assert rsp['hid_reports'][1]["report_tag"] == 1
 
-    report = blueretro.expect_json('parsed_hid_report')
-    assert report["report_id"] == 1
-    assert report["report_tag"] == 0
-    assert report["usages"][6]["bit_offset"] == 56
-    assert report["report_type"] == 0
-
-    report = blueretro.expect_json('parsed_hid_report')
-    assert report["report_id"] == 1
-    assert report["report_tag"] == 1
-
-    report = blueretro.expect_json('parsed_hid_report')
-    assert report["report_id"] == 2
-    assert report["usages"][0]["usage_page"] == 0x0C
-    assert report["usages"][0]["usage"] == 0x1B1
+    assert rsp['hid_reports'][2]["report_id"] == 2
+    assert rsp['hid_reports'][2]["usages"][0]["usage_page"] == 0x0C
+    assert rsp['hid_reports'][2]["usages"][0]["usage"] == 0x1B1
