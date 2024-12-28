@@ -12,17 +12,75 @@ from device_data.saturn import saturn, saturn_btns_mask
 
 
 DEVICE_NAME = 'HID Generic'
-HID_DESC = (
-    '05010905a10185010901a10009300931'
-    '150027ff000000950275088102c00901'
-    'a100093209351500270f000000950275'
-    '048102c0050209c5150026ff00950175'
-    '088102050209c4150026ff0095017508'
-    '810205010939150125083500463b0166'
-    '14007504950181427504950115002500'
-    '35004500650081030509190129101500'
-    '2501750195108102c0'
-)
+HID_DESC = bytes([
+    0x05, 0x01,        # Usage Page (Generic Desktop)
+    0x09, 0x05,        # Usage (Gamepad)
+    0xA1, 0x01,        # Collection (Application)
+    0x85, 0x01,        #   Report ID (1)
+    0x09, 0x01,        #   Usage (Pointer)
+    0xA1, 0x00,        #   Collection (Physical)
+    0x09, 0x30,        #     Usage (X)
+    0x09, 0x31,        #     Usage (Y)
+    0x15, 0x00,        #     Logical Minimum (0)
+    0x27, 0xFF, 0x00, 0x00, 0x00,  #     Logical Maximum (254)
+    0x95, 0x02,        #     Report Count (2)
+    0x75, 0x08,        #     Report Size (8)
+    0x81, 0x02,        #     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              #   End Collection
+    0x09, 0x01,        #   Usage (Pointer)
+    0xA1, 0x00,        #   Collection (Physical)
+    0x09, 0x32,        #     Usage (Z)
+    0x09, 0x35,        #     Usage (Rz)
+    0x15, 0x00,        #     Logical Minimum (0)
+    0x27, 0x0F, 0x00, 0x00, 0x00,  #     Logical Maximum (14)
+    0x95, 0x02,        #     Report Count (2)
+    0x75, 0x04,        #     Report Size (4)
+    0x81, 0x02,        #     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              #   End Collection
+    0x05, 0x02,        #   Usage Page (Simulation Controls)
+    0x09, 0xC5,        #   Usage (Brake)
+    0x15, 0x00,        #   Logical Minimum (0)
+    0x26, 0xFF, 0x00,  #   Logical Maximum (255)
+    0x95, 0x01,        #   Report Count (1)
+    0x75, 0x08,        #   Report Size (8)
+    0x81, 0x02,        #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x02,        #   Usage Page (Simulation Controls)
+    0x09, 0xC4,        #   Usage (Accelerator)
+    0x15, 0x00,        #   Logical Minimum (0)
+    0x26, 0xFF, 0x00,  #   Logical Maximum (255)
+    0x95, 0x01,        #   Report Count (1)
+    0x75, 0x08,        #   Report Size (8)
+    0x81, 0x02,        #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x01,        #   Usage Page (Generic Desktop)
+    0x09, 0x39,        #   Usage (Hat Switch)
+    0x15, 0x01,        #   Logical Minimum (1)
+    0x25, 0x08,        #   Logical Maximum (8)
+    0x35, 0x00,        #   Physical Minimum (0)
+    0x46, 0x3B, 0x01,  #   Physical Maximum (315)
+    0x66, 0x14, 0x00,  #   Unit (System: English Rotation, Length: Centimeter)
+    0x75, 0x04,        #   Report Size (4)
+    0x95, 0x01,        #   Report Count (1)
+    0x81, 0x42,        #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
+    0x75, 0x04,        #   Report Size (4)
+    0x95, 0x01,        #   Report Count (1)
+    0x15, 0x00,        #   Logical Minimum (0)
+    0x25, 0x00,        #   Logical Maximum (0)
+    0x35, 0x00,        #   Physical Minimum (0)
+    0x45, 0x00,        #   Physical Maximum (0)
+    0x65, 0x00,        #   Unit (None)
+    0x81, 0x03,        #   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x09,        #   Usage Page (Button)
+    0x19, 0x01,        #   Usage Minimum (0x01)
+    0x29, 0x10,        #   Usage Maximum (0x10)
+    0x15, 0x00,        #   Logical Minimum (0)
+    0x25, 0x01,        #   Logical Maximum (1)
+    0x75, 0x01,        #   Report Size (1)
+    0x95, 0x10,        #   Report Count (16)
+    0x81, 0x02,        #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              # End Collection
+
+    # 137 bytes
+])
 
 
 def test_hid_controller_b_descriptor(blueretro):
