@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "zephyr/types.h"
 #include "zephyr/usb_hid.h"
 #include "tools/util.h"
+#include "tests/cmds.h"
 #include "hid_generic.h"
 #include "adapter/mapping_quirks.h"
 #include "adapter/hid_parser.h"
@@ -134,6 +135,8 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
 static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[KB];
 
+    TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld", bt_data->base.report_id);
+
     if (!atomic_test_bit(&bt_data->base.flags[KB], BT_INIT)) {
         hid_parser_load_report(bt_data, bt_data->base.report_id);
         hid_kb_init(meta, &bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
@@ -153,6 +156,8 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
+        TESTS_CMDS_LOG(", \"modifiers\": %lu", buttons);
+
         for (uint8_t i = 0, mask = 1; mask; i++, mask <<= 1) {
             if (buttons & mask) {
                 ctrl_data->btns[(hid_kb_bitfield_to_generic[i] >> 5)].value |= BIT(hid_kb_bitfield_to_generic[i] & 0x1F);
@@ -161,6 +166,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
     }
 
     if (meta->kb_bitfield) {
+        TESTS_CMDS_LOG(", \"keys\": [");
         for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
             if (meta->hid_axes_idx[i] > -1) {
                 int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
@@ -169,6 +175,11 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
                 uint32_t byte_offset = offset / 8;
                 uint32_t bit_shift = offset % 8;
                 uint32_t key_field = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
+
+                if (i) {
+                    TESTS_CMDS_LOG(", ");
+                }
+                TESTS_CMDS_LOG("%lu", key_field);
 
                 for (uint32_t mask = 1; mask; mask <<= 1) {
                     uint32_t key = __builtin_ffs(key_field & mask);
@@ -181,6 +192,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         }
     }
     else {
+        TESTS_CMDS_LOG(", \"keys\": [");
         for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
             if (meta->hid_axes_idx[i] > -1) {
                 int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
@@ -190,12 +202,18 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
                 uint32_t bit_shift = offset % 8;
                 uint32_t key = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
+                if (i) {
+                    TESTS_CMDS_LOG(", ");
+                }
+                TESTS_CMDS_LOG("%lu", key);
+
                 if (key > 3 && key < ARRAY_SIZE(hid_kb_key_to_generic)) {
                     ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
                 }
             }
         }
     }
+    TESTS_CMDS_LOG("]},\n");
 }
 
 static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
@@ -599,12 +617,9 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
     struct ctrl_meta *ctrl_meta = bt_data->raw_src_mappings[PAD].meta;
 
+    TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld", bt_data->base.report_id);
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld", bt_data->base.report_id);
-#else
     printf("R%ld: ", bt_data->base.report_id);
-#endif
 #endif
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
@@ -626,9 +641,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
         uint32_t bit_shift = offset % 8;
         uint32_t buttons = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-        printf(", \"btns\": %lu", buttons);
-#endif
+        TESTS_CMDS_LOG(", \"btns\": %lu", buttons);
 
         for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
             if (buttons & bt_data->raw_src_mappings[PAD].btns_mask[i]) {
@@ -647,16 +660,12 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
         uint32_t hat = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
         uint32_t min = bt_data->reports[PAD].usages[meta->hid_hat_idx].logical_min;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-        printf(", \"hat\": %lu", hat);
-#endif
+        TESTS_CMDS_LOG(", \"hat\": %lu", hat);
 
         ctrl_data->btns[0].value |= hat_to_ld_btns[(hat - min) & 0xF];
     }
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf(", \"axes\": [");
-#endif
+    TESTS_CMDS_LOG(", \"axes\": [");
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (meta->hid_axes_idx[i] > -1) {
@@ -667,11 +676,9 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
             uint32_t bit_shift = offset % 8;
             uint32_t value = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-                if (i) {
-                    printf(", ");
-                }
-#endif
+            if (i) {
+                TESTS_CMDS_LOG(", ");
+            }
 
             if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
                 bt_data->base.axes_cal[i] = -(value  - ctrl_meta[i].neutral);
@@ -682,18 +689,14 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
             /* Is axis unsign? */
             if (bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].logical_min >= 0) {
                 ctrl_data->axes[i].value = value - ctrl_meta[i].neutral + bt_data->base.axes_cal[i];
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-                printf("%lu", value);
-#endif
+                TESTS_CMDS_LOG("%lu", value);
             }
             else {
                 ctrl_data->axes[i].value = value;
                 if (ctrl_data->axes[i].value & BIT(len - 1)) {
                     ctrl_data->axes[i].value |= ~mask;
                 }
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-                printf("%ld", ctrl_data->axes[i].value);
-#endif
+                TESTS_CMDS_LOG("%ld", ctrl_data->axes[i].value);
                 ctrl_data->axes[i].value += bt_data->base.axes_cal[i];
             }
         }
@@ -701,10 +704,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
     }
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("]}\n");
-#endif
-
+    TESTS_CMDS_LOG("]},\n");
 }
 
 int32_t hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {

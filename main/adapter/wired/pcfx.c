@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
+#include "tests/cmds.h"
 #include "pcfx.h"
 
 enum {
@@ -190,9 +191,7 @@ void pcfx_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wir
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"btns\": %d}\n", map_tmp.buttons);
-#endif
+    TESTS_CMDS_LOG("\"wired_output\": {\"btns\": %d},\n", map_tmp.buttons);
 }
 
 static void pcfx_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Jacques Gagnon
+ * Copyright (c) 2020-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "system/manager.h"
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "tests/cmds.h"
 #include "genesis.h"
 #include "driver/gpio.h"
 
@@ -308,11 +309,9 @@ static void genesis_std_from_generic(struct wired_ctrl *ctrl_data, struct wired_
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld, %ld, %ld, %ld, %ld]}\n",
+    TESTS_CMDS_LOG("\"wired_output\": {\"btns\": [%ld, %ld, %ld, %ld, %ld, %ld]},\n",
         map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2],
         map_tmp.buttons_high[0], map_tmp.buttons_high[1], map_tmp.buttons_high[2]);
-#endif
 }
 
 static void genesis_twh_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,7 @@
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
 #include "adapter/wireless/wireless.h"
+#include "tests/cmds.h"
 #include "n64.h"
 
 #define N64_AXES_MAX 2
@@ -270,10 +271,8 @@ static void n64_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_dat
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d], \"btns\": %d}\n",
+    TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%d, %d], \"btns\": %d},\n",
         map_tmp.axes[n64_axes_idx[0]], map_tmp.axes[n64_axes_idx[1]], map_tmp.buttons);
-#endif
 }
 
 static void n64_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

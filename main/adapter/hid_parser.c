@@ -10,6 +10,7 @@
 #include "hid_parser.h"
 #include "zephyr/usb_hid.h"
 #include "tools/util.h"
+#include "tests/cmds.h"
 
 #define HID_STACK_MAX 4
 
@@ -212,41 +213,32 @@ static void hid_patch_report(struct bt_data *bt_data, struct hid_report *report)
 static void hid_process_report(struct bt_data *bt_data, struct hid_report *report) {
     hid_patch_report(bt_data, report);
     report->type = hid_report_fingerprint(report);
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-    printf("{\"log_type\": \"parsed_hid_report\", \"report_id\": %ld, \"report_tag\": %ld, \"usages\": [", report->id, report->tag);
+    TESTS_CMDS_LOG("{\"report_id\": %ld, \"report_tag\": %ld, \"usages\": [", report->id, report->tag);
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         if (i) {
-            printf(", ");
+            TESTS_CMDS_LOG(", ");
         }
-        printf("{\"usage_page\": %ld, \"usage\": %ld, \"bit_offset\": %lu, \"bit_size\": %lu}",
+        TESTS_CMDS_LOG("{\"usage_page\": %ld, \"usage\": %ld, \"bit_offset\": %lu, \"bit_size\": %lu}",
             report->usages[i].usage_page, report->usages[i].usage, report->usages[i].bit_offset,
             report->usages[i].bit_size);
     }
-    printf("]");
-#else
+    TESTS_CMDS_LOG("]");
     printf("# %ld %c ", report->id, (report->tag) ? 'O' : 'I');
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         printf("%02lX%02lX %lu %lu ", report->usages[i].usage_page, report->usages[i].usage,
             report->usages[i].bit_offset, report->usages[i].bit_size);
     }
-#endif
     if (report->type != REPORT_NONE) {
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-        printf(", \"report_type\": %ld", report->type);
-#else
+        TESTS_CMDS_LOG(", \"report_type\": %ld", report->type);
         printf("rtype: %ld", report->type);
-#endif
         /* For output report we got to make a choice. */
         /* So we use the first one we find. */
         if (report->tag == HID_OUT && bt_data->reports[report->type].id == 0) {
             memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
         }
     }
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-    printf("}\n");
-#else
+    TESTS_CMDS_LOG("}");
     printf("\n");
-#endif
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
@@ -279,6 +271,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
 #ifdef CONFIG_BLUERETRO_DUMP_HID_DESC
     data_dump(data, len);
 #endif
+    TESTS_CMDS_LOG("\"hid_reports\": [");
 
     while (desc < end) {
         switch (*desc++) {
@@ -467,6 +460,9 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                             wip_report[i]->len++;
                         }
                         if (wip_report[i]->len) {
+                            if (report_idx) {
+                                TESTS_CMDS_LOG(",\n");
+                            }
                             hid_process_report(bt_data, wip_report[i]);
                             reports[bt_data->base.pids->id][report_idx++] = wip_report[i];
                             wip_report[i] = heap_caps_aligned_alloc(32, sizeof(struct hid_report), MALLOC_CAP_32BIT);
@@ -543,11 +539,15 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 wip_report[i]->len++;
             }
             if (wip_report[i]->len) {
+                if (report_idx) {
+                    TESTS_CMDS_LOG(",\n");
+                }
                 hid_process_report(bt_data, wip_report[i]);
                 reports[bt_data->base.pids->id][report_idx++] = wip_report[i];
             }
         }
     }
+    TESTS_CMDS_LOG("],\n");
 }
 
 struct hid_report *hid_parser_get_report(int32_t dev_id, uint8_t report_id) {

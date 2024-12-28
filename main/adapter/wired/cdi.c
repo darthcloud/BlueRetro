@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
+#include "tests/cmds.h"
 #include "cdi.h"
 
 #define CDI_KB_SHIFT 0x01
@@ -375,10 +376,8 @@ void cdi_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wire
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"axes\": [%ld, %ld], \"btns\": %d}\n",
+    TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%ld, %ld], \"btns\": %d},\n",
         raw_axes[cdi_axes_idx[0]], raw_axes[cdi_axes_idx[1]], map_tmp.buttons);
-#endif
 }
 
 static void cdi_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

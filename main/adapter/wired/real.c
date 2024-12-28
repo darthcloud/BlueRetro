@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
 #include "system/manager.h"
+#include "tests/cmds.h"
 #include "real.h"
 
 enum {
@@ -234,9 +235,7 @@ void real_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wir
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"btns\": %d}\n", map_tmp.buttons);
-#endif
+    TESTS_CMDS_LOG("\"wired_output\": {\"btns\": %d},\n", map_tmp.buttons);
 }
 
 /* I didn't RE this one my self, base on : */

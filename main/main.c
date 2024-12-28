@@ -25,6 +25,7 @@
 #include "wired/wired_rtos.h"
 #include "adapter/memory_card.h"
 #include "system/manager.h"
+#include "tests/ws_srv.h"
 #include "sdkconfig.h"
 
 static uint32_t chip_package = EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6;
@@ -124,8 +125,8 @@ static void wl_init_task(void *arg) {
     sys_mgr_init(chip_package);
 #endif
 
-#ifdef CONFIG_BLUERETRO_PKT_INJECTION
-    adapter_debug_injector_init();
+#ifdef CONFIG_BLUERETRO_WS_CMDS
+    ws_srv_init();
 #endif
 
     if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {

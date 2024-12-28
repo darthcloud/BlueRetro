@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "tools/util.h"
 #include "parallel_2p.h"
 #include "soc/gpio_struct.h"
+#include "tests/cmds.h"
 #include "driver/gpio.h"
 
 #define P1_TR_PIN 27
@@ -128,10 +129,8 @@ void para_2p_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct
         GPIO.out = (map1->buttons | map1_mask->buttons) & (map2->buttons | map2_mask->buttons);
         GPIO.out1.val = (map1->buttons_high | map1_mask->buttons_high) & (map2->buttons_high | map2_mask->buttons_high);
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-        printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld]}\n",
+        TESTS_CMDS_LOG("\"wired_output\": {\"btns\": [%ld, %ld]},\n",
             map_tmp.buttons, map_tmp.buttons_high);
-#endif
     }
 }
 

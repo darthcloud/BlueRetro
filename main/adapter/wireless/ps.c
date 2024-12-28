@@ -9,6 +9,7 @@
 #include "tools/util.h"
 #include "bluetooth/hidp/ps.h"
 #include "adapter/config.h"
+#include "tests/cmds.h"
 #include "ps.h"
 
 enum {
@@ -105,11 +106,9 @@ static void ps4_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_d
     struct ps4_map *map = (struct ps4_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+    TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u},\n",
         bt_data->base.report_id, map->axes[ps4_axes_idx[0]], map->axes[ps4_axes_idx[1]], map->axes[ps4_axes_idx[2]],
         map->axes[ps4_axes_idx[3]], map->axes[ps4_axes_idx[4]], map->axes[ps4_axes_idx[5]], map->buttons, map->hat & 0xF);
-#endif
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -145,11 +144,9 @@ static void ps5_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_d
     struct ps5_map *map = (struct ps5_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+    TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u},\n",
         bt_data->base.report_id, map->axes[ps5_axes_idx[0]], map->axes[ps5_axes_idx[1]], map->axes[ps5_axes_idx[2]],
         map->axes[ps5_axes_idx[3]], map->axes[ps5_axes_idx[4]], map->axes[ps5_axes_idx[5]], map->buttons, map->hat & 0xF);
-#endif
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -185,11 +182,9 @@ static void hid_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_d
     struct hid_map *map = (struct hid_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
 
-#ifdef CONFIG_BLUERETRO_RAW_INPUT
-    printf("{\"log_type\": \"wireless_input\", \"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u}\n",
+    TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u], \"btns\": %lu, \"hat\": %u},\n",
         bt_data->base.report_id, map->axes[ps4_axes_idx[0]], map->axes[ps4_axes_idx[1]], map->axes[ps4_axes_idx[2]],
         map->axes[ps4_axes_idx[3]], map->axes[ps4_axes_idx[4]], map->axes[ps4_axes_idx[5]], map->buttons, map->hat & 0xF);
-#endif
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 

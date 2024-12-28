@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2024, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
+#include "tests/cmds.h"
 #include "gc.h"
 
 enum {
@@ -185,11 +186,9 @@ static void gc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d, %d, %d, %d, %d], \"btns\": %d}\n",
+    TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%d, %d, %d, %d, %d, %d], \"btns\": %d},\n",
         map_tmp.axes[gc_axes_idx[0]], map_tmp.axes[gc_axes_idx[1]], map_tmp.axes[gc_axes_idx[2]],
         map_tmp.axes[gc_axes_idx[3]], map_tmp.axes[gc_axes_idx[4]], map_tmp.axes[gc_axes_idx[5]], map_tmp.buttons);
-#endif
 }
 
 static void gc_kb_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

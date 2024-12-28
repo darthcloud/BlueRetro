@@ -22,6 +22,7 @@
 #include "wireless/wireless.h"
 #include "macro.h"
 #include "bluetooth/host.h"
+#include "tests/cmds.h"
 
 const uint32_t hat_to_ld_btns[16] = {
     BIT(PAD_LD_UP), BIT(PAD_LD_UP) | BIT(PAD_LD_RIGHT), BIT(PAD_LD_RIGHT), BIT(PAD_LD_DOWN) | BIT(PAD_LD_RIGHT),
@@ -423,9 +424,7 @@ void adapter_bridge(struct bt_data *bt_data) {
         }
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-        printf("{\"log_type\": \"generic_input\"");
-#endif
+        TESTS_CMDS_LOG("\"generic_input\": {");
         adapter_debug_wireless_print(ctrl_input);
 #endif
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
@@ -444,9 +443,7 @@ void adapter_bridge(struct bt_data *bt_data) {
                 out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
-#ifdef CONFIG_BLUERETRO_JSON_DBG
-            printf("{\"log_type\": \"mapped_input\"");
-#endif
+            TESTS_CMDS_LOG("\"mapped_input\": {");
             adapter_debug_wired_print(&ctrl_output[bt_data->base.pids->out_idx]);
 #endif
             ctrl_output[bt_data->base.pids->out_idx].index = bt_data->base.pids->out_idx;

@@ -9,6 +9,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/wired.h"
+#include "tests/cmds.h"
 #include "ps.h"
 
 #define PS_JOYSTICK_AXES_CNT 4
@@ -296,12 +297,10 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-    printf("{\"log_type\": \"wired_output\", \"axes\": [%d, %d, %d, %d], \"btns\": [%d, %d]}\n",
+    TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%d, %d, %d, %d], \"btns\": [%d, %d]},\n",
         map_tmp.axes[ps_axes_idx[0]], map_tmp.axes[ps_axes_idx[1]],
         map_tmp.axes[ps_axes_idx[2]], map_tmp.axes[ps_axes_idx[3]],
         map_tmp.buttons, map_tmp.analog_btn);
-#endif
 }
 
 static void ps_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {

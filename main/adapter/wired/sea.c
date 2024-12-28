@@ -10,6 +10,7 @@
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 #include "wired/sea_io.h"
+#include "tests/cmds.h"
 #include "sea.h"
 
 #define P1_LD_UP 19
@@ -218,10 +219,8 @@ void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wir
 
         gbahd_osd(ctrl_data, wired_data);
 
-#ifdef CONFIG_BLUERETRO_RAW_OUTPUT
-        printf("{\"log_type\": \"wired_output\", \"btns\": [%ld, %ld, %d]}\n",
+        printf("\"wired_output\": {\"btns\": [%ld, %ld, %d]},\n",
             map_tmp->buttons, map_tmp->buttons_high, map_tmp->buttons_osd);
-#endif
     }
 }
 
