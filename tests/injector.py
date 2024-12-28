@@ -64,6 +64,10 @@ class BlueRetroInjector:
         self.__write(0x0A, self.handle, system_id.to_bytes(1, 'big'))
         return self.__read()
 
+    def send_vid_pid(self, vid, pid):
+        self.__write(0x0B, self.handle, struct.pack("<HH", vid, pid))
+        return self.__read()
+
 
 def main():
     name = 'BlueRetro Test'

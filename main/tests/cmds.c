@@ -26,6 +26,7 @@ enum {
     TESTS_CMDS_OUT_CFG,
     TESTS_CMDS_IN_CFG,
     TESTS_CMDS_SYSTEM_ID,
+    TESTS_CMDS_VID_PID,
 };
 
 static uint32_t log_offset = 0;
@@ -120,6 +121,19 @@ char *tests_cmds_hdlr(struct tests_cmds_pkt *pkt) {
         case TESTS_CMDS_SYSTEM_ID:
             /* Set System ID */
             wired_adapter.system_id = pkt->data[0];
+            break;
+        case TESTS_CMDS_VID_PID:
+            /* Set device VID & PID */
+            device = devices[pkt->handle];
+            if (device) {
+                bt_data = &bt_adapter.data[device->ids.id];
+                bt_data->base.vid = *(uint16_t *)&pkt->data[0];
+                bt_data->base.pid = *(uint16_t *)&pkt->data[2];
+                printf("# %s: dev: %ld VID: 0x%04X PID: 0x%04X\n", __FUNCTION__,
+                    device->ids.id, bt_data->base.vid, bt_data->base.pid);
+                TESTS_CMDS_LOG("\"device_vid_pid\": {\"device_id\": %d, \"vid\": %d, \"pid\": %d},\n",
+                    device->ids.id, bt_data->base.vid, bt_data->base.pid);
+            }
             break;
         default:
             printf("# %s invalid cmd: 0x%02X\n", __FUNCTION__, pkt->cmd);
