@@ -369,14 +369,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         meta->hid_axes_idx[AXIS_LX] = i;
                         if (report->usages[i].logical_min >= 0) {
                             map->meta[AXIS_LX].neutral = report->usages[i].logical_max / 2;
-                            map->meta[AXIS_LX].abs_max = report->usages[i].logical_max - map->meta[AXIS_LX].neutral;
-                            map->meta[AXIS_LX].abs_min = map->meta[AXIS_LX].neutral - report->usages[i].logical_min;
                         }
                         else {
                             map->meta[AXIS_LX].neutral = 0;
-                            map->meta[AXIS_LX].abs_max = report->usages[i].logical_max;
-                            map->meta[AXIS_LX].abs_min = report->usages[i].logical_min;
                         }
+                        map->meta[AXIS_LX].abs_max = report->usages[i].logical_max - map->meta[AXIS_LX].neutral;
+                        map->meta[AXIS_LX].abs_min = map->meta[AXIS_LX].neutral - report->usages[i].logical_min;
                         break;
                     case USAGE_GEN_DESKTOP_Y:
                         map->mask[0] |= BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP);
@@ -384,14 +382,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         meta->hid_axes_idx[AXIS_LY] = i;
                         if (report->usages[i].logical_min >= 0) {
                             map->meta[AXIS_LY].neutral = report->usages[i].logical_max / 2;
-                            map->meta[AXIS_LY].abs_max = report->usages[i].logical_max - map->meta[AXIS_LY].neutral;
-                            map->meta[AXIS_LY].abs_min = map->meta[AXIS_LY].neutral - report->usages[i].logical_min;
                         }
                         else {
                             map->meta[AXIS_LY].neutral = 0;
-                            map->meta[AXIS_LY].abs_max = report->usages[i].logical_max;
-                            map->meta[AXIS_LY].abs_min = report->usages[i].logical_min;
                         }
+                        map->meta[AXIS_LY].abs_max = report->usages[i].logical_max - map->meta[AXIS_LY].neutral;
+                        map->meta[AXIS_LY].abs_min = map->meta[AXIS_LY].neutral - report->usages[i].logical_min;
                         map->meta[AXIS_LY].polarity = 1;
                         break;
                     case 0x32 /* USAGE_GEN_DESKTOP_Z */:
@@ -401,14 +397,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                             meta->hid_axes_idx[AXIS_RX] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RX].neutral = report->usages[i].logical_max / 2;
-                                map->meta[AXIS_RX].abs_max = report->usages[i].logical_max - map->meta[AXIS_RX].neutral;
-                                map->meta[AXIS_RX].abs_min = map->meta[AXIS_RX].neutral - report->usages[i].logical_min;
                             }
                             else {
                                 map->meta[AXIS_RX].neutral = 0;
-                                map->meta[AXIS_RX].abs_max = report->usages[i].logical_max;
-                                map->meta[AXIS_RX].abs_min = report->usages[i].logical_min;
                             }
+                            map->meta[AXIS_RX].abs_max = report->usages[i].logical_max - map->meta[AXIS_RX].neutral;
+                            map->meta[AXIS_RX].abs_min = map->meta[AXIS_RX].neutral - report->usages[i].logical_min;
                         }
                         else {
                             map->mask[0] |= BIT(PAD_LM);
@@ -434,14 +428,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                             meta->hid_axes_idx[AXIS_RX] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RX].neutral = report->usages[i].logical_max / 2;
-                                map->meta[AXIS_RX].abs_max = report->usages[i].logical_max - map->meta[AXIS_RX].neutral;
-                                map->meta[AXIS_RX].abs_min = map->meta[AXIS_RX].neutral - report->usages[i].logical_min;
                             }
                             else {
                                 map->meta[AXIS_RX].neutral = 0;
-                                map->meta[AXIS_RX].abs_max = report->usages[i].logical_max;
-                                map->meta[AXIS_RX].abs_min = report->usages[i].logical_min;
                             }
+                            map->meta[AXIS_RX].abs_max = report->usages[i].logical_max - map->meta[AXIS_RX].neutral;
+                            map->meta[AXIS_RX].abs_min = map->meta[AXIS_RX].neutral - report->usages[i].logical_min;
                         }
                         break;
                     case 0x34 /* USAGE_GEN_DESKTOP_RY */:
@@ -459,14 +451,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                             meta->hid_axes_idx[AXIS_RY] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RY].neutral = report->usages[i].logical_max / 2;
-                                map->meta[AXIS_RY].abs_max = report->usages[i].logical_max - map->meta[AXIS_RY].neutral;
-                                map->meta[AXIS_RY].abs_min = map->meta[AXIS_RY].neutral - report->usages[i].logical_min;
                             }
                             else {
                                 map->meta[AXIS_RY].neutral = 0;
-                                map->meta[AXIS_RY].abs_max = report->usages[i].logical_max;
-                                map->meta[AXIS_RY].abs_min = report->usages[i].logical_min;
                             }
+                            map->meta[AXIS_RY].abs_max = report->usages[i].logical_max - map->meta[AXIS_RY].neutral;
+                            map->meta[AXIS_RY].abs_min = map->meta[AXIS_RY].neutral - report->usages[i].logical_min;
                             map->meta[AXIS_RY].polarity = 1;
                         }
                         break;
@@ -477,14 +467,12 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                             meta->hid_axes_idx[AXIS_RY] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RY].neutral = report->usages[i].logical_max / 2;
-                                map->meta[AXIS_RY].abs_max = report->usages[i].logical_max - map->meta[AXIS_RY].neutral;
-                                map->meta[AXIS_RY].abs_min = map->meta[AXIS_RY].neutral - report->usages[i].logical_min;
                             }
                             else {
                                 map->meta[AXIS_RY].neutral = 0;
-                                map->meta[AXIS_RY].abs_max = report->usages[i].logical_max;
-                                map->meta[AXIS_RY].abs_min = report->usages[i].logical_min;
                             }
+                            map->meta[AXIS_RY].abs_max = report->usages[i].logical_max - map->meta[AXIS_RY].neutral;
+                            map->meta[AXIS_RY].abs_min = map->meta[AXIS_RY].neutral - report->usages[i].logical_min;
                             map->meta[AXIS_RY].polarity = 1;
                         }
                         else {
