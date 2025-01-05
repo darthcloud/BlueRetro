@@ -7,6 +7,7 @@
 #include "host.h"
 #include "hci.h"
 #include "att.h"
+#include "att_cfg.h"
 #include "att_hid.h"
 #include "zephyr/uuid.h"
 #include "zephyr/att.h"
@@ -640,6 +641,10 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     break;
                 }
             }
+            break;
         }
+        default:
+            bt_att_cfg_hdlr(device, bt_hci_acl_pkt, len);
+            break;
     }
 }
