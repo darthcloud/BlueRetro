@@ -1408,7 +1408,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     printf("# dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
-                    bt_l2cap_cmd_sdp_conn_req(device);
                 }
             }
             else {
@@ -1485,9 +1484,7 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         if (atomic_test_bit(&device->flags, BT_DEV_ENCRYPTION)) {
                             bt_hci_cmd_set_conn_encrypt(&device->acl_handle);
                         }
-                        if (device->ids.type != BT_HID_GENERIC) {
-                            bt_l2cap_cmd_hid_ctrl_conn_req(device);
-                        }
+                        bt_l2cap_cmd_hid_ctrl_conn_req(device);
                     }
                 }
             }
