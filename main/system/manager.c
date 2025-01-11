@@ -77,6 +77,7 @@ static uint8_t led_init_cnt = 1;
 static uint16_t port_state = 0;
 static RingbufHandle_t cmd_q_hdl = NULL;
 static uint32_t chip_package = EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6;
+static bool factory_reset = false;
 
 static int32_t sys_mgr_get_power(void);
 static int32_t sys_mgr_get_boot_btn(void);
@@ -381,6 +382,10 @@ static void boot_btn_hdl(void) {
                 ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, hw_config.led_flash_hz[state]);
                 state++;
             }
+            if (hold_cnt == 3000) {
+                printf("# FW will be factory reset\n");
+                factory_reset = true;
+            }
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
 
@@ -521,7 +526,7 @@ static int32_t sys_mgr_get_boot_btn(void) {
 static void sys_mgr_factory_reset(void) {
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, "otadata");
-    if (partition) {
+    if (factory_reset && partition) {
         esp_partition_erase_range(partition, 0, partition->size);
     }
 
