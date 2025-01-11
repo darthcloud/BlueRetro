@@ -655,6 +655,10 @@ void sys_mgr_init(uint32_t package) {
             break;
     }
 
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
+    hw_config.port_cnt = 1;
+#endif
+
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 #ifdef CONFIG_BLUERETRO_HW2
     io_conf.pin_bit_mask = 1ULL << POWER_ON_PIN;
