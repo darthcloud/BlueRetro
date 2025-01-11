@@ -57,6 +57,9 @@ sdkconfig
 sdkconfig.old
 version.txt
 *.h4
+*.pcap
+*.pcapng
+*.log
 *.zip
 build/
 __pycache__/
