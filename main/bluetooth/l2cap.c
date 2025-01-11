@@ -14,6 +14,8 @@
 #define BT_HOST_HID_CTRL_CHAN 0x0080
 #define BT_HOST_HID_INTR_CHAN 0x0090
 
+#define BT_L2CAP_DEFAULT_MTU 672
+
 static uint8_t tx_ident = 0;
 
 static void bt_l2cap_cmd(uint16_t handle, uint16_t cid, uint8_t code, uint8_t ident, uint16_t len);
@@ -82,11 +84,16 @@ static void bt_l2cap_cmd_conn_rsp(uint16_t handle, uint8_t ident, uint16_t dcid,
 
 static void bt_l2cap_cmd_conf_req(uint16_t handle, uint8_t ident, uint16_t dcid) {
     struct bt_l2cap_conf_req *conf_req = (struct bt_l2cap_conf_req *)bt_hci_pkt_tmp.sig_data;
+    struct bt_l2cap_conf_opt *conf_opt = (struct bt_l2cap_conf_opt *)conf_req->data;
 
     conf_req->dcid = dcid;
     conf_req->flags = 0x0000;
+    conf_opt->type = BT_L2CAP_CONF_OPT_MTU;
+    conf_opt->len = sizeof(uint16_t);
+    *(uint16_t *)conf_opt->data = BT_L2CAP_DEFAULT_MTU;
 
-    bt_l2cap_cmd(handle, BT_L2CAP_CID_BR_SIG, BT_L2CAP_CONF_REQ, ident, sizeof(*conf_req) - sizeof(conf_req->data));
+    bt_l2cap_cmd(handle, BT_L2CAP_CID_BR_SIG, BT_L2CAP_CONF_REQ, ident,
+        ((sizeof(*conf_req) - sizeof(conf_req->data)) + (sizeof(*conf_opt) - sizeof(conf_opt->data)) + sizeof(uint16_t)));
 }
 
 static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid, uint16_t mtu) {
@@ -98,7 +105,7 @@ static void bt_l2cap_cmd_conf_rsp(uint16_t handle, uint8_t ident, uint16_t scid,
     conf_rsp->result = BT_L2CAP_CONF_SUCCESS;
     conf_opt->type = BT_L2CAP_CONF_OPT_MTU;
     conf_opt->len = sizeof(uint16_t);
-    *(uint16_t *)conf_opt->data = mtu ? mtu : 0x02A0;
+    *(uint16_t *)conf_opt->data = mtu ? mtu : BT_L2CAP_DEFAULT_MTU;
 
     bt_l2cap_cmd(handle, BT_L2CAP_CID_BR_SIG, BT_L2CAP_CONF_RSP, ident,
         ((sizeof(*conf_rsp) - sizeof(conf_rsp->data)) + (sizeof(*conf_opt) - sizeof(conf_opt->data)) + sizeof(uint16_t)));
