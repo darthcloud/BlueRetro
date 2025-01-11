@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    if: ${{ (github.repository == 'darthcloud/BlueRetro') || (github.event_name == 'workflow_dispatch') }}
     strategy:
       matrix:
         hw_version: [hw1, hw2]
