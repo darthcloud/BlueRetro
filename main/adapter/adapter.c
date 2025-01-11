@@ -487,7 +487,9 @@ uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
 #endif
         if (bt_data->base.pids->type != BT_NONE) {
             wireless_fb_from_generic(&fb_input, bt_data);
-            ret = 1;
+            if (fb_data->header.type == FB_TYPE_RUMBLE) {
+                ret = fb_input.state;
+            }
         }
 #ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     }
