@@ -76,12 +76,21 @@ static void bt_hid_sw_print_calib(struct bt_hid_sw_ctrl_calib *calib) {
 
 void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
     struct bt_hidp_sw_conf *sw_conf = (struct bt_hidp_sw_conf *)bt_hci_pkt_tmp.hidp_data;
+    uint8_t protocol = BT_HIDP_SW_SET_CONF;
+    uint16_t len = sizeof(struct bt_hidp_sw_conf);
 
     memcpy((void *)sw_conf, report, sizeof(*sw_conf));
     sw_conf->tid = device->tid++;
     sw_conf->tid &= 0xF;
 
-    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, BT_HIDP_SW_SET_CONF, sizeof(*sw_conf));
+
+    /* 8bitdo wont rumble w/ set_conf... */
+    if (((uint8_t *)report)[127] == FB_TYPE_RUMBLE) {
+        protocol = BT_HIDP_SW_SET_RUMBLE;
+        len = sizeof(struct bt_hidp_sw_rumble);
+    }
+
+    bt_hid_cmd(device->acl_handle, device->intr_chan.dcid, BT_HIDP_DATA_OUT, protocol, len);
 }
 
 void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
