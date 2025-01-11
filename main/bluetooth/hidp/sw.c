@@ -103,7 +103,7 @@ void bt_hid_sw_get_calib(int32_t dev_id, struct bt_hid_sw_ctrl_calib **cal) {
 }
 
 static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
-    switch(device->hid_state++) {
+    switch(device->hid_state) {
         case SW_INIT_STATE_READ_INFO:
         {
             struct bt_hidp_sw_conf sw_conf = {
@@ -207,8 +207,7 @@ static void bt_hid_sw_init_callback(void *arg) {
     printf("# %s\n", __FUNCTION__);
     bt_hid_sw_exec_next_state(device);
 
-    esp_timer_delete(device->timer_hdl);
-    device->timer_hdl = NULL;
+    esp_timer_start_once(device->timer_hdl, 100000);
 
     atomic_set_bit(&device->flags, BT_DEV_HID_INIT_DONE);
 }
@@ -252,30 +251,39 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                     switch(ack->subcmd) {
                         case BT_HIDP_SW_SUBCMD_READ_INFO:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_READ_INFO\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_SET_REP_MODE:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_SET_REP_MODE\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_TRIGGER_TIME:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_TRIGGER_TIME\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_DISABLE_SHIP:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_DISABLE_SHIP\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_READ_SPI:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_READ_SPI 0x%04X\n", ack->addr);
                             switch (ack->addr) {
                                 case 0x603D:
@@ -376,6 +384,7 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                                     atomic_set_bit(&device->flags, BT_DEV_CALIB_SET);
                                     /* Force reinit once calib available */
                                     bt_type_update(device->ids.id, BT_SW, device->ids.subtype);
+                                    device->hid_state++;
                                     bt_hid_sw_exec_next_state(device);
                                     break;
                                 }
@@ -384,20 +393,32 @@ void bt_hid_sw_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, ui
                         }
                         case BT_HIDP_SW_SUBCMD_SET_MCU_CFG:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_SET_MCU_CFG\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_ENABLE_IMU:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_ENABLE_IMU\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
                             break;
                         }
                         case BT_HIDP_SW_SUBCMD_EN_RUMBLE:
                         {
+                            esp_timer_restart(device->timer_hdl, 100000);
                             printf("# BT_HIDP_SW_SUBCMD_EN_RUMBLE\n");
+                            device->hid_state++;
                             bt_hid_sw_exec_next_state(device);
+                            break;
+                        }
+                        case BT_HIDP_SW_SUBCMD_SET_LED:
+                        {
+                            esp_timer_delete(device->timer_hdl);
+                            device->timer_hdl = NULL;
                             break;
                         }
                     }
