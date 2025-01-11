@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "zephyr/types.h"
 #include "tools/util.h"
+#include "adapter/adapter.h"
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
 #include "tests/cmds.h"
@@ -54,7 +55,7 @@ struct gc_kb_map {
     uint8_t xor;
 } __packed;
 
-static const uint32_t gc_mask[4] = {0x771F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t gc_mask[4] = {0x773F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t gc_btns_mask[32] = {
     0, 0, 0, 0,
@@ -66,6 +67,17 @@ static DRAM_ATTR const uint32_t gc_btns_mask[32] = {
     0, BIT(GC_Z), BIT(GC_L), 0,
     0, BIT(GC_Z), BIT(GC_R), 0,
 };
+static DRAM_ATTR const uint32_t gc_btns_mask_alt[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(GC_LD_LEFT), BIT(GC_LD_RIGHT), BIT(GC_LD_DOWN), BIT(GC_LD_UP),
+    0, 0, 0, 0,
+    BIT(GC_Y), BIT(GC_A), BIT(GC_B), BIT(GC_X),
+    BIT(GC_START), 0, 0, 0,
+    0, BIT(GC_Z), BIT(GC_L), 0,
+    0, BIT(GC_Z), BIT(GC_R), 0,
+};
+static DRAM_ATTR const uint32_t *btns_mask = gc_btns_mask;
 
 static const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000 | BR_COMBO_MASK};
 static const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
@@ -149,6 +161,32 @@ void gc_meta_init(struct wired_ctrl *ctrl_data) {
     }
 }
 
+static void gc_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
+    /* Face buttons mapping convertion toggle between names & positions */
+    if (ctrl_data->map_mask[0] & generic_btns_mask[PAD_MS]) {
+        if (ctrl_data->btns[0].value & generic_btns_mask[PAD_MS]) {
+            if (!atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_set_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+            }
+        }
+        else {
+            if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
+                atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
+
+                if (btns_mask == gc_btns_mask) {
+                    btns_mask = gc_btns_mask_alt;
+                    printf("# %s: Names based mapping\n", __FUNCTION__);
+                }
+                else {
+                    btns_mask = gc_btns_mask;
+                    printf("# %s: Position based mapping\n", __FUNCTION__);
+                }
+                adapter_toggle_fb(ctrl_data->index, 300000);
+            }
+        }
+    }
+}
+
 static void gc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
     struct gc_map map_tmp;
     uint32_t map_mask = 0xFFFF;
@@ -158,16 +196,18 @@ static void gc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons |= gc_btns_mask[i];
-                map_mask &= ~gc_btns_mask[i];
+                map_tmp.buttons |= btns_mask[i];
+                map_mask &= ~btns_mask[i];
                 wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
-            else if (map_mask & gc_btns_mask[i]) {
-                map_tmp.buttons &= ~gc_btns_mask[i];
+            else if (map_mask & btns_mask[i]) {
+                map_tmp.buttons &= ~btns_mask[i];
                 wired_data->cnt_mask[i] = 0;
             }
         }
     }
+
+    gc_ctrl_special_action(ctrl_data, wired_data);
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & gc_desc[0])) {
@@ -235,6 +275,6 @@ void IRAM_ATTR gc_gen_turbo_mask(struct wired_data *wired_data) {
     map_mask->buttons = 0xFFFF;
     memset(map_mask->axes, 0x00, sizeof(map_mask->axes));
 
-    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, gc_btns_mask);
+    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, btns_mask);
     wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, gc_axes_idx, gc_axes_meta);
 }
