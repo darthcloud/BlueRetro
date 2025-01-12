@@ -16,7 +16,7 @@
 //#define SW_TRIGGER_TIME_EN
 //#define SW_ENABLE_IMU_EN
 //#define SW_SET_MCU_CFG_EN
-#define KEEPALIVE_PERIOD_US 3000000
+#define SW_INIT_STATE_RETRY_MAX 10
 
 enum {
     SW_INIT_STATE_READ_INFO = 0,
@@ -109,6 +109,7 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
             struct bt_hidp_sw_conf sw_conf = {
                 .subcmd = BT_HIDP_SW_SUBCMD_READ_INFO,
             };
+            device->tid = 0;
             bt_hid_cmd_sw_set_conf(device, (void *)&sw_conf);
             break;
         }
@@ -205,6 +206,15 @@ static void bt_hid_sw_init_callback(void *arg) {
     struct bt_dev *device = (struct bt_dev *)arg;
 
     printf("# %s\n", __FUNCTION__);
+    if (device->hid_retry_cnt++ > SW_INIT_STATE_RETRY_MAX) {
+        if (device->hid_state == SW_INIT_STATE_SET_LED) {
+            esp_timer_delete(device->timer_hdl);
+            device->timer_hdl = NULL;
+            return;
+        }
+        device->hid_state++;
+        device->hid_retry_cnt = 0;
+    }
     bt_hid_sw_exec_next_state(device);
 
     esp_timer_start_once(device->timer_hdl, 100000);
