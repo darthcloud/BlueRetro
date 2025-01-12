@@ -314,7 +314,7 @@ static int32_t sw_pad_init(struct bt_data *bt_data) {
         memcpy(bt_data->raw_src_mappings[PAD].desc, desc,
             sizeof(bt_data->raw_src_mappings[PAD].desc));
     }
-    else if (bt_data->base.pids->subtype == BT_SUBTYPE_DEFAULT || bt_data->base.pids->subtype == BT_SW_POWERA) {
+    else if (bt_data->base.pids->subtype == BT_SUBTYPE_DEFAULT) {
         meta[0].polarity = 0;
         meta[1].polarity = 0;
         meta[2].polarity = 0;
