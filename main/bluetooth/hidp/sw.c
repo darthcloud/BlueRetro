@@ -107,6 +107,8 @@ static void bt_hid_sw_exec_next_state(struct bt_dev *device) {
         case SW_INIT_STATE_READ_INFO:
         {
             struct bt_hidp_sw_conf sw_conf = {
+                .l_lra.val = BT_HIDP_SW_LRA_IDLE,
+                .r_lra.val = BT_HIDP_SW_LRA_IDLE,
                 .subcmd = BT_HIDP_SW_SUBCMD_READ_INFO,
             };
             device->tid = 0;
