@@ -17,7 +17,7 @@ def test_sw_hk_admiral_controller_default_buttons_mapping(blueretro):
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
     assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 18
+    assert rsp['device_name']['device_subtype'] == 17
     assert rsp['device_name']['device_name'] == 'Hyperkin Pad'
 
     # Init adapter with a few neutral state report
@@ -61,7 +61,7 @@ def test_sw_hk_admiral_controller_axes_default_scaling(blueretro):
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
     assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 18
+    assert rsp['device_name']['device_subtype'] == 17
     assert rsp['device_name']['device_name'] == 'Hyperkin Pad'
 
     # Init adapter with a few neutral state report
