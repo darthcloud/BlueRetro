@@ -1095,6 +1095,11 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
 
                 printf("# BT_HCI_EVT_LE_ADVERTISING_REPORT\n");
 
+                if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_IND) {
+                    if (bt_host_load_le_ltk(&le_adv_report->adv_info[0].addr, NULL, NULL) == 0) {
+                        goto connect;
+                    }
+                }
                 if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_DIRECT_IND) {
                     goto connect;
                 }
