@@ -106,6 +106,7 @@ static void wl_init_task(void *arg) {
     ESP_ERROR_CHECK(ret);
 
     config_init(DEFAULT_CFG);
+    mc_init_mem();
 
 #ifndef CONFIG_BLUERETRO_BT_DISABLE
     if (bt_host_init()) {

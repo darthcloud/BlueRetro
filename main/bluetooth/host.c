@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -197,10 +197,8 @@ static void bt_tx_task(void *param) {
                     vTaskDelay(packet[1] / portTICK_PERIOD_MS);
                 }
                 else {
-#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
                     bt_mon_tx((packet[0] == BT_HCI_H4_TYPE_CMD) ? BT_MON_CMD : BT_MON_ACL_TX,
                         packet + 1, packet_len - 1);
-#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
                     atomic_clear_bit(&bt_flags, BT_CTRL_READY);
                     esp_vhci_host_send_packet(packet, packet_len);
                 }
@@ -389,10 +387,8 @@ static void bt_host_tx_pkt_ready(void) {
  */
 static int bt_host_rx_pkt(uint8_t *data, uint16_t len) {
     struct bt_hci_pkt *bt_hci_pkt = (struct bt_hci_pkt *)data;
-#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
     bt_mon_tx((bt_hci_pkt->h4_hdr.type == BT_HCI_H4_TYPE_EVT) ? BT_MON_EVT : BT_MON_ACL_RX,
         data + 1, len - 1);
-#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
 #ifdef CONFIG_BLUERETRO_BT_TIMING_TESTS
     if (atomic_test_bit(&bt_flags, BT_HOST_DBG_MODE)) {

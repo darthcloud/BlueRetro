@@ -736,6 +736,10 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_MC_CTRL_CHRC_HDL:
+                    if (config.global_cfg.banksel == CONFIG_BANKSEL_DBG) {
+                        /* Disable debug tracing */
+                        config.global_cfg.banksel = 0xFF;
+                    }
                     mc_offset = *(uint32_t *)wr_req->value;
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
