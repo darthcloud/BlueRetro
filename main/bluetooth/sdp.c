@@ -10,6 +10,7 @@
 #include "tools/util.h"
 #include "host.h"
 #include "adapter/hid_parser.h"
+#include "adapter/mapping_quirks.h"
 #include "l2cap.h"
 #include "sdp.h"
 
@@ -179,6 +180,7 @@ void bt_sdp_parser(struct bt_data *bt_data) {
         bt_data->base.pnp_data = NULL;
     }
     printf("# %s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+    mapping_quirks_apply_pnp(bt_data);
 
     hid_desc = memmem(bt_data->base.sdp_data, bt_data->base.sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
     hid_offset = hid_desc - bt_data->base.sdp_data;

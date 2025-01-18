@@ -266,3 +266,15 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
         gc_diy_8bitdo(&bt_data->raw_src_mappings[PAD]);
     }
 }
+
+void mapping_quirks_apply_pnp(struct bt_data *bt_data) {
+    switch (bt_data->base.vid) {
+        case 0x18D1: /* Google */
+            switch (bt_data->base.pid) {
+                case 0x9400: /* Stadia */
+                    stadia(&bt_data->raw_src_mappings[PAD]);
+                    break;
+            }
+            break;
+    }
+}

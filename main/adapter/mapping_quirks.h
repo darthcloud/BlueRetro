@@ -8,5 +8,6 @@
 #include "adapter.h"
 
 void mapping_quirks_apply(struct bt_data *bt_data);
+void mapping_quirks_apply_pnp(struct bt_data *bt_data);
 
 #endif /* _MAPPING_QUIRKS_H_ */
