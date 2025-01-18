@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2024 Jacques Gagnon
 # SPDX-License-Identifier: Apache-2.0
 import struct
@@ -9,6 +10,7 @@ from enum import IntEnum
 from glob import glob
 from serial import Serial
 from socket import socket, AF_INET, SOCK_STREAM
+from uuid import uuid4
 
 
 socat = None
@@ -122,23 +124,25 @@ def main():
     sys.excepthook = except_hook
 
     # Create virtual tty
+    socat_tty = f'/tmp/socat-{uuid4()}'
     socat_cmd = [
-        'socat',
-        'PTY,raw,echo=0,link=/tmp/socat,nonblock,group-late=dialout,mode=660,b921600',
-        'TCP-LISTEN:8008,reuseaddr,fork'
+        'socat', '-dd',
+        f'PTY,raw,echo=0,link={socat_tty},nonblock,group-late=dialout,mode=660,b921600',
+        'TCP-LISTEN:0,reuseaddr,fork'
     ]
-    socat = subprocess.Popen(socat_cmd, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
-    time.sleep(1)
+    socat = subprocess.Popen(socat_cmd, stdout = subprocess.DEVNULL, stderr = subprocess.PIPE)
+    socat.stderr.readline()
+    socat_port = int(socat.stderr.readline().decode().split(':')[-1])
 
     # Launch Bluez's btmon on our virtual tty
-    btmon_cmd = ['btmon', '--tty', '/tmp/socat', '--tty-speed', '921600']
+    btmon_cmd = ['btmon', '--tty', socat_tty, '--tty-speed', '921600']
     if args.write is not None:
         btmon_cmd.extend(['-w', args.write])
     btmon = subprocess.Popen(btmon_cmd)
 
     # Connect to virtual tty socket
     sock = socket(AF_INET, SOCK_STREAM)
-    sock.connect(('localhost', 8008))
+    sock.connect(('localhost', socat_port))
 
     # Setup ttys we want to sniff H4 from
     ttys = []
@@ -146,6 +150,12 @@ def main():
         ttys.append(Serial(port=args.tty0, baudrate=args.baud, bytesize=args.data, parity=args.parity, stopbits=args.stop))
     if args.tty1 is not None:
         ttys.append(Serial(port=args.tty1, baudrate=args.baud, bytesize=args.data, parity=args.parity, stopbits=args.stop))
+
+    # Test with btsnoop note
+    time.sleep(1)
+    note = b'Ready to capture...'
+    note_hdr = struct.pack('<HHBB', 4 + len(note), BtsnoopOpcode.SYSTEM_NOTE, 0, 0)
+    sock.send(note_hdr + note)
 
     # ttys read & socket send loop
     while True:
