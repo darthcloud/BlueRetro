@@ -531,7 +531,12 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                 switch (device->hid_state) {
                     case BT_ATT_HID_DEVICE_NAME:
                         hid_data->dev_name_hdl = read_type_rsp->data[0].handle;
-                        bt_att_hid_process_device_name(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
+                        if (rsp_len) {
+                            bt_att_hid_process_device_name(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
+                        }
+                        else {
+                            bt_att_cmd_read_req(device->acl_handle, read_type_rsp->data[0].handle);
+                        }
                         break;
                     case BT_ATT_HID_APPEARANCE:
                         bt_att_hid_process_appearance(device, hid_data, att_len, read_type_rsp->data[0].value, rsp_len);
@@ -558,6 +563,9 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
             if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
                 switch (device->hid_state) {
+                    case BT_ATT_HID_DEVICE_NAME:
+                        bt_att_hid_process_device_name(device, hid_data, att_len, read_rsp->value, att_len - 1);
+                        break;
                     case BT_ATT_HID_REPORT_MAP:
                         bt_att_hid_process_report_map(device, hid_data, att_len, read_rsp->value, att_len - 1);
                         break;
