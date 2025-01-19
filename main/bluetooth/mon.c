@@ -9,6 +9,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <esp_timer.h>
+#include <esp_efuse.h>
+#include "esp_app_desc.h"
+#include "hal/efuse_hal.h"
 #include "mon.h"
 #include "host.h"
 #include "zephyr/hci.h"
@@ -29,33 +32,42 @@ struct bt_mon_hdr {
 	uint32_t ts_data;
 } __packed;
 
-static int uart_port;
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
+static int uart_port = UART_NUM_1;
+#endif
 static struct bt_mon_hdr mon_hdr = {0};
 static uint32_t log_offset = 0;
 static char log_buffer[512];
 
-int bt_mon_init(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t stop_bits,
-    uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl) {
+void bt_mon_init(void) {
+#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
     uart_config_t uart_cfg = {
-        .baud_rate = baud_rate,
-        .data_bits = data_bits,
-        .parity = parity,
-        .stop_bits = stop_bits,
-        .flow_ctrl = flow_ctl,
+        .baud_rate = 921600,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT,
-        .rx_flow_ctrl_thresh = UART_HW_FIFO_LEN(port_num) - 1,
+        .rx_flow_ctrl_thresh = UART_HW_FIFO_LEN(UART_NUM_1) - 1,
     };
-    uart_port = port_num;
 
     printf("# %s: set uart pin tx:%d\n", __FUNCTION__, BT_MON_TX_PIN);
-    printf("# %s: set baud_rate:%ld.\n", __FUNCTION__, baud_rate);
+    printf("# %s: set baud_rate:%ld.\n", __FUNCTION__, uart_cfg.baud_rate);
 
     ESP_ERROR_CHECK(uart_driver_delete(port_num));
     ESP_ERROR_CHECK(uart_driver_install(port_num, UART_HW_FIFO_LEN(port_num) * 2, 0, 0, NULL, 0));
     ESP_ERROR_CHECK(uart_param_config(port_num, &uart_cfg));
     ESP_ERROR_CHECK(uart_set_pin(port_num, BT_MON_TX_PIN, BT_MON_RX_PIN, BT_MON_RTS_PIN, BT_MON_CTS_PIN));
+#endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
-    return 0;
+    const esp_app_desc_t *app_desc = esp_app_get_description();
+    uint32_t chip_package = esp_efuse_get_pkg_ver();
+    uint32_t chip_revision = efuse_hal_chip_revision();
+    bt_mon_log(true, "Project name: %s", app_desc->project_name);
+    bt_mon_log(true, "App version: %s", app_desc->version);
+    bt_mon_log(true, "Compile time: %s %s", app_desc->date, app_desc->time);
+    bt_mon_log(true, "ESP-IDF version: %s", app_desc->idf_ver);
+    bt_mon_log(true, "Chip package: %d revision: %d", chip_package, chip_revision);
 }
 
 void IRAM_ATTR bt_mon_tx(uint16_t opcode, uint8_t *data, uint16_t len) {

@@ -615,10 +615,7 @@ int32_t bt_host_init(void) {
 
     bt_host_load_bdaddr_from_nvs();
 
-#ifdef CONFIG_BLUERETRO_BT_H4_TRACE
-    bt_mon_init(UART_NUM_1, 921600, UART_DATA_8_BITS, UART_STOP_BITS_1,
-        UART_PARITY_DISABLE, UART_HW_FLOWCTRL_DISABLE);
-#endif
+    bt_mon_init();
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
