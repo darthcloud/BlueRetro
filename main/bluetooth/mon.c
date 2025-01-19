@@ -113,16 +113,21 @@ void IRAM_ATTR bt_mon_tx(uint16_t opcode, uint8_t *data, uint16_t len) {
 }
 
 void IRAM_ATTR bt_mon_log(bool end, const char * format, ...) {
-    va_list args;
-    va_start(args, format);
-    size_t max_len = sizeof(log_buffer) - log_offset;
-    int len = vsnprintf(log_buffer + log_offset, max_len, format, args);
-    if (len > 0 && len < max_len) {
-        log_offset += len;
-    }
-    va_end(args);
-    if (end) {
-        bt_mon_tx(BT_MON_SYS_NOTE, (uint8_t *)log_buffer, log_offset);
-        log_offset = 0;
+#ifndef CONFIG_BLUERETRO_BT_H4_TRACE
+    if (config.global_cfg.banksel == CONFIG_BANKSEL_DBG)
+#endif
+    {
+        va_list args;
+        va_start(args, format);
+        size_t max_len = sizeof(log_buffer) - log_offset;
+        int len = vsnprintf(log_buffer + log_offset, max_len, format, args);
+        if (len > 0 && len < max_len) {
+            log_offset += len;
+        }
+        va_end(args);
+        if (end) {
+            bt_mon_tx(BT_MON_SYS_NOTE, (uint8_t *)log_buffer, log_offset);
+            log_offset = 0;
+        }
     }
 }
