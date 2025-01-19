@@ -10,6 +10,7 @@
 #include "hid_parser.h"
 #include "zephyr/usb_hid.h"
 #include "tools/util.h"
+#include "bluetooth/mon.h"
 #include "tests/cmds.h"
 
 #define HID_STACK_MAX 4
@@ -223,14 +224,18 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *repor
             report->usages[i].bit_size);
     }
     TESTS_CMDS_LOG("]");
-    printf("# %ld %c ", report->id, (report->tag) ? 'O' : 'I');
+    printf("%ld %c ", report->id, (report->tag) ? 'O' : 'I');
+    bt_mon_log(false, "%ld %c ", report->id, (report->tag) ? 'O' : 'I');
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
         printf("%02lX%02lX %lu %lu ", report->usages[i].usage_page, report->usages[i].usage,
+            report->usages[i].bit_offset, report->usages[i].bit_size);
+        bt_mon_log(false, "%02lX%02lX %lu %lu ", report->usages[i].usage_page, report->usages[i].usage,
             report->usages[i].bit_offset, report->usages[i].bit_size);
     }
     if (report->type != REPORT_NONE) {
         TESTS_CMDS_LOG(", \"report_type\": %ld", report->type);
         printf("rtype: %ld", report->type);
+        bt_mon_log(false, "rtype: %ld", report->type);
         /* For output report we got to make a choice. */
         /* So we use the first one we find. */
         if (report->tag == HID_OUT && bt_data->reports[report->type].id == 0) {
@@ -239,6 +244,7 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *repor
     }
     TESTS_CMDS_LOG("}");
     printf("\n");
+    bt_mon_log(true, "");
 }
 
 void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
