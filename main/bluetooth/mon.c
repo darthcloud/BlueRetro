@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,6 +31,8 @@ struct bt_mon_hdr {
 
 static int uart_port;
 static struct bt_mon_hdr mon_hdr = {0};
+static uint32_t log_offset = 0;
+static char log_buffer[512];
 
 int bt_mon_init(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t stop_bits,
     uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl) {
@@ -95,4 +98,19 @@ void IRAM_ATTR bt_mon_tx(uint16_t opcode, uint8_t *data, uint16_t len) {
         }
     }
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
+}
+
+void IRAM_ATTR bt_mon_log(bool end, const char * format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t max_len = sizeof(log_buffer) - log_offset;
+    int len = vsnprintf(log_buffer + log_offset, max_len, format, args);
+    if (len > 0 && len < max_len) {
+        log_offset += len;
+    }
+    va_end(args);
+    if (end) {
+        bt_mon_tx(BT_MON_SYS_NOTE, (uint8_t *)log_buffer, log_offset);
+        log_offset = 0;
+    }
 }
