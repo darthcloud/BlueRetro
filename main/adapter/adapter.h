@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,7 @@
 #include <esp_attr.h>
 #include "zephyr/atomic.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 
 #ifndef __packed
 #define __packed __attribute__((__packed__))
@@ -601,9 +602,10 @@ static inline void bt_type_update(int32_t dev_id, int32_t type, uint32_t subtype
         for (uint32_t i = 0; i < REPORT_MAX; i++) {
             atomic_clear_bit(&bt_data->base.flags[i], BT_INIT);
         }
-        printf("# %s: dev: %ld type: %ld subtype: %ld\n", __FUNCTION__, dev_id, type, subtype);
+        printf("%s: dev: %ld type: %ld subtype: %ld\n", __FUNCTION__, dev_id, type, subtype);
         TESTS_CMDS_LOG("\"type_update\": {\"device_id\": %d, \"device_type\": %d, \"device_subtype\": %d},\n",
             dev_id, type, subtype);
+        bt_mon_log(true, "%s: dev: %ld type: %ld subtype: %ld\n", __FUNCTION__, dev_id, type, subtype);
     }
 }
 
