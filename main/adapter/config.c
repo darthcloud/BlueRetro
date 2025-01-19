@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,6 +14,7 @@
 #include "config.h"
 #include "system/fs.h"
 #include "adapter/gameid.h"
+#include "bluetooth/mon.h"
 
 struct config config;
 struct hw_config hw_config = {
@@ -445,4 +446,16 @@ void config_update(uint32_t dst) {
 
 uint32_t config_get_src(void) {
     return config_src;
+}
+
+void config_debug_log(void) {
+        bt_mon_log(true,
+            "Global config: system: 0x%02X multitap: 0x%02X inquiry: 0x%02X banksel: 0x%02X",
+            config.global_cfg.system_cfg, config.global_cfg.multitap_cfg,
+            config.global_cfg.inquiry_mode, config.global_cfg.banksel);
+        bt_mon_log(true, "Output config #0: device_mode: 0x%02X acc_mode: 0x%02X",
+            config.out_cfg[0].dev_mode, config.out_cfg[0].acc_mode);
+        bt_mon_log(true, "Mapping config #0");
+        bt_mon_tx(BT_MON_SYS_NOTE, (uint8_t *)config.in_cfg[0].map_cfg,
+            config.in_cfg[0].map_size * sizeof(config.in_cfg[0].map_cfg[0]));
 }

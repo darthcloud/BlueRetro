@@ -68,6 +68,8 @@ void bt_mon_init(void) {
     bt_mon_log(true, "Compile time: %s %s", app_desc->date, app_desc->time);
     bt_mon_log(true, "ESP-IDF version: %s", app_desc->idf_ver);
     bt_mon_log(true, "Chip package: %d revision: %d", chip_package, chip_revision);
+
+    config_debug_log();
 }
 
 void IRAM_ATTR bt_mon_tx(uint16_t opcode, uint8_t *data, uint16_t len) {
