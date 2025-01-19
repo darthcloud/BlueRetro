@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "bluetooth/hci.h"
 #include "tools/util.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "sw.h"
 
 //#define SW_DISABLE_SHIP_EN
@@ -65,13 +66,20 @@ static void bt_hid_sw_print_calib(struct bt_hid_sw_ctrl_calib *calib) {
         calib->sticks[1].axes[0].neutral, calib->sticks[1].axes[1].neutral);
     TESTS_CMDS_LOG("\"deadzone\": [%u, %u, %u, %u]},\n", calib->sticks[0].deadzone, calib->sticks[0].deadzone,
         calib->sticks[1].deadzone, calib->sticks[1].deadzone);
-    printf("# rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
-    printf("# neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
-    printf("# rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
-    printf("# rel_min LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
-    printf("# neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
-    printf("# rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
-    printf("#         LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
+    printf("rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
+    printf("neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
+    printf("rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
+    printf("rel_min LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
+    printf("neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
+    printf("rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
+    printf("        LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
+    bt_mon_log(true, "rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
+    bt_mon_log(true, "neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
+    bt_mon_log(true, "rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
+    bt_mon_log(true, "rel_min LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
+    bt_mon_log(true, "neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
+    bt_mon_log(true, "rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
+    bt_mon_log(true, "        LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
 }
 
 void bt_hid_cmd_sw_set_conf(struct bt_dev *device, void *report) {
