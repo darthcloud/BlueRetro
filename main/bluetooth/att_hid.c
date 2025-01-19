@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "att.h"
 #include "att_cfg.h"
 #include "att_hid.h"
+#include "mon.h"
 #include "zephyr/uuid.h"
 #include "zephyr/att.h"
 #include "zephyr/gatt.h"
@@ -113,7 +114,8 @@ static void bt_att_hid_process_device_name(struct bt_dev *device,
     }
 
     bt_hid_set_type_flags_from_name(device, hid_data->device_name);
-    printf("# dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
+    printf("dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
+    bt_mon_log(true, "dev: %ld type: %ld %s\n", device->ids.id, device->ids.type, hid_data->device_name);
 
     bt_att_hid_start_next_state(device, hid_data);
 }
@@ -128,7 +130,9 @@ static void bt_att_hid_process_appearance(struct bt_dev *device,
     if (data) {
         hid_data->appearance = *(uint16_t *)data;
     }
-    printf("# dev: %ld appearance: %03X:%02X\n",
+    printf("dev: %ld appearance: %03X:%02X\n",
+        device->ids.id, hid_data->appearance >> 6, hid_data->appearance & 0x3F);
+    bt_mon_log(true, "dev: %ld appearance: %03X:%02X\n",
         device->ids.id, hid_data->appearance >> 6, hid_data->appearance & 0x3F);
     bt_att_hid_start_next_state(device, hid_data);
 }
@@ -145,7 +149,8 @@ static void bt_att_hid_process_pnp(struct bt_dev *device,
         bt_data->base.vid = *(uint16_t *)&data[1];
         bt_data->base.pid = *(uint16_t *)&data[3];
     }
-    printf("# %s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+    printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+    bt_mon_log(true, "%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
     mapping_quirks_apply_pnp(bt_data);
     bt_att_hid_start_next_state(device, hid_data);
 }
@@ -216,7 +221,8 @@ static void bt_att_hid_process_ident_hid_hdls(struct bt_dev *device,
                 uuid = *(uint16_t *)&info128[i].uuid[12];
             }
 
-            printf("# INFO HDL: %04X UUID: %04X REPORT_CNT: %d\n", handle, uuid, hid_data->report_cnt);
+            printf("INFO HDL: %04X UUID: %04X REPORT_CNT: %d\n", handle, uuid, hid_data->report_cnt);
+            bt_mon_log(true, "INFO HDL: %04X UUID: %04X REPORT_CNT: %d\n", handle, uuid, hid_data->report_cnt);
 
             switch (uuid) {
                 case BT_UUID_GATT_PRIMARY:
@@ -281,7 +287,8 @@ static void bt_att_hid_process_char_prop(struct bt_dev *device,
         for (uint32_t i = 0; i < elem_cnt; i++) {
             for (uint32_t j = 0; j < HID_MAX_REPORT; j++) {
                 if (hid_data->reports[j].report_hdl == read_type_data[i].char_value_handle) {
-                    printf("# CHAR_PROP Handl: %04X Prop: %02X\n", read_type_data[i].char_value_handle, read_type_data[i].char_prop);
+                    printf("CHAR_PROP Handl: %04X Prop: %02X\n", read_type_data[i].char_value_handle, read_type_data[i].char_prop);
+                    bt_mon_log(true, "CHAR_PROP Handl: %04X Prop: %02X\n", read_type_data[i].char_value_handle, read_type_data[i].char_prop);
                     hid_data->reports[j].char_prop = read_type_data[i].char_prop;
                 }
             }
