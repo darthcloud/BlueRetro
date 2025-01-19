@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "zephyr/types.h"
 #include "zephyr/sdp.h"
 #include "tools/util.h"
+#include "mon.h"
 #include "host.h"
 #include "adapter/hid_parser.h"
 #include "adapter/mapping_quirks.h"
@@ -179,7 +180,8 @@ void bt_sdp_parser(struct bt_data *bt_data) {
         free(bt_data->base.pnp_data);
         bt_data->base.pnp_data = NULL;
     }
-    printf("# %s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+    printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+    bt_mon_log(true, "%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
     mapping_quirks_apply_pnp(bt_data);
 
     hid_desc = memmem(bt_data->base.sdp_data, bt_data->base.sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
