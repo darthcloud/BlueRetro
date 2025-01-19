@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include <freertos/ringbuf.h>
 #include "host.h"
 #include "l2cap.h"
+#include "mon.h"
 #include "hci.h"
 #include "att.h"
 #include "att_hid.h"
@@ -1057,7 +1058,8 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     bt_nb_inquiry = BT_INQUIRY_MAX;
                     device->acl_handle = le_conn_complete->handle;
                     device->pkt_retry = 0;
-                    printf("# dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
+                    printf("dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
+                    bt_mon_log(true, "dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
                     if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
                         bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
@@ -1139,7 +1141,10 @@ connect:
                         bt_hci_cmd_le_set_scan_enable(0);
                         bt_hci_cmd_le_set_adv_disable(NULL);
                         bt_hci_cmd_le_create_conn((void *)&le_adv_report->adv_info[0].addr);
-                        printf("# LE ADV dev: %ld type: %ld bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type, device->le_remote_bdaddr.type,
+                        printf("LE ADV dev: %ld type: %ld bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type, device->le_remote_bdaddr.type,
+                            device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                            device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+                        bt_mon_log(true, "LE ADV dev: %ld type: %ld bdaddr: %02X - %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type, device->le_remote_bdaddr.type,
                             device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                             device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                     }
@@ -1378,7 +1383,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                         bt_hci_cmd_connect(device->remote_bdaddr);
-                        printf("# Inquiry dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
+                        printf("Inquiry dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
+                            device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                            device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+                        bt_mon_log(true, "Inquiry dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
                             device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                             device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                     }
@@ -1410,7 +1418,8 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     bt_nb_inquiry = BT_INQUIRY_MAX;
                     device->acl_handle = conn_complete->handle;
                     device->pkt_retry = 0;
-                    printf("# dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
+                    printf("dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
+                    bt_mon_log(true, "dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     bt_hci_cmd_le_set_adv_disable(NULL);
                     bt_hci_cmd_remote_name_request(device->remote_bdaddr);
                 }
@@ -1435,7 +1444,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
                     atomic_set_bit(&device->flags, BT_DEV_PAGE);
                     bt_hci_cmd_accept_conn_req(device->remote_bdaddr);
-                    printf("# Page dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
+                    printf("Page dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
+                        device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
+                        device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
+                    bt_mon_log(true, "Page dev: %ld type: %ld bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n", device->ids.id, device->ids.type,
                         device->remote_bdaddr[5], device->remote_bdaddr[4], device->remote_bdaddr[3],
                         device->remote_bdaddr[2], device->remote_bdaddr[1], device->remote_bdaddr[0]);
                 }
@@ -1536,7 +1548,8 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         }
                         bt_hci_cmd_auth_requested(&device->acl_handle);
                     }
-                    printf("# dev: %ld type: %ld:%ld %s\n", device->ids.id, device->ids.type, device->ids.subtype, remote_name_req_complete->name);
+                    printf("dev: %ld type: %ld:%ld %s\n", device->ids.id, device->ids.type, device->ids.subtype, remote_name_req_complete->name);
+                    bt_mon_log(true, "dev: %ld type: %ld:%ld %s\n", device->ids.id, device->ids.type, device->ids.subtype, remote_name_req_complete->name);
                 }
             }
             else {
@@ -1702,7 +1715,10 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                         struct bt_hci_rp_read_bd_addr *read_bd_addr = (struct bt_hci_rp_read_bd_addr *)&bt_hci_evt_pkt->evt_data[sizeof(*cmd_complete)];
                         memcpy((void *)local_bdaddr, (void *)&read_bd_addr->bdaddr, sizeof(local_bdaddr));
                         bt_hci_set_device_name();
-                        printf("# local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                        printf("local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                            local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
+                            local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
+                        bt_mon_log(true, "local_bdaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
                             local_bdaddr[5], local_bdaddr[4], local_bdaddr[3],
                             local_bdaddr[2], local_bdaddr[1], local_bdaddr[0]);
                     }
