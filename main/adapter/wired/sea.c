@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,7 @@
 #include "driver/gpio.h"
 #include "wired/sea_io.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "sea.h"
 
 #define P1_LD_UP 19
@@ -219,7 +220,9 @@ void sea_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wir
 
         gbahd_osd(ctrl_data, wired_data);
 
-        printf("\"wired_output\": {\"btns\": [%ld, %ld, %d]},\n",
+        TESTS_CMDS_LOG("\"wired_output\": {\"btns\": [%ld, %ld, %d]},\n",
+            map_tmp->buttons, map_tmp->buttons_high, map_tmp->buttons_osd);
+        BT_MON_LOG("\"wired_output\": {\"btns\": [%08lX, %08lX, %04X]},\n",
             map_tmp->buttons, map_tmp->buttons_high, map_tmp->buttons_osd);
     }
 }

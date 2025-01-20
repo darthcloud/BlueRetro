@@ -245,6 +245,11 @@ menu "BlueRetro"
 
         endchoice
 
+        config BLUERETRO_BTMON_VERBOSE
+            bool "Enable verbose loggin into BT monitor"
+            help
+                Seclect this to enable verbose loggin into BT monitor.
+
     endmenu
 
 endmenu

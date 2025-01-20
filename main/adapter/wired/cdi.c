@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "adapter/config.h"
 #include "adapter/kb_monitor.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "cdi.h"
 
 #define CDI_KB_SHIFT 0x01
@@ -377,6 +378,8 @@ void cdi_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wire
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp) - 8);
 
     TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%ld, %ld], \"btns\": %d},\n",
+        raw_axes[cdi_axes_idx[0]], raw_axes[cdi_axes_idx[1]], map_tmp.buttons);
+    BT_MON_LOG("\"wired_output\": {\"axes\": [%08lX, %08lX], \"btns\": %02X},\n",
         raw_axes[cdi_axes_idx[0]], raw_axes[cdi_axes_idx[1]], map_tmp.buttons);
 }
 

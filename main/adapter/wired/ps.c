@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,7 @@
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/wired.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "ps.h"
 
 #define PS_JOYSTICK_AXES_CNT 4
@@ -298,6 +299,10 @@ static void ps_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
     TESTS_CMDS_LOG("\"wired_output\": {\"axes\": [%d, %d, %d, %d], \"btns\": [%d, %d]},\n",
+        map_tmp.axes[ps_axes_idx[0]], map_tmp.axes[ps_axes_idx[1]],
+        map_tmp.axes[ps_axes_idx[2]], map_tmp.axes[ps_axes_idx[3]],
+        map_tmp.buttons, map_tmp.analog_btn);
+    BT_MON_LOG("\"wired_output\": {\"axes\": [%02X, %02X, %02X, %02X], \"btns\": [%04X, %02X]},\n",
         map_tmp.axes[ps_axes_idx[0]], map_tmp.axes[ps_axes_idx[1]],
         map_tmp.axes[ps_axes_idx[2]], map_tmp.axes[ps_axes_idx[3]],
         map_tmp.buttons, map_tmp.analog_btn);

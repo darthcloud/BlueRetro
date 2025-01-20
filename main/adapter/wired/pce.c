@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "pce.h"
 #include "driver/gpio.h"
 
@@ -319,6 +320,8 @@ static void pce_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_dat
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
     TESTS_CMDS_LOG("\"wired_output\": {\"btns\": [%ld, %ld, %ld, %ld, %ld]},\n",
+        map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2], map_tmp.buttons[3], map_tmp.buttons[4]);
+    BT_MON_LOG("\"wired_output\": {\"btns\": [%08lX, %08lX, %08lX, %08lX, %08lX]},\n",
         map_tmp.buttons[0], map_tmp.buttons[1], map_tmp.buttons[2], map_tmp.buttons[3], map_tmp.buttons[4]);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "adapter/config.h"
 #include "adapter/wired/wired.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "pcfx.h"
 
 enum {
@@ -192,6 +193,7 @@ void pcfx_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wir
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
 
     TESTS_CMDS_LOG("\"wired_output\": {\"btns\": %d},\n", map_tmp.buttons);
+    BT_MON_LOG("\"wired_output\": {\"btns\": %04X},\n", map_tmp.buttons);
 }
 
 static void pcfx_mouse_from_generic(struct wired_ctrl *ctrl_data, struct wired_data *wired_data) {
