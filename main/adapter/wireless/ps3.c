@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "ps3.h"
 #include "bluetooth/hidp/ps3.h"
 
@@ -113,12 +114,18 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         memcpy(meta, ps3_axes_meta, sizeof(ps3_axes_meta));
+        bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
         for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
             meta[i].abs_max *= MAX_PULL_BACK;
             meta[i].abs_min *= MAX_PULL_BACK;
             bt_data->base.axes_cal[i] = -(map->axes[ps3_axes_idx[i]] - ps3_axes_meta[i].neutral);
+            if (i) {
+                bt_mon_log(false, ", ");
+            }
+            bt_mon_log(false, "%d", bt_data->base.axes_cal[i]);
         }
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
+        bt_mon_log(true, "]");
     }
 
     for (i = 0; i < axes_cnt; i++) {

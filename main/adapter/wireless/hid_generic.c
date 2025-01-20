@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,6 +13,7 @@
 #include "hid_generic.h"
 #include "adapter/mapping_quirks.h"
 #include "adapter/hid_parser.h"
+#include "bluetooth/mon.h"
 
 /* dinput buttons */
 enum {
@@ -614,6 +615,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
         hid_parser_load_report(bt_data, bt_data->base.report_id);
         hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
         mapping_quirks_apply(bt_data);
+        bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
     }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
@@ -670,6 +672,10 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
             if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
                 bt_data->base.axes_cal[i] = -(value  - ctrl_meta[i].neutral);
+                if (i) {
+                    bt_mon_log(false, ", ");
+                }
+                bt_mon_log(false, "%d", bt_data->base.axes_cal[i]);
             }
 
             ctrl_data->axes[i].meta = &ctrl_meta[i];
@@ -691,6 +697,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     }
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
+        bt_mon_log(true, "]");
     }
     TESTS_CMDS_LOG("]},\n");
 }

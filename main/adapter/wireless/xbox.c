@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,7 @@
 #include "tools/util.h"
 #include "adapter/mapping_quirks.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "xbox.h"
 #include "bluetooth/hidp/xbox.h"
 
@@ -201,11 +202,17 @@ static void xbox_pad_init(struct bt_data *bt_data) {
 
     mapping_quirks_apply(bt_data);
 
+    bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         meta[i].abs_max *= MAX_PULL_BACK;
         meta[i].abs_min *= MAX_PULL_BACK;
         bt_data->base.axes_cal[i] = -(map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral);
+        if (i) {
+            bt_mon_log(false, ", ");
+        }
+        bt_mon_log(false, "%d", bt_data->base.axes_cal[i]);
     }
+    bt_mon_log(true, "]");
 
     atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
 }

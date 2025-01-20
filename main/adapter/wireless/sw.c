@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "adapter/mapping_quirks.h"
 #include "bluetooth/hidp/sw.h"
 #include "tests/cmds.h"
+#include "bluetooth/mon.h"
 #include "sw.h"
 
 #define BT_HIDP_SW_SUBCMD_SET_LED 0x30
