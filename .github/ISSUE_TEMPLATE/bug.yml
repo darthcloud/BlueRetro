@@ -99,7 +99,7 @@ body:
   - type: textarea
     id: bug-desc
     attributes:
-      label: What is problem? (only list ONE problem per report)
+      label: What is the problem? (only list ONE problem per report)
     validations:
       required: true
   - type: textarea
@@ -111,4 +111,8 @@ body:
   - type: textarea
     id: attachment
     attributes:
-      label: Attach files like logs or Bluetooth traces here
+      label: Attach BlueRetro debug trace here
+  - type: markdown
+    attributes:
+      value: |
+        See how to create a [BlueRetro debug trace](https://github.com/darthcloud/BlueRetro/wiki/Debug-trace).
