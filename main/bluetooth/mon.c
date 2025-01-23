@@ -52,12 +52,12 @@ void bt_mon_init(void) {
     };
 
     printf("# %s: set uart pin tx:%d\n", __FUNCTION__, BT_MON_TX_PIN);
-    printf("# %s: set baud_rate:%ld.\n", __FUNCTION__, uart_cfg.baud_rate);
+    printf("# %s: set baud_rate:%d.\n", __FUNCTION__, uart_cfg.baud_rate);
 
-    ESP_ERROR_CHECK(uart_driver_delete(port_num));
-    ESP_ERROR_CHECK(uart_driver_install(port_num, UART_HW_FIFO_LEN(port_num) * 2, 0, 0, NULL, 0));
-    ESP_ERROR_CHECK(uart_param_config(port_num, &uart_cfg));
-    ESP_ERROR_CHECK(uart_set_pin(port_num, BT_MON_TX_PIN, BT_MON_RX_PIN, BT_MON_RTS_PIN, BT_MON_CTS_PIN));
+    ESP_ERROR_CHECK(uart_driver_delete(uart_port));
+    ESP_ERROR_CHECK(uart_driver_install(uart_port, UART_HW_FIFO_LEN(port_num) * 2, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_param_config(uart_port, &uart_cfg));
+    ESP_ERROR_CHECK(uart_set_pin(uart_port, BT_MON_TX_PIN, BT_MON_RX_PIN, BT_MON_RTS_PIN, BT_MON_CTS_PIN));
 #endif /* CONFIG_BLUERETRO_BT_H4_TRACE */
 
     const esp_app_desc_t *app_desc = esp_app_get_description();
