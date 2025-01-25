@@ -446,6 +446,7 @@ static bit_att_hid_start_func_t start_state_func[BT_ATT_HID_STATE_MAX] = {
 static bit_att_hid_process_func_t process_state_func[BT_ATT_HID_STATE_MAX] = {
     bt_att_hid_process_device_name,
     bt_att_hid_process_appearance,
+    bt_att_hid_process_pnp,
     bt_att_hid_process_find_hid_hdls,
     bt_att_hid_process_ident_hid_hdls,
     bt_att_hid_process_char_prop,
