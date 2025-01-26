@@ -126,6 +126,40 @@ static uint32_t hid_usage_is_collection(uint8_t page, uint16_t usage) {
                 default:
                     return 0;
             }
+        case 0x0F: /* PID */
+            switch (usage) {
+                case 0x01:
+                case 0x21:
+                case 0x25:
+                case 0x57:
+                case 0x58:
+                case 0x59:
+                case 0x5A:
+                case 0x5F:
+                case 0x66:
+                case 0x68:
+                case 0x6B:
+                case 0x6E:
+                case 0x73:
+                case 0x74:
+                case 0x77:
+                case 0x78:
+                case 0x7D:
+                case 0x7F:
+                case 0x85:
+                case 0x89:
+                case 0x8B:
+                case 0x90:
+                case 0x91:
+                case 0x92:
+                case 0x95:
+                case 0x96:
+                case 0xA8:
+                case 0xAB:
+                    return 1;
+                default:
+                    return 0;
+            }
         default:
             return 0;
     }
