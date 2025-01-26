@@ -183,6 +183,8 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
                             }
                         case 0x39: /* HAT_SWITCH */
                             return PAD;
+                        case 0x85: /* Sys Main Menu */
+                            return MOUSE; /* Hack for xinput Xbox btn */
                     }
                     break;
                 case USAGE_GEN_KEYBOARD:

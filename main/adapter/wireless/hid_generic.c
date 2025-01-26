@@ -251,6 +251,12 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                         map->meta[AXIS_LY].polarity = 1;
                         map->meta[AXIS_LY].relative = 1;
                         break;
+                    case 0x85: /* Sys Main Menu */
+                        /* Hack for xinput Xbox btn */
+                        meta->hid_btn_idx = i;
+                        map->mask[0] |= BIT(PAD_MT);
+                        map->btns_mask[PAD_MT] = BIT(0);
+                        break;
                 }
                 break;
             case USAGE_GEN_BUTTON:
