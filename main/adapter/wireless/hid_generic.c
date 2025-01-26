@@ -80,17 +80,6 @@ static const uint32_t hid_kb_key_to_generic[] = {
     KB_KP_8, KB_KP_9, KB_KP_0, KB_KP_DOT,
 };
 
-// static const uint32_t hid_pad_default_btns_mask[32] = {
-//     0, 0, 0, 0,
-//     0, 0, 0, 0,
-//     0, 0, 0, 0,
-//     0, BIT(HID_Z), 0, BIT(HID_C),
-//     BIT(HID_X), BIT(HID_B), BIT(HID_A), BIT(HID_Y),
-//     BIT(HID_START), BIT(HID_SELECT), BIT(HID_MENU), 0,
-//     BIT(HID_L), BIT(HID_LB), 0, BIT(HID_LJ),
-//     BIT(HID_R), BIT(HID_RB), 0, BIT(HID_RJ),
-// };
-
 static const uint32_t hid_pad_default_btns_idx[32] = {
     PAD_RB_DOWN, PAD_RB_RIGHT, PAD_RT,
     PAD_RB_LEFT, PAD_RB_UP, PAD_LT,
@@ -100,6 +89,14 @@ static const uint32_t hid_pad_default_btns_idx[32] = {
     PAD_LJ, PAD_RJ,
     PAD_MQ,
     PAD_RD_LEFT, PAD_RD_RIGHT, PAD_RD_DOWN, PAD_RD_UP,
+};
+
+static const uint32_t hid_pad_xinput_btns_idx[32] = {
+    PAD_RB_DOWN, PAD_RB_RIGHT,
+    PAD_RB_LEFT, PAD_RB_UP,
+    PAD_LS, PAD_RS,
+    PAD_MS, PAD_MM,
+    PAD_LJ, PAD_RJ,
 };
 
 static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
@@ -335,6 +332,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
 }
 
 static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
+    bool btns_is_xinput = 0;
     uint32_t z_is_joy = 0;
     int8_t hid_cbtn_idx = -1;
     memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
@@ -358,6 +356,19 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
             }
         }
     }
+
+    btns_is_xinput = (
+        report->usage_cnt == 8 &&
+        report->usages[0].usage_page == USAGE_GEN_DESKTOP && report->usages[0].usage == USAGE_GEN_DESKTOP_X &&
+        report->usages[1].usage_page == USAGE_GEN_DESKTOP && report->usages[1].usage == USAGE_GEN_DESKTOP_Y &&
+        report->usages[2].usage_page == USAGE_GEN_DESKTOP && report->usages[2].usage == 0x33 &&
+        report->usages[3].usage_page == USAGE_GEN_DESKTOP && report->usages[3].usage == 0x34 &&
+        report->usages[4].usage_page == USAGE_GEN_DESKTOP && report->usages[4].usage == 0x32 &&
+        report->usages[5].usage_page == USAGE_GEN_DESKTOP && report->usages[5].usage == 0x35 &&
+        report->usages[6].usage_page == USAGE_GEN_DESKTOP && report->usages[6].usage == 0x39 &&
+        report->usages[7].usage_page == USAGE_GEN_BUTTON &&
+        report->usages[7].usage == 0x01 && report->usages[7].usage_max == 0x0A
+    );
 
     /* Build mask, desc, idx and meta base on usage */
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
@@ -554,13 +565,14 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
     }
 
     if (meta->hid_btn_idx > -1) {
+        const uint32_t *btns_idx = (btns_is_xinput) ? hid_pad_xinput_btns_idx : hid_pad_default_btns_idx;
         uint32_t uidx = meta->hid_btn_idx;
         for (; report->usages[uidx].usage_page == USAGE_GEN_BUTTON; uidx++) {
             if (report->usages[uidx].usage) {
                 uint32_t usage = report->usages[uidx].usage - 1;
                 for (uint32_t j = 0; j < report->usages[uidx].bit_size; j++, usage++) {
-                    map->mask[0] |= BIT(hid_pad_default_btns_idx[usage]);
-                    map->btns_mask[hid_pad_default_btns_idx[usage]] =
+                    map->mask[0] |= BIT(btns_idx[usage]);
+                    map->btns_mask[btns_idx[usage]] =
                         BIT(report->usages[uidx].bit_offset - btn_offset + j);
                 }
             }
@@ -576,6 +588,11 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                     case 0x40 /* Menu */:
                         map->mask[0] |= BIT(PAD_MM);
                         map->btns_mask[PAD_MM] =
+                            BIT(report->usages[uidx].bit_offset - btn_offset);
+                        break;
+                    case 0xB2 /* Record */:
+                        map->mask[0] |= BIT(PAD_MQ);
+                        map->btns_mask[PAD_MQ] =
                             BIT(report->usages[uidx].bit_offset - btn_offset);
                         break;
                     case 0x223 /* AC Home */:
@@ -803,8 +820,19 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
 
                             is_rumble_usage = true;
                             break;
-                        case 0x70: /* Magnitude */
                         case 0x97: /* Enable Actuators */
+                            if (bt_data->reports[RUMBLE].usages[i].logical_max == 1 &&
+                                    bt_data->reports[RUMBLE].usages[i].bit_size == 4) {
+                                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                                rumble->report_size += bytes_count;
+                                
+                                tmp_value = 0x03;
+
+                                is_rumble_usage = true;
+                                break;
+                            }
+                            /* Fallthrough */
+                        case 0x70: /* Magnitude */
                             bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
                             rumble->report_size += bytes_count;
 
@@ -852,6 +880,7 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                             rumble->state[offset++] = 0;
                         }
                     }
+                    pwr_idx &= 0x01;
                 }
 
                 rumble->report_id = bt_data->reports[RUMBLE].id;

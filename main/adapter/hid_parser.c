@@ -21,6 +21,7 @@ struct hid_stack_element {
     int32_t logical_min;
     int32_t logical_max;
     uint32_t usage_page;
+    uint32_t usage_max;
 };
 
 static struct hid_report *reports[BT_MAX_DEV][HID_MAX_REPORT] = {0};
@@ -342,10 +343,15 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                 desc += 4;
                 break;
             case HID_LI_USAGE_MAX(1): /* 0x29 */
-                desc++;
+                hid_stack[hid_stack_idx].usage_max = *(int8_t *)desc++;
                 break;
             case HID_LI_USAGE_MAX(2): /* 0x2A */
+                hid_stack[hid_stack_idx].usage_max = *(int16_t *)desc;
                 desc += 2;
+                break;
+            case HID_LI_USAGE_MAX(3): /* 0x2B */
+                hid_stack[hid_stack_idx].usage_max = *(int32_t *)desc;
+                desc += 4;
                 break;
             case 0x35: /* PHYSICAL_MIN */
                 desc++;
@@ -389,6 +395,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].bit_size = div;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
+                                wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage_max = hid_stack[hid_stack_idx].usage_max;
                                 report_bit_offset[tag_idx] += div;
                                 usage += div;
 
@@ -414,6 +421,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].bit_offset = report_bit_offset[tag_idx];
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
+                                wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage_max = hid_stack[hid_stack_idx].usage_max;
                                 if (hid_stack[hid_stack_idx].usage_page == 0x0C) {
                                     wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].bit_size = hid_stack[hid_stack_idx].report_size;
                                     report_bit_offset[tag_idx] += hid_stack[hid_stack_idx].report_size;
@@ -443,6 +451,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                             wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].bit_size = hid_stack[hid_stack_idx].report_size;
                             wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_min = hid_stack[hid_stack_idx].logical_min;
                             wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].logical_max = hid_stack[hid_stack_idx].logical_max;
+                            wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage_max = hid_stack[hid_stack_idx].usage_max;
                             report_bit_offset[tag_idx] += hid_stack[hid_stack_idx].report_size;
                         }
                     }

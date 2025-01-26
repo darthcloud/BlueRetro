@@ -471,6 +471,7 @@ struct raw_fb {
 struct hid_usage {
     uint32_t usage_page;
     uint32_t usage;
+    uint32_t usage_max;
     uint32_t flags;
     uint32_t bit_offset;
     uint32_t bit_size;
