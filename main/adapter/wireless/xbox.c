@@ -256,14 +256,7 @@ int32_t xbox_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data
             ctrl_data->axes[i].meta = &meta[i];
             int32_t tmp = map->axes[xb1_axes_idx[i]] - xb1_axes_meta[i].neutral + bt_data->base.axes_cal[i];
 
-            if (bt_data->raw_src_mappings[PAD].axes_to_btns[i]) {
-                if (tmp >= xb1_axes_meta[i].abs_max) {
-                    ctrl_data->btns[0].value |= generic_btns_mask[bt_data->raw_src_mappings[PAD].axes_to_btns[i]];
-                }
-            }
-            else {
-                ctrl_data->axes[i].value = tmp;
-            }
+            ctrl_data->axes[i].value = tmp;
         }
     }
     else if (bt_data->base.report_id == 0x02) {
