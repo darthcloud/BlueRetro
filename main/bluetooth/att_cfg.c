@@ -701,6 +701,12 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             uint16_t *data = (uint16_t *)wr_req->value;
             uint32_t att_len = len - (BT_HCI_H4_HDR_SIZE + BT_HCI_ACL_HDR_SIZE + sizeof(struct bt_l2cap_hdr) + sizeof(struct bt_att_hdr));
             uint32_t data_len = att_len - sizeof(wr_req->handle);
+
+            /* Disable debug tracing */
+            if (config.global_cfg.banksel == CONFIG_BANKSEL_DBG) {
+                config.global_cfg.banksel = 0xFF;
+            }
+
             printf("# BT_ATT_OP_WRITE_REQ len: %ld\n", data_len);
             switch (wr_req->handle) {
                 case BR_GLBL_CFG_CHRC_HDL:
@@ -736,10 +742,6 @@ void bt_att_cfg_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
                 case BR_MC_CTRL_CHRC_HDL:
-                    if (config.global_cfg.banksel == CONFIG_BANKSEL_DBG) {
-                        /* Disable debug tracing */
-                        config.global_cfg.banksel = 0xFF;
-                    }
                     mc_offset = *(uint32_t *)wr_req->value;
                     bt_att_cmd_wr_rsp(device->acl_handle);
                     break;
