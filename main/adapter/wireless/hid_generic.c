@@ -36,7 +36,6 @@ enum {
 
 struct hid_report_meta {
     int8_t hid_btn_idx;
-    int8_t hid_axes_idx[ADAPTER_MAX_AXES];
     int8_t hid_hat_idx;
     uint8_t kb_bitfield;
 };
@@ -100,7 +99,7 @@ static const uint32_t hid_pad_xinput_btns_idx[32] = {
 };
 
 static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
-    memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
+    memset(map->axes_idx, -1, sizeof(map->axes_idx));
     meta->hid_btn_idx = -1;
 
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
@@ -118,7 +117,7 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
                     meta->hid_btn_idx = i;
                 }
                 else if (key_idx < 6) {
-                    meta->hid_axes_idx[key_idx] = i;
+                    map->axes_idx[key_idx] = i;
                     key_idx++;
                 }
                 break;
@@ -132,6 +131,7 @@ static void hid_kb_init(struct hid_report_meta *meta, struct hid_report *report,
 
 static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[KB];
+    struct raw_src_mapping *map = &bt_data->raw_src_mappings[KB];
 
     TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld", bt_data->base.report_id);
 
@@ -165,10 +165,10 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
 
     if (meta->kb_bitfield) {
         TESTS_CMDS_LOG(", \"keys\": [");
-        for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
-            if (meta->hid_axes_idx[i] > -1) {
-                int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
-                uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
+        for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
+            if (map->axes_idx[i] > -1) {
+                int32_t len = bt_data->reports[KB].usages[map->axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB].usages[map->axes_idx[i]].bit_offset;
                 uint32_t mask = (1ULL << len) - 1;
                 uint32_t byte_offset = offset / 8;
                 uint32_t bit_shift = offset % 8;
@@ -182,7 +182,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
                 for (uint32_t mask = 1; mask; mask <<= 1) {
                     uint32_t key = __builtin_ffs(key_field & mask);
                     if (key) {
-                        key = key - 1 + bt_data->reports[KB].usages[meta->hid_axes_idx[i]].usage;
+                        key = key - 1 + bt_data->reports[KB].usages[map->axes_idx[i]].usage;
                         ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
                     }
                 }
@@ -191,10 +191,10 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
     }
     else {
         TESTS_CMDS_LOG(", \"keys\": [");
-        for (uint32_t i = 0; i < sizeof(meta->hid_axes_idx); i++) {
-            if (meta->hid_axes_idx[i] > -1) {
-                int32_t len = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_size;
-                uint32_t offset = bt_data->reports[KB].usages[meta->hid_axes_idx[i]].bit_offset;
+        for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
+            if (map->axes_idx[i] > -1) {
+                int32_t len = bt_data->reports[KB].usages[map->axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB].usages[map->axes_idx[i]].bit_offset;
                 uint32_t mask = (1ULL << len) - 1;
                 uint32_t byte_offset = offset / 8;
                 uint32_t bit_shift = offset % 8;
@@ -215,7 +215,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
 }
 
 static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *report, struct raw_src_mapping *map) {
-    memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
+    memset(map->axes_idx, -1, sizeof(map->axes_idx));
     meta->hid_btn_idx = -1;
 
     for (uint32_t i = 0; i < report->usage_cnt; i++) {
@@ -225,7 +225,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                     case USAGE_GEN_DESKTOP_X:
                         map->mask[0] |= BIT(MOUSE_X_LEFT) | BIT(MOUSE_X_RIGHT);
                         map->desc[0] |= BIT(MOUSE_X_LEFT) | BIT(MOUSE_X_RIGHT);
-                        meta->hid_axes_idx[AXIS_RX] = i;
+                        map->axes_idx[AXIS_RX] = i;
                         map->meta[AXIS_RX].neutral = 0;
                         map->meta[AXIS_RX].abs_max = report->usages[i].logical_max;
                         map->meta[AXIS_RX].abs_min = report->usages[i].logical_min;
@@ -234,7 +234,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                     case USAGE_GEN_DESKTOP_Y:
                         map->mask[0] |= BIT(MOUSE_Y_DOWN) | BIT(MOUSE_Y_UP);
                         map->desc[0] |= BIT(MOUSE_Y_DOWN) | BIT(MOUSE_Y_UP);
-                        meta->hid_axes_idx[AXIS_RY] = i;
+                        map->axes_idx[AXIS_RY] = i;
                         map->meta[AXIS_RY].neutral = 0;
                         map->meta[AXIS_RY].abs_max = report->usages[i].logical_max;
                         map->meta[AXIS_RY].abs_min = report->usages[i].logical_min;
@@ -244,7 +244,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
                     case USAGE_GEN_DESKTOP_WHEEL:
                         map->mask[0] |= BIT(MOUSE_WY_DOWN) | BIT(MOUSE_WY_UP);
                         map->desc[0] |= BIT(MOUSE_WY_DOWN) | BIT(MOUSE_WY_UP);
-                        meta->hid_axes_idx[AXIS_LY] = i;
+                        map->axes_idx[AXIS_LY] = i;
                         map->meta[AXIS_LY].neutral = 0;
                         map->meta[AXIS_LY].abs_max = report->usages[i].logical_max;
                         map->meta[AXIS_LY].abs_min = report->usages[i].logical_min;
@@ -293,6 +293,7 @@ static void hid_mouse_init(struct hid_report_meta *meta, struct hid_report *repo
 static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[MOUSE];
     struct ctrl_meta *ctrl_meta = bt_data->raw_src_mappings[MOUSE].meta;
+    struct raw_src_mapping *map = &bt_data->raw_src_mappings[MOUSE];
 
     if (!atomic_test_bit(&bt_data->base.flags[MOUSE], BT_INIT)) {
         hid_parser_load_report(bt_data, bt_data->base.report_id);
@@ -321,9 +322,9 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
     }
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        if (meta->hid_axes_idx[i] > -1) {
-            int32_t len = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_size;
-            uint32_t offset = bt_data->reports[MOUSE].usages[meta->hid_axes_idx[i]].bit_offset;
+        if (map->axes_idx[i] > -1) {
+            int32_t len = bt_data->reports[MOUSE].usages[map->axes_idx[i]].bit_size;
+            uint32_t offset = bt_data->reports[MOUSE].usages[map->axes_idx[i]].bit_offset;
             uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
@@ -341,7 +342,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
     bool btns_is_xinput = 0;
     uint32_t z_is_joy = 0;
     int8_t hid_cbtn_idx = -1;
-    memset(meta->hid_axes_idx, -1, sizeof(meta->hid_axes_idx));
+    memset(map->axes_idx, -1, sizeof(map->axes_idx));
     meta->hid_btn_idx = -1;
     meta->hid_hat_idx = -1;
 
@@ -384,7 +385,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                     case USAGE_GEN_DESKTOP_X:
                         map->mask[0] |= BIT(PAD_LX_LEFT) | BIT(PAD_LX_RIGHT);
                         map->desc[0] |= BIT(PAD_LX_LEFT) | BIT(PAD_LX_RIGHT);
-                        meta->hid_axes_idx[AXIS_LX] = i;
+                        map->axes_idx[AXIS_LX] = i;
                         if (report->usages[i].logical_min >= 0) {
                             map->meta[AXIS_LX].neutral = (report->usages[i].logical_max / 2) + 1;
                         }
@@ -397,7 +398,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                     case USAGE_GEN_DESKTOP_Y:
                         map->mask[0] |= BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP);
                         map->desc[0] |= BIT(PAD_LY_DOWN) | BIT(PAD_LY_UP);
-                        meta->hid_axes_idx[AXIS_LY] = i;
+                        map->axes_idx[AXIS_LY] = i;
                         if (report->usages[i].logical_min >= 0) {
                             map->meta[AXIS_LY].neutral = (report->usages[i].logical_max / 2) + 1;
                         }
@@ -412,7 +413,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         if (z_is_joy) {
                             map->mask[0] |= BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
                             map->desc[0] |= BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
-                            meta->hid_axes_idx[AXIS_RX] = i;
+                            map->axes_idx[AXIS_RX] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RX].neutral = (report->usages[i].logical_max / 2) + 1;
                             }
@@ -425,7 +426,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         else {
                             map->mask[0] |= BIT(PAD_LM);
                             map->desc[0] |= BIT(PAD_LM);
-                            meta->hid_axes_idx[TRIG_L] = i;
+                            map->axes_idx[TRIG_L] = i;
                             map->meta[TRIG_L].abs_max = report->usages[i].logical_max;
                             map->meta[TRIG_L].abs_min = report->usages[i].logical_min;
                             map->meta[TRIG_L].neutral = report->usages[i].logical_min;
@@ -435,7 +436,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         if (z_is_joy) {
                             map->mask[0] |= BIT(PAD_LM);
                             map->desc[0] |= BIT(PAD_LM);
-                            meta->hid_axes_idx[TRIG_L] = i;
+                            map->axes_idx[TRIG_L] = i;
                             map->meta[TRIG_L].abs_max = report->usages[i].logical_max;
                             map->meta[TRIG_L].abs_min = report->usages[i].logical_min;
                             map->meta[TRIG_L].neutral = report->usages[i].logical_min;
@@ -443,7 +444,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         else {
                             map->mask[0] |= BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
                             map->desc[0] |= BIT(PAD_RX_LEFT) | BIT(PAD_RX_RIGHT);
-                            meta->hid_axes_idx[AXIS_RX] = i;
+                            map->axes_idx[AXIS_RX] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RX].neutral = (report->usages[i].logical_max / 2) + 1;
                             }
@@ -458,7 +459,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         if (z_is_joy) {
                             map->mask[0] |= BIT(PAD_RM);
                             map->desc[0] |= BIT(PAD_RM);
-                            meta->hid_axes_idx[TRIG_R] = i;
+                            map->axes_idx[TRIG_R] = i;
                             map->meta[TRIG_R].abs_max = report->usages[i].logical_max;
                             map->meta[TRIG_R].abs_min = report->usages[i].logical_min;
                             map->meta[TRIG_R].neutral = report->usages[i].logical_min;
@@ -466,7 +467,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         else {
                             map->mask[0] |= BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
                             map->desc[0] |= BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
-                            meta->hid_axes_idx[AXIS_RY] = i;
+                            map->axes_idx[AXIS_RY] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RY].neutral = (report->usages[i].logical_max / 2) + 1;
                             }
@@ -482,7 +483,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         if (z_is_joy) {
                             map->mask[0] |= BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
                             map->desc[0] |= BIT(PAD_RY_DOWN) | BIT(PAD_RY_UP);
-                            meta->hid_axes_idx[AXIS_RY] = i;
+                            map->axes_idx[AXIS_RY] = i;
                             if (report->usages[i].logical_min >= 0) {
                                 map->meta[AXIS_RY].neutral = (report->usages[i].logical_max / 2) + 1;
                             }
@@ -496,7 +497,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                         else {
                             map->mask[0] |= BIT(PAD_RM);
                             map->desc[0] |= BIT(PAD_RM);
-                            meta->hid_axes_idx[TRIG_R] = i;
+                            map->axes_idx[TRIG_R] = i;
                             map->meta[TRIG_R].abs_max = report->usages[i].logical_max;
                             map->meta[TRIG_R].abs_min = report->usages[i].logical_min;
                             map->meta[TRIG_R].neutral = report->usages[i].logical_min;
@@ -518,7 +519,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                     case 0xC4 /* USAGE_SIMS_ACCEL */:
                         map->mask[0] |= BIT(PAD_RM);
                         map->desc[0] |= BIT(PAD_RM);
-                        meta->hid_axes_idx[TRIG_R] = i;
+                        map->axes_idx[TRIG_R] = i;
                         map->meta[TRIG_R].abs_max = report->usages[i].logical_max;
                         map->meta[TRIG_R].abs_min = report->usages[i].logical_min;
                         map->meta[TRIG_R].neutral = report->usages[i].logical_min;
@@ -526,7 +527,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
                     case 0xC5 /* USAGE_SIMS_BRAKE */:
                         map->mask[0] |= BIT(PAD_LM);
                         map->desc[0] |= BIT(PAD_LM);
-                        meta->hid_axes_idx[TRIG_L] = i;
+                        map->axes_idx[TRIG_L] = i;
                         map->meta[TRIG_L].abs_max = report->usages[i].logical_max;
                         map->meta[TRIG_L].abs_min = report->usages[i].logical_min;
                         map->meta[TRIG_L].neutral = report->usages[i].logical_min;
@@ -628,6 +629,7 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
 static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct hid_report_meta *meta = &devices_meta[bt_data->base.pids->id].reports_meta[PAD];
     struct ctrl_meta *ctrl_meta = bt_data->raw_src_mappings[PAD].meta;
+    struct raw_src_mapping *map = &bt_data->raw_src_mappings[PAD];
 
     TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld", bt_data->base.report_id);
 #ifdef CONFIG_BLUERETRO_ADAPTER_INPUT_DBG
@@ -680,10 +682,10 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
     TESTS_CMDS_LOG(", \"axes\": [");
 
-    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        if (meta->hid_axes_idx[i] > -1) {
-            int32_t len = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_size;
-            uint32_t offset = bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].bit_offset;
+    for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
+        if (map->axes_idx[i] > -1) {
+            int32_t len = bt_data->reports[PAD].usages[map->axes_idx[i]].bit_size;
+            uint32_t offset = bt_data->reports[PAD].usages[map->axes_idx[i]].bit_offset;
             uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
@@ -704,7 +706,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
             ctrl_data->axes[i].meta = &ctrl_meta[i];
 
             /* Is axis unsign? */
-            if (bt_data->reports[PAD].usages[meta->hid_axes_idx[i]].logical_min >= 0) {
+            if (bt_data->reports[PAD].usages[map->axes_idx[i]].logical_min >= 0) {
                 ctrl_data->axes[i].value = value - ctrl_meta[i].neutral + bt_data->base.axes_cal[i];
                 TESTS_CMDS_LOG("%lu", value);
             }

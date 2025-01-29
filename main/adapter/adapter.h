@@ -492,7 +492,7 @@ struct raw_src_mapping {
     uint32_t mask[4];
     uint32_t desc[4];
     uint32_t btns_mask[32];
-    uint32_t axes_to_btns[ADAPTER_PS2_MAX_AXES];
+    int32_t axes_idx[ADAPTER_PS2_MAX_AXES];
     struct ctrl_meta meta[ADAPTER_PS2_MAX_AXES];
 };
 

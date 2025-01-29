@@ -38,8 +38,8 @@ static void face_btns_trigger_to_6buttons(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RB_DOWN] = map->btns_mask[PAD_RB_RIGHT];
     map->btns_mask[PAD_RB_RIGHT] = 0;
 
-    map->axes_to_btns[TRIG_L] = PAD_RS;
-    map->axes_to_btns[TRIG_R] = PAD_RB_RIGHT;
+    // map->axes_to_btns[TRIG_L] = PAD_RS;
+    // map->axes_to_btns[TRIG_R] = PAD_RB_RIGHT;
 }
 
 static void trigger_pri_sec_invert(struct raw_src_mapping *map) {
@@ -91,8 +91,8 @@ static void m30_8bitdo(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RB_DOWN] = map->btns_mask[PAD_RB_RIGHT];
     map->btns_mask[PAD_RB_RIGHT] = 0;
 
-    map->axes_to_btns[TRIG_L] = PAD_RM;
-    map->axes_to_btns[TRIG_R] = PAD_RB_RIGHT;
+    // map->axes_to_btns[TRIG_L] = PAD_RM;
+    // map->axes_to_btns[TRIG_R] = PAD_RB_RIGHT;
 }
 
 static void saturn_diy_8bitdo(struct raw_src_mapping *map) {
