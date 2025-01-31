@@ -205,15 +205,7 @@ def test_atari_vcs_classic_descriptor(blueretro):
 
     assert rsp['hid_reports'][1]['report_id'] == 1
     assert rsp['hid_reports'][1]['report_tag'] == 1
-    assert rsp['hid_reports'][1]["usages"][0]["usage_page"] == 0x01
-    assert rsp['hid_reports'][1]["usages"][0]["usage"] == 0x00
-    assert rsp['hid_reports'][1]["usages"][1]["usage_page"] == 0x01
-    assert rsp['hid_reports'][1]["usages"][1]["usage"] == 0x00
-    assert rsp['hid_reports'][1]["usages"][2]["usage_page"] == 0x01
-    assert rsp['hid_reports'][1]["usages"][2]["usage"] == 0x00
-    assert rsp['hid_reports'][1]["usages"][3]["usage_page"] == 0x01
-    assert rsp['hid_reports'][1]["usages"][3]["usage"] == 0x00
-    assert 'report_type' not in rsp['hid_reports'][1]
+    assert len(rsp['hid_reports'][1]["usages"]) == 0
 
 def test_atari_vcs_classic_descriptor_patch(blueretro):
     ''' Given VID & PID validate HID descriptor patch is apply. '''

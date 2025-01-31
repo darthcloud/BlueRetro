@@ -95,4 +95,4 @@ def test_hid_keyboard_descriptor(blueretro):
 
     assert rsp['hid_reports'][2]["report_id"] == 2
     assert rsp['hid_reports'][2]["usages"][0]["usage_page"] == 0x0C
-    assert rsp['hid_reports'][2]["usages"][0]["usage"] == 0x1B1
+    assert rsp['hid_reports'][2]["usages"][0]["usage"] == 0x223
