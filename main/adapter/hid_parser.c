@@ -228,7 +228,7 @@ static uint32_t hid_usage_is_used(uint32_t page, uint32_t usage) {
 
 static int32_t hid_report_fingerprint(struct hid_report *report) {
     int32_t type = REPORT_NONE;
-    for (uint32_t i = 0; i < REPORT_MAX_USAGE; i++) {
+    for (uint32_t i = 0; i < report->usage_cnt; i++) {
         if (report->usages[i].usage_page) {
             switch (report->usages[i].usage_page) {
                 case USAGE_GEN_DESKTOP:
@@ -249,7 +249,8 @@ static int32_t hid_report_fingerprint(struct hid_report *report) {
                     }
                     break;
                 case USAGE_GEN_KEYBOARD:
-                    return KB;
+                    type = KB;
+                    break;
                 case USAGE_GEN_BUTTON:
                     type = PAD;
                     break;
