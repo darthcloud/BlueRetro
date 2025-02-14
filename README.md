@@ -66,7 +66,7 @@ Thanks to all sponsors!!
   http://www.grechtech.co.uk/
 
 ## Community Contribution
-* BlueRetro PS1/2 Receiver by [mi213 ](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
+* BlueRetro PS1/2 Receiver by [mi213](https://twitter.com/mi213ger): 3D printed case & PCB for building DIY PS1/2 dongle.\
   https://github.com/Micha213/BlueRetro-PS1-2-Receiver
 * N64 BlueRetro Mount by [reventlow64](https://twitter.com/reventlow): 3d printed mount for ESP32-DevkitC for N64.\
   https://www.prusaprinters.org/prints/90275-nintendo-64-blueretro-bluetooth-receiver-mount
@@ -80,5 +80,9 @@ Thanks to all sponsors!!
   https://github.com/GamingNJncos/BLE-3D-Saturn-Public/tree/main/BlueRetro_Latency_Testing
 * BR4N64 by [TharathielCB](https://github.com/TharathielCB): Internal BlueRetro Flex-PCB for Nintendo 64\
   https://github.com/TharathielCB/BR4N64
+* BlueMemCard by [ChrispyNugget](https://github.com/ChrispyNugget): Replacement PCB for PSX memory card that incorporates PicoMemcard and BlueRetro support\
+  https://github.com/ChrispyNugget/BlueMemCard
+* BlueRetro HW2 QSB for GameCube by [Arthrimus](https://github.com/Arthrimus): Internal Blueretro PCB with CurrentTrigger for GameCube\
+  https://github.com/Arthrimus/BlueRetro-HW2-GameCube
 
 <br><p align="center"><img src="https://cdn.hackaday.io/images/4560691598833898038.png" height="200"/></p>
