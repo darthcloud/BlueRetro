@@ -148,6 +148,19 @@ static void gc_diy_8bitdo(struct raw_src_mapping *map) {
     map->btns_mask[PAD_LS] = 0;
 }
 
+static void gc_gbros_8bitdo(struct raw_src_mapping *map) {
+    map->mask[0] = 0xFF5F0FFF;
+    map->desc[0] = 0x110000FF;
+
+    map->btns_mask[PAD_LT] = map->btns_mask[PAD_LS];
+    map->btns_mask[PAD_RT] = map->btns_mask[PAD_RS];
+    map->btns_mask[PAD_RS] = map->btns_mask[PAD_MS];
+    map->btns_mask[PAD_MS] = 0;
+    map->btns_mask[PAD_LM] = 0;
+    map->btns_mask[PAD_RM] = 0;
+    map->btns_mask[PAD_LS] = 0;
+}
+
 static void n64_bluen64(struct raw_src_mapping *map) {
     map->mask[0] = 0x23150FFF;
     map->desc[0] = 0x000000FF;
@@ -294,6 +307,9 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_GC)) {
         gc_diy_8bitdo(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_GBROS)) {
+        gc_gbros_8bitdo(&bt_data->raw_src_mappings[PAD]);
     }
 }
 
