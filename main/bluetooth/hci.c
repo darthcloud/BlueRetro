@@ -74,7 +74,7 @@ static void bt_hci_cmd(uint16_t opcode, uint32_t cp_len);
 static void bt_hci_cmd_periodic_inquiry(void *cp);
 static void bt_hci_cmd_exit_periodic_inquiry(void *cp);
 static void bt_hci_cmd_connect(void *bdaddr);
-static void bt_hci_cmd_disconnect(void *handle);
+static void bt_hci_cmd_disconnect(void *handle, uint8_t reason);
 static void bt_hci_cmd_accept_conn_req(void *bdaddr);
 static void bt_hci_cmd_link_key_neg_reply(void *bdaddr);
 static void bt_hci_cmd_pin_code_reply(void *cp);
@@ -282,13 +282,12 @@ static void bt_hci_cmd_connect(void *bdaddr) {
     bt_hci_cmd(BT_HCI_OP_CONNECT, sizeof(*connect));
 }
 
-static void bt_hci_cmd_disconnect(void *handle) {
+static void bt_hci_cmd_disconnect(void *handle, uint8_t reason) {
     struct bt_hci_cp_disconnect *disconnect = (struct bt_hci_cp_disconnect *)&bt_hci_pkt_tmp.cp;
     printf("# %s\n", __FUNCTION__);
 
     disconnect->handle = *(uint16_t *)handle;
-    //disconnect->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
-    disconnect->reason = BT_HCI_ERR_REMOTE_POWER_OFF;
+    disconnect->reason = reason;
 
     bt_hci_cmd(BT_HCI_OP_DISCONNECT, sizeof(*disconnect));
 }
@@ -1061,9 +1060,8 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                     printf("dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     bt_mon_log(true, "dev: %ld acl_handle: 0x%04X\n", device->ids.id, device->acl_handle);
                     atomic_set_bit(&device->flags, BT_DEV_IS_BLE);
-                    if (atomic_test_bit(&device->flags, BT_DEV_PAGE) && bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
+                    if (bt_host_load_le_ltk(&device->le_remote_bdaddr, &encrypt_info, &master_ident) == 0) {
                         bt_hci_start_encryption(device->acl_handle, *(uint64_t *)master_ident.rand, *(uint16_t *)master_ident.ediv, encrypt_info.ltk);
-                        bt_att_hid_init(device);
                     }
                     else {
                         bt_smp_pairing_start(device);
@@ -1131,9 +1129,6 @@ connect:
                     (void)bt_host_get_new_dev(&device);
                     if (device) {
                         bt_host_reset_dev(device);
-                        if (le_adv_report->adv_info[0].evt_type == BT_LE_ADV_DIRECT_IND) {
-                            atomic_set_bit(&device->flags, BT_DEV_PAGE);
-                        }
                         memcpy((uint8_t *)&device->le_remote_bdaddr, (uint8_t *)&le_adv_report->adv_info[0].addr, sizeof(device->le_remote_bdaddr));
                         device->ids.type = BT_HID_GENERIC;
                         bt_l2cap_init_dev_scid(device);
@@ -1290,7 +1285,7 @@ void bt_hci_inquiry_override(uint32_t state) {
 
 void bt_hci_disconnect(struct bt_dev *device) {
     if (atomic_test_bit(&device->flags, BT_DEV_DEVICE_FOUND)) {
-        bt_hci_cmd_disconnect(&device->acl_handle);
+        bt_hci_cmd_disconnect(&device->acl_handle, BT_HCI_ERR_REMOTE_POWER_OFF);
     }
 }
 
@@ -1565,6 +1560,13 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             if (device) {
                 if (encrypt_change->status) {
                     printf("# dev: %ld error: 0x%02X\n", device->ids.id, encrypt_change->status);
+                    if (atomic_test_bit(&device->flags, BT_DEV_IS_BLE)) {
+                        bt_host_clear_le_ltk(&device->le_remote_bdaddr);
+                        bt_hci_cmd_disconnect(&device->acl_handle, BT_HCI_ERR_AUTHENTICATION_FAIL);
+                    }
+                }
+                else if (atomic_test_bit(&device->flags, BT_DEV_IS_BLE)) {
+                    bt_att_hid_init(device);
                 }
             }
             else {

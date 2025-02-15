@@ -694,6 +694,16 @@ int32_t bt_host_store_link_key(struct bt_hci_evt_link_key_notify *link_key_notif
     return ret;
 }
 
+void bt_host_clear_le_ltk(bt_addr_le_t *le_bdaddr) {
+    for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_le_link_keys.keys); i++) {
+        if (memcmp((void *)le_bdaddr, (void *)&bt_host_le_link_keys.keys[i].le_bdaddr, sizeof(*le_bdaddr)) == 0) {
+            memset(&bt_host_le_link_keys.keys[i].le_bdaddr, 0, sizeof(bt_host_le_link_keys.keys[0].le_bdaddr));
+            memset(&bt_host_le_link_keys.keys[i].ltk, 0, sizeof(bt_host_le_link_keys.keys[i].ltk));
+            memset(&bt_host_le_link_keys.keys[i].ident, 0, sizeof(bt_host_le_link_keys.keys[i].ident));
+        }
+    }
+}
+
 int32_t bt_host_load_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info, struct bt_smp_master_ident *master_ident) {
     int32_t ret = -1;
     for (uint32_t i = 0; i < ARRAY_SIZE(bt_host_le_link_keys.keys); i++) {
