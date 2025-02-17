@@ -702,6 +702,7 @@ void bt_host_clear_le_ltk(bt_addr_le_t *le_bdaddr) {
             memset(&bt_host_le_link_keys.keys[i].ident, 0, sizeof(bt_host_le_link_keys.keys[i].ident));
         }
     }
+    bt_host_store_le_keys_on_file(&bt_host_le_link_keys);
 }
 
 int32_t bt_host_load_le_ltk(bt_addr_le_t *le_bdaddr, struct bt_smp_encrypt_info *encrypt_info, struct bt_smp_master_ident *master_ident) {
