@@ -182,7 +182,6 @@ void bt_sdp_parser(struct bt_data *bt_data) {
     }
     printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
     bt_mon_log(true, "%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
-    mapping_quirks_apply_pnp(bt_data);
 
     hid_desc = memmem(bt_data->base.sdp_data, bt_data->base.sdp_len, sdp_hid_desc_list, sizeof(sdp_hid_desc_list));
     hid_offset = hid_desc - bt_data->base.sdp_data;

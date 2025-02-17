@@ -151,7 +151,6 @@ static void bt_att_hid_process_pnp(struct bt_dev *device,
     }
     printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
     bt_mon_log(true, "%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
-    mapping_quirks_apply_pnp(bt_data);
     bt_att_hid_start_next_state(device, hid_data);
 }
 

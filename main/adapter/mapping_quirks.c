@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -265,7 +265,20 @@ static void ouya(struct raw_src_mapping *map) {
     map->btns_mask[PAD_RJ] = BIT(OUYA_R3);
 }
 
+static void mapping_quirks_apply_pnp(struct bt_data *bt_data) {
+    switch (bt_data->base.vid) {
+        case 0x18D1: /* Google */
+            switch (bt_data->base.pid) {
+                case 0x9400: /* Stadia */
+                    stadia(&bt_data->raw_src_mappings[PAD]);
+                    break;
+            }
+            break;
+    }
+}
+
 void mapping_quirks_apply(struct bt_data *bt_data) {
+    mapping_quirks_apply_pnp(bt_data);
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_FACE_BTNS_INVERT)) {
         face_btns_invert(&bt_data->raw_src_mappings[PAD]);
     }
@@ -310,17 +323,5 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_GBROS)) {
         gc_gbros_8bitdo(&bt_data->raw_src_mappings[PAD]);
-    }
-}
-
-void mapping_quirks_apply_pnp(struct bt_data *bt_data) {
-    switch (bt_data->base.vid) {
-        case 0x18D1: /* Google */
-            switch (bt_data->base.pid) {
-                case 0x9400: /* Stadia */
-                    stadia(&bt_data->raw_src_mappings[PAD]);
-                    break;
-            }
-            break;
     }
 }
