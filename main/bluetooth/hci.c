@@ -549,7 +549,7 @@ static void bt_hci_cmd_write_local_name(void *cp) {
     printf("# %s\n", __FUNCTION__);
 
     memset((void *)write_local_name, 0, sizeof(*write_local_name));
-    snprintf((char *)write_local_name->local_name, sizeof(write_local_name->local_name), "BlueRetro Adapter");
+    snprintf((char *)write_local_name->local_name, sizeof(write_local_name->local_name), "Nintendo");
 
     bt_hci_cmd(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*write_local_name));
 }
