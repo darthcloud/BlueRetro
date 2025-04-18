@@ -646,6 +646,11 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
         }
     }
     TESTS_CMDS_LOG("],\n");
+
+    /* Free reports for non-generic devices */
+    if (bt_data->base.pids->type > BT_HID_GENERIC) {
+        hid_parser_free_reports(bt_data->base.pids->id);
+    }
 }
 
 struct hid_report *hid_parser_get_report(int32_t dev_id, uint8_t report_id) {
@@ -669,6 +674,18 @@ void hid_parser_load_report(struct bt_data *bt_data, uint8_t report_id) {
             if (report->type != REPORT_NONE) {
                 memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
             }
+        }
+    }
+}
+
+void hid_parser_free_reports(int32_t dev_id) {
+    struct hid_report **our_reports = reports[dev_id];
+
+    for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
+        struct hid_report *report = our_reports[i];
+        if (report) {
+            free(report);
+            our_reports[i] = NULL;
         }
     }
 }
