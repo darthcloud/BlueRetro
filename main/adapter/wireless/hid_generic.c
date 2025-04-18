@@ -137,7 +137,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
 
     if (!atomic_test_bit(&bt_data->base.flags[KB], BT_INIT)) {
         hid_parser_load_report(bt_data, bt_data->base.report_id);
-        hid_kb_init(meta, &bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
+        hid_kb_init(meta, bt_data->reports[KB], &bt_data->raw_src_mappings[KB]);
         atomic_set_bit(&bt_data->base.flags[KB], BT_INIT);
     }
 
@@ -147,8 +147,8 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
     ctrl_data->desc = (uint32_t *)bt_data->raw_src_mappings[KB].desc;
 
     if (meta->hid_btn_idx > -1) {
-        uint32_t len = bt_data->reports[KB].usages[meta->hid_btn_idx].bit_size;
-        uint32_t offset = bt_data->reports[KB].usages[meta->hid_btn_idx].bit_offset;
+        uint32_t len = bt_data->reports[KB]->usages[meta->hid_btn_idx].bit_size;
+        uint32_t offset = bt_data->reports[KB]->usages[meta->hid_btn_idx].bit_offset;
         uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
@@ -167,8 +167,8 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         TESTS_CMDS_LOG(", \"keys\": [");
         for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
             if (map->axes_idx[i] > -1) {
-                int32_t len = bt_data->reports[KB].usages[map->axes_idx[i]].bit_size;
-                uint32_t offset = bt_data->reports[KB].usages[map->axes_idx[i]].bit_offset;
+                int32_t len = bt_data->reports[KB]->usages[map->axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB]->usages[map->axes_idx[i]].bit_offset;
                 uint32_t mask = (1ULL << len) - 1;
                 uint32_t byte_offset = offset / 8;
                 uint32_t bit_shift = offset % 8;
@@ -182,7 +182,7 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
                 for (uint32_t mask = 1; mask; mask <<= 1) {
                     uint32_t key = __builtin_ffs(key_field & mask);
                     if (key) {
-                        key = key - 1 + bt_data->reports[KB].usages[map->axes_idx[i]].usage;
+                        key = key - 1 + bt_data->reports[KB]->usages[map->axes_idx[i]].usage;
                         ctrl_data->btns[(hid_kb_key_to_generic[key] >> 5)].value |= BIT(hid_kb_key_to_generic[key] & 0x1F);
                     }
                 }
@@ -193,8 +193,8 @@ static void hid_kb_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         TESTS_CMDS_LOG(", \"keys\": [");
         for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
             if (map->axes_idx[i] > -1) {
-                int32_t len = bt_data->reports[KB].usages[map->axes_idx[i]].bit_size;
-                uint32_t offset = bt_data->reports[KB].usages[map->axes_idx[i]].bit_offset;
+                int32_t len = bt_data->reports[KB]->usages[map->axes_idx[i]].bit_size;
+                uint32_t offset = bt_data->reports[KB]->usages[map->axes_idx[i]].bit_offset;
                 uint32_t mask = (1ULL << len) - 1;
                 uint32_t byte_offset = offset / 8;
                 uint32_t bit_shift = offset % 8;
@@ -297,7 +297,7 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
 
     if (!atomic_test_bit(&bt_data->base.flags[MOUSE], BT_INIT)) {
         hid_parser_load_report(bt_data, bt_data->base.report_id);
-        hid_mouse_init(meta, &bt_data->reports[MOUSE], &bt_data->raw_src_mappings[MOUSE]);
+        hid_mouse_init(meta, bt_data->reports[MOUSE], &bt_data->raw_src_mappings[MOUSE]);
         atomic_set_bit(&bt_data->base.flags[MOUSE], BT_INIT);
     }
 
@@ -307,8 +307,8 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
     ctrl_data->desc = (uint32_t *)bt_data->raw_src_mappings[MOUSE].desc;
 
     if (meta->hid_btn_idx > -1) {
-        uint32_t len = bt_data->reports[MOUSE].usages[meta->hid_btn_idx].bit_size;
-        uint32_t offset = bt_data->reports[MOUSE].usages[meta->hid_btn_idx].bit_offset;
+        uint32_t len = bt_data->reports[MOUSE]->usages[meta->hid_btn_idx].bit_size;
+        uint32_t offset = bt_data->reports[MOUSE]->usages[meta->hid_btn_idx].bit_offset;
         uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
@@ -323,8 +323,8 @@ static void hid_mouse_to_generic(struct bt_data *bt_data, struct wireless_ctrl *
 
     for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
         if (map->axes_idx[i] > -1) {
-            int32_t len = bt_data->reports[MOUSE].usages[map->axes_idx[i]].bit_size;
-            uint32_t offset = bt_data->reports[MOUSE].usages[map->axes_idx[i]].bit_offset;
+            int32_t len = bt_data->reports[MOUSE]->usages[map->axes_idx[i]].bit_size;
+            uint32_t offset = bt_data->reports[MOUSE]->usages[map->axes_idx[i]].bit_offset;
             uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
@@ -638,7 +638,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
     if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
         hid_parser_load_report(bt_data, bt_data->base.report_id);
-        hid_pad_init(meta, &bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
+        hid_pad_init(meta, bt_data->reports[PAD], &bt_data->raw_src_mappings[PAD]);
         mapping_quirks_apply(bt_data);
         bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
     }
@@ -649,8 +649,8 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     ctrl_data->desc = (uint32_t *)bt_data->raw_src_mappings[PAD].desc;
 
     if (meta->hid_btn_idx > -1) {
-        uint32_t len = bt_data->reports[PAD].usages[meta->hid_btn_idx].bit_size;
-        uint32_t offset = bt_data->reports[PAD].usages[meta->hid_btn_idx].bit_offset;
+        uint32_t len = bt_data->reports[PAD]->usages[meta->hid_btn_idx].bit_size;
+        uint32_t offset = bt_data->reports[PAD]->usages[meta->hid_btn_idx].bit_offset;
         uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
@@ -667,13 +667,13 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
     /* Convert hat to regular btns */
     if (meta->hid_hat_idx > -1) {
-        uint32_t len = bt_data->reports[PAD].usages[meta->hid_hat_idx].bit_size;
-        uint32_t offset = bt_data->reports[PAD].usages[meta->hid_hat_idx].bit_offset;
+        uint32_t len = bt_data->reports[PAD]->usages[meta->hid_hat_idx].bit_size;
+        uint32_t offset = bt_data->reports[PAD]->usages[meta->hid_hat_idx].bit_offset;
         uint32_t mask = (1ULL << len) - 1;
         uint32_t byte_offset = offset / 8;
         uint32_t bit_shift = offset % 8;
         uint32_t hat = ((*(uint32_t *)(bt_data->base.input + byte_offset)) >> bit_shift) & mask;
-        uint32_t min = bt_data->reports[PAD].usages[meta->hid_hat_idx].logical_min;
+        uint32_t min = bt_data->reports[PAD]->usages[meta->hid_hat_idx].logical_min;
 
         TESTS_CMDS_LOG(", \"hat\": %lu", hat);
 
@@ -684,8 +684,8 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
 
     for (uint32_t i = 0; i < ADAPTER_PS2_MAX_AXES; i++) {
         if (map->axes_idx[i] > -1) {
-            int32_t len = bt_data->reports[PAD].usages[map->axes_idx[i]].bit_size;
-            uint32_t offset = bt_data->reports[PAD].usages[map->axes_idx[i]].bit_offset;
+            int32_t len = bt_data->reports[PAD]->usages[map->axes_idx[i]].bit_size;
+            uint32_t offset = bt_data->reports[PAD]->usages[map->axes_idx[i]].bit_offset;
             uint32_t mask = (1ULL << len) - 1;
             uint32_t byte_offset = offset / 8;
             uint32_t bit_shift = offset % 8;
@@ -706,7 +706,7 @@ static void hid_pad_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
             ctrl_data->axes[i].meta = &ctrl_meta[i];
 
             /* Is axis unsign? */
-            if (bt_data->reports[PAD].usages[map->axes_idx[i]].logical_min >= 0) {
+            if (bt_data->reports[PAD]->usages[map->axes_idx[i]].logical_min >= 0) {
                 ctrl_data->axes[i].value = value - ctrl_meta[i].neutral + bt_data->base.axes_cal[i];
                 TESTS_CMDS_LOG("%lu", value);
             }
@@ -809,29 +809,29 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                 pwr[0] = fb_data->lf_pwr;
                 pwr[1] = fb_data->hf_pwr;
 
-                for (uint32_t i = 0; i < bt_data->reports[RUMBLE].usage_cnt; i++)
+                for (uint32_t i = 0; i < bt_data->reports[RUMBLE]->usage_cnt; i++)
                 {
                     is_rumble_usage = false;
 
-                    switch (bt_data->reports[RUMBLE].usages[i].usage)
+                    switch (bt_data->reports[RUMBLE]->usages[i].usage)
                     {
                         case 0x50: /* Duration */
-                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            bytes_count = (bt_data->reports[RUMBLE]->usages[i].bit_size + 7) / 8;
                             rumble->report_size += bytes_count;
 
                             if (fb_data->state) {
-                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                                tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_max;
                             }
                             else {
-                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                                tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_min;
                             }
 
                             is_rumble_usage = true;
                             break;
                         case 0x97: /* Enable Actuators */
-                            if (bt_data->reports[RUMBLE].usages[i].logical_max == 1 &&
-                                    bt_data->reports[RUMBLE].usages[i].bit_size == 4) {
-                                bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            if (bt_data->reports[RUMBLE]->usages[i].logical_max == 1 &&
+                                    bt_data->reports[RUMBLE]->usages[i].bit_size == 4) {
+                                bytes_count = (bt_data->reports[RUMBLE]->usages[i].bit_size + 7) / 8;
                                 rumble->report_size += bytes_count;
                                 
                                 tmp_value = 0x03;
@@ -841,36 +841,36 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                             }
                             /* Fallthrough */
                         case 0x70: /* Magnitude */
-                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            bytes_count = (bt_data->reports[RUMBLE]->usages[i].bit_size + 7) / 8;
                             rumble->report_size += bytes_count;
 
                             if (fb_data->state && pwr_idx < sizeof(pwr)/sizeof(pwr[0])) {
-                                tmp_value = ((float)bt_data->reports[RUMBLE].usages[i].logical_max / 255.0) * pwr[pwr_idx++];
+                                tmp_value = ((float)bt_data->reports[RUMBLE]->usages[i].logical_max / 255.0) * pwr[pwr_idx++];
                             }
                             else {
-                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                                tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_min;
                             }
 
                             is_rumble_usage = true;
                             break;
                         case 0x7C: /* Loop Count */
-                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            bytes_count = (bt_data->reports[RUMBLE]->usages[i].bit_size + 7) / 8;
                             rumble->report_size += bytes_count;
 
                             if (fb_data->state) {
-                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_max;
+                                tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_max;
                             }
                             else {
-                                tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                                tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_min;
                             }
 
                             is_rumble_usage = true;
                             break;
                         case 0xA7: /* Start Delay */
-                            bytes_count = (bt_data->reports[RUMBLE].usages[i].bit_size + 7) / 8;
+                            bytes_count = (bt_data->reports[RUMBLE]->usages[i].bit_size + 7) / 8;
                             rumble->report_size += bytes_count;
 
-                            tmp_value = bt_data->reports[RUMBLE].usages[i].logical_min;
+                            tmp_value = bt_data->reports[RUMBLE]->usages[i].logical_min;
 
                             is_rumble_usage = true;
                             break;
@@ -891,7 +891,7 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                     pwr_idx &= 0x01;
                 }
 
-                rumble->report_id = bt_data->reports[RUMBLE].id;
+                rumble->report_id = bt_data->reports[RUMBLE]->id;
             }
             break;
     }

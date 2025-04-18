@@ -346,8 +346,8 @@ static void hid_process_report(struct bt_data *bt_data, struct hid_report *repor
         bt_mon_log(false, "rtype: %ld", report->type);
         /* For output report we got to make a choice. */
         /* So we use the first one we find. */
-        if (report->tag == HID_OUT && bt_data->reports[report->type].id == 0) {
-            memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
+        if (report->tag == HID_OUT && bt_data->reports[report->type] == NULL) {
+            bt_data->reports[report->type] = report;
         }
     }
     TESTS_CMDS_LOG("}");
@@ -672,7 +672,7 @@ void hid_parser_load_report(struct bt_data *bt_data, uint8_t report_id) {
         struct hid_report *report = our_reports[i];
         if (report && report->len && report->id == report_id && report->tag == HID_IN) {
             if (report->type != REPORT_NONE) {
-                memcpy(&bt_data->reports[report->type], report, sizeof(bt_data->reports[0]));
+                bt_data->reports[report->type] = report;
             }
         }
     }

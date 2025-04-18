@@ -582,7 +582,7 @@ void bt_host_reset_dev(struct bt_dev *device) {
 reset_dev:
     adapter_init_buffer(dev_id);
     memset(bt_adapter.data[dev_id].raw_src_mappings, 0, sizeof(*bt_adapter.data[0].raw_src_mappings) * REPORT_MAX);
-    memset(bt_adapter.data[dev_id].reports, 0, sizeof(*bt_adapter.data[0].reports) * REPORT_MAX);
+    memset(bt_adapter.data[dev_id].reports, 0, sizeof(bt_adapter.data[0].reports));
     memset(&bt_adapter.data[dev_id].base, 0, sizeof(bt_adapter.data[0].base));
     memset(device, 0, sizeof(*device));
 
@@ -792,7 +792,7 @@ void bt_host_bridge(struct bt_dev *device, uint8_t report_id, uint8_t *data, uin
         }
         bt_data->base.report_type = report_type = report->type;
         len = report->len;
-        if (report_id != bt_data->reports[report_type].id) {
+        if (report_id != bt_data->base.report_id) {
             atomic_clear_bit(&bt_data->base.flags[report_type], BT_INIT);
         }
     }

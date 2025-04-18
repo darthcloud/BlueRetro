@@ -544,10 +544,6 @@ void adapter_init(void) {
         if (bt_adapter.data[i].raw_src_mappings == NULL) {
             printf("# %s bt_adapter.data[%ld].raw_src_mappings alloc fail\n", __FUNCTION__, i);
         }
-        bt_adapter.data[i].reports = heap_caps_aligned_alloc(32, sizeof(struct hid_report) * REPORT_MAX, MALLOC_CAP_32BIT);
-        if (bt_adapter.data[i].reports == NULL) {
-            printf("# %s bt_adapter.data[%ld].reports alloc fail\n", __FUNCTION__, i);
-        }
     }
 
     wired_adapter.input_q_hdl = queue_bss_init(16, sizeof(struct raw_fb));

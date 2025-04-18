@@ -527,7 +527,7 @@ struct bt_data_base {
 struct bt_data {
     struct bt_data_base base;
     struct raw_src_mapping *raw_src_mappings;
-    struct hid_report *reports;
+    struct hid_report *reports[REPORT_MAX];
 };
 
 struct wired_data {
