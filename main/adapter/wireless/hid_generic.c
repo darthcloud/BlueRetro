@@ -794,7 +794,7 @@ void hid_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
                     rumble->state[2] = 0x00;
                 }
             }
-            else {
+            else if (bt_data->reports[RUMBLE]) {
                 struct generic_rumble *rumble = (struct generic_rumble *)bt_data->base.output;
 
                 rumble->report_size = 0;
