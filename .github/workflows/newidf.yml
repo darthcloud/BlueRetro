@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:latest
+    outputs:
+      br_version: ${{ env.br_version }}
 
     steps:
     - name: Checkout repo
@@ -42,4 +44,36 @@ jobs:
         echo "$(git describe --always --tags --dirty) ${{ matrix.hw_version }} ${{ matrix.br_config }}" | cut -c -31 > version.txt
         cat version.txt
         cp configs/${{ matrix.hw_version }}/${{ matrix.br_config }} sdkconfig
-        BR_HW=_${{ matrix.hw_version }} BR_SYS=_${{ matrix.br_config }} idf.py reconfigure build
+        BR_HW=_${{ matrix.hw_version }} BR_SYS=_${{ matrix.br_config }} idf.py reconfigure size size-components size-files
+        (cd build/log; for f in * ; do mv -- "$f" "${{ matrix.hw_version }}_${{ matrix.br_config }}_$f" ; done)
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.hw_version }}_${{ matrix.br_config }}
+        path: |
+          build/log/*
+        if-no-files-found: error
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge Artifacts HW1
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_hw1_size_logs
+          pattern: hw1*
+          delete-merged: true
+      - name: Merge Artifacts HW2
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_hw2_size_logs
+          pattern: hw2*
+          delete-merged: true
+      - name: Merge Artifacts DBG
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ needs.build.outputs.br_version }}_dbg_size_logs
+          pattern: dbg*
+          delete-merged: true
