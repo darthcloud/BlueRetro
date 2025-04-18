@@ -369,18 +369,29 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
     uint8_t report_idx = 0;
     struct hid_report *wip_report[2] = {0};
 
-    wip_report[0] = heap_caps_aligned_alloc(32, sizeof(struct hid_report), MALLOC_CAP_32BIT);
-    wip_report[1] = heap_caps_aligned_alloc(32, sizeof(struct hid_report), MALLOC_CAP_32BIT);
-
-    memset(wip_report[0], 0, sizeof(struct hid_report));
-    memset(wip_report[1], 0, sizeof(struct hid_report));
-
+    /* Free pre-existing reports for this device id */
     for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
         if (reports[bt_data->base.pids->id][i]) {
             free(reports[bt_data->base.pids->id][i]);
             reports[bt_data->base.pids->id][i] = NULL;
         }
     }
+
+    wip_report[0] = heap_caps_aligned_alloc(32, sizeof(struct hid_report), MALLOC_CAP_32BIT);
+    if (wip_report[0] == NULL) {
+        printf("# %s: failed to alloc wip_report[0]\n", __FUNCTION__);
+        return;
+    }
+    wip_report[1] = heap_caps_aligned_alloc(32, sizeof(struct hid_report), MALLOC_CAP_32BIT);
+    if (wip_report[1] == NULL) {
+        printf("# %s: failed to alloc wip_report[1]\n", __FUNCTION__);
+        free(wip_report[0]);
+        return;
+    }
+
+    memset(wip_report[0], 0, sizeof(struct hid_report));
+    memset(wip_report[1], 0, sizeof(struct hid_report));
+
 
 #ifdef CONFIG_BLUERETRO_DUMP_HID_DESC
     data_dump(data, len);
