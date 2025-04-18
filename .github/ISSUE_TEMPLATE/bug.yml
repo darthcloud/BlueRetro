@@ -4,7 +4,29 @@ body:
   - type: markdown
     attributes:
       value: |
-        For a single bug report only. For questions use the [discussions forum](https://github.com/darthcloud/BlueRetro/discussions).
+        For a single bug report only. For questions, use the [discussions forum](https://github.com/darthcloud/BlueRetro/discussions).
+        
+        ***DO NOT EXPECT A QUICK REPLY OR RESOLUTION***
+        This project is done purely in my spare time, and months can go by before I do have some.
+        Do not ask for update, just be patient and wait for me to get to it.
+
+        Some stats base on previous 400 bugs:
+        * Usual time to first response: between 45 to 131 days
+        * Usual time to resolution: between 132 to 476 days
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Answers checklist.
+      description: Before submitting a new issue, please follow the checklist and try to find the answer.
+      options:
+        - label: I have read and will follow the terms above.
+          required: true
+        - label: I have read the documentation [BlueRetro wiki](https://github.com/darthcloud/BlueRetro/wiki) and the issue is not addressed there.
+          required: true
+        - label: I have updated my BlueRetro to [latest version available](https://github.com/darthcloud/BlueRetro/releases/latest).
+          required: true
+        - label: I have searched the issue tracker for a similar issue and not found a similar issue.
+          required: true
   - type: input
     id: version
     attributes:
