@@ -502,7 +502,8 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                     bool bitfield_merge = (usage_idx == 1 && hid_stack[hid_stack_idx].report_size == 1 && hid_stack[hid_stack_idx].report_cnt > 1);
                     uint32_t usage_cnt = (bitfield_merge) ? 1 : hid_stack[hid_stack_idx].report_cnt;
                     for (uint32_t i = 0; i < usage_cnt; i++) {
-                        if (hid_usage_is_used(hid_stack[hid_stack_idx].usage_page, usage_list[i])) {
+                        uint16_t usage = (usage_idx == 1) ? usage_list[0] : usage_list[i];
+                        if (hid_usage_is_used(hid_stack[hid_stack_idx].usage_page, usage)) {
                             uint32_t frag_cnt = 1;
                             if (bitfield_merge) {
                                 frag_cnt = hid_stack[hid_stack_idx].report_cnt / 32;
@@ -513,7 +514,7 @@ void hid_parser(struct bt_data *bt_data, uint8_t *data, uint32_t len) {
                             for (uint32_t j = 0; j < frag_cnt; j++) {
                                 uint32_t usage_offset = j * 32;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage_page = hid_stack[hid_stack_idx].usage_page;
-                                wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage = (usage_idx == 1) ? usage_list[0] : usage_list[i];
+                                wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage = usage;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].usage += usage_offset;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].flags = *desc;
                                 wip_report[tag_idx]->usages[report_usage_idx[tag_idx]].bit_offset = report_bit_offset[tag_idx];
