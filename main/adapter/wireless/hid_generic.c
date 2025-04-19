@@ -574,9 +574,13 @@ static void hid_pad_init(struct hid_report_meta *meta, struct hid_report *report
     if (meta->hid_btn_idx > -1) {
         const uint32_t *btns_idx = (btns_is_xinput) ? hid_pad_xinput_btns_idx : hid_pad_default_btns_idx;
         uint32_t uidx = meta->hid_btn_idx;
+        uint32_t undef_usage = 15;
         for (; report->usages[uidx].usage_page == USAGE_GEN_BUTTON; uidx++) {
             if (report->usages[uidx].usage) {
                 uint32_t usage = report->usages[uidx].usage - 1;
+                if (usage > HID_RJ) {
+                    usage = undef_usage++;
+                }
                 for (uint32_t j = 0; j < report->usages[uidx].bit_size; j++, usage++) {
                     map->mask[0] |= BIT(btns_idx[usage]);
                     map->btns_mask[btns_idx[usage]] =
