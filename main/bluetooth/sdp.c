@@ -59,9 +59,9 @@ static const uint8_t pnp_attr_req[] = {
                         /* Att Range */ 0x00, 0x00, /* to */ 0xff, 0xff,
 };
 
-static const uint8_t xb1_svc_search_attr_rsp[] = {
-    0x35, 0x0a, 0x35, 0x08, 0x09, 0x00, 0x01, 0x35, 0x03, 0x19, 0x12, 0x00
-};
+// static const uint8_t xb1_svc_search_attr_rsp[] = {
+//     0x35, 0x0a, 0x35, 0x08, 0x09, 0x00, 0x01, 0x35, 0x03, 0x19, 0x12, 0x00
+// };
 
 static const uint8_t xb1_svc_search_rsp[] = {
     0x00, 0x01, 0x00, 0x00
@@ -251,15 +251,8 @@ void bt_sdp_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt) {
                 sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_attr_rsp, sizeof(xb1_svc_attr_rsp));
             break;
         case BT_SDP_SVC_SEARCH_ATTR_REQ:
-            if (device->ids.type == BT_XBOX && device->ids.subtype == BT_SUBTYPE_DEFAULT) {
-                /* Need to test if empty answer work for xb1 */
-                bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid,
-                    sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), xb1_svc_search_attr_rsp, sizeof(xb1_svc_search_attr_rsp));
-            }
-            else {
-                bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid,
-                    sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), NULL, 0);
-            }
+            bt_sdp_cmd_svc_search_attr_rsp(device->acl_handle, device->sdp_rx_chan.dcid,
+                sys_be16_to_cpu(bt_hci_acl_pkt->sdp_hdr.tid), NULL, 0);
             break;
         case BT_SDP_SVC_SEARCH_ATTR_RSP:
         {

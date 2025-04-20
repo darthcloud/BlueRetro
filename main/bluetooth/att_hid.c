@@ -15,9 +15,6 @@
 #include "zephyr/gatt.h"
 #include "adapter/hid_parser.h"
 #include "adapter/mapping_quirks.h"
-#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
-#include "bluetooth/hidp/xbox.h"
-#endif
 
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,

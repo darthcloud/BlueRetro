@@ -10,7 +10,6 @@
 #include "ps3.h"
 #include "wii.h"
 #include "ps.h"
-#include "xbox.h"
 #include "sw.h"
 
 typedef void (*bt_hid_init_t)(struct bt_dev *device);
@@ -25,7 +24,6 @@ static const struct bt_name_type bt_name_type[] = {
 #ifndef CONFIG_BLUERETRO_GENERIC_HID_DEBUG
     {"PLAYSTATION(R)3", BT_PS3, BT_SUBTYPE_DEFAULT, 0},
     {"Xbox Wireless Controller", BT_HID_GENERIC, BT_SUBTYPE_DEFAULT, 0},
-    {"Xbox Adaptive Controller", BT_XBOX, BT_XBOX_ADAPTIVE, 0},
     {"DualSense Wireless Controller", BT_PS, BT_PS5_DS, 0},
     {"Wireless Controller", BT_PS, BT_SUBTYPE_DEFAULT, 0},
     {"Nintendo RVL-CNT-01-UC", BT_WII, BT_WIIU_PRO, 0}, /* Must be before WII */
@@ -60,7 +58,6 @@ static const bt_hid_init_t bt_hid_init_list[BT_TYPE_MAX] = {
     bt_hid_generic_init, /* BT_HID_GENERIC */
     bt_hid_ps3_init, /* BT_PS3 */
     bt_hid_wii_init, /* BT_WII */
-    bt_hid_xbox_init, /* BT_XBOX */
     bt_hid_ps_init, /* BT_PS */
     bt_hid_sw_init, /* BT_SW */
 };
@@ -69,7 +66,6 @@ static const bt_hid_hdlr_t bt_hid_hdlr_list[BT_TYPE_MAX] = {
     bt_hid_generic_hdlr, /* BT_HID_GENERIC */
     bt_hid_ps3_hdlr, /* BT_PS3 */
     bt_hid_wii_hdlr, /* BT_WII */
-    bt_hid_xbox_hdlr, /* BT_XBOX */
     bt_hid_ps_hdlr, /* BT_PS */
     bt_hid_sw_hdlr, /* BT_SW */
 };
@@ -78,7 +74,6 @@ static const bt_hid_cmd_t bt_hid_feedback_list[BT_TYPE_MAX] = {
     bt_hid_cmd_generic_rumble, /* BT_HID_GENERIC */
     bt_hid_cmd_ps3_set_conf, /* BT_PS3 */
     bt_hid_cmd_wii_set_feedback, /* BT_WII */
-    bt_hid_cmd_xbox_rumble, /* BT_XBOX */
     bt_hid_cmd_ps_set_conf, /* BT_PS */
     bt_hid_cmd_sw_set_conf, /* BT_SW */
 };

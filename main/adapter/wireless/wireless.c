@@ -8,7 +8,6 @@
 #include "ps3.h"
 #include "wii.h"
 #include "ps.h"
-#include "xbox.h"
 #include "sw.h"
 #include "wireless.h"
 
@@ -16,7 +15,6 @@ static to_generic_t to_generic_func[BT_TYPE_MAX] = {
     hid_to_generic, /* BT_HID_GENERIC */
     ps3_to_generic, /* BT_PS3 */
     wii_to_generic, /* BT_WII */
-    xbox_to_generic, /* BT_XBOX */
     ps_to_generic, /* BT_PS */
     sw_to_generic, /* BT_SW */
 };
@@ -25,7 +23,6 @@ static fb_from_generic_t fb_from_generic_func[BT_TYPE_MAX] = {
     hid_fb_from_generic, /* BT_HID_GENERIC */
     ps3_fb_from_generic, /* BT_PS3 */
     wii_fb_from_generic, /* BT_WII */
-    xbox_fb_from_generic, /* BT_XBOX */
     ps_fb_from_generic, /* BT_PS */
     sw_fb_from_generic, /* BT_SW */
 };
