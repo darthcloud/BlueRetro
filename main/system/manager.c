@@ -188,7 +188,7 @@ static void internal_flag_init(void) {
 
 static void port_led_pulse(uint32_t pin) {
     if (pin) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
         gpio_set_direction(pin, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(pin, ledc_periph_signal[LEDC_HIGH_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_0, 0, 0);
     }
@@ -201,7 +201,7 @@ static void set_leds_as_btn_status(uint8_t state) {
     for (uint32_t i = 0; i < hw_config.port_cnt; i++) {
         uint8_t pin = led_list[i];
 
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin], PIN_FUNC_GPIO);
         gpio_set_direction(pin, GPIO_MODE_OUTPUT);
         if (state) {
             esp_rom_gpio_connect_out_signal(pin, ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + LEDC_CHANNEL_1, 0, 0);
