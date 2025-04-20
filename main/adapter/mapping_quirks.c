@@ -122,6 +122,15 @@ static void m30_8bitdo(struct raw_src_mapping *map) {
     memcpy(&map->meta[TRIG_R], &map->meta[TRIG_L], sizeof(map->meta[0]));
 }
 
+static void m30_8bitdo_modkit(struct raw_src_mapping *map) {
+    map->btns_mask[PAD_RB_LEFT] = BIT(0);
+    map->btns_mask[PAD_RB_RIGHT] = BIT(5);
+    map->btns_mask[PAD_RB_DOWN] = BIT(1);
+    map->btns_mask[PAD_RB_UP] = BIT(3);
+    map->btns_mask[PAD_LS] = BIT(2);
+    map->btns_mask[PAD_RS] = BIT(4);
+}
+
 static void saturn_diy_8bitdo(struct raw_src_mapping *map) {
     uint32_t tmp = map->btns_mask[PAD_LS];
 
@@ -254,6 +263,9 @@ void mapping_quirks_apply(struct bt_data *bt_data) {
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_M30)) {
         m30_8bitdo(&bt_data->raw_src_mappings[PAD]);
+    }
+    if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_M30_MODKIT)) {
+        m30_8bitdo_modkit(&bt_data->raw_src_mappings[PAD]);
     }
     if (atomic_test_bit(&bt_data->base.flags[PAD], BT_QUIRK_8BITDO_SATURN)) {
         saturn_diy_8bitdo(&bt_data->raw_src_mappings[PAD]);
