@@ -4,7 +4,7 @@ from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap16
 from device_data.sw import sw_hk_admiral_btns_mask, sw_hk_admiral_axes
-from device_data.br import axis, hat_to_ld_btns
+from device_data.br import axis, hat_to_ld_btns, bt_type, bt_subtype
 from device_data.gc import gc_axes
 
 
@@ -16,8 +16,8 @@ def test_sw_hk_admiral_controller_default_buttons_mapping(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 17
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_HYPERKIN_ADMIRAL
     assert rsp['device_name']['device_name'] == 'Hyperkin Pad'
 
     # Init adapter with a few neutral state report
@@ -60,8 +60,8 @@ def test_sw_hk_admiral_controller_axes_default_scaling(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 17
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_HYPERKIN_ADMIRAL
     assert rsp['device_name']['device_name'] == 'Hyperkin Pad'
 
     # Init adapter with a few neutral state report

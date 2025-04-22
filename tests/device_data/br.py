@@ -15,7 +15,6 @@ class bt_type(IntEnum):
     HID_GENERIC = 0
     PS3 = auto()
     WII = auto()
-    XBOX = auto()
     PS = auto()
     SW = auto()
 
@@ -30,18 +29,13 @@ class bt_subtype(IntEnum):
     WII_CLASSIC_PRO_8BIT = auto()
     WIIU_PRO = auto()
     PS5_DS = auto()
-    XBOX_XINPUT = auto()
-    XBOX_XS = auto()
-    XBOX_ADAPTIVE = auto()
     SW_LEFT_JOYCON = auto()
     SW_RIGHT_JOYCON = auto()
     SW_NES = auto()
     SW_SNES = auto()
     SW_N64 = auto()
     SW_MD_GEN = auto()
-    SW_POWERA = auto()
     SW_HYPERKIN_ADMIRAL = auto()
-    GBROS = auto()
 
 
 class system(IntEnum):

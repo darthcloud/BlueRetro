@@ -4,7 +4,7 @@ from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap16, swap24
 from device_data.sw import sw_d_jc_btns_mask, sw_n_jc_btns_mask, sw_n_rjc_axes
-from device_data.br import axis, hat_to_ld_btns
+from device_data.br import axis, hat_to_ld_btns, bt_type, bt_subtype
 from device_data.gc import gc_axes
 
 
@@ -16,8 +16,8 @@ def test_sw_right_joycon_controller_default_buttons_mapping_native_report(bluere
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 12
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_RIGHT_JOYCON
     assert rsp['device_name']['device_name'] == 'Joy-Con (R)'
 
     # Init adapter with a few neutral state report
@@ -53,8 +53,8 @@ def test_sw_right_joycon_controller_axes_default_scaling_native_report(blueretro
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 12
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_RIGHT_JOYCON
     assert rsp['device_name']['device_name'] == 'Joy-Con (R)'
 
     # Init adapter with a few neutral state report
@@ -93,8 +93,8 @@ def test_sw_right_joycon_controller_axes_scaling_with_calib_native_report(bluere
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 12
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_RIGHT_JOYCON
     assert rsp['device_name']['device_name'] == 'Joy-Con (R)'
 
     # Send calibration data
@@ -166,8 +166,8 @@ def test_sw_right_joycon_controller_default_buttons_mapping_default_report(bluer
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 12
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_RIGHT_JOYCON
     assert rsp['device_name']['device_name'] == 'Joy-Con (R)'
 
     # Init adapter with a few neutral state report

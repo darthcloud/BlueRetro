@@ -4,7 +4,7 @@ from device_data.test_data_generator import btns_generic_test_data
 from device_data.test_data_generator import axes_test_data_generator
 from bit_helper import swap24
 from device_data.ps import ps_btns_mask, ps_axes
-from device_data.br import axis, hat_to_ld_btns
+from device_data.br import axis, hat_to_ld_btns, bt_type, bt_subtype
 from device_data.gc import gc_axes
 
 
@@ -16,8 +16,8 @@ def test_ps5_ds_controller_default_buttons_mapping_native_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 4
-    assert rsp['device_name']['device_subtype'] == 0
+    assert rsp['device_name']['device_type'] == bt_type.PS
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
     assert rsp['device_name']['device_name'] == 'Wireless Controller'
 
     # Init adapter with a few neutral state report
@@ -37,8 +37,8 @@ def test_ps5_ds_controller_default_buttons_mapping_native_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 7
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.PS5_DS
 
     # Validate buttons default mapping
     for btns, br_btns in btns_generic_test_data(ps_btns_mask):
@@ -82,8 +82,8 @@ def test_ps5_ds_controller_axes_default_scaling_native_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 4
-    assert rsp['device_name']['device_subtype'] == 0
+    assert rsp['device_name']['device_type'] == bt_type.PS
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
     assert rsp['device_name']['device_name'] == 'Wireless Controller'
 
     # Init adapter with a few neutral state report
@@ -103,8 +103,8 @@ def test_ps5_ds_controller_axes_default_scaling_native_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 7
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.PS5_DS
 
     # Validate axes default scaling
     for axes in axes_test_data_generator(ps_axes, gc_axes, 0.0135):
@@ -134,8 +134,8 @@ def test_ps5_ds_controller_default_buttons_mapping_default_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 4
-    assert rsp['device_name']['device_subtype'] == 0
+    assert rsp['device_name']['device_type'] == bt_type.PS
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
     assert rsp['device_name']['device_name'] == 'Wireless Controller'
 
     # Init adapter in PS5 mode
@@ -155,8 +155,8 @@ def test_ps5_ds_controller_default_buttons_mapping_default_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 7
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.PS5_DS
 
     # Init adapter back to default report mode
     for _ in range(2):
@@ -169,8 +169,8 @@ def test_ps5_ds_controller_default_buttons_mapping_default_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 0
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
 
     # Validate buttons default mapping
     for btns, br_btns in btns_generic_test_data(ps_btns_mask):
@@ -202,8 +202,8 @@ def test_ps5_ds_controller_axes_default_scaling_default_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 4
-    assert rsp['device_name']['device_subtype'] == 0
+    assert rsp['device_name']['device_type'] == bt_type.PS
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
     assert rsp['device_name']['device_name'] == 'Wireless Controller'
 
     # Init adapter in PS5 mode
@@ -223,8 +223,8 @@ def test_ps5_ds_controller_axes_default_scaling_default_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 7
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.PS5_DS
 
     # Init adapter back to default report mode
     for _ in range(2):
@@ -237,8 +237,8 @@ def test_ps5_ds_controller_axes_default_scaling_default_report(blueretro):
 
     # Validate device type change
     assert rsp['type_update']['device_id'] == 0
-    assert rsp['type_update']['device_type'] == 4
-    assert rsp['type_update']['device_subtype'] == 0
+    assert rsp['type_update']['device_type'] == bt_type.PS
+    assert rsp['type_update']['device_subtype'] == bt_subtype.SUBTYPE_DEFAULT
 
     # Validate axes default scaling
     for axes in axes_test_data_generator(ps_axes, gc_axes, 0.0135):

@@ -2,7 +2,7 @@
 from device_data.test_data_generator import btns_generic_test_data
 from bit_helper import swap16, swap24
 from device_data.sw import sw_d_snes_btns_mask, sw_n_snes_btns_mask
-from device_data.br import hat_to_ld_btns
+from device_data.br import hat_to_ld_btns, bt_type, bt_subtype
 
 
 DEVICE_NAME = 'SNES Controller'
@@ -13,8 +13,8 @@ def test_sw_snes_controller_default_buttons_mapping_native_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 14
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_SNES
     assert rsp['device_name']['device_name'] == 'SNES Controller'
 
     # Init adapter with a few neutral state report
@@ -50,8 +50,8 @@ def test_sw_snes_controller_default_buttons_mapping_default_report(blueretro):
     # Set device name
     rsp = blueretro.send_name(DEVICE_NAME)
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 14
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_SNES
     assert rsp['device_name']['device_name'] == 'SNES Controller'
 
     # Init adapter with a few neutral state report

@@ -2,7 +2,7 @@
 from device_data.test_data_generator import btns_generic_test_data
 from bit_helper import swap16, swap24
 from device_data.sw import sw_d_nes_btns_mask, sw_n_nes_btns_mask
-from device_data.br import hat_to_ld_btns
+from device_data.br import hat_to_ld_btns, bt_type, bt_subtype
 
 
 def test_sw_nes_left_controller_default_buttons_mapping_native_report(blueretro):
@@ -10,8 +10,8 @@ def test_sw_nes_left_controller_default_buttons_mapping_native_report(blueretro)
     # Set device name
     rsp = blueretro.send_name('NES Controller (L)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'NES Controller (L)'
 
     # Init adapter with a few neutral state report
@@ -47,8 +47,8 @@ def test_sw_nes_right_controller_default_buttons_mapping_native_report(blueretro
     # Set device name
     rsp = blueretro.send_name('NES Controller (R)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'NES Controller (R)'
 
     # Init adapter with a few neutral state report
@@ -84,8 +84,8 @@ def test_sw_fc_left_controller_default_buttons_mapping_native_report(blueretro):
     # Set device name
     rsp = blueretro.send_name('HVC Controller (L)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'HVC Controller (L)'
 
     # Init adapter with a few neutral state report
@@ -121,8 +121,8 @@ def test_sw_fc_right_controller_default_buttons_mapping_native_report(blueretro)
     # Set device name
     rsp = blueretro.send_name('HVC Controller (R)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'HVC Controller (R)'
 
     # Init adapter with a few neutral state report
@@ -158,8 +158,8 @@ def test_sw_nes_left_controller_default_buttons_mapping_default_report(blueretro
     # Set device name
     rsp = blueretro.send_name('NES Controller (L)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'NES Controller (L)'
 
     # Init adapter with a few neutral state report
@@ -201,8 +201,8 @@ def test_sw_nes_right_controller_default_buttons_mapping_default_report(blueretr
     # Set device name
     rsp = blueretro.send_name('NES Controller (R)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'NES Controller (R)'
 
     # Init adapter with a few neutral state report
@@ -244,8 +244,8 @@ def test_sw_fc_left_controller_default_buttons_mapping_default_report(blueretro)
     # Set device name
     rsp = blueretro.send_name('HVC Controller (L)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'HVC Controller (L)'
 
     # Init adapter with a few neutral state report
@@ -287,8 +287,8 @@ def test_sw_fc_right_controller_default_buttons_mapping_default_report(blueretro
     # Set device name
     rsp = blueretro.send_name('HVC Controller (R)')
     assert rsp['device_name']['device_id'] == 0
-    assert rsp['device_name']['device_type'] == 5
-    assert rsp['device_name']['device_subtype'] == 13
+    assert rsp['device_name']['device_type'] == bt_type.SW
+    assert rsp['device_name']['device_subtype'] == bt_subtype.SW_NES
     assert rsp['device_name']['device_name'] == 'HVC Controller (R)'
 
     # Init adapter with a few neutral state report
