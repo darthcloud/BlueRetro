@@ -182,7 +182,7 @@ static void gc_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_da
                     btns_mask = gc_btns_mask;
                     printf("# %s: Position based mapping\n", __FUNCTION__);
                 }
-                adapter_toggle_fb(ctrl_data->index, 300000);
+                adapter_toggle_fb(ctrl_data->index, 300000, 0xFF, 0xFF);
             }
         }
     }

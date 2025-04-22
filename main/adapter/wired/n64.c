@@ -203,12 +203,12 @@ static void n64_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_d
                 /* Change config directly but do not update file */
                 if (config.out_cfg[ctrl_data->index].acc_mode == ACC_MEM) {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_RUMBLE;
-                    adapter_toggle_fb(ctrl_data->index, 300000);
+                    adapter_toggle_fb(ctrl_data->index, 300000, 0xFF, 0xFF);
                     printf("# %s: Set rumble pak\n", __FUNCTION__);
                 }
                 else {
                     config.out_cfg[ctrl_data->index].acc_mode = ACC_MEM;
-                    adapter_toggle_fb(ctrl_data->index, 150000);
+                    adapter_toggle_fb(ctrl_data->index, 150000, 0xFF, 0xFF);
                     printf("# %s: Set ctrl pak\n", __FUNCTION__);
                 }
             }

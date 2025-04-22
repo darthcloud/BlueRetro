@@ -504,7 +504,7 @@ void IRAM_ATTR adapter_q_fb(struct raw_fb *fb_data) {
     }
 }
 
-void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
+void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us, uint8_t lf_pwr, uint8_t hf_pwr) {
     struct bt_dev *device = NULL;
     struct bt_data *bt_data = NULL;
 
@@ -517,8 +517,8 @@ void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us) {
             fb_data.wired_id = wired_id;
             fb_data.type = FB_TYPE_RUMBLE;
             fb_data.state = 1;
-            fb_data.hf_pwr = 0xFF;
-            fb_data.lf_pwr = 0xFF;
+            fb_data.hf_pwr = hf_pwr;
+            fb_data.lf_pwr = lf_pwr;
             rumble_mute = true;
             adapter_fb_stop_timer_start(wired_id, duration_us);
             wireless_fb_from_generic(&fb_data, bt_data);

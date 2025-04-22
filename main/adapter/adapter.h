@@ -585,7 +585,7 @@ void adapter_fb_stop_timer_start(uint8_t dev_id, uint64_t dur_us);
 void adapter_fb_stop_timer_stop(uint8_t dev_id);
 uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data);
 void adapter_q_fb(struct raw_fb *fb_data);
-void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us);
+void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us, uint8_t lf_pwr, uint8_t hf_pwr);
 void adapter_init(void);
 void adapter_meta_init(void);
 
