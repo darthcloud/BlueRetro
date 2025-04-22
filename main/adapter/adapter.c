@@ -224,11 +224,11 @@ static void adapter_fb_stop_cb(void* arg) {
 
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 
-    /* Unmute system rumble */
-    rumble_mute = false;
-
     /* Send 0 byte data, system that require callback stop shall look for that */
     adapter_q_fb(&fb_data);
+
+    /* Unmute system rumble */
+    rumble_mute = false;
 }
 
 uint32_t adapter_get_out_mask(uint8_t dev_id) {
@@ -427,12 +427,6 @@ void adapter_bridge(struct bt_data *bt_data) {
         TESTS_CMDS_LOG("\"generic_input\": {");
         adapter_debug_wireless_print(ctrl_input);
 #endif
-#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
-        if (ctrl_input->btns[0].value & BIT(PAD_RB_DOWN)) {
-            uint8_t tmp = 0;
-            adapter_q_fb(&tmp, 1);
-        }
-#endif
         if (wired_adapter.system_id != WIRED_AUTO) {
             if (wired_meta_init(ctrl_output)) {
                 /* Unsupported system */
@@ -479,21 +473,17 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
 
 uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
     uint32_t ret = 0;
-#ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
+
     if (wired_adapter.system_id != WIRED_AUTO && bt_data && bt_data->base.pids) {
         wired_fb_to_generic(config.out_cfg[bt_data->base.pids->id].dev_mode, fb_data, &fb_input);
-#else
-        fb_input.state ^= 0x01;
-#endif
+
         if (bt_data->base.pids->type != BT_NONE) {
             wireless_fb_from_generic(&fb_input, bt_data);
             if (fb_data->header.type == FB_TYPE_RUMBLE) {
                 ret = fb_input.state;
             }
         }
-#ifndef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
     }
-#endif
     return ret;
 }
 
@@ -509,7 +499,7 @@ void adapter_toggle_fb(uint32_t wired_id, uint32_t duration_us, uint8_t lf_pwr, 
     struct bt_data *bt_data = NULL;
 
     bt_host_get_active_dev_from_out_idx(wired_id, &device);
-    if (device) {
+    if (!rumble_mute && device) {
         bt_data = &bt_adapter.data[device->ids.id];
         if (bt_data) {
             struct generic_fb fb_data = {0};

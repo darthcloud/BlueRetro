@@ -268,9 +268,17 @@ void gc_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct wire
 void gc_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
-    fb_data->state = raw_fb_data->data[0];
-    fb_data->lf_pwr = (fb_data->state) ? 0xFF : 0x00;
-    fb_data->hf_pwr = (fb_data->state) ? 0xFF : 0x00;
+
+    /* This stop rumble when BR timeout trigger */
+    if (raw_fb_data->header.data_len == 0) {
+        fb_data->state = 0;
+        fb_data->lf_pwr = fb_data->hf_pwr = 0;
+    }
+    else {
+        fb_data->state = raw_fb_data->data[0];
+        fb_data->lf_pwr = (fb_data->state) ? 0xFF : 0x00;
+        fb_data->hf_pwr = (fb_data->state) ? 0xFF : 0x00;
+    }
 }
 
 void IRAM_ATTR gc_gen_turbo_mask(struct wired_data *wired_data) {

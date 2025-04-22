@@ -310,6 +310,11 @@ static void bt_host_task(void *param) {
         /* Update turbo mask for parallel system */
         wired_para_turbo_mask_hdlr();
 
+#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_DBG
+    adapter_toggle_fb(0, 150000,
+        wired_adapter.data[0].output[16], wired_adapter.data[0].output[17]);
+#endif
+
         vTaskDelay(16 / portTICK_PERIOD_MS);
     }
 }

@@ -390,15 +390,22 @@ void ps_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct gener
     fb_data->wired_id = raw_fb_data->header.wired_id;
     fb_data->type = raw_fb_data->header.type;
 
-    switch (fb_data->type) {
-        case FB_TYPE_RUMBLE:
-            fb_data->state = (raw_fb_data->data[0] || raw_fb_data->data[1] ? 1 : 0);
-            fb_data->lf_pwr = raw_fb_data->data[1];
-            fb_data->hf_pwr = (raw_fb_data->data[0] == 0x01) ? 0xFF : 0x00;
-            break;
-        case FB_TYPE_STATUS_LED:
-            fb_data->led = raw_fb_data->data[0];
-            break;
+    /* This stop rumble when BR timeout trigger */
+    if (raw_fb_data->header.data_len == 0) {
+        fb_data->state = 0;
+        fb_data->lf_pwr = fb_data->hf_pwr = 0;
+    }
+    else {
+        switch (fb_data->type) {
+            case FB_TYPE_RUMBLE:
+                fb_data->state = (raw_fb_data->data[0] || raw_fb_data->data[1] ? 1 : 0);
+                fb_data->lf_pwr = raw_fb_data->data[1];
+                fb_data->hf_pwr = (raw_fb_data->data[0] == 0x01) ? 0xFF : 0x00;
+                break;
+            case FB_TYPE_STATUS_LED:
+                fb_data->led = raw_fb_data->data[0];
+                break;
+        }
     }
 }
 
