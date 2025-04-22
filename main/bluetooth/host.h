@@ -37,14 +37,6 @@ enum {
     BT_DEV_PPCP_DONE,
 };
 
-enum {
-    /* BT Sniff states */
-    BT_SNIFF_DISABLE = 0,
-    BT_SNIFF_SET_PENDING,
-    BT_SNIFF_SET,
-    BT_SNIFF_EXIT_PENDING,
-};
-
 struct bt_name_type {
     char name[249];
     int32_t type;
@@ -70,8 +62,6 @@ struct bt_dev {
         bt_addr_le_t le_remote_bdaddr;
     };
     uint16_t acl_handle;
-    uint16_t sniff_interval;
-    uint16_t sniff_state;
     uint32_t hid_state;
     void *timer_hdl;
     uint8_t tid;
@@ -140,7 +130,6 @@ struct bt_hci_pkt {
 
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
 
-void bt_host_update_sniff_interval(void);
 uint32_t bt_host_get_flag_dev_cnt(uint32_t flag);
 void bt_host_disconnect_all(void);
 int32_t bt_host_get_new_dev(struct bt_dev **device);

@@ -1673,13 +1673,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                             bt_hci_q_conf(0);
                         }
                         break;
-                    /* Sniff mode is best efforts no retry */
-                    case BT_HCI_OP_SNIFF_MODE:
-                        device->sniff_state = BT_SNIFF_DISABLE;
-                        break;
-                    case BT_HCI_OP_EXIT_SNIFF_MODE:
-                        device->sniff_state = BT_SNIFF_SET;
-                        break;
                 }
             }
             else {
@@ -1825,20 +1818,6 @@ void bt_hci_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
             struct bt_hci_evt_mode_change *evt = (struct bt_hci_evt_mode_change *)bt_hci_evt_pkt->evt_data;
             bt_host_get_dev_from_handle(evt->handle, &device);
             printf("# BT_HCI_EVT_MODE_CHANGE dev: %ld status: %d mode: %d interval %d\n", device->ids.id, evt->status, evt->mode, evt->interval);
-#if 0
-            if (evt->status == BT_HCI_ERR_SUCCESS) {
-                if (evt->mode == BT_MODE_ACTIVE) {
-                    device->sniff_interval = 0;
-                    device->sniff_state = BT_SNIFF_DISABLE;
-                    bt_host_update_sniff_interval();
-                }
-                else {
-                    device->sniff_interval = evt->interval;
-                    device->sniff_state = BT_SNIFF_SET;
-                    bt_host_update_sniff_interval();
-                }
-            }
-#endif
             break;
         }
         case BT_HCI_EVT_PIN_CODE_REQ:
