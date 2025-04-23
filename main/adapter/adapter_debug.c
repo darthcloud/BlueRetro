@@ -12,7 +12,15 @@
 #ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
 static void adapter_debug_btns(int32_t value) {
         uint32_t b = value;
-        printf(" %sDL%s %sDR%s %sDD%s %sDU%s %sBL%s %sBR%s %sBD%s %sBU%s %sMM%s %sMS%s %sMT%s %sMQ%s %sLM%s %sLS%s %sLT%s %sLJ%s %sRM%s %sRS%s %sRT%s %sRJ%s",
+        printf(" %sJL%s %sJR%s %sJD%s %sJU%s %sEL%s %sER%s %sED%s %sEU%s %sDL%s %sDR%s %sDD%s %sDU%s %sBL%s %sBR%s %sBD%s %sBU%s %sMM%s %sMS%s %sMT%s %sMQ%s %sLM%s %sLS%s %sLT%s %sLJ%s %sRM%s %sRS%s %sRT%s %sRJ%s",
+            (b & BIT(PAD_RX_LEFT)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RX_RIGHT)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RY_DOWN)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RY_UP)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RD_LEFT)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RD_RIGHT)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RD_DOWN)) ? GREEN : RESET, RESET,
+            (b & BIT(PAD_RD_UP)) ? GREEN : RESET, RESET,
             (b & BIT(PAD_LD_LEFT)) ? GREEN : RESET, RESET,
             (b & BIT(PAD_LD_RIGHT)) ? GREEN : RESET, RESET,
             (b & BIT(PAD_LD_DOWN)) ? GREEN : RESET, RESET,
@@ -40,10 +48,9 @@ void adapter_debug_wireless_print(struct wireless_ctrl *ctrl_input) {
     TESTS_CMDS_LOG("\"axes\": [%ld, %ld, %ld, %ld, %lu, %lu], \"btns\": [%lu, %lu, %lu, %lu]},\n",
         ctrl_input->axes[0].value, ctrl_input->axes[1].value, ctrl_input->axes[2].value, ctrl_input->axes[3].value, ctrl_input->axes[4].value, ctrl_input->axes[5].value,
         ctrl_input->btns[0].value, ctrl_input->btns[1].value, ctrl_input->btns[2].value, ctrl_input->btns[3].value);
-    printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
+    printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s",
         BOLD, ctrl_input->axes[0].value, RESET, BOLD, ctrl_input->axes[1].value, RESET, BOLD, ctrl_input->axes[2].value, RESET, BOLD, ctrl_input->axes[3].value, RESET,
-        BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET, BOLD, ctrl_input->btns[0].value, RESET, BOLD, ctrl_input->btns[1].value, RESET,
-        BOLD, ctrl_input->btns[2].value, RESET, BOLD, ctrl_input->btns[3].value, RESET);
+        BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET);
 #ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
     adapter_debug_btns(ctrl_input->btns[0].value);
 #endif
@@ -54,10 +61,9 @@ void adapter_debug_wired_print(struct wired_ctrl *ctrl_input) {
     TESTS_CMDS_LOG("\"axes\": [%ld, %ld, %ld, %ld, %lu, %lu], \"btns\": [%lu, %lu, %lu, %lu]},\n",
         ctrl_input->axes[0].value, ctrl_input->axes[1].value, ctrl_input->axes[2].value, ctrl_input->axes[3].value, ctrl_input->axes[4].value, ctrl_input->axes[5].value,
         ctrl_input->btns[0].value, ctrl_input->btns[1].value, ctrl_input->btns[2].value, ctrl_input->btns[3].value);
-    printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s, BTNS: %s%08lX%s",
+    printf("LX: %s%08lX%s, LY: %s%08lX%s, RX: %s%08lX%s, RY: %s%08lX%s, LT: %s%08lX%s, RT: %s%08lX%s",
         BOLD, ctrl_input->axes[0].value, RESET, BOLD, ctrl_input->axes[1].value, RESET, BOLD, ctrl_input->axes[2].value, RESET, BOLD, ctrl_input->axes[3].value, RESET,
-        BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET, BOLD, ctrl_input->btns[0].value, RESET, BOLD, ctrl_input->btns[1].value, RESET,
-        BOLD, ctrl_input->btns[2].value, RESET, BOLD, ctrl_input->btns[3].value, RESET);
+        BOLD, ctrl_input->axes[4].value, RESET, BOLD, ctrl_input->axes[5].value, RESET);
 #ifdef CONFIG_BLUERETRO_ADAPTER_BTNS_DBG
     adapter_debug_btns(ctrl_input->btns[0].value);
 #endif

@@ -98,8 +98,13 @@ struct ps_mouse_map {
     int32_t raw_axes[2];
 } __packed;
 
+#ifndef CONFIG_BLUERETRO_ADAPTER_INPUT_MAP_DBG
 static const uint32_t ps_mask[4] = {0xBB7F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t ps_desc[4] = {0x330F0FFF, 0x00000000, 0x00000000, 0x00000000};
+#else
+static const uint32_t ps_mask[4] = {0xFFFFFFFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t ps_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+#endif
 static DRAM_ATTR const uint32_t ps_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
