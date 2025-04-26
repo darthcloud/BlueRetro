@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/darthcloud/idf-blueretro:v5.5.0_2024-12-02_ws
+      image: ghcr.io/darthcloud/idf-blueretro:v5.5.0_2024-12-02_gcovr
 
     steps:
     - name: Checkout repo
@@ -32,12 +32,20 @@ jobs:
       run: |
         . $IDF_PATH/export.sh
         (cd build; esptool.py --chip esp32 merge_bin --fill-flash-size 4MB -o flash_image.bin @flash_args)
-        qemu-system-xtensa -machine esp32 -drive file=build/flash_image.bin,if=mtd,format=raw -serial file:serial_log.txt -display none -nic user,model=open_eth,id=lo0,hostfwd=tcp:127.0.0.1:8001-:80 -daemonize
+        qemu-system-xtensa -machine esp32 -drive file=build/flash_image.bin,if=mtd,format=raw -serial file:serial_log.txt -serial file:gcov_data.gcfn -display none -nic user,model=open_eth,id=lo0,hostfwd=tcp:127.0.0.1:8001-:80 -daemonize
         pytest
+    - name: Generate gcov report
+      shell: bash
+      run: |
+        . $IDF_PATH/export.sh
+        xtensa-esp32-elf-gcov-tool merge-stream gcov_data.gcfn
+        gcovr --gcov-executable xtensa-esp32-elf-gcov --html-details coverage.html
     - name: Upload artifact
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
-        name: serial_log
-        path: serial_log.txt
+        name: logs
+        path: |
+          serial_log.txt
+          coverage*
         if-no-files-found: error
