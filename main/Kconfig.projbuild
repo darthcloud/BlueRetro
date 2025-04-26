@@ -250,6 +250,11 @@ menu "BlueRetro"
             help
                 Seclect this to enable verbose loggin into BT monitor.
 
+        config BLUERETRO_COVERAGE
+            bool "Enable gcov coverage logging"
+            help
+                Seclect this to enable gcov coverage logging.
+
     endmenu
 
 endmenu

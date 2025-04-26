@@ -26,6 +26,7 @@
 #include "adapter/memory_card.h"
 #include "system/manager.h"
 #include "tests/ws_srv.h"
+#include "tests/coverage.h"
 #include "sdkconfig.h"
 
 static uint32_t chip_package = EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6;
@@ -84,6 +85,10 @@ static void wl_init_task(void *arg) {
     esp_ota_get_state_partition(running, &ota_state);
 
     chip_package = esp_efuse_get_pkg_ver();
+
+#ifdef CONFIG_BLUERETRO_COVERAGE
+    cov_init();
+#endif
 
     err_led_init(chip_package);
 

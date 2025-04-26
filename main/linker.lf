@@ -24,3 +24,17 @@ entries:
     jag_io (noflash)
     wii_i2c (noflash)
     devcrypto (noflash)
+
+[sections:gcov_info]
+entries:
+    .gcov_info
+
+[scheme:gcov_default]
+entries:
+    gcov_info -> flash_rodata
+
+[mapping:gcov_info]
+archive: *
+entries:
+    * (gcov_default);
+    gcov_info -> flash_rodata KEEP() SURROUND(_gcov_info)

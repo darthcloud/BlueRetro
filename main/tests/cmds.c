@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Jacques Gagnon
+ * Copyright (c) 2024-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,6 +13,7 @@
 #include "bluetooth/host.h"
 #include "bluetooth/hci.h"
 #include "bluetooth/hidp/hidp.h"
+#include "coverage.h"
 #include "cmds.h"
 
 enum {
@@ -27,6 +28,7 @@ enum {
     TESTS_CMDS_IN_CFG,
     TESTS_CMDS_SYSTEM_ID,
     TESTS_CMDS_VID_PID,
+    TESTS_CMDS_COV_DUMP,
 };
 
 static uint32_t log_offset = 0;
@@ -134,6 +136,12 @@ char *tests_cmds_hdlr(struct tests_cmds_pkt *pkt) {
                 TESTS_CMDS_LOG("\"device_vid_pid\": {\"device_id\": %d, \"vid\": %d, \"pid\": %d},\n",
                     device->ids.id, bt_data->base.vid, bt_data->base.pid);
             }
+            break;
+        case TESTS_CMDS_COV_DUMP:
+            /* Trigger coverage dump on UART1 */
+#ifdef CONFIG_BLUERETRO_COVERAGE
+            cov_dump_info();
+#endif
             break;
         default:
             printf("# %s invalid cmd: 0x%02X\n", __FUNCTION__, pkt->cmd);

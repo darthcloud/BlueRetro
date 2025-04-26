@@ -1,7 +1,6 @@
-set(srcs
+set(cov_srcs
     "main.c"
     "adapter/adapter.c"
-    "adapter/adapter_debug.c"
     "adapter/config.c"
     "adapter/gameid.c"
     "adapter/hid_parser.c"
@@ -34,7 +33,6 @@ set(srcs
     "adapter/wireless/sw.c"
     "adapter/wireless/wireless.c"
     "bluetooth/host.c"
-    "bluetooth/debug.c"
     "bluetooth/hci.c"
     "bluetooth/l2cap.c"
     "bluetooth/sdp.c"
@@ -49,19 +47,24 @@ set(srcs
     "bluetooth/hidp/wii.c"
     "bluetooth/hidp/ps.c"
     "bluetooth/hidp/sw.c"
-    "system/bare_metal_app_cpu.c"
-    "system/core0_stall.c"
-    "system/core0_stall_highint_hdl.S"
+    "system/manager.c"
+    "tools/devcrypto.c"
+    "tools/ps1_gameid.c"
+)
+
+set(srcs
+    "adapter/adapter_debug.c"
+    "bluetooth/debug.c"
     "system/delay.c"
     "system/fpga_config.c"
     "system/fs.c"
     "system/gpio.c"
     "system/intr.c"
     "system/led.c"
-    "system/manager.c"
+    "system/bare_metal_app_cpu.c"
+    "system/core0_stall.c"
+    "system/core0_stall_highint_hdl.S"
     "system/startup.c"
-    "tools/devcrypto.c"
-    "tools/ps1_gameid.c"
     "tools/stats.c"
     "wired/detect.c"
     "wired/wired_bare.c"
@@ -90,8 +93,14 @@ if(CONFIG_BLUERETRO_WS_CMDS)
     )
 endif()
 
+if(CONFIG_BLUERETRO_COVERAGE)
+    list(APPEND srcs
+        "tests/coverage.c"
+    )
+endif()
+
 idf_component_register(
-    SRCS "${srcs}"
+    SRCS "${srcs}" "${cov_srcs}"
     PRIV_INCLUDE_DIRS "."
     LDFRAGMENTS linker.lf
 )
@@ -99,6 +108,17 @@ idf_component_register(
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address-of-packed-member)
 target_compile_options(${COMPONENT_LIB} PRIVATE -fno-builtin-memset)
 target_compile_options(${COMPONENT_LIB} PRIVATE -fno-builtin-memcpy)
+
+if(CONFIG_BLUERETRO_COVERAGE)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -fprofile-info-section)
+
+    set_source_files_properties(
+        ${cov_srcs}
+        PROPERTIES COMPILE_FLAGS --coverage
+    )
+
+    target_link_libraries(${COMPONENT_TARGET} gcov)
+endif()
 
 idf_build_set_property(COMPILE_DEFINITIONS "-DBLUERETRO" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "-DXT_INTEXC_HOOKS" APPEND)
