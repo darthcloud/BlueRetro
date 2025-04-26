@@ -68,6 +68,10 @@ class BlueRetroInjector:
         self.__write(0x0B, self.handle, struct.pack("<HH", vid, pid))
         return self.__read()
 
+    def send_cov_dump(self):
+        self.__write(0x0C, self.handle)
+        return self.__read()
+
 
 def main():
     name = 'BlueRetro Test'

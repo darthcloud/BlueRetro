@@ -13,14 +13,15 @@ class BlueRetroDut(BlueRetroInjector):
 def blueretro_dut():
     ''' Fixture that try to return a BlueRetroDut object. '''
     logging.StreamHandler.terminator = ""
-    retry = 0
     while True:
         try:
-            ret = BlueRetroDut()
+            dut = BlueRetroDut()
             break
         except Exception as e:
             logging.debug(e)
-    return ret
+    yield dut
+
+    dut.send_cov_dump()
 
 @pytest.fixture()
 def blueretro(blueretro_dut, request):
