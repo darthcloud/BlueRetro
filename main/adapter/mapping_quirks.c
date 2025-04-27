@@ -161,6 +161,9 @@ static void gc_gbros_8bitdo(struct raw_src_mapping *map) {
     map->mask[0] = 0xFF5F0FFF;
     map->desc[0] = 0x110000FF;
 
+    uint32_t tmp = map->btns_mask[PAD_RB_LEFT];
+    map->btns_mask[PAD_RB_LEFT] = map->btns_mask[PAD_RB_RIGHT];
+    map->btns_mask[PAD_RB_RIGHT] = tmp;
     map->btns_mask[PAD_LT] = map->btns_mask[PAD_LS];
     map->btns_mask[PAD_RT] = map->btns_mask[PAD_RS];
     map->btns_mask[PAD_RS] = map->btns_mask[PAD_MS];
