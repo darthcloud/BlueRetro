@@ -224,11 +224,11 @@ static void adapter_fb_stop_cb(void* arg) {
 
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 
-    /* Send 0 byte data, system that require callback stop shall look for that */
-    adapter_q_fb(&fb_data);
-
     /* Unmute system rumble */
     rumble_mute = false;
+
+    /* Send 0 byte data, system that require callback stop shall look for that */
+    adapter_q_fb(&fb_data);
 }
 
 uint32_t adapter_get_out_mask(uint8_t dev_id) {
