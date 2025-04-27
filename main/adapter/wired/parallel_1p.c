@@ -30,14 +30,29 @@
 static const uint32_t para_1p_mask[4] = {0x337F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
 static const uint32_t para_1p_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t para_1p_btns_mask[32] = {
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    BIT(P1_LD_LEFT), BIT(P1_LD_RIGHT), BIT(P1_LD_DOWN), BIT(P1_LD_UP),
-    0, 0, 0, 0,
-    BIT(P1_RB_LEFT), BIT(P1_RB_RIGHT), BIT(P1_RB_DOWN), BIT(P1_RB_UP),
-    BIT(P1_MM - 32) | 0xF0000000, BIT(P1_MS), BIT(P1_MT), 0,
-    BIT(P1_LM), BIT(P1_LM), 0, 0,
-    BIT(P1_RM - 32) | 0xF0000000, BIT(P1_RM - 32) | 0xF0000000, 0, 0,
+    0, 0, 0, 0,          // 0~3
+    0, 0, 0, 0,          // 4~7
+    BIT(P1_LD_LEFT),     // 8 (D-Pad LEFT)
+    BIT(P1_LD_RIGHT),    // 9 (D-Pad RIGHT)
+    BIT(P1_LD_DOWN),     // 10 (D-Pad DOWN)
+    BIT(P1_LD_UP),       // 11 (D-Pad UP)
+    0, 0, 0, 0,          // 12~15
+    BIT(P1_RB_LEFT),     // 16 → A버튼 → 약손
+    BIT(P1_RB_RIGHT),    // 17 → B버튼 → 중손
+    BIT(P1_RB_UP),       // 18 → X버튼 → 약발
+    BIT(P1_LM),          // 19 → Y버튼 → 중발
+    BIT(P1_MM - 32) | 0xF0000000, // 20 (START)
+    BIT(P1_MS),          // 21 (SELECT)
+    BIT(P1_MT),          // 22 (MODE, 사용안함)
+    0,                   // 23
+    0,                   // 24 (LB버튼, 사용 안함)
+    0,                   // 25
+    0,                   // 26
+    0,                   // 27
+    BIT(P1_RM - 32) | 0xF0000000, // 28 → RB버튼 → 강발
+    0,                   // 29
+    0,                   // 30
+    0,                   // 31
 };
 
 void IRAM_ATTR para_1p_init_buffer(int32_t dev_mode, struct wired_data *wired_data) {
