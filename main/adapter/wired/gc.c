@@ -78,7 +78,11 @@ static DRAM_ATTR const uint32_t gc_btns_mask_alt[32] = {
     0, BIT(GC_Z), BIT(GC_L), 0,
     0, BIT(GC_Z), BIT(GC_R), 0,
 };
-static DRAM_ATTR const uint32_t *btns_mask = gc_btns_mask;
+static DRAM_ATTR const uint32_t *btns_mask[WIRED_MAX_DEV] = {
+    gc_btns_mask, gc_btns_mask, gc_btns_mask, gc_btns_mask,
+    gc_btns_mask, gc_btns_mask, gc_btns_mask, gc_btns_mask,
+    gc_btns_mask, gc_btns_mask, gc_btns_mask, gc_btns_mask,
+};
 
 static const uint32_t gc_kb_mask[4] = {0xE6FF0F0F, 0xFFFFFFFF, 0x1FBFFFFF, 0x0003C000 | BR_COMBO_MASK};
 static const uint32_t gc_kb_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
@@ -174,12 +178,12 @@ static void gc_ctrl_special_action(struct wired_ctrl *ctrl_data, struct wired_da
             if (atomic_test_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE)) {
                 atomic_clear_bit(&wired_data->flags, WIRED_WAITING_FOR_RELEASE);
 
-                if (btns_mask == gc_btns_mask) {
-                    btns_mask = gc_btns_mask_alt;
+                if (btns_mask[ctrl_data->index] == gc_btns_mask) {
+                    btns_mask[ctrl_data->index] = gc_btns_mask_alt;
                     printf("# %s: Names based mapping\n", __FUNCTION__);
                 }
                 else {
-                    btns_mask = gc_btns_mask;
+                    btns_mask[ctrl_data->index] = gc_btns_mask;
                     printf("# %s: Position based mapping\n", __FUNCTION__);
                 }
                 adapter_toggle_fb(ctrl_data->index, 300000, 0xFF, 0xFF);
@@ -197,12 +201,12 @@ static void gc_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_data
     for (uint32_t i = 0; i < ARRAY_SIZE(generic_btns_mask); i++) {
         if (ctrl_data->map_mask[0] & generic_btns_mask[i]) {
             if (ctrl_data->btns[0].value & generic_btns_mask[i]) {
-                map_tmp.buttons |= btns_mask[i];
-                map_mask &= ~btns_mask[i];
+                map_tmp.buttons |= btns_mask[ctrl_data->index][i];
+                map_mask &= ~btns_mask[ctrl_data->index][i];
                 wired_data->cnt_mask[i] = ctrl_data->btns[0].cnt_mask[i];
             }
-            else if (map_mask & btns_mask[i]) {
-                map_tmp.buttons &= ~btns_mask[i];
+            else if (map_mask & btns_mask[ctrl_data->index][i]) {
+                map_tmp.buttons &= ~btns_mask[ctrl_data->index][i];
                 wired_data->cnt_mask[i] = 0;
             }
         }
@@ -287,6 +291,6 @@ void IRAM_ATTR gc_gen_turbo_mask(struct wired_data *wired_data) {
     map_mask->buttons = 0xFFFF;
     memset(map_mask->axes, 0x00, sizeof(map_mask->axes));
 
-    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, btns_mask);
+    wired_gen_turbo_mask_btns16_pos(wired_data, &map_mask->buttons, btns_mask[wired_data->index]);
     wired_gen_turbo_mask_axes8(wired_data, map_mask->axes, ADAPTER_MAX_AXES, gc_axes_idx, gc_axes_meta);
 }
