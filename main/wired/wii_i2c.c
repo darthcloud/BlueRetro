@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -294,6 +294,8 @@ static unsigned isr_dispatch(unsigned cause) {
 
 void wii_i2c_init(uint32_t package) {
 #if defined (CONFIG_BLUERETRO_SYSTEM_WII_EXT) || defined(CONFIG_BLUERETRO_SYSTEM_UNIVERSAL)
+    config_set_rst_bare_core(true);
+
     for (uint32_t i = 0; i < WII_PORT_MAX; i++) {
         struct wii_ctrl_port *p = &wii_ctrl_ports[i];
 

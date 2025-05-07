@@ -570,6 +570,13 @@ void sys_mgr_cmd(uint8_t cmd) {
             printf("# %s cmd_q full!\n", __FUNCTION__);
         }
     }
+    else {
+        printf("# %s cmd_q_hdl NULL!\n", __FUNCTION__);
+        if (cmd == SYS_MGR_CMD_WIRED_RST) {
+            /* For gameid cfg we may need to reset bare core very early */
+            sys_mgr_wired_reset();
+        }
+    }
 }
 
 void sys_mgr_init(uint32_t package) {

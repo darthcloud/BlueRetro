@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -270,6 +270,7 @@ static unsigned isr_dispatch(unsigned cause) {
 void cdi_uart_init(uint32_t package) {
 #if defined (CONFIG_BLUERETRO_SYSTEM_CDI)
     gpio_config_t io_conf = {0};
+    config_set_rst_bare_core(true);
 
     for (uint32_t i = 0; i < CDI_PORT_MAX; i++) {
         struct cdi_ctrl_port *p = &cdi_ctrl_ports[i];

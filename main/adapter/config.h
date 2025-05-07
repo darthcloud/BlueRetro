@@ -101,6 +101,7 @@ struct hw_config {
 extern struct config config;
 extern struct hw_config hw_config;
 
+void config_set_rst_bare_core(bool value);
 void hw_config_patch(void);
 void config_init(uint32_t src);
 void config_update(uint32_t dst);

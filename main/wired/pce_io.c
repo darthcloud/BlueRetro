@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -350,6 +350,8 @@ static unsigned pce_kb_oe_isr(unsigned cause) {
 
 void pce_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
+
+    config_set_rst_bare_core(true);
 
     /* SEL */
     io_conf.intr_type = GPIO_INTR_DISABLE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -450,6 +450,8 @@ void jag_io_init(uint32_t package) {
     gpio_config_t io_conf = {0};
     uint8_t inputs[] = {P1_J0_PIN, P1_J1_PIN, P1_J2_PIN, P1_J3_PIN};
     uint8_t outputs[] = {P1_J8_PIN, P1_J9_PIN, P1_J10_PIN, P1_J11_PIN, P1_B0_PIN, P1_B1_PIN};
+
+    config_set_rst_bare_core(true);
 
     /* Inputs */
     io_conf.intr_type = GPIO_INTR_DISABLE;

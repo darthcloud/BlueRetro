@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -569,6 +569,8 @@ static unsigned npiso_sfc_snes_5p_isr(unsigned cause) {
 void npiso_init(uint32_t package)
 {
     gpio_config_t io_conf = {0};
+
+    config_set_rst_bare_core(true);
 
     if (wired_adapter.system_id == NES) {
         switch (config.global_cfg.multitap_cfg) {
