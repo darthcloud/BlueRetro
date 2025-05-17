@@ -562,10 +562,10 @@ maple_end:
                             case CMD_INFO_REQ:
                                 pkt.len = 28;
                                 pkt.cmd = CMD_INFO_RSP;
-                                pkt.data32[0] = ID_VMU_MEM;
-                                pkt.data32[1] = DESC_VMU_MEMORY;
-                                pkt.data32[2] = 0;
-                                pkt.data32[3] = 0;
+                                pkt.data32[0] = ID_VMU_CLK | ID_VMU_LCD | ID_VMU_MEM;
+                                pkt.data32[1] = DESC_VMU_TIMER;
+                                pkt.data32[2] = DESC_VMU_SCREEN;
+                                pkt.data32[3] = DESC_VMU_MEMORY;
                                 memcpy((void *)&pkt.data32[4], vmu_area_dir_name, sizeof(vmu_area_dir_name));
                                 memcpy((void *)&pkt.data32[12], brand, sizeof(brand));
                                 pkt.data32[27] = PWR_VMU;
@@ -593,7 +593,7 @@ maple_end:
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             case CMD_BLOCK_WRITE:
-                                if (pkt.len != (32 + 2)) {
+                                if (pkt.len != (32 + 2) && pkt.data32[0] == ID_VMU_MEM) {
                                     ets_printf("Unexpected Block Write packet length: 0x%02X, expected 0x22\n", pkt.len);
                                 }
                                 pkt.len = 0x00;
