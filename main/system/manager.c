@@ -19,6 +19,7 @@
 #include "esp_rom_gpio.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/memory_card.h"
 #include "bluetooth/host.h"
 #include "bluetooth/hci.h"
 #include "wired/wired_bare.h"
@@ -340,7 +341,7 @@ static void wired_port_hdl(void) {
             update++;
         }
     }
-    if (update) {
+    if (update && !mc_get_state()) {
         printf("# %s: Update ports state: %04X\n", __FUNCTION__, port_mask);
         wired_bare_port_cfg(port_mask);
         port_state = port_mask;

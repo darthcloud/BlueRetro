@@ -188,3 +188,7 @@ void IRAM_ATTR mc_write(uint32_t addr, uint8_t *data, uint32_t size) {
 uint8_t IRAM_ATTR *mc_get_ptr(uint32_t addr) {
     return mc_buffer[addr >> 12] + (addr & 0xFFF);
 }
+
+uint32_t IRAM_ATTR mc_get_state(void) {
+    return mc_block_state;
+}
