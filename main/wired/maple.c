@@ -165,6 +165,7 @@ static uint32_t rumble_timeout = 0x00021300; /* mask 0x02 (unit1), 5 sec timeout
 static uint32_t rumble_config = 0x10000F00; /* unit 1, freq 8 Hz */
 static uint32_t port_cnt = ARRAY_SIZE(gpio_pin);
 
+#ifndef CONFIG_BLUERETRO_WIRED_TRACE
 static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
     uint8_t *relative = (uint8_t *)(wired_adapter.data[port].output + 4);
     int32_t *raw_axes = (int32_t *)(wired_adapter.data[port].output + 8);
@@ -189,6 +190,7 @@ static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
         }
     }
 }
+#endif
 
 static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint32_t len) {
     uint8_t *crc = data + (len - 1);
@@ -636,7 +638,11 @@ void maple_init(uint32_t package)
         port_cnt = 1;
     }
 #endif
+#ifndef CONFIG_BLUERETRO_WIRED_TRACE
     maple_port_cfg(0x0);
+#else
+    maple_port_cfg(0x1);
+#endif
     intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, maple_rx);
 }
 
