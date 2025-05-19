@@ -201,7 +201,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     GPIO.out_w1ts = maple0 | maple1;
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_OUTPUT);
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_OUTPUT);
-    //core0_stall_start();
+    core0_stall_start();
     GPIO.out_w1tc = maple0;
     wait_500ns();
     GPIO.out_w1tc = maple1;
@@ -266,7 +266,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     wait_500ns();
     GPIO.out_w1ts = maple1;
 
-    //core0_stall_end();
+    core0_stall_end();
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_INPUT);
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_INPUT);
 }
