@@ -639,7 +639,7 @@ void maple_init(uint32_t package)
     }
 #endif
 #ifndef CONFIG_BLUERETRO_WIRED_TRACE
-    maple_port_cfg(0x0);
+    maple_port_cfg(0xF);
 #else
     maple_port_cfg(0x1);
 #endif

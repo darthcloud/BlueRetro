@@ -647,12 +647,9 @@ void sys_mgr_init(uint32_t package) {
             hw_config.ports_sense_p3_p4_as_output = 1;
             break;
         case N64:
-            hw_config.port_cnt = 4;
-            break;
         case DC:
         case GC:
             hw_config.port_cnt = 4;
-            hw_config.hotplug = 1;
             break;
         case PARALLEL_1P:
         case PCE:
