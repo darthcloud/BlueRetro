@@ -22,6 +22,7 @@ SOC_RESERVE_MEMORY_REGION(0x3FFE7D98, 0x3FFE7E28, bad_region);
 static uint8_t *mc_buffer[MC_BUFFER_BLOCK_CNT] = {0};
 static esp_timer_handle_t mc_timer_hdl = NULL;
 static int32_t mc_block_state = 0;
+static bool mc_ready = false;
 
 static int32_t mc_restore(void);
 static int32_t mc_store(void);
@@ -157,6 +158,10 @@ int32_t mc_init(void) {
         ret = mc_restore();
     }
 
+    if (ret == 0) {
+        mc_ready = true;
+    }
+
     return ret;
 }
 
@@ -191,4 +196,8 @@ uint8_t IRAM_ATTR *mc_get_ptr(uint32_t addr) {
 
 uint32_t IRAM_ATTR mc_get_state(void) {
     return mc_block_state;
+}
+
+bool IRAM_ATTR mc_get_ready(void) {
+    return mc_ready;
 }

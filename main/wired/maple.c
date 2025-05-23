@@ -451,7 +451,7 @@ maple_end:
                         if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
                             pkt.src |= ADDR_RUMBLE;
                         }
-                        if (config.out_cfg[port].acc_mode & ACC_MEM) {
+                        if (config.out_cfg[port].acc_mode & ACC_MEM && mc_get_ready()) {
                             pkt.src |= ADDR_MEM;
                         }
                         pkt.dst = dst;
