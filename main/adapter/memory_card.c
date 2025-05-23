@@ -130,7 +130,7 @@ static inline void mc_store_cb(void *arg) {
 
 int32_t mc_init_mem(void) {
     for (uint32_t i = 0; i < MC_BUFFER_BLOCK_CNT; i++) {
-        mc_buffer[i] = malloc(MC_BUFFER_BLOCK_SIZE);
+        mc_buffer[i] = heap_caps_malloc(MC_BUFFER_BLOCK_SIZE, MALLOC_CAP_DMA);
 
         if (mc_buffer[i] == NULL) {
             printf("# %s mc_buffer[%ld] alloc fail\n", __FUNCTION__, i);
