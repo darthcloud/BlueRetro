@@ -68,8 +68,6 @@
 #define TIMEOUT_ABORT 100
 
 #define VMU_BLOCK_SIZE 512
-#define VMU_WRITE_ACCESSES 4
-#define VMU_READ_ACCESSES 1
 
 #define wait_100ns() asm("movi a8, 5\n\tloop a8, waitend%=\n\tnop\n\twaitend%=:\n":::"a8");
 #define wait_500ns() asm("movi a8, 49\n\tloop a8, waitend%=\n\tnop\n\twaitend%=:\n":::"a8");
@@ -88,6 +86,11 @@ struct maple_pkt {
         uint8_t data[545];
     };
 };
+
+typedef union {
+    uint8_t bytes[4];
+    uint32_t val;
+} u32_val_t;
 
 static const uint8_t gpio_pin[][2] = {
     {21, 22},
@@ -192,7 +195,8 @@ static inline void load_mouse_axes(uint8_t port, uint16_t *axes) {
 }
 #endif
 
-static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint32_t len) {
+static uint8_t maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *data, uint32_t len) {
+    uint8_t crc_ret = 0;
     uint8_t *crc = data + (len - 1);
     *crc = 0x00;
 
@@ -248,6 +252,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
             GPIO.out_w1tc = maple1;
             wait_200ns();
         }
+        crc_ret = *crc;
         *crc ^= *data;
     }
     GPIO.out_w1ts = maple0;
@@ -269,6 +274,7 @@ static void maple_tx(uint32_t port, uint32_t maple0, uint32_t maple1, uint8_t *d
     core0_stall_end();
     gpio_set_direction_iram(gpio_pin[port][0], GPIO_MODE_INPUT);
     gpio_set_direction_iram(gpio_pin[port][1], GPIO_MODE_INPUT);
+    return crc_ret;
 }
 
 static unsigned maple_rx(unsigned cause) {
@@ -277,13 +283,12 @@ static unsigned maple_rx(unsigned cause) {
     uint32_t bit_cnt = 0;
     uint32_t gpio;
     uint8_t *data = pkt.data;
-#ifdef CONFIG_BLUERETRO_WIRED_TRACE
     uint32_t byte;
-#endif
     uint32_t port;
     uint32_t bad_frame;
-    uint8_t len, cmd, src, dst, crc = 0;
+    uint8_t len, cmd, src, dst, crc = 0, wcrc = 0;
     uint32_t maple1;
+    u32_val_t func;
     uint8_t phase;
     uint8_t block_no;
 
@@ -331,7 +336,8 @@ static unsigned maple_rx(unsigned cause) {
                     *data &= ~mask;
                 }
             }
-            crc ^= *data;
+            crc = wcrc;
+            wcrc ^= *data;
             ++data;
         }
 maple_end:
@@ -358,6 +364,7 @@ maple_end:
         ets_printf("\n");
 #else
         len = ((bit_cnt - 1) / 32) - 1;
+        byte = ((bit_cnt - 1) / 8);
         /* Fix up to 7 bits loss */
         if (bad_frame) {
             cmd = maple_fix_byte(bad_frame, pkt.data[2], pkt.data[3]);
@@ -369,7 +376,7 @@ maple_end:
             cmd = pkt.data[2];
             src = pkt.data[1];
             dst = pkt.data[0];
-            bad_frame = 1;
+            bad_frame = 8;
         }
         else {
             cmd = pkt.cmd;
@@ -558,8 +565,16 @@ maple_end:
                     case ADDR_MEM:
                         pkt.src = src;
                         pkt.dst = dst;
+                        func.bytes[0] = maple_fix_byte(bad_frame, pkt.data[3], pkt.data[4]);
+                        func.bytes[1] = maple_fix_byte(bad_frame, pkt.data[4], pkt.data[5]);
+                        func.bytes[2] = maple_fix_byte(bad_frame, pkt.data[5], pkt.data[6]);
+                        func.bytes[3] = maple_fix_byte(bad_frame, pkt.data[6], pkt.data[7]);
+                        block_no = maple_fix_byte(bad_frame, pkt.data[7], pkt.data[8]);
+                        phase = maple_fix_byte(bad_frame, pkt.data[9], pkt.data[10]);
+                        // ets_printf("%ld S: %ld C: %02X F: %08X B: %02X P: %02X\n", bad_frame, byte, cmd, func.val, block_no, phase);
                         switch(cmd) {
                             case CMD_INFO_REQ:
+                            case CMD_EXT_INFO_REQ:
                                 pkt.len = 28;
                                 pkt.cmd = CMD_INFO_RSP;
                                 pkt.data32[0] = ID_VMU_CLK | ID_VMU_LCD | ID_VMU_MEM;
@@ -571,39 +586,60 @@ maple_end:
                                 pkt.data32[27] = PWR_VMU;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
-                            case CMD_EXT_INFO_REQ: /* unimplemented */
                             case CMD_GET_CONDITION:
                             case CMD_MEM_INFO_REQ:
-                                pkt.len = 0x07;
                                 pkt.cmd = CMD_DATA_TX;
-                                pkt.data32[0] = ID_VMU_MEM;
-                                memcpy((void *)&pkt.data32[1], vmu_media_info, sizeof(vmu_media_info));
-                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                pkt.data32[0] = func.val;
+                                switch (func.val) {
+                                    case ID_VMU_MEM:
+                                        pkt.len = 0x07;
+                                        memcpy((void *)&pkt.data32[1], vmu_media_info, sizeof(vmu_media_info));
+                                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                        break;
+                                    case ID_VMU_LCD:
+                                        pkt.len = 0x02;
+                                        pkt.data32[1] = 0x2F1F1002;
+                                        maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                        break;
+                                }
                                 break;
                             case CMD_BLOCK_READ:
+                                if (func.val != ID_VMU_MEM) {
+                                    ets_printf("RD ERR func: 0x%08X\n", pkt.data32[0]);
+                                }
                                 pkt.len = 0x82;
                                 pkt.cmd = CMD_DATA_TX;
-                                pkt.data32[0] = ID_VMU_MEM;
-                                phase = (uint8_t)((pkt.data32[1] >> 16) & 0x00FF);
+                                pkt.data32[0] = func.val;
+                                pkt.data32[1] = (phase << 16) | block_no;
                                 if (phase) {
-                                    ets_printf("Block Read with unexpected phase: 0x%02X, expected 0\n", phase);
+                                    ets_printf("RD ERR phase: %d, expected 0\n", phase);
                                 }
-                                block_no = (uint8_t)((pkt.data32[1]) & 0x00FF);
                                 mc_read(block_no * VMU_BLOCK_SIZE, (void *)&pkt.data32[2], VMU_BLOCK_SIZE);
-                                maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                crc = maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
+                                // ets_printf("R: %02X %d %02X\n", block_no, phase, crc);
                                 break;
                             case CMD_BLOCK_WRITE:
-                                if (pkt.len != (32 + 2) && pkt.data32[0] == ID_VMU_MEM) {
-                                    ets_printf("Unexpected Block Write packet length: 0x%02X, expected 0x22\n", pkt.len);
-                                }
+                                // if (pkt.len != (32 + 2) && func.val == ID_VMU_MEM) {
+                                //     ets_printf("WR ERR: %d words, expected 34\n", pkt.len);
+                                // }
+                                // if (func.val == ID_VMU_MEM) {
+                                //     if (crc != pkt.data[pkt.len * 4 + 4]) {
+                                //         ets_printf("CRC ERR: 0x%02X, 0x%02X\n", pkt.data[pkt.len * 4 + 4], crc);
+                                //     }
+                                // }
                                 pkt.len = 0x00;
                                 pkt.cmd = CMD_ACK;
-                                if ((!bad_frame) && pkt.data32[0] == ID_VMU_MEM) {
-                                    phase = (uint8_t)((pkt.data32[1] >> 16) & 0x00FF);
-                                    block_no = (uint8_t)((pkt.data32[1]) & 0x00FF);
-                                    /* Data is written to the MC module in wire byte order. */
-                                    /* If creating a read/write function, this must be accounted for. */
-                                    mc_write((block_no * VMU_BLOCK_SIZE) + (128 * phase), (void *)&pkt.data32[2], 128);
+                                if (func.val == ID_VMU_MEM) {
+                                    // ets_printf("W: %02X %d %02X\n", block_no, phase, crc);
+                                    if (bad_frame) {
+                                        for (uint32_t i = 0; i < 128; i++) {
+                                            uint8_t mc_data = maple_fix_byte(bad_frame, pkt.data[i + 11], pkt.data[i + 12]);
+                                            mc_write((block_no * VMU_BLOCK_SIZE) + (128 * phase) + i, &mc_data, 1);
+                                        }
+                                    }
+                                    else {
+                                        mc_write((block_no * VMU_BLOCK_SIZE) + (128 * phase), (void *)&pkt.data32[2], 128);
+                                    }
                                 }
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
@@ -613,7 +649,7 @@ maple_end:
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             default:
-                                ets_printf("%02X: Unk cmd: 0x%02X\n", dst, cmd);
+                                ets_printf("%02X: Unk cmd: %02X %02X %ld\n", dst, cmd, crc, byte);
                                 break;
                         }
                         break;
