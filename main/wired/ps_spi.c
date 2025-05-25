@@ -20,6 +20,7 @@
 #include "tools/util.h"
 #include "adapter/adapter.h"
 #include "adapter/config.h"
+#include "adapter/memory_card.h"
 #include "adapter/kb_monitor.h"
 #include "adapter/wired/ps.h"
 #include "wired_bare.h"
@@ -39,6 +40,40 @@ enum {
     DEV_PS2_MULTITAP,
     DEV_TYPE_MAX,
 };
+
+enum {
+    PORT_TYPE_CTRL = 0,
+    PORT_TYPE_MEM,
+};
+
+enum {
+    MC_ADDR = 0,
+    MC_CMD,
+    MC_ID1,
+    MC_ID2,
+    MC_MSB,
+    MC_LSB,
+    MC_RD_AK1,
+    MC_RD_AK2,
+    MC_RD_MSB,
+    MC_RD_LSB,
+    MC_RD_DAT,
+    MC_RD_CRC = 138,
+    MC_RD_STS = 139,
+    MC_RD_LEN = 140,
+    MC_WR_DAT = 6,
+    MC_WR_CRC = 134,
+    MC_WR_AK1 = 135,
+    MC_WR_AK2 = 136,
+    MC_WR_STS = 137,
+    MC_WR_LEN = 138,
+    MC_GID_LEN = 3,
+};
+
+#define MC_CMD_GID 0x21
+#define MC_CMD_RD 0x52
+#define MC_CMD_ID 0x53
+#define MC_CMD_WR 0x57
 
 #define ESP_SPI2_HSPI 1
 #define ESP_SPI3_VSPI 2
@@ -73,7 +108,8 @@ enum {
 #define PS_SPI_RXD 3
 #define PS_SPI_DSR 4
 
-#define PS_BUFFER_SIZE 64
+#define PS_BUFFER_SIZE 144
+#define MC_BLOCK_SIZE 128
 #define PS_PORT_MAX 2
 #define MT_PORT_MAX 4
 
@@ -81,6 +117,11 @@ struct ps_ctrl_port {
     struct spi_cfg cfg;
     spi_dev_t *spi_hw;
     uint8_t id;
+    uint8_t active_port_type;
+    uint8_t mc_cmd;
+    uint8_t mc_flags;
+    uint8_t mc_crc;
+    uint16_t mc_addr;
     uint8_t led_pin;
     uint8_t root_dev_type;
     uint8_t mt_state;
@@ -101,7 +142,6 @@ struct ps_ctrl_port {
     uint32_t idx;
     uint32_t mt_idx;
     uint32_t valid;
-    uint32_t game_id_len;
 };
 
 static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
@@ -122,6 +162,7 @@ static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
             .inten = 1,
         },
         .id = 0,
+        .mc_flags = 0x08,
         .led_pin = P1_ANALOG_LED_PIN,
         .spi_hw = &SPI2,
     },
@@ -142,6 +183,7 @@ static struct ps_ctrl_port ps_ctrl_ports[PS_PORT_MAX] = {
             .inten = 1,
         },
         .id = 1,
+        .mc_flags = 0x08,
         .led_pin = P2_ANALOG_LED_PIN,
         .spi_hw = &SPI3,
     }
@@ -268,7 +310,7 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
     switch (cmd) {
         case 0x42:
         {
-            if (port->dev_id[id] != 0x41 && config.out_cfg[id + port->mt_first_port].acc_mode == ACC_RUMBLE) {
+            if (port->dev_id[id] != 0x41 && (config.out_cfg[id + port->mt_first_port].acc_mode & ACC_RUMBLE)) {
                 struct raw_fb fb_data = {0};
                 req++;
                 if (port->rumble_r_state[id]) {
@@ -539,6 +581,109 @@ static void ps_cmd_const_rsp_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t
     }
 }
 
+static int32_t ps_mc_hdlr(struct ps_ctrl_port *port) {
+    if (port->idx == MC_CMD) {
+        port->mc_cmd = port->rx_buf[port->active_rx_buf][port->idx];
+        if (!port->valid && port->mc_cmd != MC_CMD_GID) {
+            //ets_printf("M%d NOT GID\n", port->id);
+            return -1;
+        }
+    }
+    switch (port->mc_cmd) {
+        case MC_CMD_GID:
+            switch (port->idx) {
+                case MC_GID_LEN:
+                    port->tx_buf_len = 4 + port->rx_buf[port->active_rx_buf][port->idx];
+                    break;
+            }
+            break;
+        case MC_CMD_RD:
+            switch (port->idx) {
+                case MC_CMD:
+                    port->tx_buf_len = MC_RD_LEN;
+                    port->tx_buf[MC_RD_AK1] = 0x5C;
+                    port->tx_buf[MC_RD_AK2] = 0x5D;
+                    port->tx_buf[MC_RD_CRC] = 0x00;
+                    port->tx_buf[MC_RD_STS] = 0x47;
+                    break;
+                case MC_MSB:
+                    port->mc_addr = port->rx_buf[port->active_rx_buf][port->idx] << 8;
+                    port->tx_buf[MC_RD_MSB] = port->rx_buf[port->active_rx_buf][port->idx];
+                    port->tx_buf[port->idx + 1] = port->rx_buf[port->active_rx_buf][port->idx];
+                    break;
+                case MC_LSB:
+                    port->mc_addr |= port->rx_buf[port->active_rx_buf][port->idx];
+                    port->tx_buf[MC_RD_LSB] = port->rx_buf[port->active_rx_buf][port->idx];
+                    //ets_printf("RD:ADDR:%03X\n", port->mc_addr);
+                    break;
+                case MC_RD_AK2:
+                    mc_read(port->mc_addr * MC_BLOCK_SIZE, &port->tx_buf[MC_RD_DAT], MC_BLOCK_SIZE);
+                    for (uint32_t i = MC_RD_MSB; i < MC_RD_CRC; i++) {
+                        port->tx_buf[MC_RD_CRC] ^= port->tx_buf[i];
+                    }
+                    //ets_printf("RD:CRC:%02X\n", port->tx_buf[MC_RD_CRC]);
+                    break;
+            }
+            break;
+        case MC_CMD_ID:
+            switch (port->idx) {
+                case MC_CMD:
+                    port->tx_buf_len = 10;
+                    port->tx_buf[4] = 0x5C;
+                    port->tx_buf[5] = 0x5D;
+                    port->tx_buf[6] = 0x04;
+                    port->tx_buf[7] = 0x00;
+                    port->tx_buf[8] = 0x00;
+                    port->tx_buf[9] = 0x00;
+                    break;
+            }
+            break;
+        case MC_CMD_WR:
+            switch (port->idx) {
+                case MC_CMD:
+                    port->tx_buf_len = MC_WR_LEN;
+                    port->tx_buf[MC_WR_AK1] = 0x5C;
+                    port->tx_buf[MC_WR_AK2] = 0x5D;
+                    port->tx_buf[MC_WR_STS] = 0x47;
+                    break;
+                case MC_ID1:
+                case MC_ID2:
+                    break;
+                case MC_MSB:
+                    port->mc_addr = port->rx_buf[port->active_rx_buf][port->idx] << 8;
+                    port->tx_buf[port->idx + 1] = port->rx_buf[port->active_rx_buf][port->idx];
+                    break;
+                case MC_LSB:
+                    port->mc_addr |= port->rx_buf[port->active_rx_buf][port->idx];
+                    port->tx_buf[port->idx + 1] = port->rx_buf[port->active_rx_buf][port->idx];
+                    //ets_printf("WR:ADDR:%03X\n", port->mc_addr);
+                    break;
+                case MC_WR_CRC:
+                    port->mc_crc = 0;
+                    for (uint32_t i = MC_MSB; i < MC_WR_CRC; i++) {
+                        port->mc_crc ^= port->rx_buf[port->active_rx_buf][i];
+                    }
+
+                    //ets_printf("WR:CRC:%02X:%02X\n", port->mc_crc, port->rx_buf[port->active_rx_buf][MC_WR_CRC]);
+
+                    if (port->mc_crc != port->rx_buf[port->active_rx_buf][MC_WR_CRC]) {
+                        port->tx_buf[MC_WR_STS] = 0x4E;
+                    }
+                    break;
+                case MC_WR_AK1:
+                case MC_WR_AK2:
+                    break;
+                default:
+                    port->tx_buf[port->idx + 1] = port->rx_buf[port->active_rx_buf][port->idx];
+                    break;
+            }
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
+
 static void packet_end(void *arg) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
@@ -559,48 +704,69 @@ static void packet_end(void *arg) {
             port->mt_idx = 0;
             port->spi_hw->slave.trans_inten = 1;
             port->spi_hw->slave.trans_done = 0;
-            if (port->valid) {
-                if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
-                    uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
-                    for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
-                        ps_analog_btn_hdlr(port, j);
-                        ps_cmd_req_hdlr(port, j, port->rx_buf[prev_rx_buf][3 + (j * 8)], &port->rx_buf[prev_rx_buf][4 + (j * 8)]);
-                        ps_gen_turbo_mask(&wired_adapter.data[port->mt_first_port + j]);
+            if (port->active_port_type == PORT_TYPE_CTRL) {
+                if (port->valid) {
+                    if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+                        uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
+                        for (uint32_t j = 0; j < MT_PORT_MAX; j++) {
+                            ps_analog_btn_hdlr(port, j);
+                            ps_cmd_req_hdlr(port, j, port->rx_buf[prev_rx_buf][3 + (j * 8)], &port->rx_buf[prev_rx_buf][4 + (j * 8)]);
+                            ps_gen_turbo_mask(&wired_adapter.data[port->mt_first_port + j]);
+                        }
+                    }
+                    else {
+                        ps_analog_btn_hdlr(port, 0);
+                        ps_cmd_req_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->rx_buf[port->active_rx_buf][2]);
+                        ps_gen_turbo_mask(&wired_adapter.data[port->id]);
+                    }
+                    if (port->root_dev_type == DEV_PSX_MULTITAP) {
+                        port->mt_state = port->rx_buf[port->active_rx_buf][2];
                     }
                 }
-                else {
-                    ps_analog_btn_hdlr(port, 0);
-                    ps_cmd_req_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->rx_buf[port->active_rx_buf][2]);
-                    ps_gen_turbo_mask(&wired_adapter.data[port->id]);
+            }
+            else if (port->active_port_type == PORT_TYPE_MEM) {
+                switch (port->mc_cmd) {
+                    case MC_CMD_GID:
+                    {
+                        struct raw_fb fb_data = {0};
+                        uint8_t offset = (port->rx_buf[port->active_rx_buf][4] == 'c') ? 7 : 0;
+                        uint8_t len = port->rx_buf[port->active_rx_buf][MC_GID_LEN] - offset;
+
+                        offset += 4;
+
+                        uint8_t *str = &port->rx_buf[port->active_rx_buf][offset];
+
+                        if (len > 13) {
+                            len = 13;
+                        }
+
+                        fb_data.header.wired_id = 0;
+                        fb_data.header.type = FB_TYPE_GAME_ID;
+                        fb_data.header.data_len = len;
+                        for (uint32_t i = 0; i < len; ++i) {
+                            fb_data.data[i] = str[i];
+                        }
+                        adapter_q_fb(&fb_data);
+                        break;
+                    }
+                    case MC_CMD_WR:
+                    {
+                        if (port->valid) {
+                            //ets_printf("PE%d:WR\n", port->id);
+                            if (port->mc_crc == port->rx_buf[port->active_rx_buf][MC_WR_CRC]) {
+                                mc_write(port->mc_addr * MC_BLOCK_SIZE, &port->rx_buf[port->active_rx_buf][MC_WR_DAT], MC_BLOCK_SIZE);
+                            }
+                        }
+                        break;
+                    }
                 }
-                if (port->root_dev_type == DEV_PSX_MULTITAP) {
-                    port->mt_state = port->rx_buf[port->active_rx_buf][2];
+                if (port->valid) {
+                    port->mc_flags = 0x00;
                 }
+            }
+            if (port->valid) {
                 port->valid = 0;
                 port->active_rx_buf ^= 0x01;
-            }
-            else if (port->game_id_len) {
-                struct raw_fb fb_data = {0};
-                uint8_t offset = (port->rx_buf[port->active_rx_buf][4] == 'c') ? 7 : 0;
-                uint8_t len = port->game_id_len - offset;
-
-                offset += 4;
-
-                uint8_t *str = &port->rx_buf[port->active_rx_buf][offset];
-
-                if (len > 13) {
-                    len = 13;
-                }
-
-                fb_data.header.wired_id = 0;
-                fb_data.header.type = FB_TYPE_GAME_ID;
-                fb_data.header.data_len = len;
-                for (uint32_t i = 0; i < len; ++i) {
-                    fb_data.data[i] = str[i];
-                }
-                adapter_q_fb(&fb_data);
-
-                port->game_id_len = 0;
             }
         }
     }
@@ -622,6 +788,7 @@ static void spi_isr(void* arg) {
         if (port->idx == 0) {
             port->tx_buf_len = 3 + 6;
             if (port->rx_buf[port->active_rx_buf][0] == 0x01) {
+                port->active_port_type = PORT_TYPE_CTRL;
                 set_output_state(port->id, 1);
                 port->valid = 1;
                 if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
@@ -633,63 +800,74 @@ static void spi_isr(void* arg) {
                     port->tx_buf[1] = port->dev_id[0];
                 }
             }
+            else if (port->rx_buf[port->active_rx_buf][0] == 0x81) {
+                port->active_port_type = PORT_TYPE_MEM;
+                if (config.out_cfg[port->id].acc_mode & ACC_MEM && mc_get_ready()) {
+                    set_output_state(port->id, 1);
+                    port->valid = 1;
+                    port->tx_buf[1] = port->mc_flags;
+                    port->tx_buf[2] = 0x5A;
+                    port->tx_buf[3] = 0x5D;
+                    port->tx_buf[4] = 0x00;
+                    //ets_printf("M%d EN\n", port->id);
+                }
+                else {
+                    port->valid = 0;
+                    port->mc_flags = 0x08;
+                    //ets_printf("M%d DIS\n", port->id);
+                }
+            }
             else {
-                port->valid = 0;
-                if (port->rx_buf[port->active_rx_buf][0] != 0x81) {
-                    port->spi_hw->slave.trans_inten = 0;
-                    goto early_end;
-                }
-            }
-        }
-        /* GAME ID sent to memcard */
-        else if (!port->valid) {
-            if (port->idx == 1) {
-                if (port->rx_buf[port->active_rx_buf][1] != 0x21) {
-                    port->spi_hw->slave.trans_inten = 0;
-                    goto early_end;
-                }
-                port->game_id_len = 0;
-            }
-            else if (port->idx == 3) {
-                port->game_id_len = port->rx_buf[port->active_rx_buf][3];
-            }
-        }
-        else if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
-            uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
-            if (port->idx == 3 && port->rx_buf[port->active_rx_buf][2] == 0x00) {
-                port->mt_state = 0;
                 port->valid = 0;
                 port->spi_hw->slave.trans_inten = 0;
                 goto early_end;
             }
-            else if ((port->idx - 2) % 8  == 0) {
-                port->tx_buf[port->idx + 1] = port->dev_id[port->mt_idx];
-            }
-            else if ((port->idx - 3) % 8  == 0) {
-                ps_cmd_rsp_hdlr(port, port->mt_idx++, port->rx_buf[prev_rx_buf][port->idx], &port->tx_buf[port->idx + 1]);
-            }
-            else if ((port->idx - 5) % 8  == 0
-                    && (port->rx_buf[prev_rx_buf][port->idx - 2] == 0x46 || port->rx_buf[prev_rx_buf][port->idx - 2] == 0x4C)
-                    && port->rx_buf[prev_rx_buf][port->idx] == 0x01) {
-                ps_cmd_const_rsp_hdlr(port, port->mt_idx - 1, port->rx_buf[prev_rx_buf][port->idx - 2], &port->tx_buf[port->idx + 1]);
-            }
         }
-        else {
-            if (port->idx == 1) {
-                /* Special dev only ACK 0x42 */
-                if ((port->root_dev_type == DEV_PSX_MOUSE || port->root_dev_type == DEV_PSX_FLIGHT || port->root_dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER)
-                    && port->rx_buf[port->active_rx_buf][1] != 0x42) {
+        else if (port->active_port_type == PORT_TYPE_CTRL) {
+            if (port->root_dev_type == DEV_PSX_MULTITAP && port->mt_state) {
+                uint8_t prev_rx_buf = port->active_rx_buf ^ 0x01;
+                if (port->idx == 3 && port->rx_buf[port->active_rx_buf][2] == 0x00) {
+                    port->mt_state = 0;
                     port->valid = 0;
                     port->spi_hw->slave.trans_inten = 0;
                     goto early_end;
                 }
-                else {
-                    ps_cmd_rsp_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->tx_buf[2]);
+                else if ((port->idx - 2) % 8  == 0) {
+                    port->tx_buf[port->idx + 1] = port->dev_id[port->mt_idx];
+                }
+                else if ((port->idx - 3) % 8  == 0) {
+                    ps_cmd_rsp_hdlr(port, port->mt_idx++, port->rx_buf[prev_rx_buf][port->idx], &port->tx_buf[port->idx + 1]);
+                }
+                else if ((port->idx - 5) % 8  == 0
+                        && (port->rx_buf[prev_rx_buf][port->idx - 2] == 0x46 || port->rx_buf[prev_rx_buf][port->idx - 2] == 0x4C)
+                        && port->rx_buf[prev_rx_buf][port->idx] == 0x01) {
+                    ps_cmd_const_rsp_hdlr(port, port->mt_idx - 1, port->rx_buf[prev_rx_buf][port->idx - 2], &port->tx_buf[port->idx + 1]);
                 }
             }
-            else if (port->idx == 3 && (port->rx_buf[port->active_rx_buf][1] == 0x46 || port->rx_buf[port->active_rx_buf][1] == 0x4C)
-                    && port->rx_buf[port->active_rx_buf][3] == 0x01) {
-                ps_cmd_const_rsp_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->tx_buf[4]);
+            else {
+                if (port->idx == 1) {
+                    /* Special dev only ACK 0x42 */
+                    if ((port->root_dev_type == DEV_PSX_MOUSE || port->root_dev_type == DEV_PSX_FLIGHT || port->root_dev_type == DEV_PSX_PS_2_KB_MOUSE_ADAPTER)
+                        && port->rx_buf[port->active_rx_buf][1] != 0x42) {
+                        port->valid = 0;
+                        port->spi_hw->slave.trans_inten = 0;
+                        goto early_end;
+                    }
+                    else {
+                        ps_cmd_rsp_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->tx_buf[2]);
+                    }
+                }
+                else if (port->idx == 3 && (port->rx_buf[port->active_rx_buf][1] == 0x46 || port->rx_buf[port->active_rx_buf][1] == 0x4C)
+                        && port->rx_buf[port->active_rx_buf][3] == 0x01) {
+                    ps_cmd_const_rsp_hdlr(port, 0, port->rx_buf[port->active_rx_buf][1], &port->tx_buf[4]);
+                }
+            }
+        }
+        else if (port->active_port_type == PORT_TYPE_MEM) {
+            if (ps_mc_hdlr(port)) {
+                port->valid = 0;
+                port->spi_hw->slave.trans_inten = 0;
+                goto early_end;
             }
         }
         port->spi_hw->data_buf[0] = port->tx_buf[++port->idx];
