@@ -13,7 +13,7 @@
 #include "sw.h"
 
 //#define SW_DISABLE_SHIP_EN
-//#define SW_SET_NATIVE_EN
+#define SW_SET_NATIVE_EN
 //#define SW_TRIGGER_TIME_EN
 //#define SW_ENABLE_IMU_EN
 //#define SW_SET_MCU_CFG_EN
