@@ -326,8 +326,8 @@ static void bt_att_hid_process_report_map(struct bt_dev *device,
         }
     }
 
-    hid_parser(bt_data, bt_data->base.sdp_data, bt_data->base.sdp_len);
     if (bt_data->base.sdp_data) {
+        hid_parser(bt_data, bt_data->base.sdp_data, bt_data->base.sdp_len);
         free(bt_data->base.sdp_data);
         bt_data->base.sdp_data = NULL;
     }
@@ -336,6 +336,11 @@ static void bt_att_hid_process_report_map(struct bt_dev *device,
     }
     else {
         printf("# dev: %ld No report found!!\n", device->ids.id);
+
+        if (device->ids.type == BT_SW2) {
+            uint16_t data = BT_GATT_CCC_NOTIFY;
+            bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
+        }
     }
 }
 
@@ -662,21 +667,26 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_notify *notify = (struct bt_att_notify *)bt_hci_acl_pkt->att_data;
 
-            for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
-                if (notify->handle == hid_data->reports[i].report_hdl) {
+            if (device->ids.type == BT_SW2) {
+                bt_host_bridge(device, 1, notify->value, att_len - sizeof(notify->handle));
+            }
+            else {
+                for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
+                    if (notify->handle == hid_data->reports[i].report_hdl) {
 #ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
-                    struct bt_hidp_xb1_rumble rumble = {
-                        .enable = 0x03,
-                        .duration = 0xFF,
-                        .cnt = 0x00,
-                    };
-                    rumble.mag_r = bt_hci_acl_pkt->hidp_data[11];
-                    rumble.mag_l = bt_hci_acl_pkt->hidp_data[9];
-                    bt_hid_cmd_xbox_rumble(device, &rumble);
+                        struct bt_hidp_xb1_rumble rumble = {
+                            .enable = 0x03,
+                            .duration = 0xFF,
+                            .cnt = 0x00,
+                        };
+                        rumble.mag_r = bt_hci_acl_pkt->hidp_data[11];
+                        rumble.mag_l = bt_hci_acl_pkt->hidp_data[9];
+                        bt_hid_cmd_xbox_rumble(device, &rumble);
 #else
-                    bt_host_bridge(device, hid_data->reports[i].id, notify->value, att_len - sizeof(notify->handle));
+                        bt_host_bridge(device, hid_data->reports[i].id, notify->value, att_len - sizeof(notify->handle));
 #endif
-                    break;
+                        break;
+                    }
                 }
             }
             break;

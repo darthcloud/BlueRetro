@@ -31,6 +31,7 @@ set(cov_srcs
     "adapter/wireless/wii.c"
     "adapter/wireless/ps.c"
     "adapter/wireless/sw.c"
+    "adapter/wireless/sw2.c"
     "adapter/wireless/wireless.c"
     "bluetooth/host.c"
     "bluetooth/hci.c"

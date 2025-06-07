@@ -41,6 +41,7 @@ enum {
     BT_WII,
     BT_PS,
     BT_SW,
+    BT_SW2,
     BT_TYPE_MAX,
 };
 

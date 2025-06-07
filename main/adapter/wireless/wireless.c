@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 #include "wii.h"
 #include "ps.h"
 #include "sw.h"
+#include "sw2.h"
 #include "wireless.h"
 
 static to_generic_t to_generic_func[BT_TYPE_MAX] = {
@@ -17,6 +18,7 @@ static to_generic_t to_generic_func[BT_TYPE_MAX] = {
     wii_to_generic, /* BT_WII */
     ps_to_generic, /* BT_PS */
     sw_to_generic, /* BT_SW */
+    sw2_to_generic, /* BT_SW2 */
 };
 
 static fb_from_generic_t fb_from_generic_func[BT_TYPE_MAX] = {
@@ -25,6 +27,7 @@ static fb_from_generic_t fb_from_generic_func[BT_TYPE_MAX] = {
     wii_fb_from_generic, /* BT_WII */
     ps_fb_from_generic, /* BT_PS */
     sw_fb_from_generic, /* BT_SW */
+    sw2_fb_from_generic, /* BT_SW2 */
 };
 
 int32_t wireless_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
