@@ -1119,6 +1119,13 @@ static void bt_hci_le_meta_evt_hdlr(struct bt_hci_pkt *bt_hci_evt_pkt) {
                                 goto skip;
                             }
                             break;
+                        case BT_DATA_MANUFACTURER_DATA:
+                            /* Manufacturer Specific Data */
+                            value = *(uint16_t *)&data[1];
+                            if (value == 0x0553) {
+                                goto connect;
+                            }
+                            break;
                     }
                     data += len;
                 }
