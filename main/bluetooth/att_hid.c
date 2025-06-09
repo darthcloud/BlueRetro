@@ -336,11 +336,6 @@ static void bt_att_hid_process_report_map(struct bt_dev *device,
     }
     else {
         printf("# dev: %ld No report found!!\n", device->ids.id);
-
-        if (device->ids.type == BT_SW2) {
-            uint16_t data = BT_GATT_CCC_NOTIFY;
-            bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
-        }
     }
 }
 
@@ -534,7 +529,14 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
             if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
                 bt_hci_stop_inquiry();
-                bt_att_hid_start_first_state(device, hid_data);
+
+                if (device->ids.type == BT_SW2) {
+                    uint16_t data = BT_GATT_CCC_NOTIFY;
+                    bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
+                }
+                else {
+                    bt_att_hid_start_first_state(device, hid_data);
+                }
             }
             break;
         }
