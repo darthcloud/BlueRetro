@@ -1142,6 +1142,12 @@ connect:
                         device->ids.type = BT_HID_GENERIC;
                         if (sw2) {
                             device->ids.type = BT_SW2;
+                            struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+                            if (data) {
+                                bt_data->base.vid = *(uint16_t *)&data[6];
+                                bt_data->base.pid = *(uint16_t *)&data[8];
+                                printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+                            }
                         }
                         bt_l2cap_init_dev_scid(device);
                         atomic_set_bit(&device->flags, BT_DEV_DEVICE_FOUND);
