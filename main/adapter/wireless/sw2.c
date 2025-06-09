@@ -12,9 +12,6 @@
 #include "bluetooth/mon.h"
 #include "sw2.h"
 
-//#define SW2_PRO
-#define SW2_GC
-
 #define SW2_AXES_MAX 4
 
 enum {
@@ -52,7 +49,6 @@ enum {
 //     0,       1,       2,       3,       4,      5
 // };
 
-#ifdef SW2_PRO
 static const struct ctrl_meta sw2_pro_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x800, .abs_max = 1610, .abs_min = 1610},
@@ -62,9 +58,7 @@ static const struct ctrl_meta sw2_pro_axes_meta[ADAPTER_MAX_AXES] =
     {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
     {.neutral = 0x00, .abs_max = 0xFF, .abs_min = 0x00},
 };
-#endif
 
-#ifdef SW2_GC
 static const struct ctrl_meta sw2_gc_axes_meta[ADAPTER_MAX_AXES] =
 {
     {.neutral = 0x800, .abs_max = 1225, .abs_min = 1225},
@@ -74,7 +68,6 @@ static const struct ctrl_meta sw2_gc_axes_meta[ADAPTER_MAX_AXES] =
     {.neutral = 30, .abs_max = 195, .abs_min = 0x00},
     {.neutral = 30, .abs_max = 195, .abs_min = 0x00},
 };
-#endif
 
 struct sw2_map {
     uint8_t tbd[4];
@@ -86,7 +79,6 @@ struct sw2_map {
     uint8_t tbd3;
 } __packed;
 
-#ifdef SW2_PRO
 static const uint32_t sw2_pro_mask[4] = {0xFFFF1FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw2_pro_desc[4] = {0x000000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw2_pro_btns_mask[32] = {
@@ -148,9 +140,7 @@ static void sw2_pro_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
         ctrl_data->axes[i].value = axes[i] - meta[i].neutral;
     }
 }
-#endif
 
-#ifdef SW2_GC
 static const uint32_t sw2_gc_mask[4] = {0x77FF0FFF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw2_gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static const uint32_t sw2_gc_btns_mask[32] = {
@@ -217,28 +207,21 @@ static void sw2_gc_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         ctrl_data->axes[i].value = map->triggers[i - 4] - meta[i].neutral;
     }
 }
-#endif
 
 int32_t sw2_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
-#if  defined(SW2_PRO)
-    sw2_pro_to_generic(bt_data, ctrl_data);
-#elif  defined(SW2_GC)
-    sw2_gc_to_generic(bt_data, ctrl_data);
-#else
-    #error Not supported
-#endif
-    // switch (bt_data->base.report_id) {
-    //     case 0x11:
-    //         sw2_pro_to_generic(bt_data, ctrl_data);
-    //         break;
-    //     case 0x31:
-    //         sw2_gc_to_generic(bt_data, ctrl_data);
-    //         break;
-    //     default:
-    //         printf("# Unknown report type: %02lX\n", bt_data->base.report_type);
-    //         return -1;
-    // }
-
+    switch (bt_data->base.pid) {
+        case 0x2066:
+        case 0x2067:
+        case 0x2069:
+            sw2_pro_to_generic(bt_data, ctrl_data);
+            break;
+        case 0x2073:
+            sw2_gc_to_generic(bt_data, ctrl_data);
+            break;
+        default:
+            printf("# Unknown pid : %04X\n", bt_data->base.pid);
+            return -1;
+    }
     return 0;
 }
 
