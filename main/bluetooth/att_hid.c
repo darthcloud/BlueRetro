@@ -532,6 +532,12 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
 
                 if (device->ids.type == BT_SW2) {
                     uint16_t data = BT_GATT_CCC_NOTIFY;
+                    uint8_t led[16] = {
+                        0x09, 0x91, 0x00, 0x07, 0x00, 0x08, 0x00, 0x00,
+                        bt_hid_led_dev_id_map[device->ids.out_idx],
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+                    bt_att_cmd_write_req(device->acl_handle, 0x001b, (uint8_t *)&data, sizeof(data));
+                    bt_att_cmd_write_cmd(device->acl_handle, 0x0014, (uint8_t *)&led, sizeof(led));
                     bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
                 }
                 else {
