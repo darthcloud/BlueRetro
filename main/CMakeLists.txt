@@ -48,6 +48,7 @@ set(cov_srcs
     "bluetooth/hidp/wii.c"
     "bluetooth/hidp/ps.c"
     "bluetooth/hidp/sw.c"
+    "bluetooth/hidp/sw2.c"
     "system/manager.c"
     "tools/devcrypto.c"
     "tools/ps1_gameid.c"

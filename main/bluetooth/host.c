@@ -85,23 +85,13 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 };
 
 static int32_t bt_host_load_bdaddr_from_nvs(void) {
-    esp_err_t err;
-    nvs_handle_t nvs;
     int32_t ret = -1;
 
-    err = nvs_open("hw", NVS_READONLY, &nvs);
-    if (err == ESP_OK) {
-        uint8_t test_mac[6];
-        size_t size = sizeof(test_mac);
-        err = nvs_get_blob(nvs, "bdaddr", test_mac, &size);
-        if (err == ESP_OK) {
-            test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
-            esp_base_mac_addr_set(test_mac);
-            printf("# %s: Using NVS MAC\n", __FUNCTION__);
-            ret = 0;
-        }
-        nvs_close(nvs);
-    }
+    // uint8_t test_mac[6] = {0x48, 0xf1, 0xeb, 0xed, 0xf4, 0x1d};
+    // test_mac[5] -= 2; /* Set base mac to BDADDR-2 so that BDADDR end up what we want */
+    // esp_base_mac_addr_set(test_mac);
+    // printf("# %s: Using NVS MAC\n", __FUNCTION__);
+    // ret = 0;
     return ret;
 }
 

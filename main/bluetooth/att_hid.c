@@ -15,6 +15,7 @@
 #include "zephyr/gatt.h"
 #include "adapter/hid_parser.h"
 #include "adapter/mapping_quirks.h"
+#include "hidp/sw2.h"
 
 enum {
     BT_ATT_HID_DEVICE_NAME = 0,
@@ -471,9 +472,14 @@ static void bt_att_hid_process_current_state(struct bt_dev *device,
 
 static void bt_att_hid_start_next_state(struct bt_dev *device,
         struct bt_att_hid *hid_data) {
-    device->hid_state++;
-    if (device->hid_state < BT_ATT_HID_STATE_MAX && start_state_func[device->hid_state]) {
-        start_state_func[device->hid_state](device, hid_data);
+    if (device->ids.type == BT_SW2 && !atomic_test_bit(&device->flags, BT_DEV_HID_INIT_DONE)) {
+        bt_hid_sw2_init(device);
+    }
+    else {
+        device->hid_state++;
+        if (device->hid_state < BT_ATT_HID_STATE_MAX && start_state_func[device->hid_state]) {
+            start_state_func[device->hid_state](device, hid_data);
+        }
     }
 }
 
@@ -487,9 +493,14 @@ static int32_t bt_att_get_report_index(struct bt_att_hid *hid_data, uint8_t repo
 }
 
 void bt_att_hid_init(struct bt_dev *device) {
-    struct bt_att_hid *hid_data = &att_hid[device->ids.id];
-    memset((uint8_t *)hid_data, 0, sizeof(*hid_data));
-    bt_att_cmd_mtu_req(device->acl_handle, bt_att_get_le_max_mtu());
+    if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_PENDING)) {
+        struct bt_att_hid *hid_data = &att_hid[device->ids.id];
+
+        atomic_set_bit(&device->flags, BT_DEV_HID_INTR_PENDING);
+
+        memset((uint8_t *)hid_data, 0, sizeof(*hid_data));
+        bt_att_cmd_mtu_req(device->acl_handle, bt_att_get_le_max_mtu());
+    }
 }
 
 void bt_att_write_hid_report(struct bt_dev *device, uint8_t report_id, uint8_t *data, uint32_t len) {
@@ -530,19 +541,7 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
             if (!atomic_test_bit(&device->flags, BT_DEV_HID_INTR_READY)) {
                 bt_hci_stop_inquiry();
 
-                if (device->ids.type == BT_SW2) {
-                    uint16_t data = BT_GATT_CCC_NOTIFY;
-                    uint8_t led[16] = {
-                        0x09, 0x91, 0x00, 0x07, 0x00, 0x08, 0x00, 0x00,
-                        bt_hid_led_dev_id_map[device->ids.out_idx],
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-                    bt_att_cmd_write_req(device->acl_handle, 0x001b, (uint8_t *)&data, sizeof(data));
-                    bt_att_cmd_write_cmd(device->acl_handle, 0x0014, (uint8_t *)&led, sizeof(led));
-                    bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
-                }
-                else {
-                    bt_att_hid_start_first_state(device, hid_data);
-                }
+                bt_att_hid_start_first_state(device, hid_data);
             }
             break;
         }
@@ -675,27 +674,18 @@ void bt_att_hid_hdlr(struct bt_dev *device, struct bt_hci_pkt *bt_hci_acl_pkt, u
         {
             struct bt_att_notify *notify = (struct bt_att_notify *)bt_hci_acl_pkt->att_data;
 
-            if (device->ids.type == BT_SW2) {
-                bt_host_bridge(device, 1, notify->value, att_len - sizeof(notify->handle));
-            }
-            else {
-                for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
-                    if (notify->handle == hid_data->reports[i].report_hdl) {
-#ifdef CONFIG_BLUERETRO_ADAPTER_RUMBLE_TEST
-                        struct bt_hidp_xb1_rumble rumble = {
-                            .enable = 0x03,
-                            .duration = 0xFF,
-                            .cnt = 0x00,
-                        };
-                        rumble.mag_r = bt_hci_acl_pkt->hidp_data[11];
-                        rumble.mag_l = bt_hci_acl_pkt->hidp_data[9];
-                        bt_hid_cmd_xbox_rumble(device, &rumble);
-#else
-                        bt_host_bridge(device, hid_data->reports[i].id, notify->value, att_len - sizeof(notify->handle));
-#endif
-                        break;
+            switch (device->ids.type) {
+                case BT_SW2:
+                    bt_hid_sw2_hdlr(device, notify->handle, notify->value, att_len - sizeof(notify->handle));
+                    break;
+                default:
+                    for (uint32_t i = 0; i < HID_MAX_REPORT; i++) {
+                        if (notify->handle == hid_data->reports[i].report_hdl) {
+                            bt_host_bridge(device, hid_data->reports[i].id, notify->value, att_len - sizeof(notify->handle));
+                            break;
+                        }
                     }
-                }
+                    break;
             }
             break;
         }
