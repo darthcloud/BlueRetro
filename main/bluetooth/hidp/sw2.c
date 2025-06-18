@@ -72,16 +72,19 @@ static void bt_hid_sw2_print_calib(struct bt_hid_sw2_ctrl_calib *calib) {
 #endif
 
 void bt_hid_cmd_sw2_out(struct bt_dev *device, void *report) {
-    uint8_t led[] = {
-        BT_HIDP_SW2_CMD_SET_LED,
-        BT_HIDP_SW2_REQ_TYPE_REQ,
-        BT_HIDP_SW2_REQ_INT_BLE,
-        BT_HIDP_SW2_SUBCMD_SET_LED,
-        0x00, 0x08, 0x00, 0x00,
-        bt_hid_led_dev_id_map[device->ids.out_idx],
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_CMD_ATT_HDL, led, sizeof(led));
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    if (bt_data) {
+        switch (bt_data->base.pid) {
+            case 0x2069:
+                break;
+            case 0x2073:
+                bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_OUT_CMD_ATT_HDL, (uint8_t *)report, 21);
+                break;
+        }
+
+        bt_data->base.output[1] &= 0xF0;
+        bt_data->base.output[1] |= device->tid++ & 0xF;
+    }
 }
 
 void bt_hid_sw2_get_calib(int32_t dev_id, struct bt_hid_sw2_ctrl_calib **cal) {
@@ -161,14 +164,27 @@ static void bt_hid_sw2_exec_next_state(struct bt_dev *device) {
         {
             uint16_t data = BT_GATT_CCC_NOTIFY;
             bt_att_cmd_write_req(device->acl_handle, 0x000b, (uint8_t *)&data, sizeof(data));
+            data = 0;
+            bt_att_cmd_write_req(device->acl_handle, 0x001b, (uint8_t *)&data, sizeof(data));
             break;
         }
     }
 }
 
 void bt_hid_sw2_init(struct bt_dev *device) {
-    uint16_t data = BT_GATT_CCC_NOTIFY;
+    /* Init output data for Rumble/LED feedback */
+    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+    bt_data->base.output[1] = 0x50;
+
+    bt_data->base.output[5] = BT_HIDP_SW2_CMD_SET_LED;
+    bt_data->base.output[6] = BT_HIDP_SW2_REQ_TYPE_REQ;
+    bt_data->base.output[7] = BT_HIDP_SW2_REQ_INT_BLE;
+    bt_data->base.output[8] = BT_HIDP_SW2_SUBCMD_SET_LED;
+    bt_data->base.output[10] = 0x08;
+    bt_data->base.output[13] = bt_hid_led_dev_id_map[device->ids.out_idx];
+
     /* enable cmds rsp */
+    uint16_t data = BT_GATT_CCC_NOTIFY;
     bt_att_cmd_write_req(device->acl_handle, 0x001b, (uint8_t *)&data, sizeof(data));
 
     bt_hid_sw2_exec_next_state(device);

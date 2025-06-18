@@ -10,6 +10,7 @@
 #include "adapter/config.h"
 #include "tests/cmds.h"
 #include "bluetooth/mon.h"
+#include "bluetooth/hidp/hidp.h"
 #include "sw2.h"
 
 #define SW2_AXES_MAX 4
@@ -226,5 +227,27 @@ int32_t sw2_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 }
 
 void sw2_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
-
+    switch (bt_data->base.pid) {
+        case 0x2066:
+        case 0x2067:
+        case 0x2069:
+            break;
+        case 0x2073:
+            switch (fb_data->type) {
+                case FB_TYPE_RUMBLE:
+                    if (fb_data->state) {
+                        bt_data->base.output[2] = 0x01;
+                    }
+                    else {
+                        bt_data->base.output[2] = 0x00;
+                    }
+                    break;
+                case FB_TYPE_PLAYER_LED:
+                    bt_data->base.output[13] = bt_hid_led_dev_id_map[bt_data->base.pids->out_idx];
+                    break;
+            }
+            break;
+        default:
+            printf("# Unknown pid : %04X\n", bt_data->base.pid);
+    }
 }
