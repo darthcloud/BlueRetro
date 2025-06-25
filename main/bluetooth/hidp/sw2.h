@@ -8,11 +8,17 @@
 
 #include "hidp.h"
 
-#define BT_HIDP_SW2_LRA_IDLE 0x40400100
-#define BT_HIDP_SW2_LRA_R_HF_FREQ 0x028
-#define BT_HIDP_SW2_LRA_R_LF_FREQ 0x70
-#define BT_HIDP_SW2_LRA_L_HF_FREQ 0x060
-#define BT_HIDP_SW2_LRA_L_LF_FREQ 0x70
+#define SW2_LJC_PID 0x2066
+#define SW2_RJC_PID 0x2067
+#define SW2_PRO2_PID 0x2069
+#define SW2_GC_PID 0x2073
+
+#define BT_HIDP_SW2_LRA_IDLE_32 0x1e100000
+#define BT_HIDP_SW2_LRA_IDLE_8 0x00
+#define BT_HIDP_SW2_LRA_R_HF_FREQ 0x1e1
+#define BT_HIDP_SW2_LRA_R_LF_FREQ 0x180
+#define BT_HIDP_SW2_LRA_L_HF_FREQ 0xe1
+#define BT_HIDP_SW2_LRA_L_LF_FREQ 0x100
 
 struct bt_hid_sw2_axis_calib {
     union {

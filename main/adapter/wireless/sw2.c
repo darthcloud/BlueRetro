@@ -8,6 +8,7 @@
 #include "zephyr/types.h"
 #include "tools/util.h"
 #include "adapter/config.h"
+#include "adapter/mapping_quirks.h"
 #include "tests/cmds.h"
 #include "bluetooth/mon.h"
 #include "bluetooth/hidp/sw2.h"
@@ -44,11 +45,11 @@ enum {
     SW2_GL,
 };
 
-// static const uint8_t sw2_axes_idx[ADAPTER_MAX_AXES] =
-// {
-// /*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
-//     0,       1,       2,       3,       4,      5
-// };
+static const uint8_t sw2_axes_idx[ADAPTER_MAX_AXES] =
+{
+/*  AXIS_LX, AXIS_LY, AXIS_RX, AXIS_RY, TRIG_L, TRIG_R  */
+    0,       1,       2,       3,       4,      5
+};
 
 static const struct ctrl_meta sw2_pro_axes_meta[ADAPTER_MAX_AXES] =
 {
@@ -93,16 +94,131 @@ static const uint32_t sw2_pro_btns_mask[32] = {
     BIT(SW2_ZR), BIT(SW2_R), BIT(SW2_GR), BIT(SW2_RJ),
 };
 
-static void sw2_pro_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
+static const uint32_t sw2_gc_mask[4] = {0x77FF0FFF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw2_gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t sw2_gc_btns_mask[32] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    BIT(SW2_LEFT), BIT(SW2_RIGHT), BIT(SW2_DOWN), BIT(SW2_UP),
+    0, 0, 0, 0,
+    BIT(SW2_B), BIT(SW2_X), BIT(SW2_A), BIT(SW2_Y),
+    BIT(SW2_PLUS), BIT(SW2_C), BIT(SW2_HOME), BIT(SW2_CAPTURE),
+    0, BIT(SW2_ZL), BIT(SW2_L), 0,
+    0, BIT(SW2_ZR), BIT(SW2_R), 0,
+};
+
+static int32_t sw2_pad_init(struct bt_data *bt_data) {
+    struct bt_hid_sw2_ctrl_calib *calib = NULL;
+    const uint8_t *axes_idx = sw2_axes_idx;
+    struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
+    const struct ctrl_meta *sw2_axes_meta = sw2_pro_axes_meta;
+
+    mapping_quirks_apply(bt_data);
+
+    bt_hid_sw2_get_calib(bt_data->base.pids->id, &calib);
+
+    switch (bt_data->base.pid) {
+        case SW2_LJC_PID:
+        {
+            // memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_jc_btns_mask[report_type],
+            //     sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+
+            // meta[0].polarity = 1;
+            // meta[1].polarity = 0;
+            // axes_idx = sw_jc_axes_idx;
+            // memcpy(bt_data->raw_src_mappings[PAD].mask, sw_jc_mask,
+            //     sizeof(bt_data->raw_src_mappings[PAD].mask));
+            // memcpy(bt_data->raw_src_mappings[PAD].desc, desc,
+            //     sizeof(bt_data->raw_src_mappings[PAD].desc));
+            break;
+        }
+        case SW2_RJC_PID:
+        {
+            // memcpy(bt_data->raw_src_mappings[PAD].btns_mask, &sw_jc_btns_mask[report_type],
+            //     sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+
+            // meta[0].polarity = 0;
+            // meta[1].polarity = 1;
+            // axes_idx = sw_jc_axes_idx;
+            // memcpy(bt_data->raw_src_mappings[PAD].mask, sw_jc_mask,
+            //     sizeof(bt_data->raw_src_mappings[PAD].mask));
+            // memcpy(bt_data->raw_src_mappings[PAD].desc, desc,
+            //     sizeof(bt_data->raw_src_mappings[PAD].desc));
+            break;
+        }
+        case SW2_GC_PID:
+        {
+            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw2_gc_btns_mask,
+                sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+            meta[0].polarity = 0;
+            meta[1].polarity = 0;
+            meta[2].polarity = 0;
+            meta[3].polarity = 0;
+            axes_idx = sw2_axes_idx;
+            sw2_axes_meta = sw2_gc_axes_meta;
+            memcpy(bt_data->raw_src_mappings[PAD].mask, sw2_gc_mask,
+                sizeof(bt_data->raw_src_mappings[PAD].mask));
+            memcpy(bt_data->raw_src_mappings[PAD].desc, sw2_gc_desc,
+                sizeof(bt_data->raw_src_mappings[PAD].desc));
+
+            meta[TRIG_L].neutral = sw2_gc_axes_meta[TRIG_L].neutral;
+            meta[TRIG_L].abs_max = sw2_gc_axes_meta[TRIG_L].abs_max;
+            meta[TRIG_L].abs_min = sw2_gc_axes_meta[TRIG_L].abs_min;
+            meta[TRIG_R].neutral = sw2_gc_axes_meta[TRIG_R].neutral;
+            meta[TRIG_R].abs_max = sw2_gc_axes_meta[TRIG_R].abs_max;
+            meta[TRIG_R].abs_min = sw2_gc_axes_meta[TRIG_R].abs_min;
+            break;
+        }
+        case SW2_PRO2_PID:
+        default:
+        {
+            memcpy(bt_data->raw_src_mappings[PAD].btns_mask, sw2_pro_btns_mask,
+                sizeof(bt_data->raw_src_mappings[PAD].btns_mask));
+            meta[0].polarity = 0;
+            meta[1].polarity = 0;
+            meta[2].polarity = 0;
+            meta[3].polarity = 0;
+            axes_idx = sw2_axes_idx;
+            memcpy(bt_data->raw_src_mappings[PAD].mask, sw2_pro_mask,
+                sizeof(bt_data->raw_src_mappings[PAD].mask));
+            memcpy(bt_data->raw_src_mappings[PAD].desc, sw2_pro_desc,
+                sizeof(bt_data->raw_src_mappings[PAD].desc));
+            break;
+        }
+    }
+
+    for (uint32_t i = 0; i < SW2_AXES_MAX; i++) {
+        if (calib && calib->sticks[i / 2].axes[i % 2].neutral) {
+            meta[axes_idx[i]].neutral = calib->sticks[i / 2].axes[i % 2].neutral;
+            meta[axes_idx[i]].abs_max = calib->sticks[i / 2].axes[i % 2].rel_max * MAX_PULL_BACK;
+            meta[axes_idx[i]].abs_min = calib->sticks[i / 2].axes[i % 2].rel_min * MAX_PULL_BACK;
+            meta[axes_idx[i]].deadzone = calib->sticks[i / 2].deadzone;
+            printf("# %s: controller calib loaded\n", __FUNCTION__);
+        }
+        else {
+            meta[axes_idx[i]].neutral = sw2_axes_meta[i].neutral;
+            meta[axes_idx[i]].abs_max = sw2_axes_meta[i].abs_max * MAX_PULL_BACK;
+            meta[axes_idx[i]].abs_min = sw2_axes_meta[i].abs_min * MAX_PULL_BACK;
+            meta[axes_idx[i]].deadzone = sw2_axes_meta[i].deadzone;
+            printf("# %s: no calib, using default\n", __FUNCTION__);
+        }
+        bt_data->base.axes_cal[i] = 0;
+    }
+
+    atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
+    return 0;
+}
+
+static int32_t sw2_pro_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     struct sw2_map *map = (struct sw2_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     uint16_t axes[4];
 
-    // TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u]], \"btns\": %lu},\n",
-    //     bt_data->base.report_id,
-    //     map->axes[0], map->axes[1], map->axes[2], map->axes[3], map->axes[4], map->axes[5],
-    //     map->axes[6], map->axes[7], map->axes[8], map->axes[9], map->axes[10], map->axes[11],
-    //     map->buttons);
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        if (sw2_pad_init(bt_data)) {
+            return -1;
+        }
+    }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -120,52 +236,27 @@ static void sw2_pro_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ct
     axes[2] = map->axes[3] | ((map->axes[4] & 0xF) << 8);
     axes[3] = (map->axes[4] >> 4) | (map->axes[5] << 4);
 
-    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
-        memcpy(meta, sw2_pro_axes_meta, sizeof(sw2_pro_axes_meta));
-        // bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
-        // for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        //     meta[i].abs_max *= MAX_PULL_BACK;
-        //     meta[i].abs_min *= MAX_PULL_BACK;
-        //     bt_data->base.axes_cal[i] = -(map->axes[sw2_pro_axes_idx[i]] - sw2_pro_axes_meta[i].neutral);
-        //     if (i) {
-        //         bt_mon_log(false, ", ");
-        //     }
-        //     bt_mon_log(false, "%d", bt_data->base.axes_cal[i]);
-        // }
-        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
-        // bt_mon_log(true, "]");
-    }
+    TESTS_CMDS_LOG("\"wireless_input\": {\"axes\": [%u, %u, %u, %u], \"btns\": %lu},\n",
+        axes[0], axes[1], axes[2], axes[3], map->buttons);
 
     for (uint32_t i = 0; i < SW2_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = axes[i] - meta[i].neutral;
     }
+    return 0;
 }
 
-static const uint32_t sw2_gc_mask[4] = {0x77FF0FFF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t sw2_gc_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
-static const uint32_t sw2_gc_btns_mask[32] = {
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    BIT(SW2_LEFT), BIT(SW2_RIGHT), BIT(SW2_DOWN), BIT(SW2_UP),
-    0, 0, 0, 0,
-    BIT(SW2_B), BIT(SW2_X), BIT(SW2_A), BIT(SW2_Y),
-    BIT(SW2_PLUS), BIT(SW2_C), BIT(SW2_HOME), BIT(SW2_CAPTURE),
-    0, BIT(SW2_ZL), BIT(SW2_L), 0,
-    0, BIT(SW2_ZR), BIT(SW2_R), 0,
-};
-
-static void sw2_gc_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
+static int32_t sw2_gc_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     
     struct sw2_map *map = (struct sw2_map *)bt_data->base.input;
     struct ctrl_meta *meta = bt_data->raw_src_mappings[PAD].meta;
     uint16_t axes[4];
 
-    // TESTS_CMDS_LOG("\"wireless_input\": {\"report_id\": %ld, \"axes\": [%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u]], \"btns\": %lu},\n",
-    //     bt_data->base.report_id,
-    //     map->axes[0], map->axes[1], map->axes[2], map->axes[3], map->axes[4], map->axes[5],
-    //     map->axes[6], map->axes[7], map->axes[8], map->axes[9], map->axes[10], map->axes[11],
-    //     map->buttons);
+    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
+        if (sw2_pad_init(bt_data)) {
+            return -1;
+        }
+    }
 
     memset((void *)ctrl_data, 0, sizeof(*ctrl_data));
 
@@ -183,21 +274,8 @@ static void sw2_gc_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
     axes[2] = map->axes[3] | ((map->axes[4] & 0xF) << 8);
     axes[3] = (map->axes[4] >> 4) | (map->axes[5] << 4);
 
-    if (!atomic_test_bit(&bt_data->base.flags[PAD], BT_INIT)) {
-        memcpy(meta, sw2_gc_axes_meta, sizeof(sw2_gc_axes_meta));
-        // bt_mon_log(false, "%s: axes_cal: [", __FUNCTION__);
-        // for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
-        //     meta[i].abs_max *= MAX_PULL_BACK;
-        //     meta[i].abs_min *= MAX_PULL_BACK;
-        //     bt_data->base.axes_cal[i] = -(map->axes[sw2_pro_axes_idx[i]] - sw2_pro_axes_meta[i].neutral);
-        //     if (i) {
-        //         bt_mon_log(false, ", ");
-        //     }
-        //     bt_mon_log(false, "%d", bt_data->base.axes_cal[i]);
-        // }
-        atomic_set_bit(&bt_data->base.flags[PAD], BT_INIT);
-        // bt_mon_log(true, "]");
-    }
+    TESTS_CMDS_LOG("\"wireless_input\": {\"axes\": [%u, %u, %u, %u], \"btns\": %lu},\n",
+        axes[0], axes[1], axes[2], axes[3], map->buttons);
 
     for (uint32_t i = 0; i < SW2_AXES_MAX; i++) {
         ctrl_data->axes[i].meta = &meta[i];
@@ -207,18 +285,17 @@ static void sw2_gc_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctr
         ctrl_data->axes[i].meta = &meta[i];
         ctrl_data->axes[i].value = map->triggers[i - 4] - meta[i].neutral;
     }
+    return 0;
 }
 
 int32_t sw2_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) {
     switch (bt_data->base.pid) {
-        case 0x2066:
-        case 0x2067:
-        case 0x2069:
-            sw2_pro_to_generic(bt_data, ctrl_data);
-            break;
-        case 0x2073:
-            sw2_gc_to_generic(bt_data, ctrl_data);
-            break;
+        case SW2_LJC_PID:
+        case SW2_RJC_PID:
+        case SW2_PRO2_PID:
+            return sw2_pro_to_generic(bt_data, ctrl_data);
+        case SW2_GC_PID:
+            return sw2_gc_to_generic(bt_data, ctrl_data);
         default:
             printf("# Unknown pid : %04X\n", bt_data->base.pid);
             return -1;
@@ -230,38 +307,38 @@ void sw2_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_sw2_out *out = (struct bt_hidp_sw2_out *)bt_data->base.output;
 
     switch (bt_data->base.pid) {
-        case 0x2066:
-        case 0x2067:
-        case 0x2069:
+        case SW2_LJC_PID:
+        case SW2_RJC_PID:
+        case SW2_PRO2_PID:
             switch (fb_data->type) {
                 case FB_TYPE_RUMBLE:
                     if (fb_data->hf_pwr || fb_data->lf_pwr) {
-                        out->r_lra.ops[0].hf_freq = 0x1e1;
+                        out->r_lra.ops[0].hf_freq = BT_HIDP_SW2_LRA_R_HF_FREQ;
                         out->r_lra.ops[0].hf_amp = (uint8_t)((float)fb_data->hf_pwr / 2.68);
-                        out->r_lra.ops[0].lf_freq = 0x180;
+                        out->r_lra.ops[0].lf_freq = BT_HIDP_SW2_LRA_R_LF_FREQ;
                         out->r_lra.ops[0].lf_amp = (uint16_t)((float)fb_data->hf_pwr / 0.3156);
                         out->r_lra.ops[0].enable = 1;
 
-                        out->l_lra.ops[0].hf_freq = 0xe1;
+                        out->l_lra.ops[0].hf_freq = BT_HIDP_SW2_LRA_L_HF_FREQ;
                         out->l_lra.ops[0].hf_amp = (uint8_t)((float)fb_data->lf_pwr / 2.68);
-                        out->l_lra.ops[0].lf_freq = 0x100;
+                        out->l_lra.ops[0].lf_freq = BT_HIDP_SW2_LRA_L_LF_FREQ;
                         out->l_lra.ops[0].lf_amp = (uint16_t)((float)fb_data->lf_pwr / 0.3156);
                         out->l_lra.ops[0].enable = 1;
                     }
                     else {
-                        out->l_lra.ops[0].val = 0x1e100000;
-                        out->l_lra.ops[0].hf_amp = 0x00;
-                        out->r_lra.ops[0].val = 0x1e100000;
-                        out->r_lra.ops[0].hf_amp = 0x00;
+                        out->l_lra.ops[0].val = BT_HIDP_SW2_LRA_IDLE_32;
+                        out->l_lra.ops[0].hf_amp = BT_HIDP_SW2_LRA_IDLE_8;
+                        out->r_lra.ops[0].val = BT_HIDP_SW2_LRA_IDLE_32;
+                        out->r_lra.ops[0].hf_amp = BT_HIDP_SW2_LRA_IDLE_8;
                     }
-                    printf("%08lX %02X %08lX %02X\n", out->l_lra.ops[0].val, out->l_lra.ops[0].hf_amp, out->r_lra.ops[0].val, out->r_lra.ops[0].hf_amp);
+                    //printf("%08lX %02X %08lX %02X\n", out->l_lra.ops[0].val, out->l_lra.ops[0].hf_amp, out->r_lra.ops[0].val, out->r_lra.ops[0].hf_amp);
                     break;
                 case FB_TYPE_PLAYER_LED:
                     bt_data->base.output[41] = bt_hid_led_dev_id_map[bt_data->base.pids->out_idx];
                     break;
             }
             break;
-        case 0x2073:
+        case SW2_GC_PID:
             switch (fb_data->type) {
                 case FB_TYPE_RUMBLE:
                     if (fb_data->state) {

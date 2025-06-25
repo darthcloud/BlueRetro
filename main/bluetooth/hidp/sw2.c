@@ -13,6 +13,7 @@
 #include "zephyr/gatt.h"
 #include "tools/util.h"
 #include "tests/cmds.h"
+#include "adapter/config.h"
 #include "sw2.h"
 
 #define SW2_INIT_STATE_RETRY_MAX 10
@@ -22,26 +23,22 @@ enum {
     SW2_INIT_STATE_READ_LTK,
     SW2_INIT_STATE_SET_BDADDR,
     SW2_INIT_STATE_READ_NEW_LTK,
+    SW2_INIT_STATE_READ_LEFT_FACTORY_CALIB,
+    SW2_INIT_STATE_READ_RIGHT_FACTORY_CALIB,
+    SW2_INIT_STATE_READ_USER_CALIB,
     SW2_INIT_STATE_SET_LED,
     SW2_INIT_STATE_EN_REPORT,
 };
 
-#ifdef TBD
-static uint8_t calib_idx[][3] = {
-    {2, 1, 0},
-    {1, 0, 2},
-};
-#endif
 static struct bt_hid_sw2_ctrl_calib calib[BT_MAX_DEV] = {0};
 
-#ifdef TBD
-static void bt_hid_sw2_set_calib(struct bt_hid_sw2_ctrl_calib *calib, uint8_t *data, uint8_t stick, uint8_t idx) {
-    calib->sticks[stick].axes[0].val[calib_idx[idx][0]] = ((data[1] << 8) & 0xF00) | data[0];
-    calib->sticks[stick].axes[1].val[calib_idx[idx][0]] = (data[2] << 4) | (data[1] >> 4);
-    calib->sticks[stick].axes[0].val[calib_idx[idx][1]] = ((data[4] << 8) & 0xF00) | data[3];
-    calib->sticks[stick].axes[1].val[calib_idx[idx][1]] = (data[5] << 4) | (data[4] >> 4);
-    calib->sticks[stick].axes[0].val[calib_idx[idx][2]] = ((data[7] << 8) & 0xF00) | data[6];
-    calib->sticks[stick].axes[1].val[calib_idx[idx][2]] = (data[8] << 4) | (data[7] >> 4);
+static void bt_hid_sw2_set_calib(struct bt_hid_sw2_ctrl_calib *calib, uint8_t *data, uint8_t stick) {
+    calib->sticks[stick].axes[0].neutral = ((data[1] << 8) & 0xF00) | data[0];
+    calib->sticks[stick].axes[1].neutral = (data[2] << 4) | (data[1] >> 4);
+    calib->sticks[stick].axes[0].rel_max = ((data[4] << 8) & 0xF00) | data[3];
+    calib->sticks[stick].axes[1].rel_max = (data[5] << 4) | (data[4] >> 4);
+    calib->sticks[stick].axes[0].rel_min = ((data[7] << 8) & 0xF00) | data[6];
+    calib->sticks[stick].axes[1].rel_min = (data[8] << 4) | (data[7] >> 4);
 }
 
 static void bt_hid_sw2_print_calib(struct bt_hid_sw2_ctrl_calib *calib) {
@@ -54,22 +51,21 @@ static void bt_hid_sw2_print_calib(struct bt_hid_sw2_ctrl_calib *calib) {
         calib->sticks[1].axes[0].neutral, calib->sticks[1].axes[1].neutral);
     TESTS_CMDS_LOG("\"deadzone\": [%u, %u, %u, %u]},\n", calib->sticks[0].deadzone, calib->sticks[0].deadzone,
         calib->sticks[1].deadzone, calib->sticks[1].deadzone);
-    printf("rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
-    printf("neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
-    printf("rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
-    printf("rel_min LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
-    printf("neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
-    printf("rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
-    printf("        LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
-    bt_mon_log(true, "rel_min LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
-    bt_mon_log(true, "neutral LX %03X RX %03X\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
-    bt_mon_log(true, "rel_max LX %03X RX %03X\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
-    bt_mon_log(true, "rel_min LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
-    bt_mon_log(true, "neutral LY %03X RY %03X\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
-    bt_mon_log(true, "rel_max LY %03X RY %03X\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
-    bt_mon_log(true, "        LD %03X RD %03X\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
+    printf("rel_min LX %04d RX %04d\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
+    printf("neutral LX %04d RX %04d\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
+    printf("rel_max LX %04d RX %04d\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
+    printf("rel_min LY %04d RY %04d\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
+    printf("neutral LY %04d RY %04d\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
+    printf("rel_max LY %04d RY %04d\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
+    printf("        LD %04d RD %04d\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
+    bt_mon_log(true, "rel_min LX %04d RX %04d\n", calib->sticks[0].axes[0].rel_min, calib->sticks[1].axes[0].rel_min);
+    bt_mon_log(true, "neutral LX %04d RX %04d\n", calib->sticks[0].axes[0].neutral, calib->sticks[1].axes[0].neutral);
+    bt_mon_log(true, "rel_max LX %04d RX %04d\n", calib->sticks[0].axes[0].rel_max, calib->sticks[1].axes[0].rel_max);
+    bt_mon_log(true, "rel_min LY %04d RY %04d\n", calib->sticks[0].axes[1].rel_min, calib->sticks[1].axes[1].rel_min);
+    bt_mon_log(true, "neutral LY %04d RY %04d\n", calib->sticks[0].axes[1].neutral, calib->sticks[1].axes[1].neutral);
+    bt_mon_log(true, "rel_max LY %04d RY %04d\n", calib->sticks[0].axes[1].rel_max, calib->sticks[1].axes[1].rel_max);
+    bt_mon_log(true, "        LD %04d RD %04d\n", calib->sticks[0].deadzone, calib->sticks[1].deadzone);
 }
-#endif
 
 void bt_hid_sw2_init_rumble_gc(struct bt_data *bt_data) {
     bt_data->base.output[1] = 0x50;
@@ -105,12 +101,12 @@ void bt_hid_cmd_sw2_out(struct bt_dev *device, void *report) {
     struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
     if (bt_data) {
         switch (bt_data->base.pid) {
-            case 0x2069:
+            case SW2_PRO2_PID:
                 bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_OUT_CMD_ATT_HDL, (uint8_t *)report, 41);
                 bt_data->base.output[17] &= 0xF0;
                 bt_data->base.output[17] |= device->tid & 0xF;
                 break;
-            case 0x2073:
+            case SW2_GC_PID:
                 bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_OUT_CMD_ATT_HDL, (uint8_t *)report, 21);
                 break;
         }
@@ -178,6 +174,51 @@ static void bt_hid_sw2_exec_next_state(struct bt_dev *device) {
             bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_CMD_ATT_HDL, read_ltk, sizeof(read_ltk));
             break;
         }
+        case SW2_INIT_STATE_READ_LEFT_FACTORY_CALIB:
+        {
+            uint8_t read_calib[] = {
+                BT_HIDP_SW2_CMD_READ_SPI,
+                BT_HIDP_SW2_REQ_TYPE_REQ,
+                BT_HIDP_SW2_REQ_INT_BLE,
+                BT_HIDP_SW2_SUBCMD_READ_SPI,
+                0x00, 0x08, 0x00, 0x00,
+                0x40, /* Read len */
+                0x7e, 0x00, 0x00,
+                0x80, 0x30, 0x01, 0x00, /* Left Factory Calib addr */
+            };
+            bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_CMD_ATT_HDL, read_calib, sizeof(read_calib));
+            break;
+        }
+        case SW2_INIT_STATE_READ_RIGHT_FACTORY_CALIB:
+        {
+            uint8_t read_calib[] = {
+                BT_HIDP_SW2_CMD_READ_SPI,
+                BT_HIDP_SW2_REQ_TYPE_REQ,
+                BT_HIDP_SW2_REQ_INT_BLE,
+                BT_HIDP_SW2_SUBCMD_READ_SPI,
+                0x00, 0x08, 0x00, 0x00,
+                0x40, /* Read len */
+                0x7e, 0x00, 0x00,
+                0xc0, 0x30, 0x01, 0x00, /* Right Factory Calib addr */
+            };
+            bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_CMD_ATT_HDL, read_calib, sizeof(read_calib));
+            break;
+        }
+        case SW2_INIT_STATE_READ_USER_CALIB:
+        {
+            uint8_t read_calib[] = {
+                BT_HIDP_SW2_CMD_READ_SPI,
+                BT_HIDP_SW2_REQ_TYPE_REQ,
+                BT_HIDP_SW2_REQ_INT_BLE,
+                BT_HIDP_SW2_SUBCMD_READ_SPI,
+                0x00, 0x08, 0x00, 0x00,
+                0x40, /* Read len */
+                0x7e, 0x00, 0x00,
+                0x40, 0xc0, 0x1f, 0x00, /* User Calib addr */
+            };
+            bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_CMD_ATT_HDL, read_calib, sizeof(read_calib));
+            break;
+        }
         case SW2_INIT_STATE_SET_LED:
         {
             uint8_t led[] = {
@@ -219,7 +260,7 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
         case BT_HIDP_SW2_REPORT_TYPE1_ATT_HDL:
             bt_host_bridge(device, 1, data, len);
             struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
-            if (bt_data) {
+            if (bt_data && config.out_cfg[device->ids.out_idx].acc_mode & ACC_RUMBLE) {
                 bt_hid_cmd_sw2_out(device, bt_data->base.output);
             }
             break;
@@ -244,12 +285,12 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
 
                                 /* Init output data for Rumble/LED feedback */
                                 switch (bt_data->base.pid) {
-                                    case 0x2066:
-                                    case 0x2067:
-                                    case 0x2069:
+                                    case SW2_LJC_PID:
+                                    case SW2_RJC_PID:
+                                    case SW2_PRO2_PID:
                                         bt_hid_sw2_init_rumble_pro2(bt_data);
                                         break;
-                                    case 0x2073:
+                                    case SW2_GC_PID:
                                         bt_hid_sw2_init_rumble_gc(bt_data);
                                         break;
                                     default:
@@ -284,6 +325,42 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
                             printf("\n");
                             bt_host_store_le_ltk(&device->le_remote_bdaddr, (struct bt_smp_encrypt_info *)&ack->value[12]);
                             break;
+                        case SW2_INIT_STATE_READ_LEFT_FACTORY_CALIB:
+                        {
+                            struct bt_hid_sw2_ctrl_calib *dev_calib = &calib[device->ids.id];
+                            uint8_t *data = &ack->value[52];
+                            if (data[0] != 0xFF) {
+                                bt_hid_sw2_set_calib(dev_calib, data, 0);
+                            }
+                            break;
+                        }
+                        case SW2_INIT_STATE_READ_RIGHT_FACTORY_CALIB:
+                        {
+                            struct bt_hid_sw2_ctrl_calib *dev_calib = &calib[device->ids.id];
+                            uint8_t *data = &ack->value[52];
+                            if (data[0] != 0xFF) {
+                                bt_hid_sw2_set_calib(dev_calib, data, 1);
+                            }
+                            bt_hid_sw2_print_calib(dev_calib);
+                            break;
+                        }
+                        case SW2_INIT_STATE_READ_USER_CALIB:
+                        {
+                            struct bt_hid_sw2_ctrl_calib *dev_calib = &calib[device->ids.id];
+                            uint8_t *data = &ack->value[14];
+                            if (data[0] != 0xFF) {
+                                bt_hid_sw2_set_calib(dev_calib, data, 0);
+                            }
+                            data = &ack->value[46];
+                            if (data[0] != 0xFF) {
+                                bt_hid_sw2_set_calib(dev_calib, data, 1);
+                            }
+                            bt_hid_sw2_print_calib(dev_calib);
+                            atomic_set_bit(&device->flags, BT_DEV_CALIB_SET);
+                            /* Force reinit once calib available */
+                            bt_type_update(device->ids.id, BT_SW2, device->ids.subtype);
+                            break;
+                        }
                     }
                     device->hid_state++;
                     bt_hid_sw2_exec_next_state(device);
