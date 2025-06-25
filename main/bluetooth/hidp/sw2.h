@@ -48,18 +48,41 @@ struct bt_hid_sw2_ctrl_calib {
 
 typedef union {
     struct {
-        uint8_t val[5];
-        uint8_t tbd[11];
+        uint8_t tid : 4;
+        uint8_t ops_cnt : 2;
+        uint8_t enable : 1;
+        uint8_t tbd : 1;
     };
-    uint8_t val16[16];
-} sw2_lra_t;
+    uint8_t val;
+} sw2_fb_state_t;
+
+struct sw2_lra_op_t {
+    union {
+        uint32_t val;
+        struct {
+            uint32_t lf_freq : 9;
+            uint32_t lf_en_tone : 1;
+            uint32_t lf_amp : 10;
+            uint32_t hf_freq : 9;
+            uint32_t hf_en_tone : 1;
+            uint32_t tbd : 1;
+            uint32_t enable : 1;
+        };
+    };
+    uint8_t hf_amp;
+} __packed;
+
+struct sw2_lra_ops_t {
+    sw2_fb_state_t state;
+    struct sw2_lra_op_t ops[3];
+} __packed;
 
 #define BT_HIDP_SW2_OUT_ATT_HDL 0x0012
 struct bt_hidp_sw2_out {
-    uint8_t pad;
-    sw2_lra_t l_lra;
-    sw2_lra_t r_lra;
-    uint8_t pad2[9];
+    uint8_t zero;
+    struct sw2_lra_ops_t l_lra;
+    struct sw2_lra_ops_t r_lra;
+    uint8_t padding[9];
 } __packed;
 
 #define BT_HIDP_SW2_REQ_TYPE_REQ 0x91
@@ -79,8 +102,8 @@ struct bt_hidp_sw2_cmd {
 #define BT_HIDP_SW2_OUT_CMD_ATT_HDL 0x0016
 struct bt_hidp_sw2_out_cmd {
     uint8_t pad;
-    sw2_lra_t l_lra;
-    sw2_lra_t r_lra;
+    struct sw2_lra_ops_t l_lra;
+    struct sw2_lra_ops_t r_lra;
     uint8_t cmd;
     uint8_t type;
     uint8_t interface;

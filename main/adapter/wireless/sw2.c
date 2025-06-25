@@ -10,7 +10,7 @@
 #include "adapter/config.h"
 #include "tests/cmds.h"
 #include "bluetooth/mon.h"
-#include "bluetooth/hidp/hidp.h"
+#include "bluetooth/hidp/sw2.h"
 #include "sw2.h"
 
 #define SW2_AXES_MAX 4
@@ -227,10 +227,39 @@ int32_t sw2_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
 }
 
 void sw2_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    struct bt_hidp_sw2_out *out = (struct bt_hidp_sw2_out *)bt_data->base.output;
+
     switch (bt_data->base.pid) {
         case 0x2066:
         case 0x2067:
         case 0x2069:
+            switch (fb_data->type) {
+                case FB_TYPE_RUMBLE:
+                    if (fb_data->hf_pwr || fb_data->lf_pwr) {
+                        out->r_lra.ops[0].hf_freq = 0x1e1;
+                        out->r_lra.ops[0].hf_amp = (uint8_t)((float)fb_data->hf_pwr / 2.68);
+                        out->r_lra.ops[0].lf_freq = 0x180;
+                        out->r_lra.ops[0].lf_amp = (uint16_t)((float)fb_data->hf_pwr / 0.3156);
+                        out->r_lra.ops[0].enable = 1;
+
+                        out->l_lra.ops[0].hf_freq = 0xe1;
+                        out->l_lra.ops[0].hf_amp = (uint8_t)((float)fb_data->lf_pwr / 2.68);
+                        out->l_lra.ops[0].lf_freq = 0x100;
+                        out->l_lra.ops[0].lf_amp = (uint16_t)((float)fb_data->lf_pwr / 0.3156);
+                        out->l_lra.ops[0].enable = 1;
+                    }
+                    else {
+                        out->l_lra.ops[0].val = 0x1e100000;
+                        out->l_lra.ops[0].hf_amp = 0x00;
+                        out->r_lra.ops[0].val = 0x1e100000;
+                        out->r_lra.ops[0].hf_amp = 0x00;
+                    }
+                    printf("%08lX %02X %08lX %02X\n", out->l_lra.ops[0].val, out->l_lra.ops[0].hf_amp, out->r_lra.ops[0].val, out->r_lra.ops[0].hf_amp);
+                    break;
+                case FB_TYPE_PLAYER_LED:
+                    bt_data->base.output[41] = bt_hid_led_dev_id_map[bt_data->base.pids->out_idx];
+                    break;
+            }
             break;
         case 0x2073:
             switch (fb_data->type) {

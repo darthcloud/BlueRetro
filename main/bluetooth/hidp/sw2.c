@@ -71,11 +71,44 @@ static void bt_hid_sw2_print_calib(struct bt_hid_sw2_ctrl_calib *calib) {
 }
 #endif
 
+void bt_hid_sw2_init_rumble_gc(struct bt_data *bt_data) {
+    bt_data->base.output[1] = 0x50;
+
+    bt_data->base.output[5] = BT_HIDP_SW2_CMD_SET_LED;
+    bt_data->base.output[6] = BT_HIDP_SW2_REQ_TYPE_REQ;
+    bt_data->base.output[7] = BT_HIDP_SW2_REQ_INT_BLE;
+    bt_data->base.output[8] = BT_HIDP_SW2_SUBCMD_SET_LED;
+    bt_data->base.output[10] = 0x08;
+    bt_data->base.output[13] = bt_hid_led_dev_id_map[bt_data->base.pids->out_idx];
+}
+
+void bt_hid_sw2_init_rumble_pro2(struct bt_data *bt_data) {
+    bt_data->base.output[1] = 0x50;
+    bt_data->base.output[2] = 0xe1;
+    bt_data->base.output[4] = 0x10;
+    bt_data->base.output[5] = 0x1e;
+
+    bt_data->base.output[17] = 0x50;
+    bt_data->base.output[18] = 0xe1;
+    bt_data->base.output[20] = 0x10;
+    bt_data->base.output[21] = 0x1e;
+
+    bt_data->base.output[33] = BT_HIDP_SW2_CMD_SET_LED;
+    bt_data->base.output[34] = BT_HIDP_SW2_REQ_TYPE_REQ;
+    bt_data->base.output[35] = BT_HIDP_SW2_REQ_INT_BLE;
+    bt_data->base.output[36] = BT_HIDP_SW2_SUBCMD_SET_LED;
+    bt_data->base.output[38] = 0x08;
+    bt_data->base.output[41] = bt_hid_led_dev_id_map[bt_data->base.pids->out_idx];
+}
+
 void bt_hid_cmd_sw2_out(struct bt_dev *device, void *report) {
     struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
     if (bt_data) {
         switch (bt_data->base.pid) {
             case 0x2069:
+                bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_OUT_CMD_ATT_HDL, (uint8_t *)report, 41);
+                bt_data->base.output[17] &= 0xF0;
+                bt_data->base.output[17] |= device->tid & 0xF;
                 break;
             case 0x2073:
                 bt_att_cmd_write_cmd(device->acl_handle, BT_HIDP_SW2_OUT_CMD_ATT_HDL, (uint8_t *)report, 21);
@@ -172,17 +205,6 @@ static void bt_hid_sw2_exec_next_state(struct bt_dev *device) {
 }
 
 void bt_hid_sw2_init(struct bt_dev *device) {
-    /* Init output data for Rumble/LED feedback */
-    struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
-    bt_data->base.output[1] = 0x50;
-
-    bt_data->base.output[5] = BT_HIDP_SW2_CMD_SET_LED;
-    bt_data->base.output[6] = BT_HIDP_SW2_REQ_TYPE_REQ;
-    bt_data->base.output[7] = BT_HIDP_SW2_REQ_INT_BLE;
-    bt_data->base.output[8] = BT_HIDP_SW2_SUBCMD_SET_LED;
-    bt_data->base.output[10] = 0x08;
-    bt_data->base.output[13] = bt_hid_led_dev_id_map[device->ids.out_idx];
-
     /* enable cmds rsp */
     uint16_t data = BT_GATT_CCC_NOTIFY;
     bt_att_cmd_write_req(device->acl_handle, 0x001b, (uint8_t *)&data, sizeof(data));
@@ -196,6 +218,10 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
     switch (att_handle) {
         case BT_HIDP_SW2_REPORT_TYPE1_ATT_HDL:
             bt_host_bridge(device, 1, data, len);
+            struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
+            if (bt_data) {
+                bt_hid_cmd_sw2_out(device, bt_data->base.output);
+            }
             break;
         case BT_HIDP_SW2_REPORT_TYPE2_ATT_HDL:
             bt_host_bridge(device, 2, data, len);
@@ -215,6 +241,21 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
 
                                 printf("%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
                                 bt_mon_log(true, "%s: VID: 0x%04X PID: 0x%04X\n", __FUNCTION__, bt_data->base.vid, bt_data->base.pid);
+
+                                /* Init output data for Rumble/LED feedback */
+                                switch (bt_data->base.pid) {
+                                    case 0x2066:
+                                    case 0x2067:
+                                    case 0x2069:
+                                        bt_hid_sw2_init_rumble_pro2(bt_data);
+                                        break;
+                                    case 0x2073:
+                                        bt_hid_sw2_init_rumble_gc(bt_data);
+                                        break;
+                                    default:
+                                        printf("# Unknown pid : %04X\n", bt_data->base.pid);
+                                        break;
+                                }
                             }
                             break;
                         }
