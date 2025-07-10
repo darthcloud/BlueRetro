@@ -19,6 +19,7 @@ entries:
     pcfx_spi (noflash)
     ps_spi (noflash)
     real_spi (noflash)
+    snes_spi (noflash)
     sega_io (noflash)
     pce_io (noflash)
     jag_io (noflash)

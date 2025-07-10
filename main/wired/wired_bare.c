@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,6 +15,7 @@
 #include "pcfx_spi.h"
 #include "ps_spi.h"
 #include "real_spi.h"
+#include "snes_spi.h"
 #include "jag_io.h"
 #include "wii_i2c.h"
 #include "adapter/adapter.h"
@@ -60,7 +61,7 @@ static const wired_init_t wired_init[WIRED_MAX] = {
     npiso_init, /* NES */
     pce_io_init, /* PCE */
     sega_io_init, /* GENESIS */
-    npiso_init, /* SNES */
+    snes_spi_init, /* SNES */
     cdi_uart_init, /* CDI */
     NULL, /* CD32 */
     real_spi_init, /* REAL_3DO */

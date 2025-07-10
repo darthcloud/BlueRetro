@@ -439,6 +439,26 @@ void npiso_from_generic(int32_t dev_mode, struct wired_ctrl *ctrl_data, struct w
     }
 }
 
+void npiso_fb_to_generic(int32_t dev_mode, struct raw_fb *raw_fb_data, struct generic_fb *fb_data) {
+    fb_data->wired_id = raw_fb_data->header.wired_id;
+    fb_data->type = raw_fb_data->header.type;
+
+    /* This stop rumble when BR timeout trigger */
+    if (raw_fb_data->header.data_len == 0) {
+        fb_data->state = 0;
+        fb_data->lf_pwr = fb_data->hf_pwr = 0;
+    }
+    else {
+        switch (fb_data->type) {
+            case FB_TYPE_RUMBLE:
+                fb_data->state = (raw_fb_data->data[0] || raw_fb_data->data[1] ? 1 : 0);
+                fb_data->lf_pwr = raw_fb_data->data[1] * 17;
+                fb_data->hf_pwr = raw_fb_data->data[0] * 17;
+                break;
+        }
+    }
+}
+
 void IRAM_ATTR npiso_gen_turbo_mask(struct wired_data *wired_data) {
     const uint32_t *btns_mask = (wired_adapter.system_id == VBOY) ? npiso_vb_btns_mask : npiso_btns_mask;
     struct npiso_map *map_mask = (struct npiso_map *)wired_data->output_mask;

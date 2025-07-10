@@ -60,7 +60,7 @@ static fb_to_generic_t fb_to_generic_func[WIRED_MAX] = {
     NULL, /* NES */
     NULL, /* PCE */
     NULL, /* GENESIS */
-    NULL, /* SNES */
+    npiso_fb_to_generic, /* SNES */
     NULL, /* CDI */
     NULL, /* CD32 */
     NULL, /* REAL_3DO */
