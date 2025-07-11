@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Jacques Gagnon
+ * Copyright (c) 2019-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -471,17 +471,14 @@ void adapter_fb_stop_timer_stop(uint8_t dev_id) {
     }
 }
 
-uint32_t adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
-    uint32_t ret = 0;
+bool adapter_bridge_fb(struct raw_fb *fb_data, struct bt_data *bt_data) {
+    bool ret = false;
 
     if (wired_adapter.system_id != WIRED_AUTO && bt_data && bt_data->base.pids) {
         wired_fb_to_generic(config.out_cfg[bt_data->base.pids->id].dev_mode, fb_data, &fb_input);
 
         if (bt_data->base.pids->type != BT_NONE) {
-            wireless_fb_from_generic(&fb_input, bt_data);
-            if (fb_data->header.type == FB_TYPE_RUMBLE) {
-                ret = fb_input.state;
-            }
+            ret = wireless_fb_from_generic(&fb_input, bt_data);
         }
     }
     return ret;

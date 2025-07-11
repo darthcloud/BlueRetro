@@ -260,7 +260,8 @@ void bt_hid_sw2_hdlr(struct bt_dev *device, uint16_t att_handle, uint8_t *data, 
         case BT_HIDP_SW2_REPORT_TYPE1_ATT_HDL:
             bt_host_bridge(device, 1, data, len);
             struct bt_data *bt_data = &bt_adapter.data[device->ids.id];
-            if (bt_data && config.out_cfg[device->ids.out_idx].acc_mode & ACC_RUMBLE) {
+            if (bt_data && bt_data->base.pid != SW2_GC_PID
+                    && config.out_cfg[device->ids.out_idx].acc_mode & ACC_RUMBLE) {
                 bt_hid_cmd_sw2_out(device, bt_data->base.output);
             }
             break;

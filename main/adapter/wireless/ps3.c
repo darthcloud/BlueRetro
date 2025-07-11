@@ -136,8 +136,9 @@ int32_t ps3_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
     return 0;
 }
 
-void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+bool ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_ps3_set_conf *set_conf = (struct bt_hidp_ps3_set_conf *)bt_data->base.output;
+    bool ret = true;
 
     switch (fb_data->type) {
         case FB_TYPE_RUMBLE:
@@ -162,4 +163,5 @@ void ps3_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
             set_conf->leds = (led_dev_id_map[bt_data->base.pids->out_idx] << 1);
             break;
     }
+    return ret;
 }

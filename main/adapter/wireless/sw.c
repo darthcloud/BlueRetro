@@ -511,8 +511,9 @@ int32_t sw_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data) 
     return -1;
 }
 
-void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+bool sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_sw_conf *set_conf = (struct bt_hidp_sw_conf *)bt_data->base.output;
+    bool ret = true;
     /* 8bitdo wont rumble w/ set_conf so we need keep track of fb_type somehow */
     bt_data->base.output[127] = fb_data->type;
 
@@ -540,5 +541,6 @@ void sw_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
             set_conf->subcmd_data[0] = led_dev_id_map[bt_data->base.pids->out_idx];
             break;
     }
+    return ret;
 }
 

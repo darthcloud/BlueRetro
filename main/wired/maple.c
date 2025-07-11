@@ -164,8 +164,9 @@ static uint32_t cur_us = 0, pre_us = 0;
 #endif
 
 static struct maple_pkt pkt;
-static uint32_t rumble_timeout = 0x00021300; /* mask 0x02 (unit1), 5 sec timeout */
-static uint32_t rumble_config = 0x10000F00; /* unit 1, freq 8 Hz */
+static uint32_t rumble_timeout[4] = {0x00021300, 0x00021300, 0x00021300, 0x00021300}; /* mask 0x02 (unit1), 5 sec timeout */
+static uint32_t rumble_timeout_prev[4] = {0};
+static uint32_t rumble_config[4] = {0x10000F00, 0x10000F00, 0x10000F00, 0x10000F00}; /* unit 1, freq 8 Hz */
 static uint32_t port_cnt = ARRAY_SIZE(gpio_pin);
 
 #ifndef CONFIG_BLUERETRO_WIRED_TRACE
@@ -520,7 +521,7 @@ maple_end:
                                 pkt.len = 0x02;
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_RUMBLE;
-                                pkt.data32[1] = rumble_config;
+                                pkt.data32[1] = rumble_config[port];
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             case CMD_BLOCK_READ:
@@ -528,7 +529,7 @@ maple_end:
                                 pkt.cmd = CMD_DATA_TX;
                                 pkt.data32[0] = ID_RUMBLE;
                                 pkt.data32[1] = 0;
-                                pkt.data32[2] = rumble_timeout;
+                                pkt.data32[2] = rumble_timeout[port];
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 break;
                             case CMD_BLOCK_WRITE:
@@ -536,7 +537,7 @@ maple_end:
                                 pkt.cmd = CMD_ACK;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 if (!bad_frame) {
-                                    rumble_timeout = pkt.data32[2];
+                                    rumble_timeout[port] = pkt.data32[2];
                                 }
                                 break;
                             case CMD_SET_CONDITION:
@@ -544,17 +545,20 @@ maple_end:
                                 pkt.cmd = CMD_ACK;
                                 maple_tx(port, maple0, maple1, pkt.data, pkt.len * 4 + 5);
                                 if (!bad_frame) {
-                                    rumble_config = pkt.data32[1];
-                                    if (config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                                    if ((rumble_config[port] != pkt.data32[1] ||
+                                                rumble_timeout[port] != rumble_timeout_prev[port]) &&
+                                            config.out_cfg[port].acc_mode & ACC_RUMBLE) {
                                         struct raw_fb fb_data = {0};
 
                                         fb_data.header.wired_id = port;
                                         fb_data.header.type = FB_TYPE_RUMBLE;
                                         fb_data.header.data_len = sizeof(uint32_t) * 2;
-                                        *(uint32_t *)&fb_data.data[0] = rumble_timeout;
-                                        *(uint32_t *)&fb_data.data[4] = rumble_config;
+                                        *(uint32_t *)&fb_data.data[0] = rumble_timeout[port];
+                                        *(uint32_t *)&fb_data.data[4] = rumble_config[port];
                                         adapter_q_fb(&fb_data);
                                     }
+                                    rumble_config[port] = pkt.data32[1];
+                                    rumble_timeout_prev[port] = rumble_config[port];
                                 }
                                 break;
                             default:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jacques Gagnon
+ * Copyright (c) 2021-2025, Jacques Gagnon
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,6 @@
 #include "adapter/adapter.h"
 
 int32_t wireless_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data);
-void wireless_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data);
+bool wireless_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data);
 
 #endif /* _WIRELESS_H_ */

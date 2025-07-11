@@ -137,6 +137,8 @@ struct ps_ctrl_port {
     uint8_t rumble_l_state[MT_PORT_MAX];
     uint8_t rumble_r_idx[MT_PORT_MAX];
     uint8_t rumble_l_idx[MT_PORT_MAX];
+    uint8_t rumble_r_val[MT_PORT_MAX];
+    uint8_t rumble_l_val[MT_PORT_MAX];
     uint8_t analog_btn[MT_PORT_MAX];
     uint32_t dev_desc[MT_PORT_MAX];
     uint32_t idx;
@@ -310,9 +312,12 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
     switch (cmd) {
         case 0x42:
         {
-            if (port->dev_id[id] != 0x41 && (config.out_cfg[id + port->mt_first_port].acc_mode & ACC_RUMBLE)) {
+            req++;
+            if (port->dev_id[id] != 0x41
+                    && (req[port->rumble_r_idx[id]] != port->rumble_r_val[id]
+                        || req[port->rumble_l_idx[id]] != port->rumble_l_val[id])
+                    && (config.out_cfg[id + port->mt_first_port].acc_mode & ACC_RUMBLE)) {
                 struct raw_fb fb_data = {0};
-                req++;
                 if (port->rumble_r_state[id]) {
                     fb_data.data[0] = req[port->rumble_r_idx[id]];
                 }
@@ -327,6 +332,8 @@ static void ps_cmd_req_hdlr(struct ps_ctrl_port *port, uint8_t id, uint8_t cmd, 
                 fb_data.header.data_len = 2;
                 adapter_q_fb(&fb_data);
             }
+            port->rumble_r_val[id] = req[port->rumble_r_idx[id]];
+            port->rumble_l_val[id] = req[port->rumble_l_idx[id]];
             break;
         }
         case 0x43:

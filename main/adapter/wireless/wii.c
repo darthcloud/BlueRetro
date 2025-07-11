@@ -492,8 +492,9 @@ int32_t wii_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_data)
     }
 }
 
-void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+bool wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
     struct bt_hidp_wii_conf *set_conf = (struct bt_hidp_wii_conf *)bt_data->base.output;
+    uint8_t cur_val = set_conf->conf;
 
     switch (fb_data->type) {
         case FB_TYPE_RUMBLE:
@@ -509,4 +510,5 @@ void wii_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
             set_conf->conf |= (led_dev_id_map[bt_data->base.pids->id] << 4);
             break;
     }
+    return (cur_val != set_conf->conf);
 }

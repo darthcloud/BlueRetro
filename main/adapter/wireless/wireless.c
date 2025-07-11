@@ -40,9 +40,13 @@ int32_t wireless_to_generic(struct bt_data *bt_data, struct wireless_ctrl *ctrl_
     return ret;
 }
 
-void wireless_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+bool wireless_fb_from_generic(struct generic_fb *fb_data, struct bt_data *bt_data) {
+    bool ret = false;
+
     if (fb_from_generic_func[bt_data->base.pids->type]) {
-        fb_from_generic_func[bt_data->base.pids->type](fb_data, bt_data);
+        ret = fb_from_generic_func[bt_data->base.pids->type](fb_data, bt_data);
     }
+
+    return ret;
 }
 
