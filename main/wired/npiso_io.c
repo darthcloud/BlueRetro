@@ -94,8 +94,8 @@ static uint8_t fs_id[NPISO_PORT_MAX] = {0xEF, 0xDF};
 static uint8_t mouse_speed[NPISO_PORT_MAX] = {MOUSE_SPEED_MIN, MOUSE_SPEED_MIN};
 static uint8_t mouse_update[NPISO_PORT_MAX] = {0};
 static uint8_t mouse_axes[NPISO_PORT_MAX][2] = {0};
-static uint8_t mt_mode = 1; /* multitap starts on 5p mode by default */
-static uint8_t mt_load = 0;
+//static uint8_t mt_mode = 1; /* multitap starts on 5p mode by default */
+//static uint8_t mt_load = 0;
 static uint8_t kb_column = 0;
 static uint32_t kb_data = 0;
 static uint8_t pads_idx[2] = {0};
@@ -385,6 +385,7 @@ static unsigned npiso_fc_kb_isr(unsigned cause) {
     return 0;
 }
 
+#if 0
 static unsigned npiso_sfc_snes_5p_isr(unsigned cause) {
     const uint32_t low_io = GPIO.acpu_int;
     const uint32_t high_io = GPIO.acpu_int1.intr;
@@ -565,6 +566,7 @@ static unsigned npiso_sfc_snes_5p_isr(unsigned cause) {
 
     return 0;
 }
+#endif
 
 void npiso_init(uint32_t package)
 {
@@ -722,10 +724,7 @@ void npiso_init(uint32_t package)
         }
     }
 
-    if (dev_type[1] == DEV_SFC_SNES_MULTITAP) {
-        intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_sfc_snes_5p_isr);
-    }
-    else if (dev_type[0] == DEV_FC_KB) {
+    if (dev_type[0] == DEV_FC_KB) {
         intexc_alloc_iram(ETS_GPIO_INTR_SOURCE, 19, npiso_fc_kb_isr);
     }
     else {
