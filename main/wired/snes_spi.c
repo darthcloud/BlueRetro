@@ -45,6 +45,12 @@
 
 #define SNES_PORT_MAX 2
 
+enum {
+    SNES_PAD_FORMAT_DEFAULT = 0,
+    SNES_PAD_FORMAT_BR_8BITS,
+    SNES_PAD_FORMAT_BR_4BITS,
+};
+
 struct snes_ctrl_port {
     struct spi_cfg cfg;
     spi_dev_t *hw;
@@ -62,6 +68,7 @@ struct snes_ctrl_port {
     uint8_t copi_sig;
     uint8_t spi_mod;
     uint8_t rumble_data;
+    uint8_t format;
 };
 
 static struct snes_ctrl_port snes_ctrl_ports[SNES_PORT_MAX] = {
@@ -76,8 +83,8 @@ static struct snes_ctrl_port snes_ctrl_ports[SNES_PORT_MAX] = {
             .miso_delay_num = 2,
             .mosi_delay_mode = 0,
             .mosi_delay_num = 3,
-            .write_bit_len = 33 - 1,
-            .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
+            .write_bit_len = 64 - 1,
+            .read_bit_len = 64 - 1, // Extra bit to remove small gitch on packet end
             .inten = 0,
         },
         .hw = &SPI2,
@@ -106,8 +113,8 @@ static struct snes_ctrl_port snes_ctrl_ports[SNES_PORT_MAX] = {
             .miso_delay_num = 2,
             .mosi_delay_mode = 0,
             .mosi_delay_num = 3,
-            .write_bit_len = 33 - 1,
-            .read_bit_len = 33 - 1, // Extra bit to remove small gitch on packet end
+            .write_bit_len = 64 - 1,
+            .read_bit_len = 64 - 1, // Extra bit to remove small gitch on packet end
             .inten = 0,
         },
         .hw = &SPI3,
@@ -161,8 +168,44 @@ static inline void load_buffer(uint8_t port) {
     switch (config.out_cfg[port].dev_mode) {
         case DEV_PAD:
         {
-            uint16_t tmp = wired_adapter.data[port].output16[0] | wired_adapter.data[port].output_mask16[0];;
-            snes_ctrl_ports[port].hw->data_buf[0] = tmp;
+            union {
+                uint8_t tmp[8];
+                uint16_t tmp16[4];
+                uint32_t tmp32[2];
+            } raw = {0};
+
+            switch (snes_ctrl_ports[port].format) {
+                case SNES_PAD_FORMAT_BR_8BITS:
+                    raw.tmp16[0] = wired_adapter.data[port].output16[0] | wired_adapter.data[port].output_mask16[0];
+                    raw.tmp16[1] = wired_adapter.data[port].output16[1];
+                    raw.tmp32[1] = wired_adapter.data[port].output32[1];
+                    raw.tmp[1] &= 0xF0;
+                    raw.tmp[1] |= 0x09;
+                    break;
+                case SNES_PAD_FORMAT_BR_4BITS:
+                    raw.tmp16[0] = wired_adapter.data[port].output16[0] | wired_adapter.data[port].output_mask16[0];
+                    raw.tmp[2] = (wired_adapter.data[port].output[2] & 0xF0) | (wired_adapter.data[port].output[3] >> 4);
+                    raw.tmp[3] = (wired_adapter.data[port].output[4] & 0xF0) | (wired_adapter.data[port].output[5] >> 4);
+                    raw.tmp[4] = (wired_adapter.data[port].output[6] & 0xF0) | (wired_adapter.data[port].output[7] >> 4);
+                    raw.tmp[1] &= 0xF0;
+                    raw.tmp[1] |= 0x08;
+                    break;
+                default:
+                    raw.tmp16[0] = wired_adapter.data[port].output16[0] | wired_adapter.data[port].output_mask16[0];
+                    raw.tmp16[1] = 0;
+                    raw.tmp32[1] = 0;
+                    raw.tmp[1] |= 0x0F;
+                    if ((uint8_t)~wired_adapter.data[port].output[6] > 16) {
+                        raw.tmp16[0] &= ~(1 << 13);
+                    }
+                    if ((uint8_t)~wired_adapter.data[port].output[7] > 16) {
+                        raw.tmp16[0] &= ~(1 << 12);
+                    }
+                    break;
+            }
+
+            snes_ctrl_ports[port].hw->data_buf[0] = raw.tmp32[0];
+            snes_ctrl_ports[port].hw->data_buf[1] = raw.tmp32[1];
             break;
         }
         case DEV_MOUSE:
@@ -196,7 +239,6 @@ static unsigned latch_isr(unsigned cause) {
             raw.tmp32[1] = snes_ctrl_ports[port].hw->data_buf[1];
             p = &snes_ctrl_ports[port];
 
-            p->hw->data_buf[1] = 0x00000000;
             load_buffer(port);
             p->hw->slave.sync_reset = 1;
             p->hw->slave.trans_done = 0;
@@ -205,26 +247,31 @@ static unsigned latch_isr(unsigned cause) {
             ++wired_adapter.data[port].frame_cnt;
             npiso_gen_turbo_mask(&wired_adapter.data[port]);
 
-            uint8_t rumble_sentry = (raw.tmp[2] << 1) | (raw.tmp[3] >> 7);
-            uint8_t rumble_data = (raw.tmp[3] << 1) | (raw.tmp[4] >> 7);
-            if (rumble_sentry != 0x72) {
-                rumble_sentry = raw.tmp[2];
-                rumble_data = raw.tmp[3];
+            uint8_t cmd_sentry = (raw.tmp[2] << 1) | (raw.tmp[3] >> 7);
+            uint8_t cmd_data = (raw.tmp[3] << 1) | (raw.tmp[4] >> 7);
+            if (cmd_sentry != 'r' && cmd_sentry != 'b') {
+                cmd_sentry = raw.tmp[2];
+                cmd_data = raw.tmp[3];
             }
 
-            if (rumble_sentry == 0x72) {
-                if (rumble_data != p->rumble_data
-                        && config.out_cfg[port].acc_mode & ACC_RUMBLE) {
-                    struct raw_fb fb_data = {0};
-                    fb_data.data[0] = (rumble_data & 0xF0) >> 4;
-                    fb_data.data[1] = rumble_data & 0x0F;
-                    fb_data.header.wired_id = port;
-                    fb_data.header.type = FB_TYPE_RUMBLE;
-                    fb_data.header.data_len = 2;
-                    adapter_q_fb(&fb_data);
-                }
-                p->rumble_data = rumble_data;
-                //ets_printf("%02X %02X\n", rumble_sentry, rumble_data);
+            switch (cmd_sentry) {
+                case 'b':
+                    p->format = cmd_data;
+                    break;
+                case 'r':
+                    if (cmd_data != p->rumble_data
+                            && config.out_cfg[port].acc_mode & ACC_RUMBLE) {
+                        struct raw_fb fb_data = {0};
+                        fb_data.data[0] = (cmd_data & 0xF0) >> 4;
+                        fb_data.data[1] = cmd_data & 0x0F;
+                        fb_data.header.wired_id = port;
+                        fb_data.header.type = FB_TYPE_RUMBLE;
+                        fb_data.header.data_len = 2;
+                        adapter_q_fb(&fb_data);
+                    }
+                    p->rumble_data = cmd_data;
+                    //ets_printf("%02X %02X\n", cmd_sentry, cmd_data);
+                    break;
             }
         }
     }

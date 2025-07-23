@@ -71,8 +71,19 @@ static DRAM_ATTR const struct ctrl_meta npiso_trackball_axes_meta[ADAPTER_MAX_AX
     {.size_min = -8, .size_max = 7, .neutral = 0x00, .abs_max = 0x7, .abs_min = 0x8},
 };
 
+static DRAM_ATTR const struct ctrl_meta npiso_axes_meta[ADAPTER_MAX_AXES] =
+{
+    {.size_min = -128, .size_max = 127, .neutral = 0, .abs_max = 127, .abs_min = 128},
+    {.size_min = -128, .size_max = 127, .neutral = 0, .abs_max = 127, .abs_min = 128},
+    {.size_min = -128, .size_max = 127, .neutral = 0, .abs_max = 127, .abs_min = 128},
+    {.size_min = -128, .size_max = 127, .neutral = 0, .abs_max = 127, .abs_min = 128},
+    {.size_min = 0, .size_max = 255, .neutral = 0, .abs_max = 255, .abs_min = 0x00},
+    {.size_min = 0, .size_max = 255, .neutral = 0, .abs_max = 255, .abs_min = 0x00},
+};
+
 struct npiso_map {
     uint16_t buttons;
+    uint8_t axes[6];
 } __packed;
 
 struct npiso_mouse_map {
@@ -98,9 +109,8 @@ struct npiso_kb_key_to_matrix {
     uint8_t row_nibble_idx;
     uint32_t row_mask;
 };
-
-static const uint32_t npiso_mask[4] = {0x333F0F00, 0x00000000, 0x00000000, BR_COMBO_MASK};
-static const uint32_t npiso_desc[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+static const uint32_t npiso_mask[4] = {0x333F0FFF, 0x00000000, 0x00000000, BR_COMBO_MASK};
+static const uint32_t npiso_desc[4] = {0x110000FF, 0x00000000, 0x00000000, 0x00000000};
 static DRAM_ATTR const uint32_t npiso_btns_mask[32] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -232,6 +242,8 @@ void IRAM_ATTR npiso_init_buffer(int32_t dev_mode, struct wired_data *wired_data
                 map->buttons = 0xFFFF;
             }
             map_mask->buttons = 0x0000;
+            memset(map->axes, 0xFF, sizeof(map_mask->axes));
+            memset(map_mask->axes, 0x00, sizeof(map_mask->axes));
             break;
         }
     }
@@ -267,6 +279,7 @@ void npiso_meta_init(struct wired_ctrl *ctrl_data) {
                     else {
                         ctrl_data[i].mask = npiso_mask;
                         ctrl_data[i].desc = npiso_desc;
+                        ctrl_data[i].axes[j].meta = &npiso_axes_meta[j];
                     }
                     break;
             }
@@ -326,6 +339,21 @@ static void npiso_ctrl_from_generic(struct wired_ctrl *ctrl_data, struct wired_d
                 wired_data->cnt_mask[i] = 0;
             }
         }
+    }
+
+    for (uint32_t i = 0; i < ADAPTER_MAX_AXES; i++) {
+        if (ctrl_data->map_mask[0] & (axis_to_btn_mask(i) & ctrl_data->desc[0])) {
+            if (ctrl_data->axes[i].value > ctrl_data->axes[i].meta->size_max) {
+                map_tmp.axes[i] = ~ctrl_data->axes[i].meta->size_max;
+            }
+            else if (ctrl_data->axes[i].value < ctrl_data->axes[i].meta->size_min) {
+                map_tmp.axes[i] = ~ctrl_data->axes[i].meta->size_min;
+            }
+            else {
+                map_tmp.axes[i] = ~(uint8_t)(ctrl_data->axes[i].value);
+            }
+        }
+        wired_data->cnt_mask[axis_to_btn_id(i)] = ctrl_data->axes[i].cnt_mask;
     }
 
     memcpy(wired_data->output, (void *)&map_tmp, sizeof(map_tmp));
