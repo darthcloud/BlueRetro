@@ -83,8 +83,8 @@ static struct snes_ctrl_port snes_ctrl_ports[SNES_PORT_MAX] = {
             .miso_delay_num = 2,
             .mosi_delay_mode = 0,
             .mosi_delay_num = 3,
-            .write_bit_len = 64 - 1,
-            .read_bit_len = 64 - 1, // Extra bit to remove small gitch on packet end
+            .write_bit_len = 33 - 1,
+            .read_bit_len = 33 - 1,
             .inten = 0,
         },
         .hw = &SPI2,
@@ -113,8 +113,8 @@ static struct snes_ctrl_port snes_ctrl_ports[SNES_PORT_MAX] = {
             .miso_delay_num = 2,
             .mosi_delay_mode = 0,
             .mosi_delay_num = 3,
-            .write_bit_len = 64 - 1,
-            .read_bit_len = 64 - 1, // Extra bit to remove small gitch on packet end
+            .write_bit_len = 33 - 1,
+            .read_bit_len = 33 - 1,
             .inten = 0,
         },
         .hw = &SPI3,
@@ -256,6 +256,14 @@ static unsigned latch_isr(unsigned cause) {
 
             switch (cmd_sentry) {
                 case 'b':
+                    if (cmd_data) {
+                        snes_ctrl_ports[port].hw->slv_wrbuf_dlen.bit_len = 64 - 1;
+                        snes_ctrl_ports[port].hw->slv_rdbuf_dlen.bit_len = 64 - 1;
+                    }
+                    else {
+                        snes_ctrl_ports[port].hw->slv_wrbuf_dlen.bit_len = 33 - 1;
+                        snes_ctrl_ports[port].hw->slv_rdbuf_dlen.bit_len = 33 - 1;
+                    }
                     p->format = cmd_data;
                     break;
                 case 'r':
